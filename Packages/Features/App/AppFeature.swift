@@ -17,6 +17,9 @@ public struct AppFeature: Sendable {
             case nameGreeting
             case birthData
             case relationshipStatus
+            case professionalContext
+            case lifestyleRhythm
+            case cycleData
         }
 
         public var healthDataConsent: Bool = false
@@ -26,6 +29,19 @@ public struct AppFeature: Sendable {
         public var birthTime: Date = Date()
         public var birthPlace: String = ""
         public var relationshipStatus: RelationshipStatus?
+        public var professionalContext: ProfessionalContext?
+        public var lifestyleType: LifestyleType?
+
+        // Cycle Data (matching backend API)
+        public var lastPeriodDate: Date = Date()
+        public var cycleDuration: Int = 28  // avgCycleLength (21-40)
+        public var periodDuration: Int = 5  // avgBleedingDays (2-10)
+        public var cycleRegularity: CycleRegularity = .regular
+        public var flowIntensity: Int = 3  // 1-5 scale
+        public var selectedSymptoms: Set<SymptomType> = []
+        public var usesContraception: Bool = false
+        public var contraceptionType: ContraceptionType? = nil
+
         public init(destination: Destination = .splash) {
             self.destination = destination
         }
@@ -43,10 +59,16 @@ public struct AppFeature: Sendable {
         case nameGreetingContinue
         case birthDataNextTapped
         case relationshipStatusNextTapped
+        case professionalContextNextTapped
+        case lifestyleRhythmNextTapped
+        case cycleDataNextTapped
         case backTapped
         case backToPrivacy
         case backToNameInput
         case backToBirthData
+        case backToRelationshipStatus
+        case backToProfessionalContext
+        case backToLifestyleRhythm
     }
 
     @Dependency(\.continuousClock) var clock
@@ -100,7 +122,27 @@ public struct AppFeature: Sendable {
                 return .none
 
             case .relationshipStatusNextTapped:
-                // TODO: Navigate to next screen or main app
+                state.destination = .professionalContext
+                return .none
+
+            case .professionalContextNextTapped:
+                state.destination = .lifestyleRhythm
+                return .none
+
+            case .lifestyleRhythmNextTapped:
+                state.destination = .cycleData
+                return .none
+
+            case .cycleDataNextTapped:
+                // TODO: Navigate to main app
+                return .none
+
+            case .backToProfessionalContext:
+                state.destination = .professionalContext
+                return .none
+
+            case .backToRelationshipStatus:
+                state.destination = .relationshipStatus
                 return .none
 
             case .backTapped:
@@ -117,6 +159,10 @@ public struct AppFeature: Sendable {
 
             case .backToBirthData:
                 state.destination = .birthData
+                return .none
+
+            case .backToLifestyleRhythm:
+                state.destination = .lifestyleRhythm
                 return .none
             }
         }
@@ -180,6 +226,34 @@ public struct AppView: View {
                     selectedStatus: $store.relationshipStatus,
                     onNext: { store.send(.relationshipStatusNextTapped) },
                     onBack: { store.send(.backToBirthData) }
+                )
+
+            case .professionalContext:
+                ProfessionalContextView(
+                    selectedContext: $store.professionalContext,
+                    onNext: { store.send(.professionalContextNextTapped) },
+                    onBack: { store.send(.backToRelationshipStatus) }
+                )
+
+            case .lifestyleRhythm:
+                LifestyleRhythmView(
+                    selectedType: $store.lifestyleType,
+                    onNext: { store.send(.lifestyleRhythmNextTapped) },
+                    onBack: { store.send(.backToProfessionalContext) }
+                )
+
+            case .cycleData:
+                CycleDataView(
+                    lastPeriodDate: $store.lastPeriodDate,
+                    cycleDuration: $store.cycleDuration,
+                    periodDuration: $store.periodDuration,
+                    cycleRegularity: $store.cycleRegularity,
+                    flowIntensity: $store.flowIntensity,
+                    selectedSymptoms: $store.selectedSymptoms,
+                    usesContraception: $store.usesContraception,
+                    contraceptionType: $store.contraceptionType,
+                    onNext: { store.send(.cycleDataNextTapped) },
+                    onBack: { store.send(.backToLifestyleRhythm) }
                 )
             }
         }

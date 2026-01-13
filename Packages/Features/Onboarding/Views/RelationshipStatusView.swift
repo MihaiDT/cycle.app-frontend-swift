@@ -39,8 +39,8 @@ public struct RelationshipStatusView: View {
 
     public var body: some View {
         OnboardingLayout(
-            currentStep: 4,
-            totalSteps: 5,
+            currentStep: 5,
+            totalSteps: 8,
             onBack: onBack,
             onNext: onNext,
             nextButtonEnabled: selectedStatus != nil

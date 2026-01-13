@@ -40,8 +40,8 @@ public struct BirthDataView: View {
 
     public var body: some View {
         OnboardingLayout(
-            currentStep: 3,
-            totalSteps: 5,
+            currentStep: 4,
+            totalSteps: 8,
             onBack: onBack,
             onNext: onNext,
             nextButtonEnabled: true
@@ -88,9 +88,8 @@ public struct BirthDataView: View {
 
                 // Description
                 Text("This helps personalize your cycle predictions.")
-                    .font(.custom("Raleway-Regular", size: 13))
-                    .tracking(1)
-                    .foregroundColor(DesignColors.text.opacity(0.5))
+                    .font(.custom("Raleway-Regular", size: 17))
+                    .foregroundColor(DesignColors.text.opacity(0.7))
                     .multilineTextAlignment(.center)
             }
         }

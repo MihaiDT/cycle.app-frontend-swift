@@ -23,8 +23,8 @@ public struct NameInputView: View {
 
     public var body: some View {
         OnboardingLayout(
-            currentStep: 2,
-            totalSteps: 5,
+            currentStep: 3,
+            totalSteps: 8,
             onBack: onBack,
             onNext: onNext,
             nextButtonEnabled: canContinue
