@@ -118,6 +118,12 @@ public struct LifestyleRhythmView: View {
                 .padding(.bottom, 80)
             }
         }
+        .onAppear {
+            // Restore drag angle from selected type when returning to this screen
+            if let type = selectedType {
+                dragAngle = type.angle
+            }
+        }
     }
 }
 

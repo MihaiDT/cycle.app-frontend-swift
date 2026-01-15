@@ -1,165 +1,136 @@
 import SwiftUI
 
-// MARK: - Professional Context
+// MARK: - Personal Goal Type
 
-public enum ProfessionalContext: String, CaseIterable, Equatable, Sendable {
-    case student = "Student"
-    case employed = "Employed"
-    case freelancer = "Freelancer"
-    case entrepreneur = "Entrepreneur"
-    case stayAtHome = "Stay-at-home mom"
+public enum PersonalGoal: String, CaseIterable, Identifiable, Equatable, Hashable, Sendable {
+    case emotionalBalance = "emotional_balance"
+    case energyClarity = "energy_clarity"
+    case harmoniousRelationships = "harmonious_relationships"
+    case motivation = "motivation"
+    case selfUnderstanding = "self_understanding"
 
-    var subtitle: String {
+    public var id: String { rawValue }
+
+    public var title: String {
         switch self {
-        case .student: return "Learning & growing"
-        case .employed: return "Stable career"
-        case .freelancer: return "Creative freedom"
-        case .entrepreneur: return "Building the future"
-        case .stayAtHome: return "Present for family"
+        case .emotionalBalance: return "Emotional Balance"
+        case .energyClarity: return "Energy & Clarity"
+        case .harmoniousRelationships: return "Harmonious Relationships"
+        case .motivation: return "Motivation"
+        case .selfUnderstanding: return "Self Understanding"
+        }
+    }
+
+    public var subtitle: String {
+        switch self {
+        case .emotionalBalance: return "Find inner peace and stability"
+        case .energyClarity: return "Feel vibrant and focused"
+        case .harmoniousRelationships: return "Connect deeply with others"
+        case .motivation: return "Stay driven and inspired"
+        case .selfUnderstanding: return "Know yourself better"
         }
     }
 }
 
-// MARK: - Professional Context View
+// MARK: - Personal Goals View
 
-public struct ProfessionalContextView: View {
-    @Binding public var selectedContext: ProfessionalContext?
+public struct PersonalGoalsView: View {
+    @Binding public var selectedGoals: Set<PersonalGoal>
     public let onNext: () -> Void
     public let onBack: (() -> Void)?
 
-    @State private var hasAppeared = false
+    @State private var animatedGoals: Set<PersonalGoal> = []
 
     public init(
-        selectedContext: Binding<ProfessionalContext?>,
+        selectedGoals: Binding<Set<PersonalGoal>>,
         onNext: @escaping () -> Void,
         onBack: (() -> Void)? = nil
     ) {
-        self._selectedContext = selectedContext
+        self._selectedGoals = selectedGoals
         self.onNext = onNext
         self.onBack = onBack
     }
 
     public var body: some View {
         OnboardingLayout(
-            currentStep: 6,
-            totalSteps: 8,
+            currentStep: 9,
+            totalSteps: 9,
             onBack: onBack,
             onNext: onNext,
-            nextButtonEnabled: selectedContext != nil
+            nextButtonEnabled: !selectedGoals.isEmpty
         ) {
             VStack(spacing: 0) {
-                // Elegant header
+                // Header
                 VStack(spacing: 6) {
-                    Text("one more thing")
+                    Text("personal touch")
                         .font(.custom("Raleway-Regular", size: 13))
                         .tracking(3)
                         .textCase(.uppercase)
                         .foregroundColor(DesignColors.text.opacity(0.5))
 
-                    Text("Your Lifestyle")
+                    Text("Your Intentions")
                         .font(.custom("Raleway-Bold", size: 32))
                         .foregroundColor(DesignColors.text)
-                }
-                .padding(.bottom, 32)
 
-                // Cards with slide-in animation
-                ZStack {
-                    ForEach(Array(ProfessionalContext.allCases.enumerated()), id: \.element) { index, context in
-                        ProfessionalCard(
-                            context: context,
-                            isSelected: selectedContext == context,
-                            hasSelection: selectedContext != nil,
-                            index: index,
-                            totalCount: ProfessionalContext.allCases.count,
-                            hasAppeared: hasAppeared
+                    Text("Select all that resonate with you")
+                        .font(.custom("Raleway-Regular", size: 15))
+                        .foregroundColor(DesignColors.text.opacity(0.6))
+                        .padding(.top, 4)
+                }
+                .padding(.bottom, 20)
+
+                // Goals list
+                VStack(spacing: 12) {
+                    ForEach(Array(PersonalGoal.allCases.enumerated()), id: \.element.id) { index, goal in
+                        GoalCard(
+                            goal: goal,
+                            isSelected: selectedGoals.contains(goal),
+                            isAnimated: animatedGoals.contains(goal)
                         ) {
-                            withAnimation(.spring(response: 0.5, dampingFraction: 0.8)) {
-                                selectedContext = context
-                            }
+                            toggleGoal(goal)
                         }
                     }
                 }
-                .frame(height: selectedContext == nil ? 280 : 380)
                 .padding(.horizontal, 24)
+
+                Spacer()
             }
         }
         .onAppear {
-            // Staggered entrance animation
-            withAnimation(.spring(response: 0.8, dampingFraction: 0.75).delay(0.2)) {
-                hasAppeared = true
+            // Stagger animation on appear
+            for (index, goal) in PersonalGoal.allCases.enumerated() {
+                DispatchQueue.main.asyncAfter(deadline: .now() + Double(index) * 0.06) {
+                    withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
+                        _ = animatedGoals.insert(goal)
+                    }
+                }
+            }
+        }
+    }
+
+    private func toggleGoal(_ goal: PersonalGoal) {
+        #if canImport(UIKit)
+            let generator = UIImpactFeedbackGenerator(style: .light)
+            generator.impactOccurred()
+        #endif
+
+        withAnimation(.spring(response: 0.35, dampingFraction: 0.7)) {
+            if selectedGoals.contains(goal) {
+                selectedGoals.remove(goal)
+            } else {
+                _ = selectedGoals.insert(goal)
             }
         }
     }
 }
 
-// MARK: - Professional Card
+// MARK: - Goal Card
 
-private struct ProfessionalCard: View {
-    let context: ProfessionalContext
+private struct GoalCard: View {
+    let goal: PersonalGoal
     let isSelected: Bool
-    let hasSelection: Bool
-    let index: Int
-    let totalCount: Int
-    let hasAppeared: Bool
+    let isAnimated: Bool
     let action: () -> Void
-
-    // Stacked position (no selection) vs expanded position
-    private var yOffset: CGFloat {
-        let centerIndex = CGFloat(totalCount - 1) / 2.0
-        let relativeIndex = CGFloat(index) - centerIndex
-
-        if hasSelection {
-            // Expanded: spread out with more space
-            return relativeIndex * 68
-        } else {
-            // Stacked: tight stack with overlap
-            return relativeIndex * 42
-        }
-    }
-
-    // Entrance from left/right alternating
-    private var entranceOffset: CGFloat {
-        guard !hasAppeared else { return 0 }
-        let direction: CGFloat = index.isMultiple(of: 2) ? -1 : 1
-        return direction * 300
-    }
-
-    private var horizontalOffset: CGFloat {
-        guard !hasSelection else { return 0 }
-        guard hasAppeared else { return entranceOffset }
-        // Subtle wave pattern when stacked
-        let offsets: [CGFloat] = [5, -5, 7, -7, 0]
-        return offsets[index % 5]
-    }
-
-    private var rotation: Double {
-        guard !hasSelection else { return 0 }
-        guard hasAppeared else {
-            // Entrance rotation
-            let direction: Double = index.isMultiple(of: 2) ? -1 : 1
-            return direction * 15
-        }
-        // Slight rotation when stacked
-        let rotations: [Double] = [-1.8, 1.5, -1.0, 1.8, -1.2]
-        return rotations[index % 5]
-    }
-
-    private var cardScale: CGFloat {
-        guard hasAppeared else { return 0.85 }
-        if isSelected {
-            return 1.03
-        } else if !hasSelection {
-            // Slight scale variation when stacked
-            let scales: [CGFloat] = [0.98, 0.99, 1.0, 0.99, 0.98]
-            return scales[index % 5]
-        }
-        return 1.0
-    }
-
-    private var cardOpacity: Double {
-        guard hasAppeared else { return 0 }
-        return 1
-    }
 
     var body: some View {
         Button(action: action) {
@@ -180,28 +151,25 @@ private struct ProfessionalCard: View {
 
                 // Content
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(context.rawValue)
+                    Text(goal.title)
                         .font(.custom("Raleway-SemiBold", size: 17))
                         .foregroundColor(DesignColors.text)
 
-                    // Animated subtitle
-                    Text(context.subtitle)
+                    Text(goal.subtitle)
                         .font(.custom("Raleway-Regular", size: 12))
-                        .foregroundColor(DesignColors.text.opacity(isSelected ? 0.6 : 0))
-                        .frame(height: isSelected ? nil : 0, alignment: .top)
-                        .clipped()
+                        .foregroundColor(DesignColors.text.opacity(isSelected ? 0.6 : 0.4))
                 }
                 .padding(.leading, 16)
 
                 Spacer()
 
-                // Consent-style checkbox
-                ProfessionalCheckbox(isSelected: isSelected)
+                // Checkbox
+                GoalCheckbox(isSelected: isSelected)
                     .frame(width: 24, height: 24)
                     .padding(.trailing, 20)
             }
             .padding(.leading, 20)
-            .frame(height: isSelected ? 72 : 56)
+            .frame(height: 64)
             .frame(maxWidth: .infinity)
             .background {
                 RoundedRectangle(cornerRadius: 16)
@@ -210,7 +178,7 @@ private struct ProfessionalCard: View {
             .background {
                 if isSelected {
                     RoundedRectangle(cornerRadius: 16)
-                        .fill(DesignColors.accent.opacity(0.08))
+                        .fill(DesignColors.accentWarm.opacity(0.08))
                         .blur(radius: 12)
                         .offset(y: 4)
                 }
@@ -220,7 +188,7 @@ private struct ProfessionalCard: View {
                     .strokeBorder(
                         LinearGradient(
                             colors: isSelected
-                                ? [DesignColors.accent.opacity(0.5), DesignColors.accent.opacity(0.15)]
+                                ? [DesignColors.accentWarm.opacity(0.5), DesignColors.accentWarm.opacity(0.15)]
                                 : [Color.white.opacity(0.3), Color.white.opacity(0.08)],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
@@ -230,34 +198,25 @@ private struct ProfessionalCard: View {
             }
             .shadow(
                 color: isSelected
-                    ? DesignColors.accent.opacity(0.12)
-                    : Color.black.opacity(0.08),
-                radius: isSelected ? 16 : 8,
+                    ? DesignColors.accentWarm.opacity(0.12)
+                    : Color.black.opacity(0.06),
+                radius: isSelected ? 12 : 6,
                 x: 0,
-                y: isSelected ? 8 : 4
+                y: isSelected ? 6 : 3
             )
+            .scaleEffect(isAnimated ? 1.0 : 0.95)
+            .opacity(isAnimated ? 1.0 : 0.0)
         }
         .buttonStyle(.plain)
-        .offset(x: horizontalOffset, y: yOffset)
-        .rotation3DEffect(.degrees(rotation), axis: (x: 0, y: 0, z: 1))
-        .scaleEffect(cardScale)
-        .opacity(cardOpacity)
-        .zIndex(isSelected ? 100 : Double(totalCount - index))
-        .animation(
-            .spring(response: 0.6, dampingFraction: 0.75).delay(Double(index) * 0.08),
-            value: hasAppeared
-        )
-        .animation(.spring(response: 0.5, dampingFraction: 0.8), value: hasSelection)
         .animation(.spring(response: 0.4, dampingFraction: 0.75), value: isSelected)
     }
 }
 
-// MARK: - Professional Checkbox (Consent Style)
+// MARK: - Goal Checkbox (Same style as other screens)
 
-private struct ProfessionalCheckbox: View {
+private struct GoalCheckbox: View {
     let isSelected: Bool
 
-    // Using accentWarm for better visibility and WCAG contrast
     private var checkmarkColor: Color {
         DesignColors.accentWarm
     }
@@ -272,18 +231,18 @@ private struct ProfessionalCheckbox: View {
 
     var body: some View {
         ZStack {
-            // Full circle - visible when not selected (using accentSecondary for visibility)
+            // Full circle - visible when not selected
             Circle()
                 .stroke(DesignColors.accentSecondary.opacity(0.5), style: strokeStyle)
                 .opacity(isSelected ? 0 : 1)
 
             // Circle with gap - visible when selected
-            ProfessionalCircleWithGap()
+            GoalCircleWithGap()
                 .stroke(checkmarkColor, style: strokeStyle)
                 .opacity(isSelected ? 1 : 0)
 
             // Checkmark - animated
-            ProfessionalCheckmark(progress: isSelected ? 1 : 0)
+            GoalCheckmark(progress: isSelected ? 1 : 0)
                 .stroke(checkmarkColor, style: strokeStyle)
                 .animation(.easeOut(duration: 0.2), value: isSelected)
         }
@@ -293,7 +252,7 @@ private struct ProfessionalCheckbox: View {
 
 // MARK: - Circle with Gap Shape
 
-private struct ProfessionalCircleWithGap: Shape {
+private struct GoalCircleWithGap: Shape {
     func path(in rect: CGRect) -> Path {
         let scale = min(rect.width, rect.height) / 19.0
 
@@ -349,7 +308,7 @@ private struct ProfessionalCircleWithGap: Shape {
 
 // MARK: - Checkmark Shape
 
-private struct ProfessionalCheckmark: Shape {
+private struct GoalCheckmark: Shape {
     var animatableData: CGFloat
 
     init(progress: CGFloat = 1) {
@@ -370,17 +329,9 @@ private struct ProfessionalCheckmark: Shape {
 
 // MARK: - Preview
 
-#Preview("Professional Context - Empty") {
-    ProfessionalContextView(
-        selectedContext: .constant(nil),
-        onNext: {},
-        onBack: {}
-    )
-}
-
-#Preview("Professional Context - Selected") {
-    ProfessionalContextView(
-        selectedContext: .constant(.freelancer),
+#Preview {
+    PersonalGoalsView(
+        selectedGoals: .constant([.emotionalBalance, .motivation]),
         onNext: {},
         onBack: {}
     )

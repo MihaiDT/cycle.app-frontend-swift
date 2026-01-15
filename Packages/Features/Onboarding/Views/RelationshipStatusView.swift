@@ -140,7 +140,7 @@ private struct LuxuryStatusCard: View {
                     .fill(
                         LinearGradient(
                             colors: isSelected
-                                ? [DesignColors.accent, DesignColors.accent.opacity(0.4)]
+                                ? [DesignColors.accentWarm, DesignColors.accentSecondary.opacity(0.4)]
                                 : [Color.white.opacity(0.2), Color.white.opacity(0.05)],
                             startPoint: .top,
                             endPoint: .bottom
@@ -223,8 +223,9 @@ private struct LuxuryStatusCard: View {
 private struct SelectionCheckbox: View {
     let isSelected: Bool
 
+    // Using accentWarm for better visibility and WCAG contrast
     private var checkmarkColor: Color {
-        DesignColors.accent
+        DesignColors.accentWarm
     }
 
     private var strokeStyle: StrokeStyle {
@@ -237,9 +238,9 @@ private struct SelectionCheckbox: View {
 
     var body: some View {
         ZStack {
-            // Full circle - visible when not selected
+            // Full circle - visible when not selected (using accentSecondary for visibility)
             Circle()
-                .stroke(Color.white.opacity(0.3), style: strokeStyle)
+                .stroke(DesignColors.accentSecondary.opacity(0.5), style: strokeStyle)
                 .opacity(isSelected ? 0 : 1)
 
             // Circle with gap - visible when selected

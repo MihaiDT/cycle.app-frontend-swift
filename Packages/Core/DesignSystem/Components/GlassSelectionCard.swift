@@ -40,7 +40,7 @@ public struct GlassSelectionCard<Icon: View>: View {
                             .strokeBorder(
                                 LinearGradient(
                                     colors: isSelected
-                                        ? [DesignColors.accent, DesignColors.accent.opacity(0.5)]
+                                        ? [DesignColors.accentWarm, DesignColors.accentSecondary.opacity(0.6)]
                                         : [Color.white.opacity(0.5), Color.white.opacity(0.1)],
                                     startPoint: .topLeading,
                                     endPoint: .bottomTrailing
@@ -50,7 +50,7 @@ public struct GlassSelectionCard<Icon: View>: View {
                     }
                     .shadow(
                         color: isSelected
-                            ? DesignColors.accent.opacity(0.3)
+                            ? DesignColors.accentWarm.opacity(0.3)
                             : Color.black.opacity(0.08),
                         radius: isSelected ? 8 : 4,
                         x: 0,

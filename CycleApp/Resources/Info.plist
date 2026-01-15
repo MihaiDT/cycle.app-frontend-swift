@@ -27,6 +27,10 @@
         <key>UIApplicationSupportsMultipleScenes</key>
         <false/>
     </dict>
+    <key>NSHealthShareUsageDescription</key>
+    <string>Cycle uses your health data to provide personalized cycle insights, track patterns, and help you understand your body better.</string>
+    <key>NSHealthUpdateUsageDescription</key>
+    <string>Cycle can log your cycle data to Apple Health, keeping all your health information in one place.</string>
     <key>UILaunchScreen</key>
     <dict>
         <key>UIColorName</key>

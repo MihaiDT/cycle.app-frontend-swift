@@ -12,6 +12,7 @@ public struct AppFeature: Sendable {
         public enum Destination: Equatable, Sendable {
             case splash
             case onboarding
+            case splineIntro
             case privacy
             case nameInput
             case nameGreeting
@@ -20,6 +21,8 @@ public struct AppFeature: Sendable {
             case professionalContext
             case lifestyleRhythm
             case cycleData
+            case healthPermission
+            case personalGoals
         }
 
         public var healthDataConsent: Bool = false
@@ -31,6 +34,7 @@ public struct AppFeature: Sendable {
         public var relationshipStatus: RelationshipStatus?
         public var professionalContext: ProfessionalContext?
         public var lifestyleType: LifestyleType?
+        public var personalGoals: Set<PersonalGoal> = []
 
         // Cycle Data (matching backend API)
         public var lastPeriodDate: Date = Date()
@@ -52,6 +56,7 @@ public struct AppFeature: Sendable {
         case onAppear
         case showOnboarding
         case onboardingBeginTapped
+        case splineIntroContinueTapped
         case toggleHealthDataConsent
         case toggleTermsConsent
         case privacyNextTapped
@@ -61,14 +66,20 @@ public struct AppFeature: Sendable {
         case relationshipStatusNextTapped
         case professionalContextNextTapped
         case lifestyleRhythmNextTapped
+        case personalGoalsNextTapped
         case cycleDataNextTapped
+        case healthPermissionConnectTapped
+        case healthPermissionSkipTapped
         case backTapped
+        case backToHealthPermission
         case backToPrivacy
         case backToNameInput
         case backToBirthData
         case backToRelationshipStatus
         case backToProfessionalContext
         case backToLifestyleRhythm
+        case backToCycleData
+        case backToPersonalGoals
     }
 
     @Dependency(\.continuousClock) var clock
@@ -94,6 +105,10 @@ public struct AppFeature: Sendable {
                 return .none
 
             case .onboardingBeginTapped:
+                state.destination = .privacy
+                return .none
+
+            case .splineIntroContinueTapped:
                 state.destination = .privacy
                 return .none
 
@@ -134,6 +149,18 @@ public struct AppFeature: Sendable {
                 return .none
 
             case .cycleDataNextTapped:
+                state.destination = .healthPermission
+                return .none
+
+            case .healthPermissionConnectTapped:
+                state.destination = .personalGoals
+                return .none
+
+            case .healthPermissionSkipTapped:
+                state.destination = .personalGoals
+                return .none
+
+            case .personalGoalsNextTapped:
                 // TODO: Navigate to main app
                 return .none
 
@@ -161,8 +188,20 @@ public struct AppFeature: Sendable {
                 state.destination = .birthData
                 return .none
 
+            case .backToHealthPermission:
+                state.destination = .healthPermission
+                return .none
+
             case .backToLifestyleRhythm:
                 state.destination = .lifestyleRhythm
+                return .none
+
+            case .backToCycleData:
+                state.destination = .cycleData
+                return .none
+
+            case .backToPersonalGoals:
+                state.destination = .personalGoals
                 return .none
             }
         }
@@ -179,87 +218,109 @@ public struct AppView: View {
     }
 
     public var body: some View {
-        Group {
-            switch store.destination {
-            case .splash:
-                SplashView()
-
-            case .onboarding:
-                OnboardingView {
-                    store.send(.onboardingBeginTapped)
-                }
-
-            case .privacy:
-                PrivacyConsentView(
-                    healthDataConsent: store.healthDataConsent,
-                    termsConsent: store.termsConsent,
-                    onToggleHealthData: { store.send(.toggleHealthDataConsent) },
-                    onToggleTerms: { store.send(.toggleTermsConsent) },
-                    onBegin: { store.send(.privacyNextTapped) },
-                    onBack: { store.send(.backTapped) }
-                )
-
-            case .nameInput:
-                NameInputView(
-                    name: $store.userName,
-                    onNext: { store.send(.nameInputNextTapped) },
-                    onBack: { store.send(.backToPrivacy) }
-                )
-
-            case .nameGreeting:
-                NameGreetingView(
-                    name: store.userName,
-                    onContinue: { store.send(.nameGreetingContinue) }
-                )
-
-            case .birthData:
-                BirthDataView(
-                    birthDate: $store.birthDate,
-                    birthTime: $store.birthTime,
-                    birthPlace: $store.birthPlace,
-                    onNext: { store.send(.birthDataNextTapped) },
-                    onBack: { store.send(.backToNameInput) }
-                )
-
-            case .relationshipStatus:
-                RelationshipStatusView(
-                    selectedStatus: $store.relationshipStatus,
-                    onNext: { store.send(.relationshipStatusNextTapped) },
-                    onBack: { store.send(.backToBirthData) }
-                )
-
-            case .professionalContext:
-                ProfessionalContextView(
-                    selectedContext: $store.professionalContext,
-                    onNext: { store.send(.professionalContextNextTapped) },
-                    onBack: { store.send(.backToRelationshipStatus) }
-                )
-
-            case .lifestyleRhythm:
-                LifestyleRhythmView(
-                    selectedType: $store.lifestyleType,
-                    onNext: { store.send(.lifestyleRhythmNextTapped) },
-                    onBack: { store.send(.backToProfessionalContext) }
-                )
-
-            case .cycleData:
-                CycleDataView(
-                    lastPeriodDate: $store.lastPeriodDate,
-                    cycleDuration: $store.cycleDuration,
-                    periodDuration: $store.periodDuration,
-                    cycleRegularity: $store.cycleRegularity,
-                    flowIntensity: $store.flowIntensity,
-                    selectedSymptoms: $store.selectedSymptoms,
-                    usesContraception: $store.usesContraception,
-                    contraceptionType: $store.contraceptionType,
-                    onNext: { store.send(.cycleDataNextTapped) },
-                    onBack: { store.send(.backToLifestyleRhythm) }
-                )
+        destinationView
+            .animation(.easeInOut(duration: 0.5), value: store.destination)
+            .task {
+                store.send(.onAppear)
             }
-        }
-        .animation(.easeInOut(duration: 0.5), value: store.destination)
-        .task {
-            store.send(.onAppear)
+    }
+
+    @ViewBuilder
+    private var destinationView: some View {
+        switch store.destination {
+        case .splash:
+            SplashView()
+
+        case .onboarding:
+            OnboardingView {
+                store.send(.onboardingBeginTapped)
+            }
+
+        case .splineIntro:
+            SplineIntroView {
+                store.send(.splineIntroContinueTapped)
+            }
+
+        case .privacy:
+            PrivacyConsentView(
+                healthDataConsent: store.healthDataConsent,
+                termsConsent: store.termsConsent,
+                onToggleHealthData: { store.send(.toggleHealthDataConsent) },
+                onToggleTerms: { store.send(.toggleTermsConsent) },
+                onBegin: { store.send(.privacyNextTapped) },
+                onBack: { store.send(.backTapped) }
+            )
+
+        case .nameInput:
+            NameInputView(
+                name: $store.userName,
+                onNext: { store.send(.nameInputNextTapped) },
+                onBack: { store.send(.backToPrivacy) }
+            )
+
+        case .nameGreeting:
+            NameGreetingView(
+                name: store.userName,
+                onContinue: { store.send(.nameGreetingContinue) }
+            )
+
+        case .birthData:
+            BirthDataView(
+                birthDate: $store.birthDate,
+                birthTime: $store.birthTime,
+                birthPlace: $store.birthPlace,
+                onNext: { store.send(.birthDataNextTapped) },
+                onBack: { store.send(.backToNameInput) }
+            )
+
+        case .relationshipStatus:
+            RelationshipStatusView(
+                selectedStatus: $store.relationshipStatus,
+                onNext: { store.send(.relationshipStatusNextTapped) },
+                onBack: { store.send(.backToBirthData) }
+            )
+
+        case .professionalContext:
+            ProfessionalContextView(
+                selectedContext: $store.professionalContext,
+                onNext: { store.send(.professionalContextNextTapped) },
+                onBack: { store.send(.backToRelationshipStatus) }
+            )
+
+        case .lifestyleRhythm:
+            LifestyleRhythmView(
+                selectedType: $store.lifestyleType,
+                onNext: { store.send(.lifestyleRhythmNextTapped) },
+                onBack: { store.send(.backToProfessionalContext) }
+            )
+
+        case .cycleData:
+            CycleDataView(
+                lastPeriodDate: $store.lastPeriodDate,
+                cycleDuration: $store.cycleDuration,
+                periodDuration: $store.periodDuration,
+                cycleRegularity: $store.cycleRegularity,
+                flowIntensity: $store.flowIntensity,
+                selectedSymptoms: $store.selectedSymptoms,
+                usesContraception: $store.usesContraception,
+                contraceptionType: $store.contraceptionType,
+                onNext: { store.send(.cycleDataNextTapped) },
+                onBack: { store.send(.backToLifestyleRhythm) }
+            )
+
+        case .healthPermission:
+            HealthPermissionView(
+                onConnect: { store.send(.healthPermissionConnectTapped) },
+                onSkip: { store.send(.healthPermissionSkipTapped) },
+                onBack: { store.send(.backToCycleData) }
+            )
+
+        case .personalGoals:
+            PersonalGoalsView(
+                selectedGoals: $store.personalGoals,
+                onNext: { store.send(.personalGoalsNextTapped) },
+                onBack: { store.send(.backToHealthPermission) }
+            )
         }
     }
 }

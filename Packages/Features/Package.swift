@@ -14,6 +14,7 @@ let package = Package(
     dependencies: [
         .package(url: "https://github.com/pointfreeco/swift-composable-architecture", from: "1.23.0"),
         .package(url: "https://github.com/krzysztofzablocki/Inject", from: "1.5.2"),
+        .package(url: "https://github.com/splinetool/spline-ios", from: "0.2.48"),
         .package(path: "../Core"),
     ],
     targets: [
@@ -29,6 +30,7 @@ let package = Package(
                 "OnboardingFeature",
                 .product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
                 .product(name: "Inject", package: "Inject"),
+                .product(name: "SplineRuntime", package: "spline-ios"),
                 .product(name: "Core", package: "Core"),
                 .product(name: "DesignSystem", package: "Core"),
             ],

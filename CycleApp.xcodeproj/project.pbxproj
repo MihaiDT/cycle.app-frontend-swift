@@ -10,6 +10,7 @@
 		02D8E101F5F49BDAC2E5D077 /* SessionClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3FC0F0AFF2877CD41AB19497 /* SessionClient.swift */; };
 		04FCF9C17DCAE18F21511B08 /* BirthDataView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4826ABD18C16E30DACC2F4B6 /* BirthDataView.swift */; };
 		067EB436C077D91ED4E79A6E /* OnboardingFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1993DB3B9FE37585E89BE6E8 /* OnboardingFeature.swift */; };
+		0985C631CF3EC7089E779C31 /* HealthPermissionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 89AB632DD5D233D065ACF184 /* HealthPermissionView.swift */; };
 		103674BDFBF3E3412696BF5A /* HomeFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F9C55BFC287E7193D934779 /* HomeFeature.swift */; };
 		1C1F2D5EC587BDF0B7346E84 /* Session.swift in Sources */ = {isa = PBXBuildFile; fileRef = 486C7ABFDDA5A44ACFAC587B /* Session.swift */; };
 		1D2E82BBC7F411B0F4F26009 /* Raleway-SemiBoldItalic.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 34A6F94AAF7182E46C4F885F /* Raleway-SemiBoldItalic.ttf */; };
@@ -18,6 +19,7 @@
 		1EBAF390664932B71CB5E403 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B38AB06E18B5A4632AE2761A /* Assets.xcassets */; };
 		2792D4F69FFD2F4D6ECA8EBE /* SeparatedIcon.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51194E26B3A815CB07BF5B59 /* SeparatedIcon.swift */; };
 		28CB5F282CFC523F42F68FA7 /* String+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF7B0C6DF47843E7CD58CEDB /* String+Extensions.swift */; };
+		29BFDA19B6329572F624B629 /* HealthKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5EC4B5B5DEB0E25A730E4507 /* HealthKit.framework */; };
 		2EBDD7F0BE4053F0A291E917 /* Raleway-Thin.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 79A0533D66600EF003BDFC79 /* Raleway-Thin.ttf */; };
 		2F9139B5B4BC95E76905B0AB /* AuthenticationFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = B28B51D5CCB675E5D110CAA7 /* AuthenticationFeature.swift */; };
 		304E418C0DF3BC7793B0D0DA /* Raleway-ExtraLight.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 6245417E8CDA74DC974841F8 /* Raleway-ExtraLight.ttf */; };
@@ -25,6 +27,7 @@
 		395E6EB894714D5526249732 /* DesignColors.swift in Sources */ = {isa = PBXBuildFile; fileRef = 925024F96EEC4267179A9CA3 /* DesignColors.swift */; };
 		3DD5F64D427F4ED1639CE319 /* Layout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BCD05B0769F861D03E644E9 /* Layout.swift */; };
 		4162B806EEFAB072B473575F /* Raleway-Medium.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 8B25658F35072C37DA32E0E8 /* Raleway-Medium.ttf */; };
+		43871BC7610359114EBD9DF7 /* SplineIntroView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4674CEEA6B50FCAB809318E6 /* SplineIntroView.swift */; };
 		49B07A298102453EC330BB35 /* RelationshipStatusView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9951D5FE998C1DD8DE8B9958 /* RelationshipStatusView.swift */; };
 		4D063F2BD8A56D021D957A5D /* GlassButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F1FB9070681EFDD7982FF5C /* GlassButton.swift */; };
 		4F4452D7D81A585BA930DDE4 /* NameGreetingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A9F95C44B71EFC08D5BAAAD /* NameGreetingView.swift */; };
@@ -35,10 +38,13 @@
 		5965EE859D54A4DBBA4D7842 /* Raleway-Italic.ttf in Resources */ = {isa = PBXBuildFile; fileRef = AAE2E54DEE19A7F71CEE3E72 /* Raleway-Italic.ttf */; };
 		59BDEC46151CF3B972C59468 /* AppFeatureTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15E5BBC3280206FB17B4DB65 /* AppFeatureTests.swift */; };
 		5B487BC5199DBBD428789E27 /* Raleway-ExtraBoldItalic.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 8EC87831D85087D66D6D3BB0 /* Raleway-ExtraBoldItalic.ttf */; };
+		5B928A4A69F761CC8DAE2EBB /* logo_animation.splineswift in Resources */ = {isa = PBXBuildFile; fileRef = E687F11BA153A2DF683BD9B0 /* logo_animation.splineswift */; };
+		5C0CAB20DB0824AC800714AF /* GradientBackground.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4E7E9A068ECB15A84A721A7 /* GradientBackground.swift */; };
 		61C5BC6A16DE8C062C40D978 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCAA65BCFE84AB53E824336C /* Models.swift */; };
 		65962311B2B6C4CB93678BF3 /* APIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 71EF173A08EFFAA9EAF10A56 /* APIClient.swift */; };
 		65C96E5B313A2E5D7212C475 /* Validation.swift in Sources */ = {isa = PBXBuildFile; fileRef = FFD79DF9CED358A6F2B17C43 /* Validation.swift */; };
 		66F1FC1906AEA3CCDA774B2F /* APIResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDEDFC948F9CDB715FAABF68 /* APIResponse.swift */; };
+		673B63847738190AA00F83B6 /* PersonalGoalsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F00316DAE6809EF9B087B33C /* PersonalGoalsView.swift */; };
 		68BA0D74CA67E6270AAA9EB5 /* GlassLogoCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1DAD850510FF8EEF911D87D /* GlassLogoCard.swift */; };
 		6B007C746D016D855B56C535 /* OnboardingLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = C7ABDE1F869500792816AF72 /* OnboardingLayout.swift */; };
 		6BE0ED40E9BBE330AE30556D /* ComposableArchitecture in Frameworks */ = {isa = PBXBuildFile; productRef = E34B6B4CD3FFA24A82AA97ED /* ComposableArchitecture */; };
@@ -51,6 +57,7 @@
 		87ED257C99FAA875969FEBE5 /* KeychainClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 226DF4A873C9600CC4F0B40D /* KeychainClient.swift */; };
 		986DC0F5842157CD9402EE82 /* Raleway-Light.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 8706093A21A56ECBA0441334 /* Raleway-Light.ttf */; };
 		997031E520EBD700B61BCB14 /* Raleway-SemiBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = BA263FB218AF9228CF648E42 /* Raleway-SemiBold.ttf */; };
+		9FD0403E0B238EFA24698733 /* SplineRuntime in Frameworks */ = {isa = PBXBuildFile; productRef = F2FDA67AF0C0C40263975CB9 /* SplineRuntime */; };
 		A149833A49EC9A7B165FE036 /* LiquidGlassModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 21F7C0B5678F3BB91C0D896A /* LiquidGlassModifier.swift */; };
 		A22AE1F3C3632E9BF6143065 /* Date+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 823B14CA893AB18E490B49AD /* Date+Extensions.swift */; };
 		A407562C236BB09CD92434A9 /* CycleDataView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B25F0848D5EE9FBB722FBAD6 /* CycleDataView.swift */; };
@@ -112,6 +119,7 @@
 		34A6F94AAF7182E46C4F885F /* Raleway-SemiBoldItalic.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Raleway-SemiBoldItalic.ttf"; sourceTree = "<group>"; };
 		3D613DF8875F1A90F07C4F34 /* CycleApp.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = CycleApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		3FC0F0AFF2877CD41AB19497 /* SessionClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionClient.swift; sourceTree = "<group>"; };
+		4674CEEA6B50FCAB809318E6 /* SplineIntroView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplineIntroView.swift; sourceTree = "<group>"; };
 		4826ABD18C16E30DACC2F4B6 /* BirthDataView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BirthDataView.swift; sourceTree = "<group>"; };
 		486C7ABFDDA5A44ACFAC587B /* Session.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Session.swift; sourceTree = "<group>"; };
 		4BCD05B0769F861D03E644E9 /* Layout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Layout.swift; sourceTree = "<group>"; };
@@ -120,6 +128,8 @@
 		51194E26B3A815CB07BF5B59 /* SeparatedIcon.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SeparatedIcon.swift; sourceTree = "<group>"; };
 		5758D419558EBCD03AB48E87 /* NameInputView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NameInputView.swift; sourceTree = "<group>"; };
 		5A599EEAB5931BAEBC4207E9 /* Raleway-MediumItalic.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Raleway-MediumItalic.ttf"; sourceTree = "<group>"; };
+		5EC4B5B5DEB0E25A730E4507 /* HealthKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = HealthKit.framework; path = System/Library/Frameworks/HealthKit.framework; sourceTree = SDKROOT; };
+		5F90D69A90239DFEC866C703 /* CycleApp.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = CycleApp.entitlements; sourceTree = "<group>"; };
 		60A69777B121E02CCD9ED6FD /* ModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelTests.swift; sourceTree = "<group>"; };
 		6245417E8CDA74DC974841F8 /* Raleway-ExtraLight.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Raleway-ExtraLight.ttf"; sourceTree = "<group>"; };
 		6512D0891C474022446C2D98 /* ValidationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ValidationTests.swift; sourceTree = "<group>"; };
@@ -131,6 +141,7 @@
 		8706093A21A56ECBA0441334 /* Raleway-Light.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Raleway-Light.ttf"; sourceTree = "<group>"; };
 		88BF907DFB59809FEF766AE8 /* OnboardingHeader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingHeader.swift; sourceTree = "<group>"; };
 		897DB2589F5482F282AC30FD /* Raleway-ExtraBold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Raleway-ExtraBold.ttf"; sourceTree = "<group>"; };
+		89AB632DD5D233D065ACF184 /* HealthPermissionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthPermissionView.swift; sourceTree = "<group>"; };
 		8A382D97B1E46FCB1896FA78 /* OnboardingBackground.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingBackground.swift; sourceTree = "<group>"; };
 		8B25658F35072C37DA32E0E8 /* Raleway-Medium.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Raleway-Medium.ttf"; sourceTree = "<group>"; };
 		8E8FBBDC5F3C40247FE20177 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
@@ -141,6 +152,7 @@
 		9A9F95C44B71EFC08D5BAAAD /* NameGreetingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NameGreetingView.swift; sourceTree = "<group>"; };
 		9C912EA0509634526A9D7F08 /* Raleway-Bold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Raleway-Bold.ttf"; sourceTree = "<group>"; };
 		A1FF005FF3F61A0F82E81BE7 /* Raleway-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Raleway-Regular.ttf"; sourceTree = "<group>"; };
+		A4E7E9A068ECB15A84A721A7 /* GradientBackground.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GradientBackground.swift; sourceTree = "<group>"; };
 		AAE2E54DEE19A7F71CEE3E72 /* Raleway-Italic.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Raleway-Italic.ttf"; sourceTree = "<group>"; };
 		AC21FE2951F51FFA372CB45A /* LifestyleRhythmView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LifestyleRhythmView.swift; sourceTree = "<group>"; };
 		B25F0848D5EE9FBB722FBAD6 /* CycleDataView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CycleDataView.swift; sourceTree = "<group>"; };
@@ -157,7 +169,9 @@
 		CF7B0C6DF47843E7CD58CEDB /* String+Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "String+Extensions.swift"; sourceTree = "<group>"; };
 		D6C462B9D1B01812BDB61714 /* GlassDateButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassDateButton.swift; sourceTree = "<group>"; };
 		E6443B1A872FD8D9CA385C44 /* GlassTextField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassTextField.swift; sourceTree = "<group>"; };
+		E687F11BA153A2DF683BD9B0 /* logo_animation.splineswift */ = {isa = PBXFileReference; path = logo_animation.splineswift; sourceTree = "<group>"; };
 		EA867F396B072ED863219115 /* APIError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIError.swift; sourceTree = "<group>"; };
+		F00316DAE6809EF9B087B33C /* PersonalGoalsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersonalGoalsView.swift; sourceTree = "<group>"; };
 		F1DAD850510FF8EEF911D87D /* GlassLogoCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassLogoCard.swift; sourceTree = "<group>"; };
 		F2D301EC66D02408A5DE9371 /* AppFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppFeature.swift; sourceTree = "<group>"; };
 		F2DF4BFD7D70E092655588F9 /* User.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = User.swift; sourceTree = "<group>"; };
@@ -179,6 +193,8 @@
 			files = (
 				6BE0ED40E9BBE330AE30556D /* ComposableArchitecture in Frameworks */,
 				A6BC9F5D9B2EF2B0BE26F756 /* Tagged in Frameworks */,
+				9FD0403E0B238EFA24698733 /* SplineRuntime in Frameworks */,
+				29BFDA19B6329572F624B629 /* HealthKit.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -201,6 +217,7 @@
 				9E8D514DBFF27BFD38FD0217 /* CycleApp */,
 				4E42731F23CD9533E2FC7AA3 /* CycleAppTests */,
 				880CAE930700C1E448D59CAB /* Packages */,
+				EA29633429F0E2AE472D4571 /* Frameworks */,
 				7B3AC404FF7D6C24A3BD7162 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -220,6 +237,7 @@
 			isa = PBXGroup;
 			children = (
 				F2D301EC66D02408A5DE9371 /* AppFeature.swift */,
+				4674CEEA6B50FCAB809318E6 /* SplineIntroView.swift */,
 			);
 			path = App;
 			sourceTree = "<group>";
@@ -263,7 +281,9 @@
 			children = (
 				B5D34372AB6699891FF62CDF /* Fonts */,
 				B38AB06E18B5A4632AE2761A /* Assets.xcassets */,
+				5F90D69A90239DFEC866C703 /* CycleApp.entitlements */,
 				F78183272EA1538F9B855ED3 /* Info.plist */,
+				E687F11BA153A2DF683BD9B0 /* logo_animation.splineswift */,
 			);
 			path = Resources;
 			sourceTree = "<group>";
@@ -356,6 +376,7 @@
 				768AB686BAC4D9AE276C0E0F /* GlassDatePicker.swift */,
 				F8E62ACB6092862D952F78FB /* GlassSelectionCard.swift */,
 				E6443B1A872FD8D9CA385C44 /* GlassTextField.swift */,
+				A4E7E9A068ECB15A84A721A7 /* GradientBackground.swift */,
 				0BC45BF7323F201338BFDA2E /* GradientTagline.swift */,
 				88BF907DFB59809FEF766AE8 /* OnboardingHeader.swift */,
 				C7ABDE1F869500792816AF72 /* OnboardingLayout.swift */,
@@ -405,17 +426,27 @@
 				4826ABD18C16E30DACC2F4B6 /* BirthDataView.swift */,
 				B25F0848D5EE9FBB722FBAD6 /* CycleDataView.swift */,
 				F1DAD850510FF8EEF911D87D /* GlassLogoCard.swift */,
+				89AB632DD5D233D065ACF184 /* HealthPermissionView.swift */,
 				AC21FE2951F51FFA372CB45A /* LifestyleRhythmView.swift */,
 				9A9F95C44B71EFC08D5BAAAD /* NameGreetingView.swift */,
 				5758D419558EBCD03AB48E87 /* NameInputView.swift */,
 				8A382D97B1E46FCB1896FA78 /* OnboardingBackground.swift */,
 				B5D52170A5CA66317D773334 /* OnboardingView.swift */,
+				F00316DAE6809EF9B087B33C /* PersonalGoalsView.swift */,
 				0132B1F82A5F0287717FAF61 /* PrivacyConsentView.swift */,
 				C0B6FD470F322B5A59DD7E00 /* ProfessionalContextView.swift */,
 				9951D5FE998C1DD8DE8B9958 /* RelationshipStatusView.swift */,
 				94278F98041D7E509F99939B /* SplashView.swift */,
 			);
 			path = Views;
+			sourceTree = "<group>";
+		};
+		EA29633429F0E2AE472D4571 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				5EC4B5B5DEB0E25A730E4507 /* HealthKit.framework */,
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 		EF6BA6C549F6605B581E1FD8 /* Onboarding */ = {
@@ -454,6 +485,7 @@
 			packageProductDependencies = (
 				E34B6B4CD3FFA24A82AA97ED /* ComposableArchitecture */,
 				076F292FCD9A6A43CFBE8788 /* Tagged */,
+				F2FDA67AF0C0C40263975CB9 /* SplineRuntime */,
 			);
 			productName = CycleApp;
 			productReference = 3D613DF8875F1A90F07C4F34 /* CycleApp.app */;
@@ -498,6 +530,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				171C139F17C38F6DAEA663E3 /* XCRemoteSwiftPackageReference "swift-composable-architecture" */,
+				AEF383D9F05536120F2B291B /* XCRemoteSwiftPackageReference "spline-ios" */,
 				FDE4EA748176C63BCCDC26BB /* XCRemoteSwiftPackageReference "swift-tagged" */,
 			);
 			preferredProjectObjectVersion = 77;
@@ -534,6 +567,7 @@
 				1D2E82BBC7F411B0F4F26009 /* Raleway-SemiBoldItalic.ttf in Resources */,
 				2EBDD7F0BE4053F0A291E917 /* Raleway-Thin.ttf in Resources */,
 				B13F6E8CA76E6FA3755D9677 /* Raleway-ThinItalic.ttf in Resources */,
+				5B928A4A69F761CC8DAE2EBB /* logo_animation.splineswift in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -565,7 +599,9 @@
 				68BA0D74CA67E6270AAA9EB5 /* GlassLogoCard.swift in Sources */,
 				7DEEFEE25F2E4577DD65220C /* GlassSelectionCard.swift in Sources */,
 				5791F41BCD82D8F186E235D6 /* GlassTextField.swift in Sources */,
+				5C0CAB20DB0824AC800714AF /* GradientBackground.swift in Sources */,
 				B51ED6F3C6525B10A6232474 /* GradientTagline.swift in Sources */,
+				0985C631CF3EC7089E779C31 /* HealthPermissionView.swift in Sources */,
 				103674BDFBF3E3412696BF5A /* HomeFeature.swift in Sources */,
 				87ED257C99FAA875969FEBE5 /* KeychainClient.swift in Sources */,
 				3DD5F64D427F4ED1639CE319 /* Layout.swift in Sources */,
@@ -581,6 +617,7 @@
 				6B007C746D016D855B56C535 /* OnboardingLayout.swift in Sources */,
 				C31DA902B29C34AA3067ED18 /* OnboardingProgressBar.swift in Sources */,
 				B8E2E6278B7F953E10E6EDE5 /* OnboardingView.swift in Sources */,
+				673B63847738190AA00F83B6 /* PersonalGoalsView.swift in Sources */,
 				B716F459D680CEFDAE2F34C3 /* PrivacyConsentView.swift in Sources */,
 				768753B77A0E07A705B892F9 /* ProfessionalContextView.swift in Sources */,
 				49B07A298102453EC330BB35 /* RelationshipStatusView.swift in Sources */,
@@ -589,6 +626,7 @@
 				02D8E101F5F49BDAC2E5D077 /* SessionClient.swift in Sources */,
 				826BEB12143C0751CD9B015F /* ShieldCheckIcon.swift in Sources */,
 				7C13CC4BABF0121CDDA43C94 /* SplashView.swift in Sources */,
+				43871BC7610359114EBD9DF7 /* SplineIntroView.swift in Sources */,
 				28CB5F282CFC523F42F68FA7 /* String+Extensions.swift in Sources */,
 				D1CF7852379A9A2B365FCE80 /* User.swift in Sources */,
 				32F595C93C135A5FE8FE9717 /* UserDefaultsClient.swift in Sources */,
@@ -623,6 +661,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = CycleApp/Resources/CycleApp.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CURRENT_PROJECT_VERSION = 1;
 				INFOPLIST_FILE = CycleApp/Resources/Info.plist;
@@ -659,6 +698,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = CycleApp/Resources/CycleApp.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CURRENT_PROJECT_VERSION = 1;
 				INFOPLIST_FILE = CycleApp/Resources/Info.plist;
@@ -854,6 +894,14 @@
 				minimumVersion = 1.17.0;
 			};
 		};
+		AEF383D9F05536120F2B291B /* XCRemoteSwiftPackageReference "spline-ios" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/splinetool/spline-ios";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.2.48;
+			};
+		};
 		FDE4EA748176C63BCCDC26BB /* XCRemoteSwiftPackageReference "swift-tagged" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/pointfreeco/swift-tagged";
@@ -874,6 +922,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 171C139F17C38F6DAEA663E3 /* XCRemoteSwiftPackageReference "swift-composable-architecture" */;
 			productName = ComposableArchitecture;
+		};
+		F2FDA67AF0C0C40263975CB9 /* SplineRuntime */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = AEF383D9F05536120F2B291B /* XCRemoteSwiftPackageReference "spline-ios" */;
+			productName = SplineRuntime;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

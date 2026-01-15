@@ -27,6 +27,9 @@ packages:
   Tagged:
     url: https://github.com/pointfreeco/swift-tagged
     from: "0.10.0"
+  SplineRuntime:
+    url: https://github.com/splinetool/spline-ios
+    from: "0.2.48"
 
 targets:
   CycleApp:
@@ -48,9 +51,18 @@ targets:
           - ".build"
           - ".swiftpm"
           - "Sources"
+    resources:
+      - path: CycleApp/Resources/logo_animation.splineswift
     dependencies:
       - package: ComposableArchitecture
       - package: Tagged
+      - package: SplineRuntime
+      - sdk: HealthKit.framework
+    entitlements:
+      path: CycleApp/Resources/CycleApp.entitlements
+      properties:
+        com.apple.developer.healthkit: true
+        com.apple.developer.healthkit.access: []
     settings:
       base:
         INFOPLIST_FILE: CycleApp/Resources/Info.plist
