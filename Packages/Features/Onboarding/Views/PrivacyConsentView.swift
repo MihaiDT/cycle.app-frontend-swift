@@ -1,3 +1,4 @@
+import Lottie
 import SwiftUI
 
 // MARK: - Privacy Consent View
@@ -39,13 +40,11 @@ public struct PrivacyConsentView: View {
             nextButtonEnabled: canContinue
         ) {
             VStack(spacing: 0) {
-                // Shield icon with checkmark (centered)
-                ShieldCheckIcon()
-                    .frame(width: 237, height: 237)
+                // Privacy animation (plays once on appear)
+                LottieView(animation: .named("ConsentPrivacy", bundle: .main))
+                    .playing(loopMode: .playOnce)
+                    .frame(width: 240, height: 240)
                     .frame(maxWidth: .infinity)
-
-                // Gap to title
-                Spacer().frame(height: 12)
 
                 // Subtitle
                 Text("your privacy matters")
@@ -64,7 +63,7 @@ public struct PrivacyConsentView: View {
                     .frame(maxWidth: .infinity)
 
                 // Gap to description
-                Spacer().frame(height: 12)
+                Spacer().frame(height: 24)
 
                 // Description (centered)
                 Text("Your health data is protected and kept private.\nReview, export, or delete it anytime.")

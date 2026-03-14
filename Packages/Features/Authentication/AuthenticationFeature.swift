@@ -107,8 +107,8 @@ public struct AuthenticationFeature: Sendable {
         case googleSignInTapped
         case clearError
 
-        case loginResponse(Result<Session, Error>)
-        case registerResponse(Result<Session, Error>)
+        case loginResponse(Result<AuthUser, Error>)
+        case registerResponse(Result<AuthUser, Error>)
         case forgotPasswordResponse(Result<Void, Error>)
 
         case delegate(Delegate)
@@ -118,15 +118,30 @@ public struct AuthenticationFeature: Sendable {
         }
     }
 
-    @Dependency(\.apiClient) var apiClient
+    @Dependency(\.firebaseAuthClient) var firebaseAuth
     @Dependency(\.sessionClient) var sessionClient
 
     public init() {}
+
+    // Map Firebase errors to user-friendly messages
+    private func mapFirebaseError(_ error: Error) -> String {
+        let nsError = error as NSError
+        switch nsError.code {
+        case 17008: return "Invalid email format"
+        case 17009: return "Incorrect password"
+        case 17011: return "No account found with this email"
+        case 17007: return "This email is already registered"
+        case 17026: return "Password must be at least 6 characters"
+        case 17020: return "Network error. Please check your connection"
+        default: return error.localizedDescription
+        }
+    }
 
     public var body: some ReducerOf<Self> {
         BindingReducer()
 
         Reduce { state, action in
+            NSLog("🔐 [AUTH-REDUCER] Action received: %@", String(describing: action))
             switch action {
             case .binding(\.email):
                 state.emailValidation = Validation.email(state.email)
@@ -149,6 +164,7 @@ public struct AuthenticationFeature: Sendable {
                 return .none
 
             case .setMode(let mode):
+                NSLog("🔐 [AUTH] setMode: %@", String(describing: mode))
                 state.mode = mode
                 state.confirmPassword = ""
                 state.error = nil
@@ -163,63 +179,98 @@ public struct AuthenticationFeature: Sendable {
                 return .none
 
             case .loginTapped:
+                NSLog("🔐 [AUTH] loginTapped - isFormValid: %@, email: %@", state.isFormValid ? "YES" : "NO", state.email)
                 guard state.isFormValid else { return .none }
                 state.isLoading = true
                 state.error = nil
 
                 return .run { [email = state.email, password = state.password] send in
-                    let endpoint = AuthEndpoints.login(email: email, password: password)
+                    NSLog("🔐 [AUTH] loginTapped - calling Firebase signIn...")
                     let result = await Result {
-                        try await apiClient.send(endpoint) as Session
+                        try await firebaseAuth.signIn(email, password)
                     }
+                    NSLog("🔐 [AUTH] loginTapped - Firebase signIn returned")
                     await send(.loginResponse(result))
                 }
 
-            case .loginResponse(.success(let session)):
+            case .loginResponse(.success(let authUser)):
+                NSLog("🔐 [AUTH] loginResponse SUCCESS - uid: %@", authUser.uid)
                 state.isLoading = false
+                // Create session from Firebase user
                 return .run { send in
+                    NSLog("🔐 [AUTH] loginResponse - getting token...")
+                    let token = try await firebaseAuth.getIDToken()
+                    NSLog("🔐 [AUTH] loginResponse - got token, creating session...")
+                    let session = Session(
+                        id: Session.ID(authUser.uid),
+                        accessToken: token,
+                        refreshToken: "",  // Firebase handles refresh internally
+                        expiresAt: Date().addingTimeInterval(3600),  // 1 hour
+                        user: User(
+                            id: User.ID(authUser.uid),
+                            email: authUser.email ?? "",
+                            firstName: authUser.displayName,
+                            lastName: nil
+                        )
+                    )
                     try await sessionClient.setSession(session)
                     await send(.delegate(.didAuthenticate))
+                } catch: { error, send in
+                    await send(.loginResponse(.failure(error)))
                 }
 
             case .loginResponse(.failure(let error)):
+                NSLog("❌ [AUTH] loginResponse FAILURE: %@", String(describing: error))
                 state.isLoading = false
-                state.error = error.localizedDescription
+                state.error = mapFirebaseError(error)
                 return .none
 
             case .registerTapped:
+                NSLog("🔐 [AUTH] registerTapped - isFormValid: %@", state.isFormValid ? "YES" : "NO")
                 guard state.isFormValid else { return .none }
                 state.isLoading = true
                 state.error = nil
 
                 let email = state.email
                 let password = state.password
-                let firstName = state.firstName.isBlank ? nil : state.firstName
-                let lastName = state.lastName.isBlank ? nil : state.lastName
 
                 return .run { send in
-                    let endpoint = AuthEndpoints.register(
-                        email: email,
-                        password: password,
-                        firstName: firstName,
-                        lastName: lastName
-                    )
                     let result = await Result {
-                        try await apiClient.send(endpoint) as Session
+                        try await firebaseAuth.signUp(email, password)
                     }
                     await send(.registerResponse(result))
                 }
 
-            case .registerResponse(.success(let session)):
+            case .registerResponse(.success(let authUser)):
                 state.isLoading = false
                 return .run { send in
+                    NSLog("🔐 [AUTH] registerResponse SUCCESS - getting token...")
+                    let token = try await firebaseAuth.getIDToken()
+                    NSLog("🔐 [AUTH] Got token, creating session...")
+                    let session = Session(
+                        id: Session.ID(authUser.uid),
+                        accessToken: token,
+                        refreshToken: "",
+                        expiresAt: Date().addingTimeInterval(3600),
+                        user: User(
+                            id: User.ID(authUser.uid),
+                            email: authUser.email ?? "",
+                            firstName: authUser.displayName,
+                            lastName: nil
+                        )
+                    )
                     try await sessionClient.setSession(session)
+                    NSLog("🔐 [AUTH] Session saved, sending didAuthenticate delegate...")
                     await send(.delegate(.didAuthenticate))
+                    NSLog("🔐 [AUTH] didAuthenticate delegate SENT")
+                } catch: { error, send in
+                    NSLog("❌ [AUTH] registerResponse catch error: %@", String(describing: error))
+                    await send(.registerResponse(.failure(error)))
                 }
 
             case .registerResponse(.failure(let error)):
                 state.isLoading = false
-                state.error = error.localizedDescription
+                state.error = mapFirebaseError(error)
                 return .none
 
             case .forgotPasswordTapped:
@@ -231,9 +282,8 @@ public struct AuthenticationFeature: Sendable {
                 state.error = nil
 
                 return .run { [email = state.email] send in
-                    let endpoint = AuthEndpoints.forgotPassword(email: email)
                     let result = await Result {
-                        try await apiClient.send(endpoint)
+                        try await firebaseAuth.resetPassword(email)
                     }
                     await send(.forgotPasswordResponse(result))
                 }
@@ -241,14 +291,17 @@ public struct AuthenticationFeature: Sendable {
             case .forgotPasswordResponse(.success):
                 state.isLoading = false
                 state.mode = .login
+                state.error = nil
+                // Could show a success message here
                 return .none
 
             case .forgotPasswordResponse(.failure(let error)):
                 state.isLoading = false
-                state.error = error.localizedDescription
+                state.error = mapFirebaseError(error)
                 return .none
 
             case .googleSignInTapped:
+                NSLog("🔐 [AUTH] googleSignInTapped - NOT YET IMPLEMENTED")
                 // TODO: Implement Google Sign In
                 return .none
 
@@ -278,6 +331,7 @@ public struct AuthenticationView: View {
     }
 
     public var body: some View {
+        let _ = NSLog("🔐 [AUTH-VIEW] body evaluated - BUILD v5 - mode: %@", String(describing: store.mode))
         GeometryReader { geometry in
             let screenHeight = geometry.size.height
             let isSmallScreen = screenHeight < 640
@@ -420,6 +474,33 @@ public struct AuthenticationView: View {
                         .frame(height: isSmallScreen ? 32 : (isMediumScreen ? 36 : 40))
                         .padding(.horizontal, horizontalPadding)
 
+                        // Error message
+                        if let error = store.error {
+                            HStack(spacing: 8) {
+                                Image(systemName: "exclamationmark.triangle.fill")
+                                    .font(.system(size: 14))
+                                Text(error)
+                                    .font(.custom("Raleway-Medium", size: 14))
+                            }
+                            .foregroundColor(Color(hex: 0xE57373))
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 10)
+                            .frame(maxWidth: .infinity)
+                            .background {
+                                RoundedRectangle(cornerRadius: 12)
+                                    .fill(Color(hex: 0xE57373).opacity(0.1))
+                                    .overlay {
+                                        RoundedRectangle(cornerRadius: 12)
+                                            .strokeBorder(Color(hex: 0xE57373).opacity(0.3), lineWidth: 1)
+                                    }
+                            }
+                            .padding(.horizontal, horizontalPadding)
+                            .transition(.opacity.combined(with: .move(edge: .top)))
+                            .onTapGesture {
+                                store.send(.clearError)
+                            }
+                        }
+
                         Spacer().frame(height: sectionSpacing)
 
                         // Submit button
@@ -479,20 +560,28 @@ public struct AuthenticationView: View {
                 .scrollDismissesKeyboard(.interactively)
             }
             .ignoresSafeArea()
-            .onTapGesture {
-                focusedField = nil
+            .background {
+                Color.clear
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        focusedField = nil
+                    }
             }
         }
         .disabled(store.isLoading)
     }
 
     private func handleSubmit() {
+        NSLog("🔐 [AUTH-VIEW] handleSubmit called - mode: %@, isFormValid: %@", String(describing: store.mode), store.isFormValid ? "YES" : "NO")
         switch store.mode {
         case .login:
+            NSLog("🔐 [AUTH-VIEW] sending loginTapped")
             store.send(.loginTapped)
         case .register:
+            NSLog("🔐 [AUTH-VIEW] sending registerTapped")
             store.send(.registerTapped)
         case .forgotPassword:
+            NSLog("🔐 [AUTH-VIEW] sending forgotPasswordTapped")
             store.send(.forgotPasswordTapped)
         }
     }
@@ -558,6 +647,7 @@ private struct AuthGlassTabSwitch: View {
                             )
                     }
                     .shadow(color: .black.opacity(0.1), radius: 8, x: 0, y: 2)
+                    .allowsHitTesting(false)
 
                 // Sliding indicator
                 HStack {
@@ -601,6 +691,7 @@ private struct AuthGlassTabSwitch: View {
 
                     if !isSignIn { Spacer() }
                 }
+                .allowsHitTesting(false)
                 .animation(.spring(response: 0.35, dampingFraction: 0.8), value: isSignIn)
 
                 // Tab labels

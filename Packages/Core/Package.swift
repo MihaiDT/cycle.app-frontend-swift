@@ -15,6 +15,7 @@ let package = Package(
     dependencies: [
         .package(url: "https://github.com/pointfreeco/swift-tagged", from: "0.10.0"),
         .package(url: "https://github.com/pointfreeco/swift-composable-architecture", from: "1.17.0"),
+        .package(url: "https://github.com/firebase/firebase-ios-sdk", from: "11.0.0"),
     ],
     targets: [
         .target(
@@ -33,6 +34,7 @@ let package = Package(
             dependencies: [
                 "Models",
                 .product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
+                .product(name: "FirebaseAuth", package: "firebase-ios-sdk"),
             ],
             path: "Networking"
         ),

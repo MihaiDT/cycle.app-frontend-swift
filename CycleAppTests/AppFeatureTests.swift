@@ -11,46 +11,81 @@ struct AppFeatureTests {
             AppFeature()
         }
 
-        #expect(store.state.isLoading == true)
-        #expect(store.state.isAuthenticated == false)
         #expect(store.state.destination == .splash)
+        #expect(store.state.healthDataConsent == false)
+        #expect(store.state.termsConsent == false)
+        #expect(store.state.userName == "")
+        #expect(store.state.selectedBirthPlace == nil)
+        #expect(store.state.isSubmittingOnboarding == false)
     }
 
     @Test
-    func testCheckAuthenticationWhenNotAuthenticated() async {
+    func testSplashTransitionsToOnboarding() async {
         let store = TestStore(initialState: AppFeature.State()) {
             AppFeature()
         } withDependencies: {
             $0.continuousClock = ImmediateClock()
-            $0.sessionClient = .mock(isAuthenticated: false)
         }
 
         await store.send(.onAppear)
 
-        await store.receive(\.checkAuthenticationCompleted) {
-            $0.isLoading = false
-            $0.isAuthenticated = false
+        await store.receive(\.showOnboarding) {
+            $0.destination = .onboarding
+        }
+    }
+
+    @Test
+    func testOnboardingFlowNavigation() async {
+        let store = TestStore(initialState: AppFeature.State(destination: .onboarding)) {
+            AppFeature()
+        }
+
+        await store.send(.onboardingBeginTapped) {
+            $0.destination = .privacy
+        }
+
+        await store.send(.privacyNextTapped) {
+            $0.destination = .nameInput
+        }
+
+        await store.send(.nameInputNextTapped) {
+            $0.destination = .nameGreeting
+        }
+
+        await store.send(.nameGreetingContinue) {
+            $0.destination = .birthData
+        }
+
+        await store.send(.birthDataNextTapped) {
+            $0.destination = .relationshipStatus
+        }
+
+        await store.send(.relationshipStatusNextTapped) {
+            $0.destination = .professionalContext
+        }
+
+        await store.send(.professionalContextNextTapped) {
+            $0.destination = .lifestyleRhythm
+        }
+
+        await store.send(.lifestyleRhythmNextTapped) {
+            $0.destination = .cycleData
+        }
+
+        await store.send(.cycleDataNextTapped) {
+            $0.destination = .healthPermission
+        }
+
+        await store.send(.healthPermissionSkipTapped) {
+            $0.destination = .personalGoals
+        }
+
+        await store.send(.personalGoalsNextTapped) {
+            $0.destination = .recap
+        }
+
+        await store.send(.recapFinishTapped) {
             $0.destination = .authentication
-            $0.authentication = AuthenticationFeature.State()
-        }
-    }
-
-    @Test
-    func testCheckAuthenticationWhenAuthenticated() async {
-        let store = TestStore(initialState: AppFeature.State()) {
-            AppFeature()
-        } withDependencies: {
-            $0.continuousClock = ImmediateClock()
-            $0.sessionClient = .mock(isAuthenticated: true)
-        }
-
-        await store.send(.onAppear)
-
-        await store.receive(\.checkAuthenticationCompleted) {
-            $0.isLoading = false
-            $0.isAuthenticated = true
-            $0.destination = .home
-            $0.home = HomeFeature.State()
         }
     }
 }

@@ -1,3 +1,4 @@
+import Lottie
 import SwiftUI
 
 // MARK: - Birth Data View
@@ -6,11 +7,26 @@ public struct BirthDataView: View {
     @Binding public var birthDate: Date
     @Binding public var birthTime: Date
     @Binding public var birthPlace: String
+    @Binding public var selectedBirthPlace: PlacesAutocompleteTextField.SelectedPlace?
     public let onNext: () -> Void
     public let onBack: (() -> Void)?
+    public let onAgeRestriction: (() -> Void)?
+    public let onSearchPlace: (@Sendable (String) async -> [PlacesAutocompleteTextField.PlaceResult])?
+    public let onSelectPlace: (@Sendable (PlacesAutocompleteTextField.PlaceResult) async -> PlacesAutocompleteTextField.SelectedPlace?)?
 
     @State private var showDatePicker = false
     @State private var showTimePicker = false
+    @State private var showAgeRestrictionAlert = false
+
+    private let minimumAge = 13
+
+    private var userAge: Int {
+        Calendar.current.dateComponents([.year], from: birthDate, to: Date()).year ?? 0
+    }
+
+    private var isUnderAge: Bool {
+        userAge < minimumAge
+    }
 
     private let dateFormatter: DateFormatter = {
         let formatter = DateFormatter()
@@ -28,14 +44,22 @@ public struct BirthDataView: View {
         birthDate: Binding<Date>,
         birthTime: Binding<Date>,
         birthPlace: Binding<String>,
+        selectedBirthPlace: Binding<PlacesAutocompleteTextField.SelectedPlace?>,
         onNext: @escaping () -> Void,
-        onBack: (() -> Void)? = nil
+        onBack: (() -> Void)? = nil,
+        onAgeRestriction: (() -> Void)? = nil,
+        onSearchPlace: (@Sendable (String) async -> [PlacesAutocompleteTextField.PlaceResult])? = nil,
+        onSelectPlace: (@Sendable (PlacesAutocompleteTextField.PlaceResult) async -> PlacesAutocompleteTextField.SelectedPlace?)? = nil
     ) {
         self._birthDate = birthDate
         self._birthTime = birthTime
         self._birthPlace = birthPlace
+        self._selectedBirthPlace = selectedBirthPlace
         self.onNext = onNext
         self.onBack = onBack
+        self.onAgeRestriction = onAgeRestriction
+        self.onSearchPlace = onSearchPlace
+        self.onSelectPlace = onSelectPlace
     }
 
     public var body: some View {
@@ -43,8 +67,14 @@ public struct BirthDataView: View {
             currentStep: 4,
             totalSteps: 8,
             onBack: onBack,
-            onNext: onNext,
-            nextButtonEnabled: true
+            onNext: {
+                if isUnderAge {
+                    showAgeRestrictionAlert = true
+                } else {
+                    onNext()
+                }
+            },
+            nextButtonEnabled: selectedBirthPlace != nil
         ) {
             VStack(spacing: 0) {
                 // Subtitle
@@ -77,9 +107,12 @@ public struct BirthDataView: View {
                         action: { showTimePicker = true }
                     )
 
-                    GlassTextField(
+                    PlacesAutocompleteTextField(
                         text: $birthPlace,
-                        placeholder: "Birth place (optional)"
+                        selectedPlace: $selectedBirthPlace,
+                        placeholder: "Where were you born?",
+                        onSearch: onSearchPlace,
+                        onSelect: onSelectPlace
                     )
                 }
                 .padding(.horizontal, 32)
@@ -109,6 +142,87 @@ public struct BirthDataView: View {
                 displayedComponents: .hourAndMinute
             )
         }
+        .overlay {
+            if showAgeRestrictionAlert {
+                AgeRestrictionAlertView(
+                    isPresented: $showAgeRestrictionAlert,
+                    onDismiss: onAgeRestriction
+                )
+            }
+        }
+    }
+}
+
+// MARK: - Age Restriction Alert View
+
+private struct AgeRestrictionAlertView: View {
+    @Binding var isPresented: Bool
+    var onDismiss: (() -> Void)?
+
+    var body: some View {
+        ZStack {
+            // Dimmed background
+            Color.black.opacity(0.4)
+                .ignoresSafeArea()
+                .onTapGesture {
+                    dismissAndNavigate()
+                }
+
+            // Alert card
+            VStack(spacing: 24) {
+                // Lottie Animation
+                LottieView(animation: .named("ConsentAnimation", bundle: .main))
+                    .playing(loopMode: .loop)
+                    .frame(width: 120, height: 120)
+
+                // Title
+                Text("Not 13 yet?")
+                    .font(.custom("Raleway-Bold", size: 22))
+                    .foregroundColor(DesignColors.text)
+
+                // Message
+                VStack(spacing: 12) {
+                    Text("You must be at least 13 years old to use this app.")
+                        .font(.custom("Raleway-Medium", size: 16))
+                        .foregroundColor(DesignColors.text)
+                        .multilineTextAlignment(.center)
+
+                    Text("This requirement helps us comply with privacy laws designed to protect children, including COPPA and Apple's App Store Guidelines.")
+                        .font(.custom("Raleway-Regular", size: 14))
+                        .foregroundColor(DesignColors.textSecondary)
+                        .multilineTextAlignment(.center)
+                }
+
+                // Dismiss button
+                Button(action: {
+                    dismissAndNavigate()
+                }) {
+                    Text("I Understand")
+                        .font(.custom("Raleway-SemiBold", size: 16))
+                        .foregroundColor(DesignColors.text)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 14)
+                        .background(
+                            Capsule()
+                                .fill(DesignColors.accent)
+                        )
+                }
+            }
+            .padding(28)
+            .background(
+                RoundedRectangle(cornerRadius: 24)
+                    .fill(DesignColors.background)
+                    .shadow(color: .black.opacity(0.15), radius: 20, x: 0, y: 10)
+            )
+            .padding(.horizontal, 32)
+        }
+        .transition(.opacity)
+        .animation(.easeInOut(duration: 0.25), value: isPresented)
+    }
+
+    private func dismissAndNavigate() {
+        isPresented = false
+        onDismiss?()
     }
 }
 
@@ -117,6 +231,7 @@ public struct BirthDataView: View {
         birthDate: .constant(Date()),
         birthTime: .constant(Date()),
         birthPlace: .constant(""),
+        selectedBirthPlace: .constant(nil),
         onNext: {},
         onBack: { print("Back tapped") }
     )

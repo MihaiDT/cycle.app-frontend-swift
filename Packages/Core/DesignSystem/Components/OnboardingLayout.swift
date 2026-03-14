@@ -8,6 +8,7 @@ public struct OnboardingLayout<Content: View>: View {
     public let onBack: (() -> Void)?
     public let onNext: () -> Void
     public let nextButtonEnabled: Bool
+    public let nextButtonTitle: String
     public let content: Content
 
     public init(
@@ -16,6 +17,7 @@ public struct OnboardingLayout<Content: View>: View {
         onBack: (() -> Void)? = nil,
         onNext: @escaping () -> Void,
         nextButtonEnabled: Bool = true,
+        nextButtonTitle: String = "Next",
         @ViewBuilder content: () -> Content
     ) {
         self.currentStep = currentStep
@@ -23,6 +25,7 @@ public struct OnboardingLayout<Content: View>: View {
         self.onBack = onBack
         self.onNext = onNext
         self.nextButtonEnabled = nextButtonEnabled
+        self.nextButtonTitle = nextButtonTitle
         self.content = content()
     }
 
@@ -49,7 +52,7 @@ public struct OnboardingLayout<Content: View>: View {
                     Spacer()
 
                     // Footer
-                    GlassButton.next(action: onNext)
+                    GlassButton(nextButtonTitle, showArrow: false, action: onNext)
                         .opacity(nextButtonEnabled ? 1 : 0.5)
                         .disabled(!nextButtonEnabled)
                         .padding(.bottom, geometry.safeAreaInsets.bottom + AppLayout.bottomOffset)

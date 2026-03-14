@@ -54,10 +54,11 @@ public struct PersonalGoalsView: View {
     public var body: some View {
         OnboardingLayout(
             currentStep: 9,
-            totalSteps: 9,
+            totalSteps: 10,
             onBack: onBack,
             onNext: onNext,
-            nextButtonEnabled: !selectedGoals.isEmpty
+            nextButtonEnabled: !selectedGoals.isEmpty,
+            nextButtonTitle: "Almost Done"
         ) {
             VStack(spacing: 0) {
                 // Header

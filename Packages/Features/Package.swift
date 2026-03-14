@@ -15,6 +15,7 @@ let package = Package(
         .package(url: "https://github.com/pointfreeco/swift-composable-architecture", from: "1.23.0"),
         .package(url: "https://github.com/krzysztofzablocki/Inject", from: "1.5.2"),
         .package(url: "https://github.com/splinetool/spline-ios", from: "0.2.48"),
+        .package(url: "https://github.com/airbnb/lottie-ios", from: "4.5.0"),
         .package(path: "../Core"),
     ],
     targets: [
@@ -61,8 +62,12 @@ let package = Package(
                 .product(name: "Inject", package: "Inject"),
                 .product(name: "Core", package: "Core"),
                 .product(name: "DesignSystem", package: "Core"),
+                .product(name: "Lottie", package: "lottie-ios"),
             ],
-            path: "Onboarding"
+            path: "Onboarding",
+            resources: [
+                .process("Resources")
+            ]
         ),
     ]
 )

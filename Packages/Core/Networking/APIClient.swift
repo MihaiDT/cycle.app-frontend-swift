@@ -75,7 +75,7 @@ extension DependencyValues {
 
 extension APIClient {
     public static func live(
-        baseURL: URL = URL(string: "https://api.cycle.app")!,
+        baseURL: URL = URL(string: "http://localhost:8085")!,
         session: URLSession = .shared
     ) -> Self {
         APIClient(

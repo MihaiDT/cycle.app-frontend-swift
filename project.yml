@@ -30,6 +30,18 @@ packages:
   SplineRuntime:
     url: https://github.com/splinetool/spline-ios
     from: "0.2.48"
+  Lottie:
+    url: https://github.com/airbnb/lottie-ios
+    from: "4.5.0"
+  Inject:
+    url: https://github.com/krzysztofzablocki/Inject
+    from: "1.5.2"
+  Firebase:
+    url: https://github.com/firebase/firebase-ios-sdk
+    from: "11.0.0"
+  GoogleSignIn:
+    url: https://github.com/google/GoogleSignIn-iOS
+    from: "8.0.0"
 
 targets:
   CycleApp:
@@ -57,6 +69,13 @@ targets:
       - package: ComposableArchitecture
       - package: Tagged
       - package: SplineRuntime
+      - package: Lottie
+      - package: Inject
+      - package: Firebase
+        product: FirebaseCore
+      - package: Firebase
+        product: FirebaseAuth
+      - package: GoogleSignIn
       - sdk: HealthKit.framework
     entitlements:
       path: CycleApp/Resources/CycleApp.entitlements
