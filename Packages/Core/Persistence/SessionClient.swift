@@ -1,4 +1,5 @@
 import ComposableArchitecture
+import FirebaseAuth
 import Foundation
 
 // MARK: - Session Client
@@ -74,6 +75,26 @@ extension SessionClient {
                 try keychain.delete(KeychainClient.Keys.session)
             },
             getAccessToken: {
+                // Always get a fresh token from Firebase — it caches internally
+                // and only makes a network call when the token is expired
+                if let user = Auth.auth().currentUser {
+                    if let freshToken = try? await user.getIDToken() {
+                        // Update stored session with fresh token
+                        if let session = storage.value {
+                            let updated = Session(
+                                id: session.id,
+                                accessToken: freshToken,
+                                refreshToken: session.refreshToken,
+                                expiresAt: Date().addingTimeInterval(3600),
+                                user: session.user
+                            )
+                            storage.setValue(updated)
+                            try? keychain.save(KeychainClient.Keys.session, value: updated)
+                        }
+                        return freshToken
+                    }
+                }
+                // Fallback to stored token
                 if let session = storage.value {
                     return session.accessToken
                 }

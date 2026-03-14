@@ -12,7 +12,8 @@ public struct BirthDataView: View {
     public let onBack: (() -> Void)?
     public let onAgeRestriction: (() -> Void)?
     public let onSearchPlace: (@Sendable (String) async -> [PlacesAutocompleteTextField.PlaceResult])?
-    public let onSelectPlace: (@Sendable (PlacesAutocompleteTextField.PlaceResult) async -> PlacesAutocompleteTextField.SelectedPlace?)?
+    public let onSelectPlace:
+        (@Sendable (PlacesAutocompleteTextField.PlaceResult) async -> PlacesAutocompleteTextField.SelectedPlace?)?
 
     @State private var showDatePicker = false
     @State private var showTimePicker = false
@@ -49,7 +50,9 @@ public struct BirthDataView: View {
         onBack: (() -> Void)? = nil,
         onAgeRestriction: (() -> Void)? = nil,
         onSearchPlace: (@Sendable (String) async -> [PlacesAutocompleteTextField.PlaceResult])? = nil,
-        onSelectPlace: (@Sendable (PlacesAutocompleteTextField.PlaceResult) async -> PlacesAutocompleteTextField.SelectedPlace?)? = nil
+        onSelectPlace: (
+            @Sendable (PlacesAutocompleteTextField.PlaceResult) async -> PlacesAutocompleteTextField.SelectedPlace?
+        )? = nil
     ) {
         self._birthDate = birthDate
         self._birthTime = birthTime
@@ -187,10 +190,12 @@ private struct AgeRestrictionAlertView: View {
                         .foregroundColor(DesignColors.text)
                         .multilineTextAlignment(.center)
 
-                    Text("This requirement helps us comply with privacy laws designed to protect children, including COPPA and Apple's App Store Guidelines.")
-                        .font(.custom("Raleway-Regular", size: 14))
-                        .foregroundColor(DesignColors.textSecondary)
-                        .multilineTextAlignment(.center)
+                    Text(
+                        "This requirement helps us comply with privacy laws designed to protect children, including COPPA and Apple's App Store Guidelines."
+                    )
+                    .font(.custom("Raleway-Regular", size: 14))
+                    .foregroundColor(DesignColors.textSecondary)
+                    .multilineTextAlignment(.center)
                 }
 
                 // Dismiss button

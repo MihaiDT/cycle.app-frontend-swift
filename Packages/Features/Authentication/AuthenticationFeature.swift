@@ -141,7 +141,6 @@ public struct AuthenticationFeature: Sendable {
         BindingReducer()
 
         Reduce { state, action in
-            NSLog("🔐 [AUTH-REDUCER] Action received: %@", String(describing: action))
             switch action {
             case .binding(\.email):
                 state.emailValidation = Validation.email(state.email)
@@ -164,7 +163,6 @@ public struct AuthenticationFeature: Sendable {
                 return .none
 
             case .setMode(let mode):
-                NSLog("🔐 [AUTH] setMode: %@", String(describing: mode))
                 state.mode = mode
                 state.confirmPassword = ""
                 state.error = nil
@@ -179,28 +177,22 @@ public struct AuthenticationFeature: Sendable {
                 return .none
 
             case .loginTapped:
-                NSLog("🔐 [AUTH] loginTapped - isFormValid: %@, email: %@", state.isFormValid ? "YES" : "NO", state.email)
                 guard state.isFormValid else { return .none }
                 state.isLoading = true
                 state.error = nil
 
                 return .run { [email = state.email, password = state.password] send in
-                    NSLog("🔐 [AUTH] loginTapped - calling Firebase signIn...")
                     let result = await Result {
                         try await firebaseAuth.signIn(email, password)
                     }
-                    NSLog("🔐 [AUTH] loginTapped - Firebase signIn returned")
                     await send(.loginResponse(result))
                 }
 
             case .loginResponse(.success(let authUser)):
-                NSLog("🔐 [AUTH] loginResponse SUCCESS - uid: %@", authUser.uid)
                 state.isLoading = false
                 // Create session from Firebase user
                 return .run { send in
-                    NSLog("🔐 [AUTH] loginResponse - getting token...")
                     let token = try await firebaseAuth.getIDToken()
-                    NSLog("🔐 [AUTH] loginResponse - got token, creating session...")
                     let session = Session(
                         id: Session.ID(authUser.uid),
                         accessToken: token,
@@ -220,13 +212,11 @@ public struct AuthenticationFeature: Sendable {
                 }
 
             case .loginResponse(.failure(let error)):
-                NSLog("❌ [AUTH] loginResponse FAILURE: %@", String(describing: error))
                 state.isLoading = false
                 state.error = mapFirebaseError(error)
                 return .none
 
             case .registerTapped:
-                NSLog("🔐 [AUTH] registerTapped - isFormValid: %@", state.isFormValid ? "YES" : "NO")
                 guard state.isFormValid else { return .none }
                 state.isLoading = true
                 state.error = nil
@@ -244,9 +234,7 @@ public struct AuthenticationFeature: Sendable {
             case .registerResponse(.success(let authUser)):
                 state.isLoading = false
                 return .run { send in
-                    NSLog("🔐 [AUTH] registerResponse SUCCESS - getting token...")
                     let token = try await firebaseAuth.getIDToken()
-                    NSLog("🔐 [AUTH] Got token, creating session...")
                     let session = Session(
                         id: Session.ID(authUser.uid),
                         accessToken: token,
@@ -260,11 +248,8 @@ public struct AuthenticationFeature: Sendable {
                         )
                     )
                     try await sessionClient.setSession(session)
-                    NSLog("🔐 [AUTH] Session saved, sending didAuthenticate delegate...")
                     await send(.delegate(.didAuthenticate))
-                    NSLog("🔐 [AUTH] didAuthenticate delegate SENT")
                 } catch: { error, send in
-                    NSLog("❌ [AUTH] registerResponse catch error: %@", String(describing: error))
                     await send(.registerResponse(.failure(error)))
                 }
 
@@ -301,7 +286,6 @@ public struct AuthenticationFeature: Sendable {
                 return .none
 
             case .googleSignInTapped:
-                NSLog("🔐 [AUTH] googleSignInTapped - NOT YET IMPLEMENTED")
                 // TODO: Implement Google Sign In
                 return .none
 
@@ -572,7 +556,11 @@ public struct AuthenticationView: View {
     }
 
     private func handleSubmit() {
-        NSLog("🔐 [AUTH-VIEW] handleSubmit called - mode: %@, isFormValid: %@", String(describing: store.mode), store.isFormValid ? "YES" : "NO")
+        NSLog(
+            "🔐 [AUTH-VIEW] handleSubmit called - mode: %@, isFormValid: %@",
+            String(describing: store.mode),
+            store.isFormValid ? "YES" : "NO"
+        )
         switch store.mode {
         case .login:
             NSLog("🔐 [AUTH-VIEW] sending loginTapped")

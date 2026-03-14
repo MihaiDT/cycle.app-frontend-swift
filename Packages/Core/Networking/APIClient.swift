@@ -74,8 +74,21 @@ extension DependencyValues {
 // MARK: - Live Implementation
 
 extension APIClient {
+    public static var resolvedBaseURL: URL {
+        if let envURL = ProcessInfo.processInfo.environment["API_BASE_URL"],
+            let url = URL(string: envURL)
+        {
+            return url
+        }
+        #if DEBUG
+            return URL(string: "https://dth-backend-277319586889.us-central1.run.app")!
+        #else
+            return URL(string: "https://dth-backend-277319586889.us-central1.run.app")!
+        #endif
+    }
+
     public static func live(
-        baseURL: URL = URL(string: "http://localhost:8085")!,
+        baseURL: URL = resolvedBaseURL,
         session: URLSession = .shared
     ) -> Self {
         APIClient(

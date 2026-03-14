@@ -1,6 +1,5 @@
 import ComposableArchitecture
 import SwiftUI
-import os.log
 
 // MARK: - App Feature
 
@@ -126,7 +125,6 @@ public struct AppFeature: Sendable {
                 return .none
 
             case .onAppear:
-                NSLog("🚀 [APP] onAppear - BUILD v5 with comprehensive auth logging")
                 return .run { send in
                     try await clock.sleep(for: .milliseconds(1500))
                     await send(.showOnboarding)
@@ -197,6 +195,7 @@ public struct AppFeature: Sendable {
                 return .none
 
             case .recapFinishTapped:
+                guard !state.isSubmittingOnboarding else { return .none }
                 state.destination = .authentication
                 return .none
 
@@ -204,25 +203,18 @@ public struct AppFeature: Sendable {
 
             case .auth(.delegate(.didAuthenticate)):
                 // User authenticated; submit all onboarding data to backend
-                print("🔴🔴🔴 [APP] didAuthenticate RECEIVED - will submit onboarding data")
-                NSLog("🔑 [APP] didAuthenticate received - submitting onboarding data")
-                // DEBUG: Write marker file to confirm this code runs
-                let marker = "didAuthenticate fired at \(Date())"
-                try? marker.write(toFile: NSTemporaryDirectory() + "onboarding_debug.txt", atomically: true, encoding: .utf8)
                 return .send(.submitOnboardingData)
 
-            case .auth(let authAction):
+            case .auth:
                 // All other auth actions handled by scoped AuthenticationFeature
-                NSLog("🔑 [APP] auth action forwarded: %@", String(describing: authAction))
                 return .none
 
             // MARK: - Backend Submission
 
             case .submitOnboardingData:
+                guard !state.isSubmittingOnboarding else { return .none }
                 state.isSubmittingOnboarding = true
                 state.onboardingError = nil
-                // DEBUG: Write marker file
-                try? "submitOnboardingData at \(Date())".write(toFile: NSTemporaryDirectory() + "submit_debug.txt", atomically: true, encoding: .utf8)
 
                 // Capture all state values for the @Sendable async effect
                 let birthDate = state.birthDate
@@ -249,18 +241,31 @@ public struct AppFeature: Sendable {
                 return .run { send in
                     do {
                         // Get auth token from session
-                        print("🔴🔴🔴 [ONBOARDING] submitOnboardingData STARTED")
                         guard let token = await sessionClient.getAccessToken() else {
-                            print("🔴🔴🔴 [ONBOARDING] NO TOKEN - getAccessToken returned nil")
-                            NSLog("❌ [ONBOARDING] No access token available")
                             await send(.onboardingSubmitFailed("Not authenticated"))
                             return
                         }
-                        print("🟢🟢🟢 [ONBOARDING] Got token: \(token.prefix(20))...")
-                        NSLog("✅ [ONBOARDING] Got token: %@...", String(token.prefix(20)))
+
+                        // Retry helper — backend upserts are idempotent so retries are safe
+                        @Sendable func withRetry<T: Decodable & Sendable>(
+                            maxAttempts: Int = 3,
+                            _ operation: @Sendable () async throws -> T
+                        ) async throws -> T {
+                            var lastError: Error?
+                            for attempt in 1...maxAttempts {
+                                do {
+                                    return try await operation()
+                                } catch {
+                                    lastError = error
+                                    if attempt < maxAttempts {
+                                        try await Task.sleep(for: .seconds(pow(2.0, Double(attempt - 1))))
+                                    }
+                                }
+                            }
+                            throw lastError!
+                        }
 
                         // 1. Submit identity_basic (birth data)
-                        NSLog("📤 [ONBOARDING] Submitting identity_basic...")
                         let identityRequest = IdentityBasicRequest(
                             birthDate: birthDate,
                             birthTime: birthTime,
@@ -269,10 +274,12 @@ public struct AppFeature: Sendable {
                             birthLng: selectedBirthPlace?.longitude ?? 0.0,
                             birthPlaceTimezone: selectedBirthPlace?.timezone
                         )
-                        let _: OnboardingSuccessResponse = try await apiClient.send(
-                            OnboardingEndpoints.submitIdentityBasic(identityRequest)
-                                .authenticated(with: token)
-                        )
+                        let _: OnboardingSuccessResponse = try await withRetry {
+                            try await apiClient.send(
+                                OnboardingEndpoints.submitIdentityBasic(identityRequest)
+                                    .authenticated(with: token)
+                            )
+                        }
 
                         // 2. Submit context_personal
                         let mappedRelationship = OnboardingDataMapper.mapRelationshipStatus(
@@ -305,10 +312,12 @@ public struct AppFeature: Sendable {
                             lifestyle: mappedLifestyle,
                             primaryGoal: mappedGoal
                         )
-                        let _: OnboardingSuccessResponse = try await apiClient.send(
-                            OnboardingEndpoints.submitContextPersonal(contextRequest)
-                                .authenticated(with: token)
-                        )
+                        let _: OnboardingSuccessResponse = try await withRetry {
+                            try await apiClient.send(
+                                OnboardingEndpoints.submitContextPersonal(contextRequest)
+                                    .authenticated(with: token)
+                            )
+                        }
 
                         // 3. Submit wellbeing
                         let wellbeingRequest = WellbeingRequest(
@@ -317,10 +326,12 @@ public struct AppFeature: Sendable {
                             stressLevel: 3,
                             mentalClarity: 3
                         )
-                        let _: OnboardingSuccessResponse = try await apiClient.send(
-                            OnboardingEndpoints.submitWellbeing(wellbeingRequest)
-                                .authenticated(with: token)
-                        )
+                        let _: OnboardingSuccessResponse = try await withRetry {
+                            try await apiClient.send(
+                                OnboardingEndpoints.submitWellbeing(wellbeingRequest)
+                                    .authenticated(with: token)
+                            )
+                        }
 
                         // 4. Submit spiritual_interests
                         let mappedInterests = OnboardingDataMapper.mapGoalsToInterests(
@@ -329,10 +340,12 @@ public struct AppFeature: Sendable {
                         let spiritualRequest = SpiritualInterestsRequest(
                             interests: mappedInterests
                         )
-                        let _: OnboardingSuccessResponse = try await apiClient.send(
-                            OnboardingEndpoints.submitSpiritualInterests(spiritualRequest)
-                                .authenticated(with: token)
-                        )
+                        let _: OnboardingSuccessResponse = try await withRetry {
+                            try await apiClient.send(
+                                OnboardingEndpoints.submitSpiritualInterests(spiritualRequest)
+                                    .authenticated(with: token)
+                            )
+                        }
 
                         // 5. Submit menstrual_setup
                         let mappedRegularity = OnboardingDataMapper.mapCycleRegularity(
@@ -351,31 +364,32 @@ public struct AppFeature: Sendable {
                                 ContraceptionTypeAPI(rawValue: $0.rawValue) ?? .other
                             }
                         )
-                        let _: OnboardingSuccessResponse = try await apiClient.send(
-                            OnboardingEndpoints.submitMenstrualSetup(menstrualRequest)
-                                .authenticated(with: token)
-                        )
+                        let _: OnboardingSuccessResponse = try await withRetry {
+                            try await apiClient.send(
+                                OnboardingEndpoints.submitMenstrualSetup(menstrualRequest)
+                                    .authenticated(with: token)
+                            )
+                        }
 
                         // 6. Submit consent (triggers persona generation on backend)
                         let consentRequest = ConsentRequest(
                             privacyConsent: termsConsent,
                             healthDataConsent: healthDataConsent
                         )
-                        let _: OnboardingSuccessResponse = try await apiClient.send(
-                            OnboardingEndpoints.submitConsent(consentRequest)
-                                .authenticated(with: token)
-                        )
+                        let _: OnboardingSuccessResponse = try await withRetry {
+                            try await apiClient.send(
+                                OnboardingEndpoints.submitConsent(consentRequest)
+                                    .authenticated(with: token)
+                            )
+                        }
 
                         await send(.onboardingSubmitCompleted)
                     } catch {
-                        print("🔴🔴🔴 [ONBOARDING] CATCH ERROR: \(error)")
-                        NSLog("❌ [ONBOARDING] Submit failed: %@", String(describing: error))
                         await send(.onboardingSubmitFailed(error.localizedDescription))
                     }
                 }
 
             case .onboardingSubmitCompleted:
-                NSLog("✅ [ONBOARDING] All screens submitted successfully!")
                 state.isSubmittingOnboarding = false
                 state.onboardingError = nil
                 state.destination = .home
@@ -509,13 +523,18 @@ public struct AppView: View {
                 onAgeRestriction: { store.send(.ageRestrictionTriggered) },
                 onSearchPlace: { query in
                     let client = PlacesClient.liveValue
-                    let results = (try? await client.autocomplete(query)) ?? []
-                    return results.map { apiResult in
-                        PlacesAutocompleteTextField.PlaceResult(
-                            id: apiResult.placeId,
-                            mainText: apiResult.mainText ?? apiResult.description,
-                            secondaryText: apiResult.secondaryText ?? ""
-                        )
+                    do {
+                        let results = try await client.autocomplete(query)
+                        return results.map { apiResult in
+                            PlacesAutocompleteTextField.PlaceResult(
+                                id: apiResult.placeId,
+                                mainText: apiResult.mainText ?? apiResult.description,
+                                secondaryText: apiResult.secondaryText ?? ""
+                            )
+                        }
+                    } catch {
+                        print("⚠️ Places autocomplete error: \(error)")
+                        return []
                     }
                 },
                 onSelectPlace: { placeResult in
