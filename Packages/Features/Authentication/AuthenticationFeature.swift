@@ -1,4 +1,5 @@
 import ComposableArchitecture
+import Inject
 import SwiftUI
 
 // MARK: - Authentication Feature
@@ -303,275 +304,195 @@ public struct AuthenticationFeature: Sendable {
 // MARK: - Authentication View
 
 public struct AuthenticationView: View {
+    @ObserveInjection var inject
     @Bindable var store: StoreOf<AuthenticationFeature>
     @FocusState private var focusedField: Field?
+    var onBack: (() -> Void)?
 
     private enum Field: Hashable {
         case email, password, confirmPassword
     }
 
-    public init(store: StoreOf<AuthenticationFeature>) {
+    public init(store: StoreOf<AuthenticationFeature>, onBack: (() -> Void)? = nil) {
         self.store = store
+        self.onBack = onBack
     }
 
     public var body: some View {
-        let _ = NSLog("🔐 [AUTH-VIEW] body evaluated - BUILD v5 - mode: %@", String(describing: store.mode))
         GeometryReader { geometry in
-            let screenHeight = geometry.size.height
-            let isSmallScreen = screenHeight < 640
-            let isMediumScreen = screenHeight >= 640 && screenHeight <= 800
+            let isSmallScreen = geometry.size.height < 640
 
-            let topSpacing: CGFloat = isSmallScreen ? 20 : (isMediumScreen ? 28 : 40)
-            let logoHeight: CGFloat = isSmallScreen ? 100 : (isMediumScreen ? 120 : 150)
-            let sectionSpacing: CGFloat = isSmallScreen ? 20 : (isMediumScreen ? 24 : 32)
-            let fieldSpacing: CGFloat = isSmallScreen ? 12 : (isMediumScreen ? 14 : 16)
+            let sectionSpacing: CGFloat = 28
+            let fieldSpacing: CGFloat = 14
             let horizontalPadding: CGFloat = max(20, min(48, geometry.size.width * 0.07))
 
             ZStack {
-                // Background - vector-based gradient
                 GradientBackground()
 
-                ScrollView(showsIndicators: false) {
-                    VStack(spacing: 0) {
-                        // Top spacing
-                        Spacer().frame(height: geometry.safeAreaInsets.top + topSpacing)
+                VStack(spacing: 0) {
+                    Spacer().frame(height: geometry.safeAreaInsets.top + 16)
 
-                        // Logo
-                        Image("LogoGradient")
-                            .resizable()
-                            .aspectRatio(contentMode: .fit)
-                            .frame(height: logoHeight)
+                    // Back button — matching OnboardingHeader layout
+                    HStack {
+                        if let onBack {
+                            GlassBackButton(action: onBack)
+                        } else {
+                            Color.clear.frame(width: 44, height: 44)
+                        }
+                        Spacer()
+                    }
+                    .padding(.horizontal, 32)
 
-                        Spacer().frame(height: 16)
+                    Spacer()
 
-                        // Tagline
-                        Text("Welcome back")
-                            .font(.custom("Raleway-SemiBold", size: 16))
-                            .tracking(2)
-                            .foregroundStyle(
-                                LinearGradient(
-                                    stops: [
-                                        .init(color: Color(hex: 0xEFE1DC), location: 0.14),
-                                        .init(color: Color(hex: 0xA5958B), location: 0.43),
-                                        .init(color: Color(hex: 0x5C4A3B), location: 0.83),
-                                    ],
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                )
+                    // Title
+                    Text(store.mode == .login ? "Welcome Back" : "Create Account")
+                        .font(.custom("Raleway-Bold", size: 28))
+                        .foregroundStyle(
+                            LinearGradient(
+                                colors: [
+                                    DesignColors.text,
+                                    DesignColors.textPrincipal,
+                                ],
+                                startPoint: .top,
+                                endPoint: .bottom
                             )
+                        )
 
-                        Spacer().frame(height: sectionSpacing)
+                    Spacer().frame(height: sectionSpacing)
 
-                        // Tab Switch
-                        AuthGlassTabSwitch(
-                            isSignIn: store.mode == .login,
-                            onModeChange: { isSignIn in
-                                store.send(.setMode(isSignIn ? .login : .register))
+                    // Form Fields
+                    VStack(spacing: fieldSpacing) {
+                        AuthGlassTextField(
+                            text: $store.email,
+                            placeholder: "Email",
+                            isFocused: focusedField == .email,
+                            error: store.emailError,
+                            keyboardType: .emailAddress,
+                            textContentType: .emailAddress
+                        )
+                        .focused($focusedField, equals: .email)
+                        .submitLabel(.next)
+                        .onSubmit { focusedField = .password }
+
+                        AuthGlassTextField(
+                            text: $store.password,
+                            placeholder: "Password",
+                            isFocused: focusedField == .password,
+                            isPassword: true,
+                            passwordVisible: store.passwordVisible,
+                            onPasswordVisibilityToggle: {
+                                store.send(.togglePasswordVisibility)
                             }
                         )
-                        .padding(.horizontal, horizontalPadding)
-
-                        Spacer().frame(height: sectionSpacing)
-
-                        // Form Fields
-                        VStack(spacing: fieldSpacing) {
-                            // Email field
-                            AuthGlassTextField(
-                                text: $store.email,
-                                placeholder: "Email",
-                                isFocused: focusedField == .email,
-                                error: store.emailError,
-                                keyboardType: .emailAddress,
-                                textContentType: .emailAddress
-                            )
-                            .focused($focusedField, equals: .email)
-                            .submitLabel(.next)
-                            .onSubmit { focusedField = .password }
-
-                            // Password field
-                            AuthGlassTextField(
-                                text: $store.password,
-                                placeholder: "Password",
-                                isFocused: focusedField == .password,
-                                isPassword: true,
-                                passwordVisible: store.passwordVisible,
-                                onPasswordVisibilityToggle: {
-                                    store.send(.togglePasswordVisibility)
-                                }
-                            )
-                            .focused($focusedField, equals: .password)
-                            .submitLabel(store.mode == .register ? .next : .done)
-                            .onSubmit {
-                                if store.mode == .register {
-                                    focusedField = .confirmPassword
-                                } else {
-                                    focusedField = nil
-                                    handleSubmit()
-                                }
+                        .focused($focusedField, equals: .password)
+                        .submitLabel(store.mode == .login ? .done : .next)
+                        .onSubmit {
+                            if store.mode == .login {
+                                focusedField = nil
+                                store.send(.loginTapped)
+                            } else {
+                                focusedField = .confirmPassword
                             }
+                        }
 
-                            // Password strength indicator (Sign Up only)
-                            if store.mode == .register && !store.password.isEmpty {
+                        if store.mode == .register {
+                            if !store.password.isEmpty {
                                 PasswordStrengthIndicator(strength: store.passwordStrength)
                                     .padding(.horizontal, 4)
                                     .transition(.opacity.combined(with: .move(edge: .top)))
                             }
 
-                            // Confirm password (Sign Up only)
-                            if store.mode == .register {
-                                AuthGlassTextField(
-                                    text: $store.confirmPassword,
-                                    placeholder: "Confirm Password",
-                                    isFocused: focusedField == .confirmPassword,
-                                    isPassword: true,
-                                    passwordVisible: store.confirmPasswordVisible,
-                                    onPasswordVisibilityToggle: {
-                                        store.send(.toggleConfirmPasswordVisibility)
-                                    },
-                                    error: store.confirmPasswordError
-                                )
-                                .focused($focusedField, equals: .confirmPassword)
-                                .submitLabel(.done)
-                                .onSubmit {
-                                    focusedField = nil
-                                    handleSubmit()
-                                }
-                                .transition(.opacity.combined(with: .move(edge: .top)))
+                            AuthGlassTextField(
+                                text: $store.confirmPassword,
+                                placeholder: "Confirm Password",
+                                isFocused: focusedField == .confirmPassword,
+                                isPassword: true,
+                                passwordVisible: store.confirmPasswordVisible,
+                                onPasswordVisibilityToggle: {
+                                    store.send(.toggleConfirmPasswordVisibility)
+                                },
+                                error: store.confirmPasswordError
+                            )
+                            .focused($focusedField, equals: .confirmPassword)
+                            .submitLabel(.done)
+                            .onSubmit {
+                                focusedField = nil
+                                store.send(.registerTapped)
                             }
                         }
-                        .padding(.horizontal, horizontalPadding)
-                        .animation(.easeInOut(duration: 0.25), value: store.mode)
-
-                        // Forgot password (Sign In only)
-                        HStack {
-                            Spacer()
-                            if store.mode == .login {
-                                Button {
-                                    store.send(.setMode(.forgotPassword))
-                                } label: {
-                                    Text("Forgot password?")
-                                        .font(.custom("Raleway-Medium", size: 14))
-                                        .foregroundColor(DesignColors.textPrincipal)
-                                }
-                            }
-                        }
-                        .frame(height: isSmallScreen ? 32 : (isMediumScreen ? 36 : 40))
-                        .padding(.horizontal, horizontalPadding)
-
-                        // Error message
-                        if let error = store.error {
-                            HStack(spacing: 8) {
-                                Image(systemName: "exclamationmark.triangle.fill")
-                                    .font(.system(size: 14))
-                                Text(error)
-                                    .font(.custom("Raleway-Medium", size: 14))
-                            }
-                            .foregroundColor(Color(hex: 0xE57373))
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 10)
-                            .frame(maxWidth: .infinity)
-                            .background {
-                                RoundedRectangle(cornerRadius: 12)
-                                    .fill(Color(hex: 0xE57373).opacity(0.1))
-                                    .overlay {
-                                        RoundedRectangle(cornerRadius: 12)
-                                            .strokeBorder(Color(hex: 0xE57373).opacity(0.3), lineWidth: 1)
-                                    }
-                            }
-                            .padding(.horizontal, horizontalPadding)
-                            .transition(.opacity.combined(with: .move(edge: .top)))
-                            .onTapGesture {
-                                store.send(.clearError)
-                            }
-                        }
-
-                        Spacer().frame(height: sectionSpacing)
-
-                        // Submit button
-                        if store.isLoading {
-                            // Loading state
-                            ZStack {
-                                Capsule()
-                                    .fill(.ultraThinMaterial)
-                                    .frame(width: isSmallScreen ? 200 : 220, height: 55)
-                                    .shadow(color: .black.opacity(0.1), radius: 8, x: 0, y: 2)
-
-                                ProgressView()
-                                    .tint(DesignColors.text)
-                            }
-                        } else {
-                            GlassButton(
-                                store.mode == .register ? "Create Account" : "Sign In",
-                                width: isSmallScreen ? 200 : 220
-                            ) {
-                                handleSubmit()
-                            }
-                            .opacity(store.isFormValid ? 1 : 0.5)
-                            .disabled(!store.isFormValid)
-                        }
-
-                        Spacer().frame(height: fieldSpacing + 4)
-
-                        // Divider with "or"
-                        HStack(spacing: 12) {
-                            GradientDivider()
-                            Text("or")
-                                .font(.custom("Raleway-Regular", size: 13))
-                                .foregroundColor(DesignColors.text.opacity(0.5))
-                            GradientDivider()
-                        }
-                        .padding(.horizontal, horizontalPadding)
-
-                        Spacer().frame(height: fieldSpacing + 4)
-
-                        // Google sign in
-                        GlassButton(
-                            "Continue with Google",
-                            width: isSmallScreen ? 220 : 240
-                        ) {
-                            store.send(.googleSignInTapped)
-                        }
-
-                        Spacer().frame(height: sectionSpacing)
-
-                        // Terms and Privacy
-                        termsAndPrivacyView
-                            .padding(.horizontal, horizontalPadding)
-
-                        Spacer().frame(height: topSpacing + geometry.safeAreaInsets.bottom)
                     }
+                    .padding(.horizontal, horizontalPadding)
+
+                    Spacer().frame(height: 8)
+
+                    // Error message
+                    if let error = store.error {
+                        HStack(spacing: 8) {
+                            Image(systemName: "exclamationmark.triangle.fill")
+                                .font(.system(size: 14))
+                            Text(error)
+                                .font(.custom("Raleway-Medium", size: 14))
+                        }
+                        .foregroundColor(Color(hex: 0xE57373))
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 10)
+                        .frame(maxWidth: .infinity)
+                        .background {
+                            RoundedRectangle(cornerRadius: 12)
+                                .fill(Color(hex: 0xE57373).opacity(0.1))
+                                .overlay {
+                                    RoundedRectangle(cornerRadius: 12)
+                                        .strokeBorder(Color(hex: 0xE57373).opacity(0.3), lineWidth: 1)
+                                }
+                        }
+                        .padding(.horizontal, horizontalPadding)
+                        .transition(.opacity.combined(with: .move(edge: .top)))
+                        .onTapGesture {
+                            store.send(.clearError)
+                        }
+                    }
+
+                    Spacer().frame(height: sectionSpacing)
+
+                    // Submit button
+                    if store.isLoading {
+                        ZStack {
+                            Capsule()
+                                .fill(.ultraThinMaterial)
+                                .frame(width: isSmallScreen ? 200 : 220, height: 55)
+                                .shadow(color: .black.opacity(0.1), radius: 8, x: 0, y: 2)
+
+                            ProgressView()
+                                .tint(DesignColors.text)
+                        }
+                    } else {
+                        GlassButton(
+                            store.mode == .login ? "Log In" : "Create Account",
+                            width: isSmallScreen ? 200 : 220
+                        ) {
+                            store.send(store.mode == .login ? .loginTapped : .registerTapped)
+                        }
+                        .opacity(store.isFormValid ? 1 : 0.5)
+                        .disabled(!store.isFormValid)
+                    }
+
+                    Spacer()
+
+                    // Terms and Privacy
+                    termsAndPrivacyView
+                        .padding(.horizontal, horizontalPadding)
+                        .padding(.bottom, geometry.safeAreaInsets.bottom + 16)
                 }
-                .scrollDismissesKeyboard(.interactively)
             }
             .ignoresSafeArea()
-            .background {
-                Color.clear
-                    .contentShape(Rectangle())
-                    .onTapGesture {
-                        focusedField = nil
-                    }
+            .ignoresSafeArea(.keyboard)
+            .onTapGesture {
+                focusedField = nil
             }
         }
         .disabled(store.isLoading)
-    }
-
-    private func handleSubmit() {
-        NSLog(
-            "🔐 [AUTH-VIEW] handleSubmit called - mode: %@, isFormValid: %@",
-            String(describing: store.mode),
-            store.isFormValid ? "YES" : "NO"
-        )
-        switch store.mode {
-        case .login:
-            NSLog("🔐 [AUTH-VIEW] sending loginTapped")
-            store.send(.loginTapped)
-        case .register:
-            NSLog("🔐 [AUTH-VIEW] sending registerTapped")
-            store.send(.registerTapped)
-        case .forgotPassword:
-            NSLog("🔐 [AUTH-VIEW] sending forgotPasswordTapped")
-            store.send(.forgotPasswordTapped)
-        }
+        .enableInjection()
     }
 
     private var termsAndPrivacyView: some View {

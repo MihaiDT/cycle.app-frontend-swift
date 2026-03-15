@@ -72,6 +72,7 @@ extension UserDefaultsClient {
 extension UserDefaultsClient {
     public enum Keys {
         public static let hasCompletedOnboarding = "cycle.hasCompletedOnboarding"
+        public static let onboardingLocalData = "cycle.onboardingLocalData"
         public static let lastSyncDate = "cycle.lastSyncDate"
         public static let preferredTheme = "cycle.preferredTheme"
         public static let notificationsEnabled = "cycle.notificationsEnabled"

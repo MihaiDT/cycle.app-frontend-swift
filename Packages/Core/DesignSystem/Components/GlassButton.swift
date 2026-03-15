@@ -87,9 +87,9 @@ public struct GlassButton: View {
                     .foregroundStyle(DesignColors.text)
 
                 if showArrow {
-                    ArrowIcon()
-                        .fill(DesignColors.text)
-                        .frame(width: 22, height: 8)
+                    Image(systemName: "arrow.right")
+                        .font(.system(size: 16, weight: .medium))
+                        .foregroundStyle(DesignColors.text)
                 }
             }
             .frame(width: width, height: height)

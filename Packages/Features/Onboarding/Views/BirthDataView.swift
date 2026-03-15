@@ -1,9 +1,11 @@
+import Inject
 import Lottie
 import SwiftUI
 
 // MARK: - Birth Data View
 
 public struct BirthDataView: View {
+    @ObserveInjection var inject
     @Binding public var birthDate: Date
     @Binding public var birthTime: Date
     @Binding public var birthPlace: String
@@ -153,6 +155,7 @@ public struct BirthDataView: View {
                 )
             }
         }
+        .enableInjection()
     }
 }
 

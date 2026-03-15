@@ -1,8 +1,10 @@
+import Inject
 import SwiftUI
 
 // MARK: - Cycle Data View
 
 public struct CycleDataView: View {
+    @ObserveInjection var inject
     // Required fields (matching backend API)
     @Binding public var lastPeriodDate: Date
     @Binding public var cycleDuration: Int  // avgCycleLength (21-40)
@@ -78,94 +80,97 @@ public struct CycleDataView: View {
             },
             nextButtonEnabled: true
         ) {
-            TabView(selection: $currentPage) {
-                // Page 0: Calendar
-                InlinePeriodCalendarPage(
-                    selectedDate: $lastPeriodDate,
-                    periodDuration: $periodDuration
-                )
-                .tag(0)
+            GeometryReader { geometry in
+                HStack(spacing: 0) {
+                    // Page 0: Calendar
+                    InlinePeriodCalendarPage(
+                        selectedDate: $lastPeriodDate,
+                        periodDuration: $periodDuration
+                    )
+                    .frame(width: geometry.size.width)
 
-                // Page 1: Cycle & Period Duration
-                CycleDataPage(
-                    title: "How long is\nyour cycle?",
-                    subtitle: "Typical cycles are 21-40 days"
-                ) {
-                    VStack(spacing: 24) {
-                        DurationStepper(
-                            label: "Cycle Length",
-                            value: $cycleDuration,
-                            range: 21...40,
-                            unit: "days"
-                        )
+                    // Page 1: Cycle & Period Duration
+                    CycleDataPage(
+                        title: "How long is\nyour cycle?",
+                        subtitle: "Typical cycles are 21-40 days"
+                    ) {
+                        VStack(spacing: 24) {
+                            DurationStepper(
+                                label: "Cycle Length",
+                                value: $cycleDuration,
+                                range: 21...40,
+                                unit: "days"
+                            )
 
-                        DurationStepper(
-                            label: "Period Length",
-                            value: $periodDuration,
-                            range: 2...10,
-                            unit: "days"
-                        )
+                            DurationStepper(
+                                label: "Period Length",
+                                value: $periodDuration,
+                                range: 2...10,
+                                unit: "days"
+                            )
+                        }
+                        .padding(.horizontal, 32)
                     }
-                    .padding(.horizontal, 32)
-                }
-                .tag(1)
+                    .frame(width: geometry.size.width)
 
-                // Page 2: Cycle Regularity
-                CycleDataPage(
-                    title: "How regular is\nyour cycle?",
-                    subtitle: "This helps us predict better"
-                ) {
-                    VStack(spacing: 12) {
-                        ForEach(CycleRegularity.allCases) { regularity in
-                            RegularityOptionButton(
-                                regularity: regularity,
-                                isSelected: cycleRegularity == regularity
-                            ) {
-                                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                                    cycleRegularity = regularity
+                    // Page 2: Cycle Regularity
+                    CycleDataPage(
+                        title: "How regular is\nyour cycle?",
+                        subtitle: "This helps us predict better"
+                    ) {
+                        VStack(spacing: 12) {
+                            ForEach(CycleRegularity.allCases) { regularity in
+                                RegularityOptionButton(
+                                    regularity: regularity,
+                                    isSelected: cycleRegularity == regularity
+                                ) {
+                                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                                        cycleRegularity = regularity
+                                    }
                                 }
                             }
                         }
-                    }
-                    .padding(.horizontal, 32)
-                }
-                .tag(2)
-
-                // Page 3: Flow Intensity
-                CycleDataPage(
-                    title: "How would you\ndescribe your flow?",
-                    subtitle: "Your typical period intensity"
-                ) {
-                    FlowIntensitySelector(intensity: $flowIntensity)
                         .padding(.horizontal, 32)
-                }
-                .tag(3)
+                    }
+                    .frame(width: geometry.size.width)
 
-                // Page 4: Symptoms
-                CycleDataPage(
-                    title: "What symptoms do\nyou typically experience?",
-                    subtitle: "Select all that apply"
-                ) {
-                    InlineSymptomsSelector(selectedSymptoms: $selectedSymptoms)
-                }
-                .tag(4)
+                    // Page 3: Flow Intensity
+                    CycleDataPage(
+                        title: "How would you\ndescribe your flow?",
+                        subtitle: "Your typical period intensity"
+                    ) {
+                        FlowIntensitySelector(intensity: $flowIntensity)
+                            .padding(.horizontal, 32)
+                    }
+                    .frame(width: geometry.size.width)
 
-                // Page 5: Contraception
-                CycleDataPage(
-                    title: "Do you use\ncontraception?",
-                    subtitle: "Optional but helps with accuracy"
-                ) {
-                    InlineContraceptionSelector(
-                        usesContraception: $usesContraception,
-                        contraceptionType: $contraceptionType
-                    )
-                    .padding(.horizontal, 32)
+                    // Page 4: Symptoms
+                    CycleDataPage(
+                        title: "What symptoms do\nyou typically experience?",
+                        subtitle: "Select all that apply"
+                    ) {
+                        InlineSymptomsSelector(selectedSymptoms: $selectedSymptoms)
+                    }
+                    .frame(width: geometry.size.width)
+
+                    // Page 5: Contraception
+                    CycleDataPage(
+                        title: "Do you use\ncontraception?",
+                        subtitle: "Optional but helps with accuracy"
+                    ) {
+                        InlineContraceptionSelector(
+                            usesContraception: $usesContraception,
+                            contraceptionType: $contraceptionType
+                        )
+                        .padding(.horizontal, 32)
+                    }
+                    .frame(width: geometry.size.width)
                 }
-                .tag(5)
+                .offset(x: -CGFloat(currentPage) * geometry.size.width)
+                .animation(.easeInOut(duration: 0.3), value: currentPage)
             }
-            .tabViewStyle(.page(indexDisplayMode: .never))
-            .animation(.easeInOut(duration: 0.3), value: currentPage)
         }
+        .enableInjection()
     }
 }
 

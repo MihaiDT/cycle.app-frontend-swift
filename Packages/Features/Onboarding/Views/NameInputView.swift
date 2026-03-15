@@ -1,8 +1,10 @@
+import Inject
 import SwiftUI
 
 // MARK: - Name Input View
 
 public struct NameInputView: View {
+    @ObserveInjection var inject
     @Binding public var name: String
     public let onNext: () -> Void
     public let onBack: (() -> Void)?
@@ -62,6 +64,7 @@ public struct NameInputView: View {
                     .multilineTextAlignment(.center)
             }
         }
+        .enableInjection()
     }
 }
 

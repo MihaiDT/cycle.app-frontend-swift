@@ -1,3 +1,4 @@
+import Inject
 import SwiftUI
 
 // MARK: - Lifestyle Type
@@ -40,6 +41,7 @@ public enum LifestyleType: Int, CaseIterable, Equatable, Sendable {
 // MARK: - Lifestyle Rhythm View
 
 public struct LifestyleRhythmView: View {
+    @ObserveInjection var inject
     @Binding public var selectedType: LifestyleType?
     public let onNext: () -> Void
     public let onBack: (() -> Void)?
@@ -124,6 +126,7 @@ public struct LifestyleRhythmView: View {
                 dragAngle = type.angle
             }
         }
+        .enableInjection()
     }
 }
 

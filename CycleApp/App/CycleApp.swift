@@ -21,6 +21,11 @@ struct CycleApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var delegate
 
     init() {
+        // Load InjectionIII bundle for hot reload
+        #if DEBUG
+            Bundle(path: "/Applications/InjectionIII.app/Contents/Resources/iOSInjection.bundle")?.load()
+        #endif
+
         // Debug: Print all available Raleway fonts
         #if DEBUG
             for family in UIFont.familyNames.sorted() {

@@ -1,3 +1,4 @@
+import Inject
 import SwiftUI
 
 // MARK: - Personal Goal Type
@@ -35,6 +36,7 @@ public enum PersonalGoal: String, CaseIterable, Identifiable, Equatable, Hashabl
 // MARK: - Personal Goals View
 
 public struct PersonalGoalsView: View {
+    @ObserveInjection var inject
     @Binding public var selectedGoals: Set<PersonalGoal>
     public let onNext: () -> Void
     public let onBack: (() -> Void)?
@@ -53,8 +55,8 @@ public struct PersonalGoalsView: View {
 
     public var body: some View {
         OnboardingLayout(
-            currentStep: 9,
-            totalSteps: 10,
+            currentStep: 10,
+            totalSteps: 11,
             onBack: onBack,
             onNext: onNext,
             nextButtonEnabled: !selectedGoals.isEmpty,
@@ -107,6 +109,7 @@ public struct PersonalGoalsView: View {
                 }
             }
         }
+        .enableInjection()
     }
 
     private func toggleGoal(_ goal: PersonalGoal) {

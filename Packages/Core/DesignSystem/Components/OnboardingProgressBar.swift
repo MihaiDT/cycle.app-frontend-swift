@@ -24,9 +24,19 @@ public struct OnboardingProgressBar: View {
             Capsule()
                 .fill(Color(red: 0.95, green: 0.93, blue: 0.92))
 
-            // Fill - cocoa
+            // Fill - gradient that darkens as it grows
             Capsule()
-                .fill(DesignColors.link)
+                .fill(
+                    LinearGradient(
+                        colors: [
+                            DesignColors.accent,
+                            DesignColors.accentSecondary,
+                            DesignColors.accentWarm,
+                        ],
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    )
+                )
                 .frame(width: 180 * progress)
                 .animation(.easeOut(duration: 0.3), value: progress)
         }

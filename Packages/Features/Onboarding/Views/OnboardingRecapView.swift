@@ -1,8 +1,10 @@
+import Inject
 import SwiftUI
 
 // MARK: - Onboarding Recap View
 
 public struct OnboardingRecapView: View {
+    @ObserveInjection var inject
     public let userName: String
     public let birthDate: Date
     public let relationshipStatus: RelationshipStatus?
@@ -14,7 +16,9 @@ public struct OnboardingRecapView: View {
     public let onFinish: () -> Void
     public let onBack: (() -> Void)?
 
-    @State private var animateIn = false
+    @State private var showHeader = false
+    @State private var showCards = false
+    @State private var showButton = false
 
     private let dateFormatter: DateFormatter = {
         let formatter = DateFormatter()
@@ -46,162 +50,351 @@ public struct OnboardingRecapView: View {
         self.onBack = onBack
     }
 
+    private var infoChips: [(String, String)] {
+        var chips: [(String, String)] = []
+        if let status = relationshipStatus {
+            chips.append(("heart", status.rawValue))
+        }
+        if let context = professionalContext {
+            chips.append(("briefcase", context.rawValue))
+        }
+        if let lifestyle = lifestyleType {
+            chips.append(("leaf", lifestyle.title))
+        }
+        return chips
+    }
+
     public var body: some View {
         GeometryReader { geometry in
             ZStack {
                 OnboardingBackground()
 
                 VStack(spacing: 0) {
-                    // Header
                     Spacer().frame(height: geometry.safeAreaInsets.top + 16)
 
                     OnboardingHeader(
-                        currentStep: 10,
-                        totalSteps: 10,
+                        currentStep: 11,
+                        totalSteps: 11,
                         onBack: onBack
                     )
 
-                    Spacer().frame(height: 24)
-
-                    // Title section
-                    VStack(spacing: 8) {
-                        Text("all set")
-                            .font(.custom("Raleway-Regular", size: 13))
-                            .tracking(3)
-                            .textCase(.uppercase)
-                            .foregroundColor(DesignColors.text.opacity(0.5))
-
-                        Text("Welcome, \(userName)!")
-                            .font(.custom("Raleway-Bold", size: 28))
-                            .foregroundColor(DesignColors.text)
-
-                        Text("Here's your personalized profile")
-                            .font(.custom("Raleway-Regular", size: 16))
-                            .foregroundColor(DesignColors.textSecondary)
-                    }
-                    .opacity(animateIn ? 1 : 0)
-                    .offset(y: animateIn ? 0 : 20)
-
-                    Spacer().frame(height: 32)
-
-                    // Recap cards
                     ScrollView(showsIndicators: false) {
-                        VStack(spacing: 16) {
-                            // Personal Info
-                            RecapCard(title: "Personal Info", icon: "person.fill") {
-                                RecapRow(label: "Name", value: userName)
-                                RecapRow(label: "Birth Date", value: dateFormatter.string(from: birthDate))
-                                if let status = relationshipStatus {
-                                    RecapRow(label: "Relationship", value: status.rawValue)
-                                }
-                                if let context = professionalContext {
-                                    RecapRow(label: "Profession", value: context.rawValue)
-                                }
-                                if let lifestyle = lifestyleType {
-                                    RecapRow(label: "Lifestyle", value: lifestyle.title)
-                                }
-                            }
-                            .opacity(animateIn ? 1 : 0)
-                            .offset(y: animateIn ? 0 : 20)
+                        VStack(spacing: 0) {
+                            Spacer().frame(height: 32)
 
-                            // Cycle Info
-                            RecapCard(title: "Cycle Details", icon: "calendar") {
-                                RecapRow(label: "Cycle Length", value: "\(cycleDuration) days")
-                                RecapRow(label: "Period Duration", value: "\(periodDuration) days")
-                            }
-                            .opacity(animateIn ? 1 : 0)
-                            .offset(y: animateIn ? 0 : 20)
+                            // Greeting with checkmark
+                            VStack(spacing: 16) {
+                                ZStack {
+                                    Circle()
+                                        .fill(
+                                            LinearGradient(
+                                                colors: [
+                                                    DesignColors.accent.opacity(0.4),
+                                                    DesignColors.accentWarm.opacity(0.6),
+                                                ],
+                                                startPoint: .topLeading,
+                                                endPoint: .bottomTrailing
+                                            )
+                                        )
+                                        .frame(width: 64, height: 64)
 
-                            // Goals
-                            if !personalGoals.isEmpty {
-                                RecapCard(title: "Your Goals", icon: "star.fill") {
-                                    ForEach(Array(personalGoals), id: \.self) { goal in
-                                        RecapRow(label: "", value: goal.title)
+                                    Image(systemName: "checkmark")
+                                        .font(.system(size: 26, weight: .bold))
+                                        .foregroundColor(.white)
+                                }
+                                .scaleEffect(showHeader ? 1 : 0.3)
+                                .opacity(showHeader ? 1 : 0)
+
+                                Text("You're all set,\n\(userName)!")
+                                    .font(.custom("Raleway-Bold", size: 32))
+                                    .multilineTextAlignment(.center)
+                                    .lineSpacing(4)
+                                    .foregroundStyle(
+                                        LinearGradient(
+                                            colors: [
+                                                DesignColors.text,
+                                                DesignColors.textPrincipal,
+                                                DesignColors.accentWarm,
+                                            ],
+                                            startPoint: .top,
+                                            endPoint: .bottom
+                                        )
+                                    )
+                                    .opacity(showHeader ? 1 : 0)
+                                    .offset(y: showHeader ? 0 : 12)
+                            }
+
+                            Spacer().frame(height: 28)
+
+                            // Stat pills row
+                            HStack(spacing: 12) {
+                                StatPill(
+                                    icon: "calendar.circle.fill",
+                                    value: "\(cycleDuration)",
+                                    label: "day cycle"
+                                )
+
+                                StatPill(
+                                    icon: "drop.circle.fill",
+                                    value: "\(periodDuration)",
+                                    label: "day period"
+                                )
+
+                                StatPill(
+                                    icon: "birthday.cake.fill",
+                                    value: ageString,
+                                    label: "years old"
+                                )
+                            }
+                            .padding(.horizontal, 24)
+                            .opacity(showCards ? 1 : 0)
+                            .offset(y: showCards ? 0 : 16)
+
+                            Spacer().frame(height: 24)
+
+                            // Info chips (relationship, profession, lifestyle)
+                            if !infoChips.isEmpty {
+                                RecapFlowLayout(spacing: 10) {
+                                    ForEach(Array(infoChips.enumerated()), id: \.offset) { _, chip in
+                                        HStack(spacing: 8) {
+                                            Image(systemName: chip.0)
+                                                .font(.system(size: 13))
+                                                .foregroundColor(DesignColors.accentWarm)
+                                            Text(chip.1)
+                                                .font(.custom("Raleway-Medium", size: 14))
+                                                .foregroundColor(DesignColors.text)
+                                        }
+                                        .padding(.horizontal, 16)
+                                        .padding(.vertical, 10)
+                                        .background {
+                                            Capsule()
+                                                .fill(.ultraThinMaterial)
+                                                .overlay {
+                                                    Capsule()
+                                                        .strokeBorder(
+                                                            LinearGradient(
+                                                                colors: [
+                                                                    Color.white.opacity(0.5),
+                                                                    Color.white.opacity(0.1),
+                                                                ],
+                                                                startPoint: .topLeading,
+                                                                endPoint: .bottomTrailing
+                                                            ),
+                                                            lineWidth: 0.5
+                                                        )
+                                                }
+                                        }
                                     }
                                 }
-                                .opacity(animateIn ? 1 : 0)
-                                .offset(y: animateIn ? 0 : 20)
+                                .padding(.horizontal, 32)
+                                .opacity(showCards ? 1 : 0)
+                                .offset(y: showCards ? 0 : 16)
+
+                                Spacer().frame(height: 24)
                             }
+
+                            // Goals section
+                            if !personalGoals.isEmpty {
+                                VStack(spacing: 14) {
+                                    Text("Your Focus")
+                                        .font(.custom("Raleway-SemiBold", size: 15))
+                                        .tracking(1)
+                                        .foregroundColor(DesignColors.text.opacity(0.5))
+
+                                    VStack(spacing: 10) {
+                                        ForEach(Array(personalGoals.sorted(by: { $0.title < $1.title })), id: \.self) {
+                                            goal in
+                                            HStack(spacing: 14) {
+                                                Image(systemName: goalIcon(for: goal))
+                                                    .font(.system(size: 18))
+                                                    .foregroundColor(DesignColors.accentWarm)
+                                                    .frame(width: 28)
+
+                                                VStack(alignment: .leading, spacing: 2) {
+                                                    Text(goal.title)
+                                                        .font(.custom("Raleway-SemiBold", size: 15))
+                                                        .foregroundColor(DesignColors.text)
+                                                    Text(goal.subtitle)
+                                                        .font(.custom("Raleway-Regular", size: 12))
+                                                        .foregroundColor(DesignColors.textSecondary)
+                                                }
+
+                                                Spacer()
+
+                                                Image(systemName: "checkmark.circle.fill")
+                                                    .font(.system(size: 18))
+                                                    .foregroundColor(DesignColors.accentWarm.opacity(0.7))
+                                            }
+                                            .padding(.horizontal, 18)
+                                            .padding(.vertical, 14)
+                                            .background {
+                                                RoundedRectangle(cornerRadius: 16)
+                                                    .fill(.ultraThinMaterial)
+                                                    .overlay {
+                                                        RoundedRectangle(cornerRadius: 16)
+                                                            .strokeBorder(
+                                                                LinearGradient(
+                                                                    colors: [
+                                                                        Color.white.opacity(0.4),
+                                                                        Color.white.opacity(0.1),
+                                                                    ],
+                                                                    startPoint: .topLeading,
+                                                                    endPoint: .bottomTrailing
+                                                                ),
+                                                                lineWidth: 0.5
+                                                            )
+                                                    }
+                                            }
+                                        }
+                                    }
+                                }
+                                .padding(.horizontal, 24)
+                                .opacity(showCards ? 1 : 0)
+                                .offset(y: showCards ? 0 : 16)
+                            }
+
+                            Spacer().frame(height: 32)
+
+                            // Motivational tagline
+                            Text("Your journey to self-awareness starts now")
+                                .font(.custom("Raleway-Regular", size: 14))
+                                .foregroundColor(DesignColors.textSecondary.opacity(0.7))
+                                .multilineTextAlignment(.center)
+                                .opacity(showButton ? 1 : 0)
+
+                            Spacer().frame(height: 100)
                         }
-                        .padding(.horizontal, 24)
                     }
 
                     Spacer()
 
-                    // Finish button
-                    GlassButton("Start Your Journey", showArrow: true, width: 240) {
-                        onFinish()
-                    }
-                    .opacity(animateIn ? 1 : 0)
-                    .padding(.bottom, geometry.safeAreaInsets.bottom + AppLayout.bottomOffset)
+                    // CTA button
+                    OnboardingCTAButton(title: "Start Your Journey", action: onFinish)
+                        .opacity(showButton ? 1 : 0)
+                        .scaleEffect(showButton ? 1 : 0.9)
+                        .padding(.bottom, geometry.safeAreaInsets.bottom + AppLayout.bottomOffset)
                 }
             }
             .ignoresSafeArea()
         }
         .onAppear {
-            withAnimation(.easeOut(duration: 0.6).delay(0.2)) {
-                animateIn = true
+            withAnimation(.spring(response: 0.6, dampingFraction: 0.7).delay(0.1)) {
+                showHeader = true
             }
+            withAnimation(.easeOut(duration: 0.5).delay(0.4)) {
+                showCards = true
+            }
+            withAnimation(.easeOut(duration: 0.5).delay(0.7)) {
+                showButton = true
+            }
+
+        }
+        .enableInjection()
+    }
+
+    private var ageString: String {
+        let age = Calendar.current.dateComponents([.year], from: birthDate, to: Date()).year ?? 0
+        return "\(age)"
+    }
+
+    private func goalIcon(for goal: PersonalGoal) -> String {
+        switch goal {
+        case .emotionalBalance: return "heart.circle"
+        case .energyClarity: return "bolt.circle"
+        case .harmoniousRelationships: return "person.2.circle"
+        case .motivation: return "flame.circle"
+        case .selfUnderstanding: return "brain.head.profile"
         }
     }
 }
 
-// MARK: - Recap Card
+// MARK: - Stat Pill
 
-private struct RecapCard<Content: View>: View {
-    let title: String
+private struct StatPill: View {
     let icon: String
-    @ViewBuilder let content: Content
+    let value: String
+    let label: String
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            // Header
-            HStack(spacing: 10) {
-                Image(systemName: icon)
-                    .font(.system(size: 16, weight: .semibold))
-                    .foregroundColor(DesignColors.accentWarm)
+        VStack(spacing: 6) {
+            Image(systemName: icon)
+                .font(.system(size: 22))
+                .foregroundColor(DesignColors.accentWarm)
 
-                Text(title)
-                    .font(.custom("Raleway-SemiBold", size: 18))
-                    .foregroundColor(DesignColors.text)
-            }
+            Text(value)
+                .font(.custom("Raleway-Bold", size: 24))
+                .foregroundColor(DesignColors.text)
 
-            // Content
-            VStack(alignment: .leading, spacing: 12) {
-                content
-            }
+            Text(label)
+                .font(.custom("Raleway-Regular", size: 11))
+                .foregroundColor(DesignColors.textSecondary)
         }
-        .padding(20)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 16)
+        .background {
             RoundedRectangle(cornerRadius: 20)
-                .fill(DesignColors.background.opacity(0.8))
-                .shadow(color: .black.opacity(0.05), radius: 10, x: 0, y: 4)
-        )
+                .fill(.ultraThinMaterial)
+                .overlay {
+                    RoundedRectangle(cornerRadius: 20)
+                        .strokeBorder(
+                            LinearGradient(
+                                colors: [
+                                    Color.white.opacity(0.5),
+                                    Color.white.opacity(0.1),
+                                ],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            ),
+                            lineWidth: 0.5
+                        )
+                }
+        }
     }
 }
 
-// MARK: - Recap Row
+// MARK: - Flow Layout
 
-private struct RecapRow: View {
-    let label: String
-    let value: String
+private struct RecapFlowLayout: Layout {
+    var spacing: CGFloat = 8
 
-    var body: some View {
-        HStack {
-            if !label.isEmpty {
-                Text(label)
-                    .font(.custom("Raleway-Regular", size: 15))
-                    .foregroundColor(DesignColors.textSecondary)
-                Spacer()
-            }
-            Text(value)
-                .font(.custom("Raleway-Medium", size: 15))
-                .foregroundColor(DesignColors.text)
-            if label.isEmpty {
-                Spacer()
-            }
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let result = arrangeSubviews(proposal: proposal, subviews: subviews)
+        return result.size
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        let result = arrangeSubviews(proposal: proposal, subviews: subviews)
+        for (index, position) in result.positions.enumerated() {
+            subviews[index].place(
+                at: CGPoint(x: bounds.minX + position.x, y: bounds.minY + position.y),
+                proposal: .unspecified
+            )
         }
+    }
+
+    private func arrangeSubviews(proposal: ProposedViewSize, subviews: Subviews) -> (positions: [CGPoint], size: CGSize)
+    {
+        let maxWidth = proposal.width ?? .infinity
+        var positions: [CGPoint] = []
+        var currentX: CGFloat = 0
+        var currentY: CGFloat = 0
+        var lineHeight: CGFloat = 0
+        var totalWidth: CGFloat = 0
+
+        for subview in subviews {
+            let size = subview.sizeThatFits(.unspecified)
+            if currentX + size.width > maxWidth && currentX > 0 {
+                currentX = 0
+                currentY += lineHeight + spacing
+                lineHeight = 0
+            }
+            positions.append(CGPoint(x: currentX, y: currentY))
+            lineHeight = max(lineHeight, size.height)
+            currentX += size.width + spacing
+            totalWidth = max(totalWidth, currentX - spacing)
+        }
+
+        return (positions, CGSize(width: totalWidth, height: currentY + lineHeight))
     }
 }
 

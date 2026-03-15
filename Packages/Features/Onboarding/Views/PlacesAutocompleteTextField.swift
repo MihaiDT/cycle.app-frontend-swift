@@ -182,11 +182,10 @@ public struct PlacesAutocompleteTextField: View {
                         .shadow(color: .black.opacity(0.1), radius: 8, x: 0, y: 4)
                 }
                 .padding(.top, 8)
-                .transition(.opacity.combined(with: .move(edge: .top)))
+                .transition(.opacity)
             }
         }
         .animation(.easeInOut(duration: 0.2), value: isShowingResults)
-        .animation(.easeInOut(duration: 0.2), value: searchResults.count)
     }
 
     private func handleTextChange(_ newValue: String) {

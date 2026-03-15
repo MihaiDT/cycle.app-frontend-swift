@@ -8,6 +8,7 @@ import Foundation
 public struct FirebaseAuthClient: Sendable {
     public var signUp: @Sendable (String, String) async throws -> AuthUser
     public var signIn: @Sendable (String, String) async throws -> AuthUser
+    public var signInAnonymously: @Sendable () async throws -> AuthUser
     public var signInWithGoogle: @Sendable (String, String) async throws -> AuthUser
     public var signOut: @Sendable () async throws -> Void
     public var resetPassword: @Sendable (String) async throws -> Void
@@ -17,6 +18,7 @@ public struct FirebaseAuthClient: Sendable {
     public init(
         signUp: @escaping @Sendable (String, String) async throws -> AuthUser,
         signIn: @escaping @Sendable (String, String) async throws -> AuthUser,
+        signInAnonymously: @escaping @Sendable () async throws -> AuthUser,
         signInWithGoogle: @escaping @Sendable (String, String) async throws -> AuthUser,
         signOut: @escaping @Sendable () async throws -> Void,
         resetPassword: @escaping @Sendable (String) async throws -> Void,
@@ -25,6 +27,7 @@ public struct FirebaseAuthClient: Sendable {
     ) {
         self.signUp = signUp
         self.signIn = signIn
+        self.signInAnonymously = signInAnonymously
         self.signInWithGoogle = signInWithGoogle
         self.signOut = signOut
         self.resetPassword = resetPassword
@@ -40,12 +43,14 @@ public struct AuthUser: Equatable, Sendable {
     public let email: String?
     public let displayName: String?
     public let isEmailVerified: Bool
+    public let isAnonymous: Bool
 
-    public init(uid: String, email: String?, displayName: String?, isEmailVerified: Bool) {
+    public init(uid: String, email: String?, displayName: String?, isEmailVerified: Bool, isAnonymous: Bool = false) {
         self.uid = uid
         self.email = email
         self.displayName = displayName
         self.isEmailVerified = isEmailVerified
+        self.isAnonymous = isAnonymous
     }
 }
 
@@ -60,7 +65,8 @@ extension FirebaseAuthClient: DependencyKey {
                     uid: result.user.uid,
                     email: result.user.email,
                     displayName: result.user.displayName,
-                    isEmailVerified: result.user.isEmailVerified
+                    isEmailVerified: result.user.isEmailVerified,
+                    isAnonymous: false
                 )
             },
             signIn: { email, password in
@@ -69,7 +75,18 @@ extension FirebaseAuthClient: DependencyKey {
                     uid: result.user.uid,
                     email: result.user.email,
                     displayName: result.user.displayName,
-                    isEmailVerified: result.user.isEmailVerified
+                    isEmailVerified: result.user.isEmailVerified,
+                    isAnonymous: false
+                )
+            },
+            signInAnonymously: {
+                let result = try await Auth.auth().signInAnonymously()
+                return AuthUser(
+                    uid: result.user.uid,
+                    email: nil,
+                    displayName: nil,
+                    isEmailVerified: false,
+                    isAnonymous: true
                 )
             },
             signInWithGoogle: { idToken, accessToken in
@@ -79,7 +96,8 @@ extension FirebaseAuthClient: DependencyKey {
                     uid: result.user.uid,
                     email: result.user.email,
                     displayName: result.user.displayName,
-                    isEmailVerified: result.user.isEmailVerified
+                    isEmailVerified: result.user.isEmailVerified,
+                    isAnonymous: false
                 )
             },
             signOut: {
@@ -94,7 +112,8 @@ extension FirebaseAuthClient: DependencyKey {
                     uid: user.uid,
                     email: user.email,
                     displayName: user.displayName,
-                    isEmailVerified: user.isEmailVerified
+                    isEmailVerified: user.isEmailVerified,
+                    isAnonymous: user.isAnonymous
                 )
             },
             getIDToken: {
@@ -112,6 +131,9 @@ extension FirebaseAuthClient: DependencyKey {
         },
         signIn: { _, _ in
             AuthUser(uid: "test-uid", email: "test@example.com", displayName: "Test User", isEmailVerified: true)
+        },
+        signInAnonymously: {
+            AuthUser(uid: "test-guest-uid", email: nil, displayName: nil, isEmailVerified: false, isAnonymous: true)
         },
         signInWithGoogle: { _, _ in
             AuthUser(uid: "test-uid", email: "test@example.com", displayName: "Test User", isEmailVerified: true)

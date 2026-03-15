@@ -42,6 +42,11 @@ public enum OnboardingEndpoints {
     public static func submitConsent(_ request: ConsentRequest) -> Endpoint {
         .post("/api/onboarding/screens/consent", body: request)
     }
+
+    /// Submit notification preferences
+    public static func submitNotificationPermission(_ request: NotificationPermissionRequest) -> Endpoint {
+        .post("/api/onboarding/screens/notification_permission", body: request)
+    }
 }
 
 // MARK: - Request Models
@@ -183,6 +188,23 @@ public struct ConsentRequest: Encodable, Sendable {
 
         let formatter = ISO8601DateFormatter()
         self.consentedAt = formatter.string(from: Date())
+    }
+}
+
+/// Notification permission matching backend NotificationPreferencesRequest
+public struct NotificationPermissionRequest: Encodable, Sendable {
+    public let notificationsEnabled: Bool
+    public let dailyCheckinEnabled: Bool
+    public let dailyCheckinHour: Int
+    public let dailyCheckinMinute: Int
+    public let timezone: String
+
+    public init(notificationsEnabled: Bool, dailyCheckinHour: Int, dailyCheckinMinute: Int) {
+        self.notificationsEnabled = notificationsEnabled
+        self.dailyCheckinEnabled = notificationsEnabled
+        self.dailyCheckinHour = dailyCheckinHour
+        self.dailyCheckinMinute = dailyCheckinMinute
+        self.timezone = TimeZone.current.identifier
     }
 }
 

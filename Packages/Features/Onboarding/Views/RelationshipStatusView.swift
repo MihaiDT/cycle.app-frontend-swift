@@ -1,3 +1,4 @@
+import Inject
 import SwiftUI
 
 // MARK: - Relationship Status
@@ -23,6 +24,7 @@ public enum RelationshipStatus: String, CaseIterable, Equatable, Sendable {
 // MARK: - Relationship Status View
 
 public struct RelationshipStatusView: View {
+    @ObserveInjection var inject
     @Binding public var selectedStatus: RelationshipStatus?
     public let onNext: () -> Void
     public let onBack: (() -> Void)?
@@ -80,6 +82,7 @@ public struct RelationshipStatusView: View {
                 .padding(.horizontal, 24)
             }
         }
+        .enableInjection()
     }
 }
 

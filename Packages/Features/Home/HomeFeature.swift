@@ -1,4 +1,5 @@
 import ComposableArchitecture
+import Inject
 import SwiftUI
 
 // MARK: - Home Feature
@@ -74,6 +75,7 @@ public struct HomeFeature: Sendable {
 
     @Dependency(\.apiClient) var apiClient
     @Dependency(\.sessionClient) var sessionClient
+    @Dependency(\.firebaseAuthClient) var firebaseAuth
 
     public init() {}
 
@@ -114,7 +116,8 @@ public struct HomeFeature: Sendable {
                 return .none
 
             case .logoutTapped:
-                return .run { send in
+                return .run { [firebaseAuth, sessionClient] send in
+                    try? await firebaseAuth.signOut()
                     try? await sessionClient.clearSession()
                     await send(.logoutCompleted)
                 }
@@ -132,6 +135,7 @@ public struct HomeFeature: Sendable {
 // MARK: - Home View
 
 public struct HomeView: View {
+    @ObserveInjection var inject
     @Bindable var store: StoreOf<HomeFeature>
 
     public init(store: StoreOf<HomeFeature>) {
@@ -154,6 +158,7 @@ public struct HomeView: View {
         .task {
             store.send(.onAppear)
         }
+        .enableInjection()
     }
 
     @ViewBuilder
@@ -245,11 +250,11 @@ public struct HomeView: View {
                         Text("Settings")
                     }
                 }
+            }
 
-                Section {
-                    Button("Sign Out", role: .destructive) {
-                        store.send(.logoutTapped)
-                    }
+            Section {
+                Button("Sign Out", role: .destructive) {
+                    store.send(.logoutTapped)
                 }
             }
         }

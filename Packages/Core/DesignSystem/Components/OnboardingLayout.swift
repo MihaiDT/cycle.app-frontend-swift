@@ -55,6 +55,7 @@ public struct OnboardingLayout<Content: View>: View {
                     GlassButton(nextButtonTitle, showArrow: false, action: onNext)
                         .opacity(nextButtonEnabled ? 1 : 0.5)
                         .disabled(!nextButtonEnabled)
+                        .animation(.easeInOut(duration: 0.35), value: nextButtonEnabled)
                         .padding(.bottom, geometry.safeAreaInsets.bottom + AppLayout.bottomOffset)
                 }
             }

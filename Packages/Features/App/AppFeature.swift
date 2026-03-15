@@ -1,4 +1,5 @@
 import ComposableArchitecture
+import Inject
 import SwiftUI
 
 // MARK: - App Feature
@@ -22,12 +23,17 @@ public struct AppFeature: Sendable {
             case lifestyleRhythm
             case cycleData
             case healthPermission
+            case notificationPermission
             case personalGoals
             case recap
+            case authChoice
             case authentication
             case home
         }
 
+        public var notificationCheckinHour: Int = 20
+        public var notificationCheckinMinute: Int = 0
+        public var notificationsEnabled: Bool = false
         public var healthDataConsent: Bool = false
         public var termsConsent: Bool = false
         public var userName: String = ""
@@ -53,6 +59,9 @@ public struct AppFeature: Sendable {
         // Authentication (child feature)
         public var authState: AuthenticationFeature.State = AuthenticationFeature.State()
 
+        // Home (child feature)
+        public var homeState: HomeFeature.State = HomeFeature.State()
+
         // Backend submission
         public var isSubmittingOnboarding: Bool = false
         public var onboardingError: String? = nil
@@ -66,7 +75,9 @@ public struct AppFeature: Sendable {
         case binding(BindingAction<State>)
         case onAppear
         case showOnboarding
+        case showHome
         case onboardingBeginTapped
+        case onboardingLoginTapped
         case splineIntroContinueTapped
         case toggleHealthDataConsent
         case toggleTermsConsent
@@ -79,11 +90,18 @@ public struct AppFeature: Sendable {
         case lifestyleRhythmNextTapped
         case personalGoalsNextTapped
         case recapFinishTapped
+        case authChoiceEmailTapped
+        case authChoiceGoogleTapped
+        case authChoiceAppleTapped
+        case backToAuthChoice
         case cycleDataNextTapped
         case healthPermissionConnectTapped
         case healthPermissionSkipTapped
+        case notificationPermissionEnableTapped(hour: Int, minute: Int)
+        case notificationPermissionSkipTapped
         case backTapped
         case backToHealthPermission
+        case backToNotificationPermission
         case backToPrivacy
         case backToNameInput
         case backToBirthData
@@ -98,10 +116,16 @@ public struct AppFeature: Sendable {
         // Authentication child actions
         case auth(AuthenticationFeature.Action)
 
+        // Home child actions
+        case home(HomeFeature.Action)
+
         // Backend submission
         case submitOnboardingData
         case onboardingSubmitCompleted
         case onboardingSubmitFailed(String)
+
+        // Guest mode
+        case guestContinueTapped
     }
 
     @Dependency(\.continuousClock) var clock
@@ -109,6 +133,8 @@ public struct AppFeature: Sendable {
     @Dependency(\.sessionClient) var sessionClient
     @Dependency(\.apiClient) var apiClient
     @Dependency(\.placesClient) var placesClient
+    @Dependency(\.firebaseAuthClient) var firebaseAuth
+    @Dependency(\.userDefaultsClient) var userDefaults
 
     public init() {}
 
@@ -119,13 +145,35 @@ public struct AppFeature: Sendable {
             AuthenticationFeature()
         }
 
+        Scope(state: \.homeState, action: \.home) {
+            HomeFeature()
+        }
+
         Reduce { state, action in
             switch action {
             case .binding:
                 return .none
 
             case .onAppear:
-                return .run { send in
+                return .run { [sessionClient, firebaseAuth] send in
+                    // Check for existing authenticated session
+                    if let session = try? await sessionClient.getSession(),
+                       session.isValid {
+                        // Refresh Firebase token to ensure it's still valid
+                        if let freshToken = try? await firebaseAuth.getIDToken() {
+                            let refreshedSession = Session(
+                                id: session.id,
+                                accessToken: freshToken,
+                                refreshToken: session.refreshToken,
+                                expiresAt: Date().addingTimeInterval(3600),
+                                user: session.user
+                            )
+                            try? await sessionClient.setSession(refreshedSession)
+                            await send(.showHome)
+                            return
+                        }
+                    }
+                    // No valid session — show onboarding
                     try await clock.sleep(for: .milliseconds(1500))
                     await send(.showOnboarding)
                 }
@@ -134,8 +182,17 @@ public struct AppFeature: Sendable {
                 state.destination = .onboarding
                 return .none
 
+            case .showHome:
+                state.destination = .home
+                return .none
+
             case .onboardingBeginTapped:
                 state.destination = .privacy
+                return .none
+
+            case .onboardingLoginTapped:
+                state.authState.mode = .login
+                state.destination = .authentication
                 return .none
 
             case .splineIntroContinueTapped:
@@ -183,10 +240,21 @@ public struct AppFeature: Sendable {
                 return .none
 
             case .healthPermissionConnectTapped:
-                state.destination = .personalGoals
+                state.destination = .notificationPermission
                 return .none
 
             case .healthPermissionSkipTapped:
+                state.destination = .notificationPermission
+                return .none
+
+            case .notificationPermissionEnableTapped(let hour, let minute):
+                state.notificationsEnabled = true
+                state.notificationCheckinHour = hour
+                state.notificationCheckinMinute = minute
+                state.destination = .personalGoals
+                return .none
+
+            case .notificationPermissionSkipTapped:
                 state.destination = .personalGoals
                 return .none
 
@@ -196,17 +264,48 @@ public struct AppFeature: Sendable {
 
             case .recapFinishTapped:
                 guard !state.isSubmittingOnboarding else { return .none }
+                state.destination = .authChoice
+                return .none
+
+            case .authChoiceEmailTapped:
+                state.authState.mode = .register
                 state.destination = .authentication
+                return .none
+
+            case .authChoiceGoogleTapped:
+                return .send(.auth(.googleSignInTapped))
+                return .none
+
+            case .authChoiceAppleTapped:
+                // TODO: Implement Apple Sign In
+                return .none
+
+            case .backToAuthChoice:
+                state.destination = .authChoice
                 return .none
 
             // MARK: - Authentication Delegate
 
             case .auth(.delegate(.didAuthenticate)):
-                // User authenticated; submit all onboarding data to backend
+                if state.authState.mode == .login {
+                    // Returning user — skip onboarding, go straight to home
+                    state.destination = .home
+                    return .none
+                }
+                // New user (register) — submit all onboarding data to backend
                 return .send(.submitOnboardingData)
 
             case .auth:
                 // All other auth actions handled by scoped AuthenticationFeature
+                return .none
+
+            // MARK: - Home Delegate
+
+            case .home(.delegate(.didLogout)):
+                state.destination = .onboarding
+                return .none
+
+            case .home:
                 return .none
 
             // MARK: - Backend Submission
@@ -235,6 +334,9 @@ public struct AppFeature: Sendable {
                 let contraceptionType = state.contraceptionType
                 let healthDataConsent = state.healthDataConsent
                 let termsConsent = state.termsConsent
+                let notificationsEnabled = state.notificationsEnabled
+                let notificationCheckinHour = state.notificationCheckinHour
+                let notificationCheckinMinute = state.notificationCheckinMinute
                 let apiClient = apiClient
                 let sessionClient = sessionClient
 
@@ -383,6 +485,19 @@ public struct AppFeature: Sendable {
                             )
                         }
 
+                        // 7. Submit notification preferences
+                        let notificationRequest = NotificationPermissionRequest(
+                            notificationsEnabled: notificationsEnabled,
+                            dailyCheckinHour: notificationCheckinHour,
+                            dailyCheckinMinute: notificationCheckinMinute
+                        )
+                        let _: OnboardingSuccessResponse = try await withRetry {
+                            try await apiClient.send(
+                                OnboardingEndpoints.submitNotificationPermission(notificationRequest)
+                                    .authenticated(with: token)
+                            )
+                        }
+
                         await send(.onboardingSubmitCompleted)
                     } catch {
                         await send(.onboardingSubmitFailed(error.localizedDescription))
@@ -432,6 +547,10 @@ public struct AppFeature: Sendable {
                 state.destination = .healthPermission
                 return .none
 
+            case .backToNotificationPermission:
+                state.destination = .notificationPermission
+                return .none
+
             case .backToLifestyleRhythm:
                 state.destination = .lifestyleRhythm
                 return .none
@@ -451,6 +570,55 @@ public struct AppFeature: Sendable {
             case .ageRestrictionTriggered:
                 state.destination = .onboarding
                 return .none
+
+            // MARK: - Guest Mode
+
+            case .guestContinueTapped:
+                state.isSubmittingOnboarding = true
+                let localData = OnboardingLocalData(
+                    userName: state.userName,
+                    birthDate: state.birthDate,
+                    birthTime: state.birthTime,
+                    birthPlace: state.selectedBirthPlace?.name ?? state.birthPlace,
+                    birthPlaceLat: state.selectedBirthPlace?.latitude ?? 0,
+                    birthPlaceLng: state.selectedBirthPlace?.longitude ?? 0,
+                    birthPlaceTimezone: state.selectedBirthPlace?.timezone,
+                    relationshipStatus: state.relationshipStatus?.rawValue,
+                    professionalContext: state.professionalContext?.rawValue,
+                    lifestyleType: state.lifestyleType?.rawValue,
+                    personalGoals: state.personalGoals.map(\.rawValue),
+                    lastPeriodDate: state.lastPeriodDate,
+                    cycleDuration: state.cycleDuration,
+                    periodDuration: state.periodDuration,
+                    cycleRegularity: state.cycleRegularity.rawValue,
+                    flowIntensity: state.flowIntensity,
+                    selectedSymptoms: state.selectedSymptoms.map(\.rawValue),
+                    usesContraception: state.usesContraception,
+                    contraceptionType: state.contraceptionType?.rawValue,
+                    healthDataConsent: state.healthDataConsent,
+                    termsConsent: state.termsConsent
+                )
+                return .run { [firebaseAuth, sessionClient, userDefaults, localData] send in
+                    let authUser = try await firebaseAuth.signInAnonymously()
+                    let token = try await firebaseAuth.getIDToken()
+                    let session = Session(
+                        id: Session.ID(authUser.uid),
+                        accessToken: token,
+                        refreshToken: "",
+                        expiresAt: Date().addingTimeInterval(3600),
+                        user: User(
+                            id: User.ID(authUser.uid),
+                            email: "",
+                            firstName: localData.userName.isEmpty ? nil : localData.userName,
+                            lastName: nil
+                        )
+                    )
+                    try await sessionClient.setSession(session)
+                    userDefaults.setCodable(localData, forKey: UserDefaultsClient.Keys.onboardingLocalData)
+                    await send(.onboardingSubmitCompleted)
+                } catch: { error, send in
+                    await send(.onboardingSubmitFailed(error.localizedDescription))
+                }
             }
         }
     }
@@ -459,6 +627,7 @@ public struct AppFeature: Sendable {
 // MARK: - App View
 
 public struct AppView: View {
+    @ObserveInjection var inject
     @Bindable var store: StoreOf<AppFeature>
 
     public init(store: StoreOf<AppFeature>) {
@@ -471,6 +640,7 @@ public struct AppView: View {
             .task {
                 store.send(.onAppear)
             }
+            .enableInjection()
     }
 
     @ViewBuilder
@@ -480,9 +650,10 @@ public struct AppView: View {
             SplashView()
 
         case .onboarding:
-            OnboardingView {
-                store.send(.onboardingBeginTapped)
-            }
+            OnboardingView(
+                onBegin: { store.send(.onboardingBeginTapped) },
+                onLogin: { store.send(.onboardingLoginTapped) }
+            )
 
         case .splineIntro:
             SplineIntroView {
@@ -593,11 +764,20 @@ public struct AppView: View {
                 onBack: { store.send(.backToCycleData) }
             )
 
+        case .notificationPermission:
+            NotificationPermissionView(
+                onEnable: { hour, minute in
+                    store.send(.notificationPermissionEnableTapped(hour: hour, minute: minute))
+                },
+                onSkip: { store.send(.notificationPermissionSkipTapped) },
+                onBack: { store.send(.backToHealthPermission) }
+            )
+
         case .personalGoals:
             PersonalGoalsView(
                 selectedGoals: $store.personalGoals,
                 onNext: { store.send(.personalGoalsNextTapped) },
-                onBack: { store.send(.backToHealthPermission) }
+                onBack: { store.send(.backToNotificationPermission) }
             )
 
         case .recap:
@@ -614,16 +794,30 @@ public struct AppView: View {
                 onBack: { store.send(.backToPersonalGoals) }
             )
 
+        case .authChoice:
+            AuthChoiceView(
+                onEmailTapped: { store.send(.authChoiceEmailTapped) },
+                onGoogleTapped: { store.send(.authChoiceGoogleTapped) },
+                onAppleTapped: { store.send(.authChoiceAppleTapped) },
+                onGuestTapped: { store.send(.guestContinueTapped) },
+                onBack: { store.send(.backToRecap) }
+            )
+
         case .authentication:
             AuthenticationView(
-                store: store.scope(state: \.authState, action: \.auth)
+                store: store.scope(state: \.authState, action: \.auth),
+                onBack: {
+                    if store.authState.mode == .login {
+                        store.send(.showOnboarding)
+                    } else {
+                        store.send(.backToAuthChoice)
+                    }
+                }
             )
 
         case .home:
             HomeView(
-                store: Store(initialState: HomeFeature.State()) {
-                    HomeFeature()
-                }
+                store: store.scope(state: \.homeState, action: \.home)
             )
         }
     }

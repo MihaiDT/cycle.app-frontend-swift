@@ -1,9 +1,11 @@
 import HealthKit
+import Inject
 import SwiftUI
 
 // MARK: - Health Permission View
 
 public struct HealthPermissionView: View {
+    @ObserveInjection var inject
     public let onConnect: () -> Void
     public let onSkip: () -> Void
     public let onBack: (() -> Void)?
@@ -32,7 +34,7 @@ public struct HealthPermissionView: View {
 
                     OnboardingHeader(
                         currentStep: 8,
-                        totalSteps: 9,
+                        totalSteps: 11,
                         onBack: onBack
                     )
 
@@ -144,6 +146,7 @@ public struct HealthPermissionView: View {
                 animateIn = true
             }
         }
+        .enableInjection()
     }
 
     private func requestHealthPermission() {

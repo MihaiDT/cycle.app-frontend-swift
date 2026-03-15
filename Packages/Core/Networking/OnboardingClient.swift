@@ -12,6 +12,8 @@ public struct OnboardingClient: Sendable {
     public var submitSpiritualInterests: @Sendable (SpiritualInterestsRequest) async throws -> OnboardingSuccessResponse
     public var submitMenstrualSetup: @Sendable (MenstrualSetupRequest) async throws -> OnboardingSuccessResponse
     public var submitConsent: @Sendable (ConsentRequest) async throws -> OnboardingSuccessResponse
+    public var submitNotificationPermission:
+        @Sendable (NotificationPermissionRequest) async throws -> OnboardingSuccessResponse
 
     public init(
         getProgress: @escaping @Sendable () async throws -> OnboardingProgressResponse,
@@ -21,7 +23,9 @@ public struct OnboardingClient: Sendable {
         submitSpiritualInterests:
             @escaping @Sendable (SpiritualInterestsRequest) async throws -> OnboardingSuccessResponse,
         submitMenstrualSetup: @escaping @Sendable (MenstrualSetupRequest) async throws -> OnboardingSuccessResponse,
-        submitConsent: @escaping @Sendable (ConsentRequest) async throws -> OnboardingSuccessResponse
+        submitConsent: @escaping @Sendable (ConsentRequest) async throws -> OnboardingSuccessResponse,
+        submitNotificationPermission:
+            @escaping @Sendable (NotificationPermissionRequest) async throws -> OnboardingSuccessResponse
     ) {
         self.getProgress = getProgress
         self.submitIdentityBasic = submitIdentityBasic
@@ -30,6 +34,7 @@ public struct OnboardingClient: Sendable {
         self.submitSpiritualInterests = submitSpiritualInterests
         self.submitMenstrualSetup = submitMenstrualSetup
         self.submitConsent = submitConsent
+        self.submitNotificationPermission = submitNotificationPermission
     }
 }
 
@@ -75,6 +80,9 @@ extension OnboardingClient {
             },
             submitConsent: { request in
                 try await apiClient.send(OnboardingEndpoints.submitConsent(request))
+            },
+            submitNotificationPermission: { request in
+                try await apiClient.send(OnboardingEndpoints.submitNotificationPermission(request))
             }
         )
     }
@@ -109,6 +117,9 @@ extension OnboardingClient {
             },
             submitConsent: { _ in
                 OnboardingSuccessResponse(success: true, message: "Consent saved")
+            },
+            submitNotificationPermission: { _ in
+                OnboardingSuccessResponse(success: true, message: "Notification preferences saved")
             }
         )
     }

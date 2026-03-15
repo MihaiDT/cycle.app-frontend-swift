@@ -1,8 +1,10 @@
+import Inject
 import SwiftUI
 
 // MARK: - Name Greeting View
 
 public struct NameGreetingView: View {
+    @ObserveInjection var inject
     public let name: String
     public let onContinue: () -> Void
 
@@ -152,6 +154,7 @@ public struct NameGreetingView: View {
                 onContinue()
             }
         }
+        .enableInjection()
     }
 }
 

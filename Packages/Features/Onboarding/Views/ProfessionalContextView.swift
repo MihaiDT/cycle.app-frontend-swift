@@ -1,3 +1,4 @@
+import Inject
 import SwiftUI
 
 // MARK: - Professional Context
@@ -23,6 +24,7 @@ public enum ProfessionalContext: String, CaseIterable, Equatable, Sendable {
 // MARK: - Professional Context View
 
 public struct ProfessionalContextView: View {
+    @ObserveInjection var inject
     @Binding public var selectedContext: ProfessionalContext?
     public let onNext: () -> Void
     public let onBack: (() -> Void)?
@@ -89,6 +91,7 @@ public struct ProfessionalContextView: View {
                 hasAppeared = true
             }
         }
+        .enableInjection()
     }
 }
 

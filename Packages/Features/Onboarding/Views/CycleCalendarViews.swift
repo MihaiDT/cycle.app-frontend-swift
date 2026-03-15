@@ -33,6 +33,7 @@ struct InlinePeriodCalendarPage: View {
     @State private var showTutorialPopup: Bool = true
     @State private var hasSeenTutorial: Bool = false
     @State private var pulseAnimation: Bool = false
+    @State private var displayedMonth: Date = Calendar.current.startOfMonth(for: Date())
 
     // Generate 6 months back + current month
     private var months: [Date] {
@@ -44,6 +45,12 @@ struct InlinePeriodCalendarPage: View {
             }
         }
         return dates
+    }
+
+    private var monthFormatter: DateFormatter {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "MMMM yyyy"
+        return formatter
     }
 
     private var allPeriodDates: Set<Date> {
@@ -93,6 +100,16 @@ struct InlinePeriodCalendarPage: View {
         return days + 1
     }
 
+    private var averagePeriodDuration: Int {
+        var allDurations: [Int] = periods.map { $0.duration }
+        if currentDuration > 0 {
+            allDurations.append(currentDuration)
+        }
+        guard !allDurations.isEmpty else { return 5 }
+        let avg = allDurations.reduce(0, +) / allDurations.count
+        return min(max(avg, 2), 10)
+    }
+
     private func confirmCurrentPeriod() {
         guard let start = currentStart, let end = currentEnd else { return }
 
@@ -103,6 +120,9 @@ struct InlinePeriodCalendarPage: View {
             tutorialStep = .selectStart
             showTutorialPopup = false  // Don't show tutorial again
         }
+
+        // Update period duration with average of all periods
+        periodDuration = averagePeriodDuration
 
         let generator = UINotificationFeedbackGenerator()
         generator.notificationOccurred(.success)
@@ -156,7 +176,7 @@ struct InlinePeriodCalendarPage: View {
                     }
                     // Auto-save to bindings
                     selectedDate = currentStart ?? tappedDate
-                    periodDuration = min(max(currentDuration, 2), 10)
+                    periodDuration = averagePeriodDuration
                 }
 
             case .complete:
@@ -259,34 +279,70 @@ struct InlinePeriodCalendarPage: View {
 
                 Spacer().frame(height: 16)
 
-                // Scrollable calendar container
-                ScrollViewReader { proxy in
-                    ScrollView(showsIndicators: false) {
-                        LazyVStack(spacing: 32) {
-                            ForEach(months, id: \.self) { month in
-                                InlineMonthView(
-                                    month: month,
-                                    periodStart: currentStart,
-                                    periodEnd: currentEnd,
-                                    allPeriodDates: allPeriodDates,
-                                    currentSelectionDates: currentSelectionDates,
-                                    savedPeriods: periods,
-                                    onDayTap: handleDayTap
+                // Swipeable calendar (left/right)
+                VStack(spacing: 0) {
+                    // Month navigation header
+                    HStack {
+                        Button {
+                            withAnimation(.easeInOut(duration: 0.3)) {
+                                displayedMonth =
+                                    calendar.date(byAdding: .month, value: -1, to: displayedMonth) ?? displayedMonth
+                            }
+                        } label: {
+                            Image(systemName: "chevron.left")
+                                .font(.system(size: 16, weight: .semibold))
+                                .foregroundColor(DesignColors.accentWarm)
+                                .frame(width: 44, height: 44)
+                        }
+
+                        Spacer()
+
+                        Text(monthFormatter.string(from: displayedMonth))
+                            .font(.custom("Raleway-SemiBold", size: 18))
+                            .foregroundColor(DesignColors.text)
+
+                        Spacer()
+
+                        Button {
+                            let nextMonth =
+                                calendar.date(byAdding: .month, value: 1, to: displayedMonth) ?? displayedMonth
+                            if nextMonth <= calendar.startOfMonth(for: Date()) {
+                                withAnimation(.easeInOut(duration: 0.3)) {
+                                    displayedMonth = nextMonth
+                                }
+                            }
+                        } label: {
+                            Image(systemName: "chevron.right")
+                                .font(.system(size: 16, weight: .semibold))
+                                .foregroundColor(
+                                    displayedMonth >= calendar.startOfMonth(for: Date())
+                                        ? DesignColors.text.opacity(0.2)
+                                        : DesignColors.accentWarm
                                 )
-                                .id(month)
-                            }
+                                .frame(width: 44, height: 44)
                         }
-                        .padding(.horizontal, 24)
-                        .padding(.bottom, 120)
+                        .disabled(displayedMonth >= calendar.startOfMonth(for: Date()))
                     }
-                    .onAppear {
-                        let currentMonth = calendar.startOfMonth(for: Date())
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                            withAnimation {
-                                proxy.scrollTo(currentMonth, anchor: .center)
-                            }
+                    .padding(.horizontal, 24)
+
+                    // Swipeable month content
+                    TabView(selection: $displayedMonth) {
+                        ForEach(months, id: \.self) { month in
+                            InlineMonthView(
+                                month: month,
+                                periodStart: currentStart,
+                                periodEnd: currentEnd,
+                                allPeriodDates: allPeriodDates,
+                                currentSelectionDates: currentSelectionDates,
+                                savedPeriods: periods,
+                                onDayTap: handleDayTap
+                            )
+                            .padding(.horizontal, 24)
+                            .tag(month)
                         }
                     }
+                    .tabViewStyle(.page(indexDisplayMode: .never))
+                    .frame(height: 340)
                 }
             }
 
@@ -315,13 +371,15 @@ struct InlinePeriodCalendarPage: View {
 
                             Rectangle()
                                 .fill(
-                                    tutorialStep == .selectEnd ? DesignColors.accentWarm : DesignColors.accentSecondary.opacity(0.6)
+                                    tutorialStep == .selectEnd
+                                        ? DesignColors.accentWarm : DesignColors.accentSecondary.opacity(0.6)
                                 )
                                 .frame(width: 20, height: 2)
 
                             Circle()
                                 .fill(
-                                    tutorialStep == .selectEnd ? DesignColors.accentWarm : DesignColors.accentSecondary.opacity(0.6)
+                                    tutorialStep == .selectEnd
+                                        ? DesignColors.accentWarm : DesignColors.accentSecondary.opacity(0.6)
                                 )
                                 .frame(width: 8, height: 8)
                         }
@@ -494,6 +552,11 @@ private struct InlineMonthView: View {
             }
         }
 
+        // Pad to 42 cells (6 rows) for consistent height
+        while days.count < 42 {
+            days.append(nil)
+        }
+
         return days
     }
 
@@ -541,15 +604,9 @@ private struct InlineMonthView: View {
 
     var body: some View {
         VStack(spacing: 12) {
-            // Month header
-            Text(monthName)
-                .font(.custom("Raleway-SemiBold", size: 18))
-                .foregroundColor(DesignColors.text)
-                .frame(maxWidth: .infinity, alignment: .leading)
-
             // Weekday headers
             LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 7), spacing: 4) {
-                ForEach(weekdays, id: \.self) { day in
+                ForEach(Array(weekdays.enumerated()), id: \.offset) { _, day in
                     Text(day)
                         .font(.custom("Raleway-Medium", size: 12))
                         .foregroundColor(DesignColors.text.opacity(0.5))
@@ -654,7 +711,6 @@ private struct InlineDayCell: View {
         }
     }
 }
-
 
 // MARK: - Inline Period Calendar
 
@@ -1254,13 +1310,15 @@ struct PeriodCalendarSheet: View {
 
                             Rectangle()
                                 .fill(
-                                    tutorialStep == .selectEnd ? DesignColors.accentWarm : DesignColors.accentSecondary.opacity(0.6)
+                                    tutorialStep == .selectEnd
+                                        ? DesignColors.accentWarm : DesignColors.accentSecondary.opacity(0.6)
                                 )
                                 .frame(width: 20, height: 2)
 
                             Circle()
                                 .fill(
-                                    tutorialStep == .selectEnd ? DesignColors.accentWarm : DesignColors.accentSecondary.opacity(0.6)
+                                    tutorialStep == .selectEnd
+                                        ? DesignColors.accentWarm : DesignColors.accentSecondary.opacity(0.6)
                                 )
                                 .frame(width: 8, height: 8)
                         }
@@ -1501,7 +1559,7 @@ private struct MonthView: View {
 
             // Weekday headers
             HStack(spacing: 0) {
-                ForEach(weekdays, id: \.self) { day in
+                ForEach(Array(weekdays.enumerated()), id: \.offset) { _, day in
                     Text(day)
                         .font(.custom("Raleway-Medium", size: 13))
                         .foregroundColor(DesignColors.text.opacity(0.5))
