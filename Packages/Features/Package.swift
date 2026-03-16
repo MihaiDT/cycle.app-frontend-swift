@@ -52,6 +52,7 @@ let package = Package(
                 .product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
                 .product(name: "Inject", package: "Inject"),
                 .product(name: "Core", package: "Core"),
+                .product(name: "DesignSystem", package: "Core"),
             ],
             path: "Home"
         ),

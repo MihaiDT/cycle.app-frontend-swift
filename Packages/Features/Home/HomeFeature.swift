@@ -12,36 +12,35 @@ public struct HomeFeature: Sendable {
         public var isLoading: Bool
         public var selectedTab: Tab
 
+        // Child features
+        public var todayState: TodayFeature.State = TodayFeature.State()
+
         public enum Tab: Int, Equatable, Sendable, CaseIterable {
-            case home = 0
-            case search = 1
-            case notifications = 2
-            case profile = 3
+            case today = 0
+            case chat = 1
+            case me = 2
 
             var title: String {
                 switch self {
-                case .home: "Home"
-                case .search: "Search"
-                case .notifications: "Notifications"
-                case .profile: "Profile"
+                case .today: "Today"
+                case .chat: "Aria"
+                case .me: "Me"
                 }
             }
 
             var icon: String {
                 switch self {
-                case .home: "house"
-                case .search: "magnifyingglass"
-                case .notifications: "bell"
-                case .profile: "person"
+                case .today: "sun.horizon"
+                case .chat: "bubble.left.and.text.bubble.right"
+                case .me: "person"
                 }
             }
 
             var selectedIcon: String {
                 switch self {
-                case .home: "house.fill"
-                case .search: "magnifyingglass"
-                case .notifications: "bell.fill"
-                case .profile: "person.fill"
+                case .today: "sun.horizon.fill"
+                case .chat: "bubble.left.and.text.bubble.right.fill"
+                case .me: "person.fill"
                 }
             }
         }
@@ -49,7 +48,7 @@ public struct HomeFeature: Sendable {
         public init(
             user: User? = nil,
             isLoading: Bool = false,
-            selectedTab: Tab = .home
+            selectedTab: Tab = .today
         ) {
             self.user = user
             self.isLoading = isLoading
@@ -59,12 +58,14 @@ public struct HomeFeature: Sendable {
 
     public enum Action: BindableAction, Sendable {
         case binding(BindingAction<State>)
-
         case onAppear
         case loadUser
         case userLoaded(Result<User, Error>)
         case logoutTapped
         case logoutCompleted
+
+        // Child features
+        case today(TodayFeature.Action)
 
         case delegate(Delegate)
 
@@ -82,6 +83,10 @@ public struct HomeFeature: Sendable {
     public var body: some ReducerOf<Self> {
         BindingReducer()
 
+        Scope(state: \.todayState, action: \.today) {
+            TodayFeature()
+        }
+
         Reduce { state, action in
             switch action {
             case .binding:
@@ -92,13 +97,11 @@ public struct HomeFeature: Sendable {
 
             case .loadUser:
                 state.isLoading = true
-
                 return .run { send in
                     guard let token = await sessionClient.getAccessToken() else {
                         await send(.delegate(.didLogout))
                         return
                     }
-
                     let endpoint = UserEndpoints.me().authenticated(with: token)
                     let result = await Result {
                         try await apiClient.send(endpoint) as User
@@ -109,11 +112,11 @@ public struct HomeFeature: Sendable {
             case .userLoaded(.success(let user)):
                 state.isLoading = false
                 state.user = user
-                return .none
+                return .send(.today(.loadDashboard))
 
             case .userLoaded(.failure):
                 state.isLoading = false
-                return .none
+                return .send(.today(.loadDashboard))
 
             case .logoutTapped:
                 return .run { [firebaseAuth, sessionClient] send in
@@ -125,7 +128,7 @@ public struct HomeFeature: Sendable {
             case .logoutCompleted:
                 return .send(.delegate(.didLogout))
 
-            case .delegate:
+            case .today, .delegate:
                 return .none
             }
         }
@@ -143,17 +146,52 @@ public struct HomeView: View {
     }
 
     public var body: some View {
-        TabView(selection: $store.selectedTab) {
-            ForEach(HomeFeature.State.Tab.allCases, id: \.self) { tab in
-                tabContent(for: tab)
+        ZStack {
+            GradientBackground()
+                .ignoresSafeArea()
+
+            TabView(selection: $store.selectedTab) {
+                // Today Tab
+                TodayView(
+                    store: store.scope(state: \.todayState, action: \.today)
+                )
+                .tabItem {
+                    Label(
+                        HomeFeature.State.Tab.today.title,
+                        systemImage: store.selectedTab == .today
+                            ? HomeFeature.State.Tab.today.selectedIcon
+                            : HomeFeature.State.Tab.today.icon
+                    )
+                }
+                .tag(HomeFeature.State.Tab.today)
+
+                // Chat Tab (Aria)
+                chatTabView
                     .tabItem {
                         Label(
-                            tab.title,
-                            systemImage: store.selectedTab == tab ? tab.selectedIcon : tab.icon
+                            HomeFeature.State.Tab.chat.title,
+                            systemImage: store.selectedTab == .chat
+                                ? HomeFeature.State.Tab.chat.selectedIcon
+                                : HomeFeature.State.Tab.chat.icon
                         )
                     }
-                    .tag(tab)
+                    .tag(HomeFeature.State.Tab.chat)
+
+                // Me Tab
+                NavigationStack {
+                    profileTabView
+                }
+                .tabItem {
+                    Label(
+                        HomeFeature.State.Tab.me.title,
+                        systemImage: store.selectedTab == .me
+                            ? HomeFeature.State.Tab.me.selectedIcon
+                            : HomeFeature.State.Tab.me.icon
+                    )
+                }
+                .tag(HomeFeature.State.Tab.me)
             }
+            .tint(DesignColors.accentWarm)
         }
         .task {
             store.send(.onAppear)
@@ -161,104 +199,124 @@ public struct HomeView: View {
         .enableInjection()
     }
 
-    @ViewBuilder
-    private func tabContent(for tab: HomeFeature.State.Tab) -> some View {
-        NavigationStack {
-            switch tab {
-            case .home:
-                homeTabView
-            case .search:
-                searchTabView
-            case .notifications:
-                notificationsTabView
-            case .profile:
-                profileTabView
+    // MARK: - Chat Tab (Placeholder)
+
+    private var chatTabView: some View {
+        VStack(spacing: AppLayout.spacingL) {
+            Spacer()
+
+            Image(systemName: "bubble.left.and.text.bubble.right")
+                .font(.system(size: 48, weight: .light))
+                .foregroundColor(DesignColors.accentWarm.opacity(0.6))
+
+            VStack(spacing: 8) {
+                Text("Aria")
+                    .font(.custom("Raleway-Bold", size: 28))
+                    .foregroundStyle(
+                        LinearGradient(
+                            colors: [DesignColors.text, DesignColors.accentWarm],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
+                    )
+
+                Text("Your AI wellness companion")
+                    .font(.custom("Raleway-Regular", size: 15))
+                    .foregroundColor(DesignColors.textSecondary)
+
+                Text("Coming Soon")
+                    .font(.custom("Raleway-Medium", size: 13))
+                    .foregroundColor(DesignColors.textPlaceholder)
+                    .padding(.top, 4)
             }
+
+            Spacer()
         }
     }
 
-    private var homeTabView: some View {
-        ScrollView {
-            LazyVStack(spacing: 16) {
-                if let user = store.user {
-                    Text("Welcom]e, \(user.fullName ?? user.email)!")
-                        .font(.title2.bold())
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(.horizontal)
-                }
-
-                // Placeholder content
-                ForEach(0..<10) { index in
-                    RoundedRectangle(cornerRadius: 12)
-                        .fill(Color.secondary.opacity(0.1))
-                        .frame(height: 120)
-                        .overlay {
-                            Text("Content \(index + 1)")
-                                .foregroundStyle(.secondary)
-                        }
-                        .padding(.horizontal)
-                }
-            }
-            .padding(.vertical)
-        }
-        .navigationTitle("Home")
-    }
-
-    private var searchTabView: some View {
-        Text("Search")
-            .navigationTitle("Search")
-    }
-
-    private var notificationsTabView: some View {
-        Text("Notifications")
-            .navigationTitle("Notifications")
-    }
+    // MARK: - Profile Tab
 
     private var profileTabView: some View {
-        List {
-            if let user = store.user {
-                Section {
-                    HStack(spacing: 16) {
+        ScrollView {
+            VStack(spacing: AppLayout.spacingL) {
+                // User info card
+                if let user = store.user {
+                    VStack(spacing: AppLayout.spacingM) {
+                        // Avatar
                         Circle()
-                            .fill(Color.accentColor)
-                            .frame(width: 60, height: 60)
+                            .fill(DesignColors.accent.opacity(0.4))
+                            .frame(width: 80, height: 80)
                             .overlay {
                                 Text(user.initials)
-                                    .font(.title2.bold())
-                                    .foregroundStyle(.white)
+                                    .font(.custom("Raleway-Bold", size: 28))
+                                    .foregroundColor(DesignColors.text)
                             }
 
-                        VStack(alignment: .leading, spacing: 4) {
+                        VStack(spacing: 4) {
                             if let fullName = user.fullName {
                                 Text(fullName)
-                                    .font(.headline)
+                                    .font(.custom("Raleway-SemiBold", size: 20))
+                                    .foregroundColor(DesignColors.text)
                             }
+
                             Text(user.email)
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
+                                .font(.custom("Raleway-Regular", size: 14))
+                                .foregroundColor(DesignColors.textSecondary)
                         }
                     }
-                    .padding(.vertical, 8)
-                }
-
-                Section("Account") {
-                    NavigationLink("Edit Profile") {
-                        Text("Edit Profile")
+                    .padding(.vertical, AppLayout.spacingL)
+                    .frame(maxWidth: .infinity)
+                    .background {
+                        RoundedRectangle(cornerRadius: AppLayout.cornerRadiusL)
+                            .fill(.ultraThinMaterial)
+                            .overlay {
+                                RoundedRectangle(cornerRadius: AppLayout.cornerRadiusL)
+                                    .strokeBorder(
+                                        LinearGradient(
+                                            colors: [Color.white.opacity(0.5), Color.white.opacity(0.1)],
+                                            startPoint: .topLeading,
+                                            endPoint: .bottomTrailing
+                                        ),
+                                        lineWidth: 0.5
+                                    )
+                            }
+                            .shadow(color: .black.opacity(0.06), radius: 8, x: 0, y: 2)
                     }
+                }
 
-                    NavigationLink("Settings") {
-                        Text("Settings")
+                // Sign Out
+                Button(action: { store.send(.logoutTapped) }) {
+                    HStack {
+                        Image(systemName: "rectangle.portrait.and.arrow.right")
+                            .font(.system(size: 16))
+                        Text("Sign Out")
+                            .font(.custom("Raleway-Medium", size: 15))
+                    }
+                    .foregroundColor(DesignColors.textSecondary)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 14)
+                    .background {
+                        RoundedRectangle(cornerRadius: AppLayout.cornerRadiusM)
+                            .fill(.ultraThinMaterial)
+                            .overlay {
+                                RoundedRectangle(cornerRadius: AppLayout.cornerRadiusM)
+                                    .strokeBorder(
+                                        LinearGradient(
+                                            colors: [Color.white.opacity(0.3), Color.white.opacity(0.05)],
+                                            startPoint: .topLeading,
+                                            endPoint: .bottomTrailing
+                                        ),
+                                        lineWidth: 0.5
+                                    )
+                            }
                     }
                 }
+                .buttonStyle(.plain)
             }
-
-            Section {
-                Button("Sign Out", role: .destructive) {
-                    store.send(.logoutTapped)
-                }
-            }
+            .padding(.horizontal, AppLayout.horizontalPadding)
+            .padding(.top, AppLayout.spacingL)
         }
-        .navigationTitle("Profile")
+        .navigationTitle("Me")
     }
 }
 
