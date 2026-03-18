@@ -30,12 +30,31 @@ extension APIClient {
         }
 
         guard (200...299).contains(httpResponse.statusCode) else {
+            let body = String(data: data, encoding: .utf8) ?? "no body"
+            print("⚠️ API \(httpResponse.statusCode): \(endpoint.path) → \(body)")
             throw APIError.httpError(statusCode: httpResponse.statusCode, data: data)
         }
 
         do {
             let decoder = JSONDecoder()
-            decoder.dateDecodingStrategy = .iso8601
+            decoder.dateDecodingStrategy = .custom { decoder in
+                let container = try decoder.singleValueContainer()
+                let str = try container.decode(String.self)
+                // Try ISO 8601 with fractional seconds first (Go default)
+                let fmtFrac = ISO8601DateFormatter()
+                fmtFrac.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+                if let date = fmtFrac.date(from: str) { return date }
+                // Fallback: ISO 8601 without fractional seconds
+                let fmtBasic = ISO8601DateFormatter()
+                fmtBasic.formatOptions = [.withInternetDateTime]
+                if let date = fmtBasic.date(from: str) { return date }
+                // Fallback: date-only "2026-03-11"
+                let dfDate = DateFormatter()
+                dfDate.dateFormat = "yyyy-MM-dd"
+                dfDate.locale = Locale(identifier: "en_US_POSIX")
+                if let date = dfDate.date(from: str) { return date }
+                throw DecodingError.dataCorruptedError(in: container, debugDescription: "Cannot decode date: \(str)")
+            }
             decoder.keyDecodingStrategy = .convertFromSnakeCase
             return try decoder.decode(T.self, from: data)
         } catch {

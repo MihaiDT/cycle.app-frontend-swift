@@ -13,10 +13,12 @@ public struct CelestialCycleView: View {
     public let nextPeriodIn: Int?
     public let fertileWindowActive: Bool
     public var collapseProgress: CGFloat
+    @Binding public var exploringDay: Int?
+    public var onLogPeriod: (() -> Void)?
 
-    @State private var exploringDay: Int?
     @State private var isDragging = false
     @State private var lastHapticPhase: CyclePhase?
+    @State private var lastDragAngle: Double?
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -26,7 +28,8 @@ public struct CelestialCycleView: View {
         phase: String,
         nextPeriodIn: Int?,
         fertileWindowActive: Bool,
-        collapseProgress: CGFloat = 0
+        collapseProgress: CGFloat = 0,
+        exploringDay: Binding<Int?>
     ) {
         self.cycleDay = cycleDay
         self.cycleLength = cycleLength
@@ -34,6 +37,28 @@ public struct CelestialCycleView: View {
         self.nextPeriodIn = nextPeriodIn
         self.fertileWindowActive = fertileWindowActive
         self.collapseProgress = collapseProgress
+        self._exploringDay = exploringDay
+        self.onLogPeriod = nil
+    }
+
+    public init(
+        cycleDay: Int,
+        cycleLength: Int,
+        phase: String,
+        nextPeriodIn: Int?,
+        fertileWindowActive: Bool,
+        collapseProgress: CGFloat = 0,
+        exploringDay: Binding<Int?>,
+        onLogPeriod: @escaping () -> Void
+    ) {
+        self.cycleDay = cycleDay
+        self.cycleLength = cycleLength
+        self.phase = phase
+        self.nextPeriodIn = nextPeriodIn
+        self.fertileWindowActive = fertileWindowActive
+        self.collapseProgress = collapseProgress
+        self._exploringDay = exploringDay
+        self.onLogPeriod = onLogPeriod
     }
 
     private var currentPhase: CyclePhase {
@@ -47,9 +72,6 @@ public struct CelestialCycleView: View {
     private var displayPhase: CyclePhase {
         phaseForDay(displayDay)
     }
-
-    /// Whether the circle is mostly collapsed into bar form
-    private var isCollapsed: Bool { collapseProgress > 0.85 }
 
     public var body: some View {
         mainContent
@@ -71,23 +93,36 @@ public struct CelestialCycleView: View {
                     break
                 }
             }
+            .onChange(of: collapseProgress) { _, newValue in
+                if newValue > 0.1 && exploringDay != nil {
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                        exploringDay = nil
+                        isDragging = false
+                    }
+                }
+            }
     }
 
     // MARK: - Main Content
 
+    private var hideProgress: Double {
+        min(1, max(0, collapseProgress * 2.5))
+    }
+
+    // Day number stays visible longer
+    private var numberHideProgress: Double {
+        min(1, max(0, (collapseProgress - 0.6) / 0.3))
+    }
+
     @ViewBuilder
     private var mainContent: some View {
-        let circleHeight: CGFloat = CGFloat(270 * (1 - collapseProgress) + 44 * collapseProgress)
-        let contentOpacity = Double(max(0, 1 - collapseProgress * 2.5))
-
         VStack(spacing: 0) {
             ZStack {
-                // Ambient glow — fades out
                 ambientGlow
-                    .opacity(contentOpacity)
+                    .opacity(1 - hideProgress)
                     .animation(.easeInOut(duration: 0.6), value: displayPhase)
+                    .allowsHitTesting(false)
 
-                // The morphing canvas (circle → bar)
                 CelestialOrbitCanvas(
                     cycleDay: cycleDay,
                     cycleLength: cycleLength,
@@ -97,43 +132,62 @@ public struct CelestialCycleView: View {
                     reduceMotion: reduceMotion,
                     collapseProgress: collapseProgress
                 )
+                .frame(width: 340, height: 340)
+                .allowsHitTesting(false)
                 .overlay {
-                    if !reduceMotion && collapseProgress < 0.4 {
+                    if !reduceMotion {
                         CosmicParticleEmitter(
                             cycleDay: cycleDay,
                             cycleLength: cycleLength,
                             exploringDay: exploringDay
                         )
-                        .frame(width: 260, height: 260)
-                        .opacity(contentOpacity)
+                        .frame(width: 340, height: 340)
                         .allowsHitTesting(false)
+                        .opacity(1 - hideProgress)
                     }
                 }
 
-                // Center content — fades out
-                if collapseProgress < 0.5 {
+                VStack(spacing: 12) {
                     centerContent
-                        .opacity(contentOpacity)
                         .animation(.spring(response: 0.3, dampingFraction: 0.8), value: displayDay)
+
+                    if let onLogPeriod, collapseProgress < 0.1 {
+                        Button {
+                            onLogPeriod()
+                        } label: {
+                            HStack(spacing: 6) {
+                                Image(systemName: "drop.fill")
+                                    .font(.system(size: 11, weight: .semibold))
+                                Text("Log Period")
+                                    .font(.custom("Raleway-SemiBold", size: 13))
+                            }
+                            .foregroundColor(CyclePhase.menstrual.orbitColor)
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 8)
+                            .background {
+                                Capsule()
+                                    .fill(.ultraThinMaterial)
+                                    .overlay {
+                                        Capsule().strokeBorder(CyclePhase.menstrual.orbitColor.opacity(0.3), lineWidth: 0.5)
+                                    }
+                            }
+                        }
+                        .buttonStyle(.plain)
+                        .transition(.opacity.combined(with: .scale(scale: 0.8)))
+                    }
                 }
 
-                // Gesture overlay — only when circle is visible
-                if collapseProgress < 0.3 {
-                    gestureOverlay
-                }
+                gestureOverlay
+                    .allowsHitTesting(collapseProgress < 0.1)
             }
-            .frame(height: circleHeight)
-            .clipped()
 
-            if collapseProgress < 0.3 {
-                contextPills
-                    .padding(.top, 16)
-                    .animation(.spring(response: 0.35, dampingFraction: 0.85), value: displayDay)
-                    .opacity(Double(max(0, 1 - collapseProgress * 4)))
-            }
+            contextPills
+                .opacity(1 - hideProgress)
+                .padding(.top, 16)
+                .animation(.spring(response: 0.35, dampingFraction: 0.85), value: displayDay)
         }
-        .padding(.vertical, CGFloat(20 * max(0, 1 - collapseProgress * 2)))
-        .padding(.horizontal, 16)
+        .padding(.vertical, 8)
+        .padding(.horizontal, 8)
         .animation(.easeInOut(duration: 0.4), value: displayPhase)
     }
 
@@ -165,7 +219,7 @@ public struct CelestialCycleView: View {
                     endRadius: 160
                 )
             )
-            .frame(width: 300, height: 300)
+            .frame(width: 380, height: 380)
             .blur(radius: 20)
     }
 
@@ -177,7 +231,9 @@ public struct CelestialCycleView: View {
             let radius = min(geo.size.width, geo.size.height) / 2 - 20
 
             Color.clear
-                .contentShape(Circle())
+                // Ring content shape: only the orbit zone captures touches.
+                // Center area passes through to the ScrollView for scrolling.
+                .contentShape(Circle().subtracting(Circle().inset(by: 80)))
                 .gesture(
                     DragGesture(minimumDistance: 0)
                         .onChanged { value in
@@ -185,27 +241,68 @@ public struct CelestialCycleView: View {
                             let dy = value.location.y - center.y
                             let distFromCenter = sqrt(dx * dx + dy * dy)
 
-                            guard abs(distFromCenter - radius) < 35 else {
+                            // Only respond to touches near the orbit, not center
+                            guard distFromCenter > radius * 0.6 && distFromCenter < radius * 1.45 else {
                                 if isDragging {
                                     withAnimation(.spring(response: 0.4, dampingFraction: 0.75)) {
                                         isDragging = false
+                                        lastDragAngle = nil
                                     }
                                 }
                                 return
                             }
 
                             let angle = atan2(dy, dx)
-                            let day = dayForAngle(angle)
 
                             if !isDragging {
+                                // First touch — snap to nearest day
                                 isDragging = true
+                                lastDragAngle = angle
+                                let day = dayForAngle(angle)
+                                exploringDay = day
                                 lastHapticPhase = phaseForDay(day)
                                 triggerHaptic(.light)
+                                return
                             }
 
-                            if day != exploringDay {
-                                exploringDay = day
-                                let newPhase = phaseForDay(day)
+                            // Incremental tracking: compute angular delta from last position
+                            guard let prevAngle = lastDragAngle else {
+                                lastDragAngle = angle
+                                return
+                            }
+
+                            // Calculate shortest angular difference (handles wrap-around)
+                            var delta = angle - prevAngle
+                            if delta > .pi { delta -= 2 * .pi }
+                            if delta < -.pi { delta += 2 * .pi }
+
+                            // Convert angular delta to fractional days
+                            let dayAngle = (2 * .pi) / Double(max(cycleLength, 1))
+                            let dayDelta = delta / dayAngle
+
+                            // Only advance when accumulated movement crosses a day boundary
+                            let currentDay = exploringDay ?? cycleDay
+                            let daysMoved = Int(dayDelta.rounded())
+
+                            if daysMoved != 0 {
+                                // Only allow moving one day at a time for smoothness
+                                let clampedMove = daysMoved > 0 ? 1 : -1
+                                let newDay = currentDay + clampedMove
+
+                                // Clamp to valid range — no wrapping
+                                guard newDay >= 1 && newDay <= cycleLength else {
+                                    lastDragAngle = angle
+                                    return
+                                }
+
+                                exploringDay = newDay
+                                // Reset lastDragAngle to current position minus the leftover
+                                lastDragAngle = prevAngle + Double(clampedMove) * dayAngle
+
+                                // Haptic tick on every day change
+                                triggerHaptic(.light)
+
+                                let newPhase = phaseForDay(newDay)
                                 if newPhase != lastHapticPhase {
                                     lastHapticPhase = newPhase
                                     triggerHaptic(.medium)
@@ -213,6 +310,7 @@ public struct CelestialCycleView: View {
                             }
                         }
                         .onEnded { _ in
+                            lastDragAngle = nil
                             withAnimation(.spring(response: 0.4, dampingFraction: 0.75)) {
                                 isDragging = false
                                 if exploringDay == cycleDay {
@@ -224,7 +322,7 @@ public struct CelestialCycleView: View {
                 )
 
         }
-        .frame(width: 260, height: 260)
+        .frame(width: 340, height: 340)
     }
 
     private func dismissSelection() {
@@ -290,16 +388,26 @@ public struct CelestialCycleView: View {
 
     // MARK: - Center Content
 
+    @ViewBuilder
     private var centerContent: some View {
-        VStack(spacing: 4) {
+        let collapse = hideProgress
+        // Compensate for parent scaleEffect shrinking the view
+        let counterScale: CGFloat = 1.0 + collapse * 1.2
+
+        VStack(spacing: 2) {
+            // Phase description — hidden when collapsing
             Text(displayPhase.description)
                 .font(.custom("Raleway-Regular", size: 11))
                 .foregroundColor(DesignColors.textSecondary)
                 .contentTransition(.numericText())
+                .opacity(1 - collapse)
+                .frame(height: (1 - collapse) * 16, alignment: .center)
+                .clipped()
 
-            HStack(alignment: .firstTextBaseline, spacing: 4) {
+            // Day + Number block
+            VStack(spacing: 0) {
                 Text("Day")
-                    .font(.custom("Raleway-Medium", size: 16))
+                    .font(.custom("Raleway-Medium", size: 14))
                     .foregroundColor(DesignColors.textSecondary)
 
                 Text("\(displayDay)")
@@ -323,11 +431,16 @@ public struct CelestialCycleView: View {
                     .contentTransition(.numericText(countsDown: displayDay < cycleDay))
                     .scaleEffect(isDragging ? 1.08 : 1.0)
             }
+            .scaleEffect(counterScale)
 
+            // Phase name — hidden when collapsing
             Text(displayPhase.displayName)
                 .font(.custom("Raleway-SemiBold", size: 13))
                 .foregroundColor(displayPhase.orbitColor.opacity(0.8))
                 .contentTransition(.numericText())
+                .opacity(1 - collapse)
+                .frame(height: (1 - collapse) * 18, alignment: .center)
+                .clipped()
         }
         .animation(.spring(response: 0.3, dampingFraction: 0.8), value: isDragging)
     }
@@ -425,9 +538,7 @@ public struct CelestialCycleView: View {
 
 // MARK: - Celestial Orbit Canvas
 
-/// Canvas that draws the cycle orbit and smoothly morphs between
-/// a circular ring (collapseProgress=0) and a horizontal bar (collapseProgress=1).
-/// Every point on the circle interpolates to a corresponding point on the bar.
+/// Canvas that draws the cycle orbit with phase arcs, glass effects, and orb marker.
 private struct CelestialOrbitCanvas: View {
     let cycleDay: Int
     let cycleLength: Int
@@ -446,19 +557,22 @@ private struct CelestialOrbitCanvas: View {
     }
 
     var body: some View {
-        TimelineView(.animation(minimumInterval: reduceMotion ? 1.0 : 1.0 / 30.0)) { timeline in
-            let time = reduceMotion ? 0.0 : timeline.date.timeIntervalSinceReferenceDate
-            let currentFill = fillAngle
-            let morph = Double(collapseProgress)
+        let currentFill = fillAngle
+        let collapse = collapseProgress
 
-            Canvas { context, size in
-                let center = CGPoint(x: size.width / 2, y: size.height / 2)
-                let circleRadius: Double = 110 // fixed radius for the circle form
+        Canvas { context, size in
+            let center = CGPoint(x: size.width / 2, y: size.height / 2)
+            let radius: Double = min(size.width, size.height) / 2 - 20
 
-                drawFilledTrack(context: &context, center: center, radius: circleRadius, fillAngle: currentFill, size: size, morph: morph)
-                drawPhaseArcs(context: &context, center: center, radius: circleRadius, fillAngle: currentFill, size: size, morph: morph)
-                drawOrbMarker(context: &context, center: center, radius: circleRadius, time: time, orbAngle: currentFill, size: size, morph: morph)
+            // Base track only visible when collapsing
+            if collapse > 0.05 {
+                context.opacity = Double(min(1, collapse * 3))
+                drawBaseTrack(context: &context, center: center, radius: radius)
+                context.opacity = 1
             }
+            drawFilledTrack(context: &context, center: center, radius: radius, fillAngle: currentFill)
+            drawPhaseArcs(context: &context, center: center, radius: radius, fillAngle: currentFill)
+            drawOrbMarker(context: &context, center: center, radius: radius, orbAngle: currentFill)
         }
         .task(id: displayDay) {
             let target = targetAngle
@@ -482,227 +596,145 @@ private struct CelestialOrbitCanvas: View {
         }
     }
 
-    // MARK: - Morphing Helpers
+    // MARK: - Base Track (full circle border)
 
-    /// Converts a cycle fraction (0…1) to a point that smoothly morphs
-    /// from a circular position to a horizontal bar position.
-    private func morphedPoint(
-        fraction: Double,
+    private func drawBaseTrack(
+        context: inout GraphicsContext,
         center: CGPoint,
-        radius: Double,
-        offsetRadius: Double = 0,
-        size: CGSize,
-        morph: Double
-    ) -> CGPoint {
-        let angle = fraction * 2 * .pi - .pi / 2
-        let r = radius + offsetRadius
-        let cx = center.x + cos(angle) * r
-        let cy = center.y + sin(angle) * r
-
-        let barInset: Double = 10
-        let lx = barInset + fraction * (size.width - 2 * barInset)
-        let ly = size.height / 2
-
-        return CGPoint(
-            x: cx + (lx - cx) * morph,
-            y: cy + (ly - cy) * morph
+        radius: Double
+    ) {
+        let arcWidth: CGFloat = 14
+        var trackPath = Path()
+        trackPath.addArc(
+            center: center, radius: radius,
+            startAngle: .degrees(0), endAngle: .degrees(360),
+            clockwise: false
+        )
+        context.stroke(
+            trackPath,
+            with: .color(Color(red: 0xDE / 255.0, green: 0xCB / 255.0, blue: 0xC1 / 255.0).opacity(0.18)),
+            style: StrokeStyle(lineWidth: arcWidth, lineCap: .round)
         )
     }
 
-    /// Creates a Path that morphs from an arc segment to a line segment.
-    /// Samples enough points for smooth curvature during the transition.
-    private func morphedArcPath(
-        startFraction: Double,
-        endFraction: Double,
-        center: CGPoint,
-        radius: Double,
-        offsetRadius: Double = 0,
-        size: CGSize,
-        morph: Double
-    ) -> Path {
-        let span = endFraction - startFraction
-        let segments = max(Int(span * 60), 12)
-        var path = Path()
-        for i in 0...segments {
-            let t = Double(i) / Double(segments)
-            let frac = startFraction + t * span
-            let pt = morphedPoint(
-                fraction: frac, center: center, radius: radius,
-                offsetRadius: offsetRadius, size: size, morph: morph
-            )
-            if i == 0 { path.move(to: pt) }
-            else { path.addLine(to: pt) }
-        }
-        return path
-    }
-
-    // MARK: - Liquid Glass Track (morphing)
+    // MARK: - Liquid Glass Track
 
     private func drawFilledTrack(
         context: inout GraphicsContext,
         center: CGPoint,
         radius: Double,
-        fillAngle: Double,
-        size: CGSize,
-        morph: Double
+        fillAngle: Double
     ) {
         let startAngle = -Double.pi / 2
-        let arcWidth: CGFloat = CGFloat(10 - 4 * morph) // 10 → 6
+        let arcWidth: CGFloat = 14
 
         guard fillAngle > startAngle + 0.01 else { return }
 
-        let fillFrac = (fillAngle + .pi / 2) / (2 * .pi)
-
         // --- Layer 1: Frosted glass body ---
-        let glassPath = morphedArcPath(
-            startFraction: 0, endFraction: fillFrac,
-            center: center, radius: radius, size: size, morph: morph
-        )
+        var glassPath = Path()
+        glassPath.addArc(center: center, radius: radius, startAngle: .radians(startAngle), endAngle: .radians(fillAngle), clockwise: false)
         context.stroke(
             glassPath,
             with: .color(Color(red: 0xDE / 255.0, green: 0xCB / 255.0, blue: 0xC1 / 255.0).opacity(0.10)),
             style: StrokeStyle(lineWidth: arcWidth, lineCap: .round)
         )
 
-        // Glass detail layers fade out during morph
-        let glassOpacity = max(0.0, 1.0 - morph * 2.5)
-        guard glassOpacity > 0.01 else { return }
-
         // --- Layer 2: Inner rim highlight ---
-        let innerPath = morphedArcPath(
-            startFraction: 0, endFraction: fillFrac,
-            center: center, radius: radius,
-            offsetRadius: Double(-arcWidth / 2 + 0.8), size: size, morph: morph
-        )
+        var innerPath = Path()
+        innerPath.addArc(center: center, radius: radius - Double(arcWidth / 2) + 0.8, startAngle: .radians(startAngle), endAngle: .radians(fillAngle), clockwise: false)
         context.stroke(
             innerPath,
-            with: .color(Color.white.opacity(0.14 * glassOpacity)),
+            with: .color(Color.white.opacity(0.14)),
             lineWidth: 0.5
         )
 
         // --- Layer 3: Outer rim depth ---
-        let outerPath = morphedArcPath(
-            startFraction: 0, endFraction: fillFrac,
-            center: center, radius: radius,
-            offsetRadius: Double(arcWidth / 2 - 0.8), size: size, morph: morph
-        )
+        var outerPath = Path()
+        outerPath.addArc(center: center, radius: radius + Double(arcWidth / 2) - 0.8, startAngle: .radians(startAngle), endAngle: .radians(fillAngle), clockwise: false)
         context.stroke(
             outerPath,
-            with: .color(Color.black.opacity(0.04 * glassOpacity)),
+            with: .color(Color.black.opacity(0.04)),
             lineWidth: 0.5
         )
     }
 
-    // MARK: - Phase Arcs (morphing glass effect)
+    // MARK: - Phase Arcs (glass effect)
 
     private func drawPhaseArcs(
         context: inout GraphicsContext,
         center: CGPoint,
         radius: Double,
-        fillAngle: Double,
-        size: CGSize,
-        morph: Double
+        fillAngle: Double
     ) {
         let startAngle = -Double.pi / 2
         let fullCircle = fillAngle >= startAngle + 2 * .pi - 0.05
-        let arcWidth: CGFloat = CGFloat(10 - 4 * morph)
-        let glassOpacity = max(0.0, 1.0 - morph * 2.5)
-        let fillFrac = (fillAngle + .pi / 2) / (2 * .pi)
-
-        // Background track (visible as morph progresses)
-        if morph > 0.05 {
-            let bgPath = morphedArcPath(
-                startFraction: 0, endFraction: 1.0,
-                center: center, radius: radius, size: size, morph: morph
-            )
-            context.stroke(
-                bgPath,
-                with: .color(Color(red: 0xDE / 255.0, green: 0xCB / 255.0, blue: 0xC1 / 255.0).opacity(0.12 * morph)),
-                style: StrokeStyle(lineWidth: arcWidth, lineCap: .round)
-            )
-        }
+        let arcWidth: CGFloat = 14
 
         for phaseItem in CyclePhase.allCases {
             let range = phaseItem.dayRange(cycleLength: cycleLength)
-            let startFrac = Double(range.lowerBound - 1) / Double(max(cycleLength, 1))
-            let endFrac = Double(range.upperBound) / Double(max(cycleLength, 1))
+            let phaseStart = Double(range.lowerBound - 1) / Double(max(cycleLength, 1)) * 2 * .pi + startAngle
+            let phaseEnd = Double(range.upperBound) / Double(max(cycleLength, 1)) * 2 * .pi + startAngle
 
-            guard fillFrac > startFrac else { continue }
-            let filledEndFrac = min(endFrac, fillFrac)
+            guard fillAngle > phaseStart else { continue }
+            let clampedEnd = min(phaseEnd, fillAngle)
 
             // --- Layer 1: Phase color ---
-            let bodyPath = morphedArcPath(
-                startFraction: startFrac, endFraction: filledEndFrac,
-                center: center, radius: radius, size: size, morph: morph
-            )
+            var bodyPath = Path()
+            bodyPath.addArc(center: center, radius: radius, startAngle: .radians(phaseStart), endAngle: .radians(clampedEnd), clockwise: false)
             context.stroke(
                 bodyPath,
                 with: .color(phaseItem.orbitColor.opacity(0.55)),
                 style: StrokeStyle(lineWidth: arcWidth, lineCap: .butt)
             )
 
-            // Glass layers fade out
-            if glassOpacity > 0.01 {
-                // --- Layer 2: Inner highlight ---
-                let innerPath = morphedArcPath(
-                    startFraction: startFrac, endFraction: filledEndFrac,
-                    center: center, radius: radius,
-                    offsetRadius: Double(-arcWidth / 2 + 1), size: size, morph: morph
-                )
-                context.stroke(
-                    innerPath,
-                    with: .color(Color.white.opacity(0.25 * glassOpacity)),
-                    lineWidth: 1.0
-                )
+            // --- Layer 2: Inner highlight ---
+            var innerPath = Path()
+            innerPath.addArc(center: center, radius: radius - Double(arcWidth / 2) + 1, startAngle: .radians(phaseStart), endAngle: .radians(clampedEnd), clockwise: false)
+            context.stroke(
+                innerPath,
+                with: .color(Color.white.opacity(0.25)),
+                lineWidth: 1.0
+            )
 
-                // --- Layer 3: Specular shine ---
-                let shinePath = morphedArcPath(
-                    startFraction: startFrac, endFraction: filledEndFrac,
-                    center: center, radius: radius,
-                    offsetRadius: Double(-arcWidth * 0.15), size: size, morph: morph
-                )
-                context.stroke(
-                    shinePath,
-                    with: .color(Color.white.opacity(0.12 * glassOpacity)),
-                    style: StrokeStyle(lineWidth: arcWidth * 0.35, lineCap: .butt)
-                )
+            // --- Layer 3: Specular shine ---
+            var shinePath = Path()
+            shinePath.addArc(center: center, radius: radius - Double(arcWidth * 0.15), startAngle: .radians(phaseStart), endAngle: .radians(clampedEnd), clockwise: false)
+            context.stroke(
+                shinePath,
+                with: .color(Color.white.opacity(0.12)),
+                style: StrokeStyle(lineWidth: arcWidth * 0.35, lineCap: .butt)
+            )
 
-                // --- Layer 4: Outer depth ---
-                let outerPath = morphedArcPath(
-                    startFraction: startFrac, endFraction: filledEndFrac,
-                    center: center, radius: radius,
-                    offsetRadius: Double(arcWidth / 2 - 1), size: size, morph: morph
-                )
-                context.stroke(
-                    outerPath,
-                    with: .color(phaseItem.orbitColor.opacity(0.15 * glassOpacity)),
-                    lineWidth: 0.8
-                )
-            }
+            // --- Layer 4: Outer depth ---
+            var outerPath = Path()
+            outerPath.addArc(center: center, radius: radius + Double(arcWidth / 2) - 1, startAngle: .radians(phaseStart), endAngle: .radians(clampedEnd), clockwise: false)
+            context.stroke(
+                outerPath,
+                with: .color(phaseItem.orbitColor.opacity(0.15)),
+                lineWidth: 0.8
+            )
         }
 
-        // Smooth fade at the start (only in circle mode)
-        if !fullCircle && morph < 0.3 {
+        // Smooth fade at the start
+        if !fullCircle {
             let fadeAngle = Double.pi * 0.1
             let clampedFade = min(fadeAngle, fillAngle - startAngle)
             guard clampedFade > 0.01 else { return }
 
-            let fadeFrac = clampedFade / (2 * .pi)
             let fadeSteps = 24
-            let fadeOpacity = max(0.0, 1.0 - morph * 3.3)
-
             for i in 0..<fadeSteps {
                 let t = Double(i) / Double(fadeSteps)
                 let tNext = Double(i + 1) / Double(fadeSteps)
-                let segStartFrac = t * fadeFrac
-                let segEndFrac = tNext * fadeFrac
 
                 let inv = 1.0 - t
-                let eraseAlpha = inv * inv * inv * 0.9 * fadeOpacity
+                let eraseAlpha = inv * inv * inv * 0.9
 
-                let seg = morphedArcPath(
-                    startFraction: segStartFrac, endFraction: segEndFrac,
-                    center: center, radius: radius, size: size, morph: morph
+                var seg = Path()
+                seg.addArc(
+                    center: center, radius: radius,
+                    startAngle: .radians(startAngle + t * clampedFade),
+                    endAngle: .radians(startAngle + tNext * clampedFade),
+                    clockwise: false
                 )
                 context.stroke(
                     seg,
@@ -713,30 +745,24 @@ private struct CelestialOrbitCanvas: View {
         }
     }
 
-    // MARK: - Orb Marker (morphing)
+    // MARK: - Orb Marker
 
     private func drawOrbMarker(
         context: inout GraphicsContext,
         center: CGPoint,
         radius: Double,
-        time: Double,
-        orbAngle: Double,
-        size: CGSize,
-        morph: Double
+        orbAngle: Double
     ) {
         let displayDay = exploringDay ?? cycleDay
         let orbPhase = phaseForDay(displayDay)
-        let orbFraction = (orbAngle + .pi / 2) / (2 * .pi)
 
-        let orbCenter = morphedPoint(
-            fraction: orbFraction, center: center, radius: radius,
-            size: size, morph: morph
+        let orbCenter = CGPoint(
+            x: center.x + cos(orbAngle) * radius,
+            y: center.y + sin(orbAngle) * radius
         )
 
-        let scale = 1.0 - morph * 0.35 // shrink slightly when collapsed
-
         // --- Soft outer bloom ---
-        let bloomSize = 38.0 * scale
+        let bloomSize = 38.0
         let bloomRect = CGRect(
             x: orbCenter.x - bloomSize / 2,
             y: orbCenter.y - bloomSize / 2,
@@ -757,37 +783,32 @@ private struct CelestialOrbitCanvas: View {
             )
         )
 
-        // --- Cross light rays (fade out during morph) ---
-        let rayOpacity = max(0.0, 1.0 - morph * 2.0)
-        if rayOpacity > 0.01 {
-            let rayLen = 14.0 * scale
-            let rayWidth: CGFloat = 1.2
-            for i in 0..<4 {
-                let angle = Double(i) * .pi / 4
-                let dx = cos(angle) * rayLen / 2
-                let dy = sin(angle) * rayLen / 2
-                var rayPath = Path()
-                rayPath.move(to: CGPoint(x: orbCenter.x - dx, y: orbCenter.y - dy))
-                rayPath.addLine(to: CGPoint(x: orbCenter.x + dx, y: orbCenter.y + dy))
-                context.stroke(
-                    rayPath,
-                    with: .color(.white.opacity((i % 2 == 0 ? 0.5 : 0.25) * rayOpacity)),
-                    lineWidth: rayWidth
-                )
-            }
+        // --- Cross light rays ---
+        let rayLen = 14.0
+        let rayWidth: CGFloat = 1.2
+        for i in 0..<4 {
+            let angle = Double(i) * .pi / 4
+            let dx = cos(angle) * rayLen / 2
+            let dy = sin(angle) * rayLen / 2
+            var rayPath = Path()
+            rayPath.move(to: CGPoint(x: orbCenter.x - dx, y: orbCenter.y - dy))
+            rayPath.addLine(to: CGPoint(x: orbCenter.x + dx, y: orbCenter.y + dy))
+            context.stroke(
+                rayPath,
+                with: .color(.white.opacity(i % 2 == 0 ? 0.5 : 0.25)),
+                lineWidth: rayWidth
+            )
         }
 
         // --- Main gemstone ---
-        let gemSize = 12.0 * scale
+        let gemSize = 12.0
         var gemCtx = context
-        gemCtx.addFilter(.shadow(color: orbPhase.glowColor.opacity(0.6), radius: 6 * scale))
+        gemCtx.addFilter(.shadow(color: orbPhase.glowColor.opacity(0.6), radius: 6))
 
         let gemRect = CGRect(x: -gemSize / 2, y: -gemSize / 2, width: gemSize, height: gemSize)
-        let cornerRadius = 3.0 * (1 - morph) + (gemSize / 2) * morph // square→circle
-        let gemPath = Path(roundedRect: gemRect, cornerRadius: cornerRadius)
+        let gemPath = Path(roundedRect: gemRect, cornerRadius: 3.0)
         gemCtx.translateBy(x: orbCenter.x, y: orbCenter.y)
-        let rotation = (.pi / 4) * (1 - morph) // diamond→upright
-        gemCtx.rotate(by: .radians(rotation))
+        gemCtx.rotate(by: .radians(.pi / 4))
 
         gemCtx.fill(
             gemPath,
@@ -850,7 +871,13 @@ private struct CosmicParticleEmitter: UIViewRepresentable {
     func updateUIView(_ uiView: CosmicParticleView, context: Context) {
         uiView.displayDay = displayDay
         uiView.cycleLen = cycleLength
-        uiView.rebuildEmitters()
+        if Thread.isMainThread {
+            uiView.rebuildEmitters()
+        } else {
+            DispatchQueue.main.async {
+                uiView.rebuildEmitters()
+            }
+        }
     }
 }
 
@@ -863,6 +890,10 @@ private final class CosmicParticleView: UIView {
 
     override func layoutSubviews() {
         super.layoutSubviews()
+        guard Thread.isMainThread else {
+            DispatchQueue.main.async { [self] in rebuildEmitters() }
+            return
+        }
         rebuildEmitters()
     }
 
@@ -1260,131 +1291,148 @@ extension CyclePhase {
     }
 }
 
-// MARK: - Cycle Progress Bar (collapsed header)
+// MARK: - Celestial Mini Bar
 
-/// Horizontal progress bar that appears when the circle scrolls out of view.
-/// Shows phase colors, day-of-week labels, and highlights the current day.
-public struct CycleProgressBar: View {
+/// Compact sticky bar shown when the full celestial circle scrolls off screen.
+/// Displays a mini orbit ring with day number, phase info, and contextual detail.
+public struct CelestialMiniBar: View {
     public let cycleDay: Int
     public let cycleLength: Int
     public let phase: String
+    public let nextPeriodIn: Int?
+    public let fertileWindowActive: Bool
 
-    public init(cycleDay: Int, cycleLength: Int, phase: String) {
+    public init(
+        cycleDay: Int,
+        cycleLength: Int,
+        phase: String,
+        nextPeriodIn: Int?,
+        fertileWindowActive: Bool
+    ) {
         self.cycleDay = cycleDay
         self.cycleLength = cycleLength
         self.phase = phase
+        self.nextPeriodIn = nextPeriodIn
+        self.fertileWindowActive = fertileWindowActive
     }
 
     private var currentPhase: CyclePhase {
         CyclePhase(rawValue: phase) ?? .follicular
     }
 
-    // Build array of (startFraction, endFraction, phase) for each cycle phase
-    private var phaseSegments: [(start: CGFloat, end: CGFloat, phase: CyclePhase)] {
-        CyclePhase.allCases.compactMap { p in
-            let range = p.dayRange(cycleLength: cycleLength)
-            let start = CGFloat(range.lowerBound - 1) / CGFloat(cycleLength)
-            let end = CGFloat(range.upperBound) / CGFloat(cycleLength)
-            return (start, end, p)
-        }
+    private var fillFraction: Double {
+        Double(cycleDay) / Double(max(cycleLength, 1))
     }
 
-    private var currentDayFraction: CGFloat {
-        CGFloat(cycleDay - 1) / CGFloat(max(cycleLength - 1, 1))
-    }
-
-    // Days of the week centered around today
-    private var weekDays: [(label: String, dayNum: Int, isToday: Bool)] {
-        let calendar = Calendar.current
-        let today = Date()
-        let formatter = DateFormatter()
-        formatter.dateFormat = "EEE"
-
-        return (-3...3).map { offset in
-            let date = calendar.date(byAdding: .day, value: offset, to: today)!
-            let label = formatter.string(from: date).uppercased()
-            let day = cycleDay + offset
-            return (label, day, offset == 0)
-        }
+    private var orbAngle: Double {
+        fillFraction * 2 * .pi - .pi / 2
     }
 
     public var body: some View {
-        VStack(spacing: 6) {
-            // Day-of-week labels
-            HStack(spacing: 0) {
-                ForEach(Array(weekDays.enumerated()), id: \.offset) { _, item in
-                    Text(item.label)
-                        .font(.custom("Raleway-SemiBold", size: 10))
-                        .foregroundColor(item.isToday ? currentPhase.orbitColor : DesignColors.textSecondary.opacity(0.6))
-                        .frame(maxWidth: .infinity)
-                }
-            }
+        HStack(spacing: 14) {
+            miniOrbit
 
-            // Progress bar with phase colors
-            GeometryReader { geo in
-                let width = geo.size.width
-                let barHeight: CGFloat = 6
-
-                ZStack(alignment: .leading) {
-                    // Background track
-                    Capsule()
-                        .fill(DesignColors.structure.opacity(0.15))
-                        .frame(height: barHeight)
-
-                    // Phase color segments
-                    Canvas { context, size in
-                        let h = size.height
-                        let r = h / 2
-
-                        for seg in phaseSegments {
-                            let x1 = seg.start * size.width
-                            let x2 = seg.end * size.width
-
-                            let segPath = Path(roundedRect: CGRect(
-                                x: x1, y: 0,
-                                width: x2 - x1, height: h
-                            ), cornerRadius: seg.start == 0 || seg.end == 1 ? r : 0)
-
-                            context.fill(segPath, with: .color(seg.phase.orbitColor.opacity(0.55)))
-                        }
-
-                        // Glass highlight on filled portion
-                        let fillX = currentDayFraction * size.width
-                        let fillRect = CGRect(x: 0, y: 0, width: fillX, height: h * 0.4)
-                        context.fill(
-                            Path(roundedRect: fillRect, cornerRadius: r),
-                            with: .color(.white.opacity(0.15))
-                        )
-                    }
-                    .frame(height: barHeight)
-                    .clipShape(Capsule())
-
-                    // Current day indicator
+            VStack(alignment: .leading, spacing: 2) {
+                HStack(spacing: 6) {
                     Circle()
                         .fill(currentPhase.orbitColor)
-                        .frame(width: 12, height: 12)
-                        .shadow(color: currentPhase.glowColor.opacity(0.5), radius: 4)
-                        .overlay {
-                            Circle()
-                                .fill(.white.opacity(0.3))
-                                .frame(width: 5, height: 5)
-                        }
-                        .offset(x: currentDayFraction * width - 6)
+                        .frame(width: 6, height: 6)
+
+                    Text("Day \(cycleDay)")
+                        .font(.custom("Raleway-Bold", size: 15))
+                        .foregroundColor(DesignColors.text)
+
+                    Text("·")
+                        .foregroundColor(DesignColors.textSecondary)
+
+                    Text(currentPhase.displayName)
+                        .font(.custom("Raleway-Medium", size: 15))
+                        .foregroundColor(currentPhase.orbitColor)
                 }
-                .frame(height: 12)
+
+                if let daysUntil = nextPeriodIn, daysUntil > 0 {
+                    Text("\(daysUntil)d until period")
+                        .font(.custom("Raleway-Regular", size: 12))
+                        .foregroundColor(DesignColors.textSecondary)
+                } else if fertileWindowActive {
+                    HStack(spacing: 4) {
+                        Image(systemName: "sparkles")
+                            .font(.system(size: 10))
+                        Text("Fertile window")
+                            .font(.custom("Raleway-Regular", size: 12))
+                    }
+                    .foregroundColor(CyclePhase.ovulatory.glowColor)
+                } else {
+                    Text(currentPhase.insight)
+                        .font(.custom("Raleway-Regular", size: 12))
+                        .foregroundColor(DesignColors.textSecondary)
+                        .lineLimit(1)
+                }
             }
-            .frame(height: 12)
+
+            Spacer()
         }
-        .padding(.horizontal, 4)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 10)
+        .background {
+            RoundedRectangle(cornerRadius: 22)
+                .fill(.ultraThinMaterial)
+                .overlay {
+                    RoundedRectangle(cornerRadius: 22)
+                        .strokeBorder(
+                            LinearGradient(
+                                colors: [
+                                    currentPhase.orbitColor.opacity(0.3),
+                                    Color.white.opacity(0.1),
+                                ],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            ),
+                            lineWidth: 0.5
+                        )
+                }
+                .shadow(color: .black.opacity(0.08), radius: 12, x: 0, y: 4)
+        }
     }
-}
 
-// MARK: - Scroll Offset Preference Key
+    // MARK: - Mini Orbit
 
-public struct ScrollOffsetPreferenceKey: PreferenceKey {
-    public static let defaultValue: CGFloat = 0
-    public static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
-        value = nextValue()
+    private var miniOrbit: some View {
+        ZStack {
+            Circle()
+                .stroke(DesignColors.textSecondary.opacity(0.12), lineWidth: 2.5)
+
+            Circle()
+                .trim(from: 0, to: fillFraction)
+                .stroke(
+                    currentPhase.orbitColor.opacity(0.6),
+                    style: StrokeStyle(lineWidth: 2.5, lineCap: .round)
+                )
+                .rotationEffect(.degrees(-90))
+
+            Circle()
+                .fill(currentPhase.orbitColor)
+                .frame(width: 5, height: 5)
+                .shadow(color: currentPhase.glowColor.opacity(0.7), radius: 3)
+                .offset(
+                    x: cos(orbAngle) * 17,
+                    y: sin(orbAngle) * 17
+                )
+
+            Text("\(cycleDay)")
+                .font(.custom("Raleway-Bold", size: 13))
+                .foregroundStyle(
+                    LinearGradient(
+                        colors: [
+                            currentPhase.orbitColor.opacity(0.85),
+                            currentPhase.glowColor.opacity(0.7),
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+        }
+        .frame(width: 40, height: 40)
     }
 }
 
@@ -1398,7 +1446,8 @@ public struct ScrollOffsetPreferenceKey: PreferenceKey {
             cycleLength: 28,
             phase: "follicular",
             nextPeriodIn: 21,
-            fertileWindowActive: false
+            fertileWindowActive: false,
+            exploringDay: .constant(nil)
         )
         .padding()
     }
@@ -1412,7 +1461,8 @@ public struct ScrollOffsetPreferenceKey: PreferenceKey {
             cycleLength: 28,
             phase: "ovulatory",
             nextPeriodIn: 14,
-            fertileWindowActive: true
+            fertileWindowActive: true,
+            exploringDay: .constant(nil)
         )
         .padding()
     }
@@ -1426,7 +1476,8 @@ public struct ScrollOffsetPreferenceKey: PreferenceKey {
             cycleLength: 28,
             phase: "menstrual",
             nextPeriodIn: nil,
-            fertileWindowActive: false
+            fertileWindowActive: false,
+            exploringDay: .constant(nil)
         )
         .padding()
     }

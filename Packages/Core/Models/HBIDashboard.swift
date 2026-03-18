@@ -4,11 +4,11 @@ import Foundation
 
 public struct HBIDashboardResponse: Codable, Equatable, Sendable {
     public let today: HBIScore?
-    public let weekTrend: [HBIScore]
+    public let weekTrend: [HBIScore]?
     public let latestReport: DailySelfReport?
     public let cyclePhase: String?
     public let cycleDay: Int?
-    public let insights: [String]
+    public let insights: [String]?
 
     public init(
         today: HBIScore? = nil,
@@ -143,6 +143,20 @@ public enum CyclePhase: String, Codable, Equatable, Sendable, CaseIterable {
         }
     }
 
+    /// Medical description with hormonal context
+    public var medicalDescription: String {
+        switch self {
+        case .menstrual:
+            return "Estrogen & progesterone are at their lowest. The uterine lining sheds. Rest, warmth, and iron-rich foods support recovery."
+        case .follicular:
+            return "FSH stimulates follicle growth. Estrogen rises gradually — boosting energy, focus, and mood. Great time for new challenges."
+        case .ovulatory:
+            return "LH surge triggers egg release. Estrogen peaks — expect peak confidence, libido, and communication skills. Fertile window active."
+        case .luteal:
+            return "Progesterone rises to prepare the uterus. If no pregnancy occurs, both hormones drop, which can trigger PMS in the final days."
+        }
+    }
+
     /// Typical day ranges within a 28-day cycle
     public func dayRange(cycleLength: Int) -> ClosedRange<Int> {
         let bleedingDays = 5
@@ -152,6 +166,35 @@ public enum CyclePhase: String, Codable, Equatable, Sendable, CaseIterable {
         case .follicular: return (bleedingDays + 1)...(ovulationDay - 2)
         case .ovulatory: return (ovulationDay - 1)...(ovulationDay + 1)
         case .luteal: return (ovulationDay + 2)...cycleLength
+        }
+    }
+}
+
+// MARK: - Flow Intensity
+
+/// Menstrual flow intensity for period day logging
+public enum FlowIntensity: String, Codable, Equatable, Sendable, CaseIterable {
+    case spotting = "spotting"
+    case light = "light"
+    case medium = "medium"
+    case heavy = "heavy"
+
+    public var label: String {
+        switch self {
+        case .spotting: "Spotting"
+        case .light: "Light"
+        case .medium: "Medium"
+        case .heavy: "Heavy"
+        }
+    }
+
+    /// Number of filled droplet icons to show (0 = small dot for spotting)
+    public var dropletCount: Int {
+        switch self {
+        case .spotting: 0
+        case .light: 1
+        case .medium: 2
+        case .heavy: 3
         }
     }
 }

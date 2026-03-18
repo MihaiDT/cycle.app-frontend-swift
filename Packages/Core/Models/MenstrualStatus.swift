@@ -97,6 +97,90 @@ public struct DateRangeInfo: Codable, Equatable, Sendable {
     }
 }
 
+// MARK: - Insights Response (GET /api/menstrual/insights)
+
+public struct MenstrualInsightsResponse: Codable, Equatable, Sendable {
+    public let cycleStats: CycleStatsInfo
+    public let predictionAccuracy: AccuracyInfo
+    public let trends: [String]?
+    public let recommendations: [String]?
+
+    public init(cycleStats: CycleStatsInfo, predictionAccuracy: AccuracyInfo, trends: [String]? = nil, recommendations: [String]? = nil) {
+        self.cycleStats = cycleStats
+        self.predictionAccuracy = predictionAccuracy
+        self.trends = trends
+        self.recommendations = recommendations
+    }
+}
+
+public struct CycleStatsInfo: Codable, Equatable, Sendable {
+    public let averageCycleLength: Double
+    public let regularity: String
+    public let totalCyclesTracked: Int
+
+    public init(averageCycleLength: Double, regularity: String, totalCyclesTracked: Int) {
+        self.averageCycleLength = averageCycleLength
+        self.regularity = regularity
+        self.totalCyclesTracked = totalCyclesTracked
+    }
+}
+
+public struct AccuracyInfo: Codable, Equatable, Sendable {
+    public let averageAccuracy: Double
+    public let confirmedCycles: Int
+    public let totalPredictions: Int
+
+    public init(averageAccuracy: Double, confirmedCycles: Int, totalPredictions: Int) {
+        self.averageAccuracy = averageAccuracy
+        self.confirmedCycles = confirmedCycles
+        self.totalPredictions = totalPredictions
+    }
+}
+
+// MARK: - Calendar Response (GET /api/menstrual/calendar)
+
+public struct MenstrualCalendarResponse: Codable, Equatable, Sendable {
+    public let startDate: Date
+    public let endDate: Date
+    public let entries: [MenstrualCalendarEntry]
+
+    public init(startDate: Date, endDate: Date, entries: [MenstrualCalendarEntry]) {
+        self.startDate = startDate
+        self.endDate = endDate
+        self.entries = entries
+    }
+}
+
+public struct MenstrualCalendarEntry: Codable, Equatable, Sendable {
+    public let date: Date
+    public let type: String
+    public let label: String
+
+    public init(date: Date, type: String, label: String) {
+        self.date = date
+        self.type = type
+        self.label = label
+    }
+}
+
+// MARK: - Symptom Response (GET /api/menstrual/symptoms)
+
+public struct MenstrualSymptomResponse: Codable, Equatable, Sendable, Identifiable {
+    public let id: Int
+    public let symptomDate: Date
+    public let symptomType: String
+    public let severity: Int
+    public let notes: String?
+
+    public init(id: Int, symptomDate: Date, symptomType: String, severity: Int, notes: String? = nil) {
+        self.id = id
+        self.symptomDate = symptomDate
+        self.symptomType = symptomType
+        self.severity = severity
+        self.notes = notes
+    }
+}
+
 // MARK: - Mock
 
 extension MenstrualStatusResponse {
@@ -128,5 +212,22 @@ extension MenstrualStatusResponse {
             isActive: false,
             daysUntilPeak: 7
         )
+    )
+}
+
+extension MenstrualInsightsResponse {
+    public static let mock = MenstrualInsightsResponse(
+        cycleStats: CycleStatsInfo(averageCycleLength: 28.5, regularity: "regular", totalCyclesTracked: 6),
+        predictionAccuracy: AccuracyInfo(averageAccuracy: 0.85, confirmedCycles: 4, totalPredictions: 6),
+        trends: ["Cycles are stable", "Sleep quality improving during follicular phase"],
+        recommendations: ["Confirm your periods to improve prediction accuracy", "Track symptoms daily for personalized insights"]
+    )
+}
+
+extension MenstrualCalendarResponse {
+    public static let mock = MenstrualCalendarResponse(
+        startDate: Calendar.current.date(byAdding: .month, value: -1, to: Date())!,
+        endDate: Calendar.current.date(byAdding: .month, value: 1, to: Date())!,
+        entries: []
     )
 }

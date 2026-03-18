@@ -128,6 +128,10 @@ public struct HomeFeature: Sendable {
             case .logoutCompleted:
                 return .send(.delegate(.didLogout))
 
+            case .today(.delegate(.openAriaChat)):
+                state.selectedTab = .chat
+                return .none
+
             case .today, .delegate:
                 return .none
             }

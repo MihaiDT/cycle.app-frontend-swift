@@ -148,18 +148,18 @@ public struct ConsentCheckbox<Content: View>: View {
     }
 
     public var body: some View {
-        HStack(alignment: .top, spacing: 16) {
-            Button(action: action) {
+        Button(action: action) {
+            HStack(alignment: .top, spacing: 16) {
                 AnimatedCheckboxIcon(isChecked: isChecked)
                     .frame(width: 24, height: 24)
-            }
-            .frame(width: 44, height: 44)
-            .contentShape(Rectangle())
-            .buttonStyle(.plain)
+                    .frame(width: 44, height: 44)
 
-            content()
-                .frame(maxWidth: .infinity, alignment: .leading)
+                content()
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
         }
+        .buttonStyle(.plain)
+        .contentShape(Rectangle())
     }
 }
 

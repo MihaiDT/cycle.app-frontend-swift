@@ -11,6 +11,10 @@ public enum MenstrualEndpoints {
         .get("/api/menstrual/insights")
     }
 
+    public static func confirmPeriod(_ request: ConfirmPeriodRequest) -> Endpoint {
+        .post("/api/menstrual/confirm", body: request)
+    }
+
     public static func calendar(start: Date, end: Date) -> Endpoint {
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd"
@@ -21,5 +25,54 @@ public enum MenstrualEndpoints {
                 URLQueryItem(name: "end", value: formatter.string(from: end)),
             ]
         )
+    }
+
+    public static func logSymptom(_ request: LogSymptomRequest) -> Endpoint {
+        .post("/api/menstrual/symptoms", body: request)
+    }
+
+    public static func symptoms(date: Date) -> Endpoint {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        return .get(
+            "/api/menstrual/symptoms",
+            queryItems: [
+                URLQueryItem(name: "date", value: formatter.string(from: date)),
+            ]
+        )
+    }
+
+    public static func predict() -> Endpoint {
+        .post("/api/menstrual/predict", body: EmptyBody())
+    }
+}
+
+private struct EmptyBody: Encodable, Sendable {}
+
+// MARK: - Request Models
+
+public struct ConfirmPeriodRequest: Encodable, Sendable {
+    public let actualStartDate: Date
+    public let bleedingDays: Int
+    public let notes: String
+
+    public init(actualStartDate: Date, bleedingDays: Int, notes: String = "") {
+        self.actualStartDate = actualStartDate
+        self.bleedingDays = bleedingDays
+        self.notes = notes
+    }
+}
+
+public struct LogSymptomRequest: Encodable, Sendable {
+    public let symptomDate: Date
+    public let symptomType: String
+    public let severity: Int
+    public let notes: String
+
+    public init(symptomDate: Date, symptomType: String, severity: Int, notes: String = "") {
+        self.symptomDate = symptomDate
+        self.symptomType = symptomType
+        self.severity = severity
+        self.notes = notes
     }
 }

@@ -3,10 +3,11 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 77;
+	objectVersion = 63;
 	objects = {
 
 /* Begin PBXBuildFile section */
+		00C8A8ED594CBB3847F13F8C /* GlassWeekCalendar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 992E17679A9E07576431CBF1 /* GlassWeekCalendar.swift */; };
 		02D8E101F5F49BDAC2E5D077 /* SessionClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3FC0F0AFF2877CD41AB19497 /* SessionClient.swift */; };
 		04FCF9C17DCAE18F21511B08 /* BirthDataView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4826ABD18C16E30DACC2F4B6 /* BirthDataView.swift */; };
 		0985C631CF3EC7089E779C31 /* HealthPermissionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 89AB632DD5D233D065ACF184 /* HealthPermissionView.swift */; };
@@ -66,6 +67,7 @@
 		826BEB12143C0751CD9B015F /* ShieldCheckIcon.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA6B79551465ACB3BDCA4C84 /* ShieldCheckIcon.swift */; };
 		87ED257C99FAA875969FEBE5 /* KeychainClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 226DF4A873C9600CC4F0B40D /* KeychainClient.swift */; };
 		8886C73FA1452FEEA91322D0 /* PlacesClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C380CB9877F9EFBE8833FE6 /* PlacesClient.swift */; };
+		8B066E6992294CE37D004E7F /* CalendarFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F6B49711D3438DDFA91BAC5 /* CalendarFeature.swift */; };
 		8B258C02527F961E9F92D674 /* DailySelfReport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D235D9C76A26B122F55AFC7 /* DailySelfReport.swift */; };
 		8E65A945BC5E33B5394380E5 /* OnboardingRecapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C5173191F10BFB448ECF0C0 /* OnboardingRecapView.swift */; };
 		9837F5D0FF85D8DD9A02B809 /* MenstrualClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D89356D7973CB8DFCC1A367 /* MenstrualClient.swift */; };
@@ -98,6 +100,7 @@
 		C108129BF646802352F8B8E6 /* Logger.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01D3B37256BD926AA7EFCBC2 /* Logger.swift */; };
 		C14D38E7246D896515FCACF5 /* Raleway-BlackItalic.ttf in Resources */ = {isa = PBXBuildFile; fileRef = FCE9EEEE1356254E0537A9D8 /* Raleway-BlackItalic.ttf */; };
 		C31DA902B29C34AA3067ED18 /* OnboardingProgressBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5D3B77B6EF5F17F3E47EB83 /* OnboardingProgressBar.swift */; };
+		C7329B926A9B9FD03A252A18 /* EditPeriodFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 811FF511C8D318DF36018D2F /* EditPeriodFeature.swift */; };
 		CE9E648A7DA44A10262A06B3 /* InsightCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = C42B971D9DFEDD03E5242413 /* InsightCard.swift */; };
 		CFA7F64C375F4333037CB6F0 /* NameInputView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5758D419558EBCD03AB48E87 /* NameInputView.swift */; };
 		D1CF7852379A9A2B365FCE80 /* User.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2DF4BFD7D70E092655588F9 /* User.swift */; };
@@ -155,10 +158,11 @@
 		2C384BB38218230424E77203 /* TodayFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayFeature.swift; sourceTree = "<group>"; };
 		2F0D454B86650384C3709981 /* Raleway-ThinItalic.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Raleway-ThinItalic.ttf"; sourceTree = "<group>"; };
 		2F1FB9070681EFDD7982FF5C /* GlassButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassButton.swift; sourceTree = "<group>"; };
+		2F6B49711D3438DDFA91BAC5 /* CalendarFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarFeature.swift; sourceTree = "<group>"; };
 		32C504F11889B24005F6A29C /* Endpoint.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Endpoint.swift; sourceTree = "<group>"; };
 		34A6F94AAF7182E46C4F885F /* Raleway-SemiBoldItalic.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Raleway-SemiBoldItalic.ttf"; sourceTree = "<group>"; };
 		3C380CB9877F9EFBE8833FE6 /* PlacesClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlacesClient.swift; sourceTree = "<group>"; };
-		3D613DF8875F1A90F07C4F34 /* CycleApp.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = CycleApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		3D613DF8875F1A90F07C4F34 /* CycleApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CycleApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		3FC0F0AFF2877CD41AB19497 /* SessionClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionClient.swift; sourceTree = "<group>"; };
 		4322D31D6B828275DD65FC35 /* CycleCalendarViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CycleCalendarViews.swift; sourceTree = "<group>"; };
 		4674CEEA6B50FCAB809318E6 /* SplineIntroView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplineIntroView.swift; sourceTree = "<group>"; };
@@ -185,6 +189,7 @@
 		768AB686BAC4D9AE276C0E0F /* GlassDatePicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassDatePicker.swift; sourceTree = "<group>"; };
 		79A0533D66600EF003BDFC79 /* Raleway-Thin.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Raleway-Thin.ttf"; sourceTree = "<group>"; };
 		7F9895D88CABF51577D545ED /* HBIDashboard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HBIDashboard.swift; sourceTree = "<group>"; };
+		811FF511C8D318DF36018D2F /* EditPeriodFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditPeriodFeature.swift; sourceTree = "<group>"; };
 		823B14CA893AB18E490B49AD /* Date+Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Date+Extensions.swift"; sourceTree = "<group>"; };
 		8706093A21A56ECBA0441334 /* Raleway-Light.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Raleway-Light.ttf"; sourceTree = "<group>"; };
 		88BF907DFB59809FEF766AE8 /* OnboardingHeader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingHeader.swift; sourceTree = "<group>"; };
@@ -199,6 +204,7 @@
 		925024F96EEC4267179A9CA3 /* DesignColors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesignColors.swift; sourceTree = "<group>"; };
 		929A3B534A8BCD8044EA93C4 /* ConsentPrivacy.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = ConsentPrivacy.json; sourceTree = "<group>"; };
 		94278F98041D7E509F99939B /* SplashView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplashView.swift; sourceTree = "<group>"; };
+		992E17679A9E07576431CBF1 /* GlassWeekCalendar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassWeekCalendar.swift; sourceTree = "<group>"; };
 		9951D5FE998C1DD8DE8B9958 /* RelationshipStatusView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RelationshipStatusView.swift; sourceTree = "<group>"; };
 		9A9F95C44B71EFC08D5BAAAD /* NameGreetingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NameGreetingView.swift; sourceTree = "<group>"; };
 		9C912EA0509634526A9D7F08 /* Raleway-Bold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Raleway-Bold.ttf"; sourceTree = "<group>"; };
@@ -231,7 +237,7 @@
 		D6C462B9D1B01812BDB61714 /* GlassDateButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassDateButton.swift; sourceTree = "<group>"; };
 		E1D75A3020910AA2ED96FB84 /* CycleDataComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CycleDataComponents.swift; sourceTree = "<group>"; };
 		E6443B1A872FD8D9CA385C44 /* GlassTextField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassTextField.swift; sourceTree = "<group>"; };
-		E687F11BA153A2DF683BD9B0 /* logo_animation.splineswift */ = {isa = PBXFileReference; path = logo_animation.splineswift; sourceTree = "<group>"; };
+		E687F11BA153A2DF683BD9B0 /* logo_animation.splineswift */ = {isa = PBXFileReference; lastKnownFileType = file; path = logo_animation.splineswift; sourceTree = "<group>"; };
 		E911916B959EE91C14269049 /* WellnessPillarCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WellnessPillarCard.swift; sourceTree = "<group>"; };
 		EA867F396B072ED863219115 /* APIError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIError.swift; sourceTree = "<group>"; };
 		EB87033FEE8193BBE8B3067D /* HBIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HBIClient.swift; sourceTree = "<group>"; };
@@ -469,6 +475,7 @@
 				768AB686BAC4D9AE276C0E0F /* GlassDatePicker.swift */,
 				F8E62ACB6092862D952F78FB /* GlassSelectionCard.swift */,
 				E6443B1A872FD8D9CA385C44 /* GlassTextField.swift */,
+				992E17679A9E07576431CBF1 /* GlassWeekCalendar.swift */,
 				A4E7E9A068ECB15A84A721A7 /* GradientBackground.swift */,
 				0BC45BF7323F201338BFDA2E /* GradientTagline.swift */,
 				0C5722C7E3AC41AE065FC9F2 /* HBIScoreRing.swift */,
@@ -511,7 +518,9 @@
 		D12F12B53142B04A149A7790 /* Home */ = {
 			isa = PBXGroup;
 			children = (
+				2F6B49711D3438DDFA91BAC5 /* CalendarFeature.swift */,
 				AA1D8BDCDF2263B793576D8E /* DailyCheckInFeature.swift */,
+				811FF511C8D318DF36018D2F /* EditPeriodFeature.swift */,
 				4F9C55BFC287E7193D934779 /* HomeFeature.swift */,
 				2C384BB38218230424E77203 /* TodayFeature.swift */,
 			);
@@ -647,7 +656,6 @@
 				AEF383D9F05536120F2B291B /* XCRemoteSwiftPackageReference "spline-ios" */,
 				FDE4EA748176C63BCCDC26BB /* XCRemoteSwiftPackageReference "swift-tagged" */,
 			);
-			preferredProjectObjectVersion = 77;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
@@ -703,6 +711,7 @@
 				DBA7ED5F00F27DDC82A5770B /* AuthChoiceView.swift in Sources */,
 				2F9139B5B4BC95E76905B0AB /* AuthenticationFeature.swift in Sources */,
 				04FCF9C17DCAE18F21511B08 /* BirthDataView.swift in Sources */,
+				8B066E6992294CE37D004E7F /* CalendarFeature.swift in Sources */,
 				F5EA81C29EE997219835D532 /* CelestialCycleView.swift in Sources */,
 				A5C69FB1F58AF2B763AF934F /* Collection+Extensions.swift in Sources */,
 				BF2C740D0AB78C44011546CE /* ConsentCheckbox.swift in Sources */,
@@ -717,6 +726,7 @@
 				8B258C02527F961E9F92D674 /* DailySelfReport.swift in Sources */,
 				A22AE1F3C3632E9BF6143065 /* Date+Extensions.swift in Sources */,
 				395E6EB894714D5526249732 /* DesignColors.swift in Sources */,
+				C7329B926A9B9FD03A252A18 /* EditPeriodFeature.swift in Sources */,
 				B3C842534218672CCDC49B93 /* Endpoint.swift in Sources */,
 				F111ECFB1ABCC7C05131215B /* Endpoints.swift in Sources */,
 				FDA70E485455D6E26478316E /* FirebaseAuthClient.swift in Sources */,
@@ -726,6 +736,7 @@
 				68BA0D74CA67E6270AAA9EB5 /* GlassLogoCard.swift in Sources */,
 				7DEEFEE25F2E4577DD65220C /* GlassSelectionCard.swift in Sources */,
 				5791F41BCD82D8F186E235D6 /* GlassTextField.swift in Sources */,
+				00C8A8ED594CBB3847F13F8C /* GlassWeekCalendar.swift in Sources */,
 				5C0CAB20DB0824AC800714AF /* GradientBackground.swift in Sources */,
 				B51ED6F3C6525B10A6232474 /* GradientTagline.swift in Sources */,
 				5868B9575EE4544EA1659266 /* HBIClient.swift in Sources */,
@@ -807,6 +818,7 @@
 				CODE_SIGN_ENTITLEMENTS = CycleApp/Resources/CycleApp.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 6VS9F47N83;
 				INFOPLIST_FILE = CycleApp/Resources/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -844,6 +856,7 @@
 				CODE_SIGN_ENTITLEMENTS = CycleApp/Resources/CycleApp.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 6VS9F47N83;
 				INFOPLIST_FILE = CycleApp/Resources/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",

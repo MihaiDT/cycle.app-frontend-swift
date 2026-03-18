@@ -179,11 +179,16 @@ struct OnboardingCTAButton: View {
     private let circleSize: CGFloat = 46
     private let inset: CGFloat = 5
 
-    @State private var isLoading = false
-    @State private var progress: CGFloat = 0
+    @State private var completed = false
+    @State private var dragOffset: CGFloat = 0
 
     private var maxTravel: CGFloat {
         buttonWidth - circleSize - inset * 2
+    }
+
+    private var progress: CGFloat {
+        guard maxTravel > 0 else { return 0 }
+        return min(max(dragOffset / maxTravel, 0), 1)
     }
 
     private var titleOpacity: Double {
@@ -193,6 +198,9 @@ struct OnboardingCTAButton: View {
     private var circleX: CGFloat {
         inset + maxTravel * progress
     }
+
+    /// How far (0-1) the user must drag to trigger the action
+    private let threshold: CGFloat = 0.85
 
     var body: some View {
         ZStack(alignment: .leading) {
@@ -241,7 +249,7 @@ struct OnboardingCTAButton: View {
                 .padding(.leading, circleSize + inset)
                 .opacity(titleOpacity)
 
-            // Circle with arrow
+            // Draggable circle with arrow
             Circle()
                 .fill(DesignColors.accentWarm)
                 .frame(width: circleSize, height: circleSize)
@@ -251,20 +259,33 @@ struct OnboardingCTAButton: View {
                         .foregroundStyle(.white)
                 }
                 .offset(x: circleX)
+                .gesture(
+                    DragGesture(minimumDistance: 0)
+                        .onChanged { value in
+                            guard !completed else { return }
+                            dragOffset = max(0, min(value.translation.width, maxTravel))
+                        }
+                        .onEnded { _ in
+                            guard !completed else { return }
+                            if progress >= threshold {
+                                completed = true
+                                withAnimation(.easeOut(duration: 0.25)) {
+                                    dragOffset = maxTravel
+                                }
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                                    action()
+                                }
+                            } else {
+                                withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
+                                    dragOffset = 0
+                                }
+                            }
+                        }
+                )
         }
         .frame(width: buttonWidth, height: buttonHeight)
         .clipShape(Capsule())
         .contentShape(Capsule())
-        .onTapGesture {
-            guard !isLoading else { return }
-            isLoading = true
-            withAnimation(.easeInOut(duration: 0.7)) {
-                progress = 1
-            }
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.85) {
-                action()
-            }
-        }
     }
 }
 
