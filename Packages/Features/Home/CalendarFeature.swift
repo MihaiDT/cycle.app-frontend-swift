@@ -26,10 +26,16 @@ public struct CalendarFeature: Sendable {
         public var cycleLength: Int
         public var bleedingDays: Int
 
-        // User-marked period days (keys: "yyyy-MM-dd")
+        // User-marked period days (keys: "yyyy-MM-dd") — confirmed + predicted from server
         public var periodDays: Set<String> = []
+        // Server-predicted period days (subset of periodDays) — for dashed/lighter styling
+        public var predictedPeriodDays: Set<String> = []
         // Flow intensity per period day (keys: "yyyy-MM-dd")
         public var periodFlowIntensity: [String: FlowIntensity] = [:]
+        // Fertile days with their level (keys: "yyyy-MM-dd")
+        public var fertileDays: [String: FertilityLevel] = [:]
+        // Ovulation days (keys: "yyyy-MM-dd")
+        public var ovulationDays: Set<String> = []
 
         @Presents public var editPeriod: EditPeriodFeature.State?
 
@@ -38,7 +44,13 @@ public struct CalendarFeature: Sendable {
             public var notes: String = ""
         }
 
-        public init(menstrualStatus: MenstrualStatusResponse? = nil) {
+        public init(
+            menstrualStatus: MenstrualStatusResponse? = nil,
+            periodDays: Set<String> = [],
+            predictedPeriodDays: Set<String> = [],
+            fertileDays: [String: FertilityLevel] = [:],
+            ovulationDays: Set<String> = []
+        ) {
             self.menstrualStatus = menstrualStatus
             let today = Calendar.current.startOfDay(for: Date())
             self.selectedDate = today
@@ -46,25 +58,22 @@ public struct CalendarFeature: Sendable {
             comps.day = 1
             self.displayedMonth = Calendar.current.date(from: comps) ?? today
 
-            let defaultCycleDay = menstrualStatus?.currentCycle.cycleDay ?? 8
-            let startDate = menstrualStatus?.currentCycle.startDate ?? Calendar.current.date(byAdding: .day, value: -(defaultCycleDay - 1), to: today) ?? today
-            let resolvedStart = Calendar.current.startOfDay(for: startDate)
-            let resolvedLength = menstrualStatus?.profile.avgCycleLength ?? 28
-            let resolvedBleeding = menstrualStatus?.currentCycle.bleedingDays ?? 5
-            self.cycleStartDate = resolvedStart
-            self.cycleLength = resolvedLength
-            self.bleedingDays = resolvedBleeding
-
-            let cal = Calendar.current
-            let fmt = DateFormatter()
-            fmt.dateFormat = "yyyy-MM-dd"
-            var days: Set<String> = []
-            for i in 0..<resolvedBleeding {
-                if let d = cal.date(byAdding: .day, value: i, to: resolvedStart) {
-                    days.insert(fmt.string(from: d))
-                }
+            let hasCycleData = menstrualStatus?.hasCycleData ?? false
+            let localCal = Calendar.current
+            if hasCycleData, let serverStart = menstrualStatus?.currentCycle.startDate {
+                let startDate = CalendarFeature.localDate(from: serverStart)
+                self.cycleStartDate = localCal.startOfDay(for: startDate)
+            } else {
+                self.cycleStartDate = localCal.date(byAdding: .year, value: -100, to: today) ?? today
             }
-            self.periodDays = days
+            self.cycleLength = menstrualStatus?.profile.avgCycleLength ?? 28
+            self.bleedingDays = menstrualStatus?.currentCycle.bleedingDays ?? 5
+
+            // Pre-populate with already-loaded data for instant display
+            self.periodDays = periodDays
+            self.predictedPeriodDays = predictedPeriodDays
+            self.fertileDays = fertileDays
+            self.ovulationDays = ovulationDays
         }
     }
 
@@ -201,8 +210,8 @@ public struct CalendarFeature: Sendable {
 
             case .loadCalendar:
                 state.isLoadingCalendar = true
-                let start = Calendar.current.date(byAdding: .month, value: -3, to: Date())!
-                let end = Calendar.current.date(byAdding: .month, value: 3, to: Date())!
+                let start = Calendar.current.date(byAdding: .month, value: -24, to: Date())!
+                let end = Calendar.current.date(byAdding: .month, value: 12, to: Date())!
                 return .run { [menstrualClient, sessionClient] send in
                     guard let token = try? await sessionClient.getAccessToken() else { return }
                     let result = await Result {
@@ -214,16 +223,36 @@ public struct CalendarFeature: Sendable {
             case .calendarLoaded(.success(let response)):
                 state.isLoadingCalendar = false
                 state.calendarEntries = response.entries
-                // Populate periodDays from backend calendar entries
-                let fmt = DateFormatter()
-                fmt.dateFormat = "yyyy-MM-dd"
+                // Populate periodDays from backend calendar entries (confirmed + predicted)
                 var serverPeriodDays: Set<String> = []
-                for entry in response.entries where entry.type == "period" {
-                    serverPeriodDays.insert(fmt.string(from: entry.date))
+                var serverPredictedDays: Set<String> = []
+                var serverFertileDays: [String: FertilityLevel] = [:]
+                var serverOvulationDays: Set<String> = []
+                let todayKey = Self.dateKey(Calendar.current.startOfDay(for: Date()))
+                for entry in response.entries {
+                    let localDay = Self.localDate(from: entry.date)
+                    let key = Self.dateKey(localDay)
+                    if entry.type == "period" {
+                        serverPeriodDays.insert(key)
+                        // Future bleeding days from current cycle → show as predicted
+                        if key > todayKey {
+                            serverPredictedDays.insert(key)
+                        }
+                    } else if entry.type == "predicted_period" {
+                        serverPeriodDays.insert(key)
+                        serverPredictedDays.insert(key)
+                    } else if entry.type == "fertile", let levelStr = entry.fertilityLevel,
+                              let level = FertilityLevel(rawValue: levelStr) {
+                        serverFertileDays[key] = level
+                    } else if entry.type == "ovulation" {
+                        serverOvulationDays.insert(key)
+                    }
                 }
-                if !serverPeriodDays.isEmpty {
-                    state.periodDays = serverPeriodDays
-                }
+                // Always use server as source of truth (even if empty)
+                state.periodDays = serverPeriodDays
+                state.predictedPeriodDays = serverPredictedDays
+                state.fertileDays = serverFertileDays
+                state.ovulationDays = serverOvulationDays
                 return .none
 
             case .calendarLoaded(.failure):
@@ -245,31 +274,38 @@ public struct CalendarFeature: Sendable {
                 return .none
 
             case .editPeriodTapped:
+                // Exclude predicted days from periodDays — EditPeriod shows them separately
+                let confirmedDays = state.periodDays.subtracting(state.predictedPeriodDays)
                 state.editPeriod = EditPeriodFeature.State(
                     cycleStartDate: state.cycleStartDate,
                     cycleLength: state.cycleLength,
                     bleedingDays: state.bleedingDays,
-                    periodDays: state.periodDays,
-                    periodFlowIntensity: state.periodFlowIntensity
+                    periodDays: confirmedDays,
+                    periodFlowIntensity: state.periodFlowIntensity,
+                    predictedPeriodDays: state.predictedPeriodDays
                 )
                 return .none
 
             case .editPeriod(.presented(.delegate(let delegate))):
                 switch delegate {
-                case .didSave(let periodDays, let flowIntensity):
-                    state.periodDays = periodDays
+                case .didSave(let periodDays, let predictedPeriodDays, let flowIntensity):
+                    // Use data directly from EditPeriod — already fresh from server
+                    state.periodDays = periodDays.union(predictedPeriodDays)
+                    state.predictedPeriodDays = predictedPeriodDays
                     state.periodFlowIntensity = flowIntensity
 
                     if periodDays.isEmpty {
                         let today = Calendar.current.startOfDay(for: Date())
                         state.cycleStartDate = state.menstrualStatus.map {
-                            Calendar.current.startOfDay(for: $0.currentCycle.startDate)
+                            Calendar.current.startOfDay(for: CalendarFeature.localDate(from: $0.currentCycle.startDate))
                         } ?? Calendar.current.date(byAdding: .day, value: -14, to: today) ?? today
                         state.bleedingDays = state.menstrualStatus?.currentCycle.bleedingDays ?? 5
                     } else {
                         CalendarFeature.recomputeCycle(from: &state)
                     }
                     state.editPeriod = nil
+                    // Reload calendar to get updated fertile window from server
+                    return .send(.loadCalendar)
                 }
                 return .none
 
@@ -289,6 +325,24 @@ public struct CalendarFeature: Sendable {
         let fmt = DateFormatter()
         fmt.dateFormat = "yyyy-MM-dd"
         return fmt.string(from: date)
+    }
+
+    /// Converts a server date (UTC midnight) to local midnight for the same calendar day.
+    /// Prevents off-by-one when local timezone is west of UTC.
+    public static func localDate(from serverDate: Date) -> Date {
+        var utcCal = Calendar(identifier: .gregorian)
+        utcCal.timeZone = TimeZone(identifier: "UTC")!
+        let comps = utcCal.dateComponents([.year, .month, .day], from: serverDate)
+        return Calendar.current.date(from: comps) ?? serverDate
+    }
+
+    /// Converts a local midnight date to UTC midnight for the same calendar day.
+    /// Use when storing local dates into models that will later be read via localDate(from:).
+    public static func utcDate(from localDate: Date) -> Date {
+        let comps = Calendar.current.dateComponents([.year, .month, .day], from: localDate)
+        var utcCal = Calendar(identifier: .gregorian)
+        utcCal.timeZone = TimeZone(identifier: "UTC")!
+        return utcCal.date(from: comps) ?? localDate
     }
 
     static func ariaMessage(symptoms: [String], phase: CyclePhase?) -> String {
@@ -322,27 +376,18 @@ public struct CalendarFeature: Sendable {
 
     private static func recomputeCycle(from state: inout State) {
         guard !state.periodDays.isEmpty else { return }
-        let cal = Calendar.current
-        let fmt = DateFormatter()
-        fmt.dateFormat = "yyyy-MM-dd"
-        let dates = state.periodDays
-            .compactMap { fmt.date(from: $0) }
-            .map { cal.startOfDay(for: $0) }
-            .sorted()
-        guard let latest = dates.last else { return }
-        var streakStart = latest
-        var streakLength = 1
-        var prev = latest
-        for date in dates.reversed().dropFirst() {
-            let diff = cal.dateComponents([.day], from: date, to: prev).day ?? 0
-            if diff == 1 {
-                streakLength += 1
-                streakStart = date
-                prev = date
-            } else { break }
-        }
-        state.cycleStartDate = streakStart
-        state.bleedingDays = streakLength
+        // Group all period days into consecutive streaks, then pick the
+        // most recent streak that starts on or before today.
+        let groups = EditPeriodFeature.groupConsecutivePeriods(state.periodDays)
+        guard !groups.isEmpty else { return }
+
+        let today = Calendar.current.startOfDay(for: Date())
+        // Find the latest period that has already started (startDate <= today)
+        let pastGroups = groups.filter { $0.startDate <= today }
+        guard let best = pastGroups.last ?? groups.first else { return }
+
+        state.cycleStartDate = best.startDate
+        state.bleedingDays = best.dayCount
     }
 }
 
@@ -360,6 +405,8 @@ private func phaseInfo(
     let diff = cal.dateComponents([.day], from: start, to: d).day ?? 0
     guard diff >= 0 else { return nil }
     let cycleIndex = diff / cycleLength
+    // Limit projection to 12 cycles ahead (~1 year)
+    guard cycleIndex <= 12 else { return nil }
     let dayInCycle = diff % cycleLength + 1
     let ovDay = cycleLength - 14
     let phase: CyclePhase
@@ -426,6 +473,8 @@ private struct CalendarDayInfo {
     let cycleDay: Int?
     let isPeriodDay: Bool
     let isFertile: Bool
+    let fertilityLevel: FertilityLevel?
+    let isOvulationDay: Bool
     let isPredicted: Bool
     let isUserMarkedPeriod: Bool
     let flowIntensity: FlowIntensity?
@@ -452,7 +501,7 @@ public struct CalendarView: View {
         var comps = cal.dateComponents([.year, .month], from: Date())
         comps.day = 1
         let current = cal.date(from: comps) ?? Date()
-        return (-6...3).compactMap { cal.date(byAdding: .month, value: $0, to: current) }
+        return (-12...12).compactMap { cal.date(byAdding: .month, value: $0, to: current) }
     }
 
     private func monthId(_ date: Date) -> String {
@@ -769,10 +818,12 @@ private struct MonthGridView: View {
         let cycleStart = cal.startOfDay(for: store.cycleStartDate)
         let cycleLength = store.cycleLength
         let bleedingDays = store.bleedingDays
-        let ovDay = cycleLength - 14
         let loggedDays = store.loggedDays
         let periodDays = store.periodDays
+        let predictedPeriodDays = store.predictedPeriodDays
         let periodFlowIntensity = store.periodFlowIntensity
+        let fertileDays = store.fertileDays
+        let ovulationDays = store.ovulationDays
         let selectedDate = store.selectedDate
         let displayedMonth = month
         let today = cal.startOfDay(for: Date())
@@ -793,44 +844,36 @@ private struct MonthGridView: View {
             let isCurrentMonth = cal.component(.month, from: date) == cal.component(.month, from: displayedMonth)
             let key = CalendarFeature.dateKey(date)
 
-            if let info = phaseInfo(for: d, cycleStartDate: cycleStart, cycleLength: cycleLength, bleedingDays: bleedingDays) {
-                // Fertile window: 5 days before ovulation through ovulation day
-                // Medically: sperm survive ~5 days, egg lives 12-24h after ovulation
-                let isFertile = info.cycleDay >= (ovDay - 5) && info.cycleDay <= ovDay
-                return CalendarDayInfo(
-                    date: date,
-                    dayNumber: cal.component(.day, from: date),
-                    isCurrentMonth: isCurrentMonth,
-                    isToday: d == today,
-                    isSelected: d == selectedDate,
-                    phase: info.phase,
-                    cycleDay: info.cycleDay,
-                    isPeriodDay: info.phase == .menstrual,
-                    isFertile: isFertile,
-                    isPredicted: info.isPredicted,
-                    isUserMarkedPeriod: periodDays.contains(key),
-                    flowIntensity: periodFlowIntensity[key],
-                    hasLog: !(loggedDays[key]?.symptoms.isEmpty ?? true),
-                    isFuture: d > today
-                )
-            } else {
-                return CalendarDayInfo(
-                    date: date,
-                    dayNumber: cal.component(.day, from: date),
-                    isCurrentMonth: isCurrentMonth,
-                    isToday: d == today,
-                    isSelected: d == selectedDate,
-                    phase: nil,
-                    cycleDay: nil,
-                    isPeriodDay: false,
-                    isFertile: false,
-                    isPredicted: false,
-                    isUserMarkedPeriod: periodDays.contains(key),
-                    flowIntensity: periodFlowIntensity[key],
-                    hasLog: !(loggedDays[key]?.symptoms.isEmpty ?? true),
-                    isFuture: d > today
-                )
-            }
+            // ONLY server data — no local math for period days
+            let isServerPeriod = periodDays.contains(key)
+            let isServerPredicted = predictedPeriodDays.contains(key)
+            let info = phaseInfo(for: d, cycleStartDate: cycleStart, cycleLength: cycleLength, bleedingDays: bleedingDays)
+            let cycleDay = info?.cycleDay
+            // Phase from server period status; otherwise use local math for non-period phases only
+            let phase: CyclePhase? = isServerPeriod ? .menstrual : (info.map { $0.phase == .menstrual ? .follicular : $0.phase })
+            // Server-driven fertility data
+            let serverFertilityLevel = fertileDays[key]
+            let isFertile = serverFertilityLevel != nil
+            let isOvulation = ovulationDays.contains(key)
+
+            return CalendarDayInfo(
+                date: date,
+                dayNumber: cal.component(.day, from: date),
+                isCurrentMonth: isCurrentMonth,
+                isToday: d == today,
+                isSelected: d == selectedDate,
+                phase: phase,
+                cycleDay: cycleDay,
+                isPeriodDay: isServerPeriod,
+                isFertile: isFertile,
+                fertilityLevel: serverFertilityLevel,
+                isOvulationDay: isOvulation,
+                isPredicted: isServerPredicted,
+                isUserMarkedPeriod: isServerPeriod && !isServerPredicted,
+                flowIntensity: periodFlowIntensity[key],
+                hasLog: !(loggedDays[key]?.symptoms.isEmpty ?? true),
+                isFuture: d > today
+            )
         }
     }
 
@@ -880,6 +923,15 @@ private struct CalendarDayCell: View {
                 Circle()
                     .fill(fillColor)
 
+                // Fertile day: subtle colored ring
+                if info.isFertile && !info.isPeriodDay && info.isCurrentMonth && !info.isSelected {
+                    Circle()
+                        .strokeBorder(
+                            info.fertilityLevel?.color ?? CyclePhase.ovulatory.orbitColor.opacity(0.4),
+                            lineWidth: info.isOvulationDay ? 2 : 1.5
+                        )
+                }
+
                 // Predicted period: dashed border
                 if info.isPredicted && info.isPeriodDay && !info.isSelected && !info.isUserMarkedPeriod {
                     Circle()
@@ -922,18 +974,28 @@ private struct CalendarDayCell: View {
                     )
                     .offset(y: 10)
                 }
+
+                // Ovulation day sparkle icon
+                if info.isOvulationDay && !info.isPeriodDay && info.isCurrentMonth {
+                    Image(systemName: "sparkle")
+                        .font(.system(size: 8, weight: .bold))
+                        .foregroundColor(CyclePhase.ovulatory.orbitColor)
+                        .offset(x: 13, y: -13)
+                }
             }
             .frame(width: 40, height: 40)
             .shadow(
                 color: info.isUserMarkedPeriod
                     ? CyclePhase.menstrual.glowColor.opacity(0.25)
-                    : .clear,
+                    : info.isOvulationDay && !info.isPeriodDay
+                        ? CyclePhase.ovulatory.glowColor.opacity(0.2)
+                        : .clear,
                 radius: 6, x: 0, y: 2
             )
             .animation(.spring(response: 0.28, dampingFraction: 0.75), value: info.isSelected)
             .animation(.spring(response: 0.25, dampingFraction: 0.8), value: info.isUserMarkedPeriod)
 
-            // Today label, log indicator, or phase dot
+            // Today label, log indicator, fertile indicator, or phase dot
             if info.isToday && info.isCurrentMonth {
                 Text("Today")
                     .font(.custom("Raleway-Bold", size: 8))
@@ -942,6 +1004,12 @@ private struct CalendarDayCell: View {
             } else if info.hasLog && info.isCurrentMonth {
                 Circle()
                     .fill(DesignColors.accentWarm)
+                    .frame(width: 5, height: 5)
+                    .frame(height: 3)
+            } else if info.isFertile && !info.isPeriodDay && info.isCurrentMonth {
+                // Fertile indicator dot — colored by level
+                Circle()
+                    .fill(info.fertilityLevel?.color ?? CyclePhase.ovulatory.orbitColor.opacity(0.5))
                     .frame(width: 5, height: 5)
                     .frame(height: 3)
             } else {
@@ -966,6 +1034,17 @@ private struct CalendarDayCell: View {
         // Predicted period: light red tint
         if info.isPredicted && info.isPeriodDay {
             return CyclePhase.menstrual.orbitColor.opacity(info.isSelected ? 0.35 : 0.18)
+        }
+
+        // Ovulation day: golden tint
+        if info.isOvulationDay && !info.isPeriodDay {
+            return CyclePhase.ovulatory.orbitColor.opacity(info.isSelected ? 0.35 : 0.18)
+        }
+
+        // Fertile days: subtle tint based on level
+        if info.isFertile && !info.isPeriodDay, let level = info.fertilityLevel {
+            let baseOpacity: Double = info.isSelected ? 0.25 : 0.12
+            return level.color.opacity(baseOpacity)
         }
 
         // Everything else: no fill (clean/blank)
@@ -993,18 +1072,14 @@ private struct CalendarDayCell: View {
 
 private struct PeriodDropletIndicator: View {
     let intensity: FlowIntensity?
-    let isOnDark: Bool
-
-    private var color: Color {
-        isOnDark ? .white : CyclePhase.menstrual.orbitColor
-    }
+    var isOnDark: Bool = false
 
     var body: some View {
         let resolved = intensity ?? .medium
         Group {
             if resolved == .spotting {
                 Circle()
-                    .fill(color.opacity(0.8))
+                    .fill(isOnDark ? Color.white.opacity(0.8) : CyclePhase.menstrual.orbitColor.opacity(0.6))
                     .frame(width: 5, height: 5)
             } else {
                 HStack(spacing: 1) {
@@ -1013,7 +1088,7 @@ private struct PeriodDropletIndicator: View {
                             .font(.system(size: 7, weight: .semibold))
                     }
                 }
-                .foregroundColor(color)
+                .foregroundColor(isOnDark ? .white : CyclePhase.menstrual.orbitColor.opacity(0.8))
             }
         }
     }
@@ -1049,6 +1124,8 @@ private struct DayDetailPanel: View {
 
     private var periodKey: String { CalendarFeature.dateKey(store.selectedDate) }
     private var isSelectedPeriodDay: Bool { store.periodDays.contains(periodKey) }
+    private var selectedFertilityLevel: FertilityLevel? { store.fertileDays[periodKey] }
+    private var isSelectedOvulationDay: Bool { store.ovulationDays.contains(periodKey) }
 
     var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
@@ -1059,6 +1136,14 @@ private struct DayDetailPanel: View {
                     dateString: formattedDate,
                     isPredicted: selectedPhaseInfo?.isPredicted ?? false
                 )
+
+                // Fertility info card
+                if let level = selectedFertilityLevel {
+                    FertilityInfoCard(
+                        level: level,
+                        isOvulationDay: isSelectedOvulationDay
+                    )
+                }
 
                 AriaInsightCard(
                     phase: selectedPhaseInfo?.phase,
@@ -1144,6 +1229,77 @@ private struct PhaseBannerRow: View {
                             }
                     }
             }
+        }
+    }
+}
+
+// MARK: - Fertility Info Card
+
+private struct FertilityInfoCard: View {
+    let level: FertilityLevel
+    let isOvulationDay: Bool
+
+    var body: some View {
+        HStack(spacing: 12) {
+            ZStack {
+                Circle()
+                    .fill(level.color.opacity(0.15))
+                Image(systemName: isOvulationDay ? "sparkle" : "leaf.fill")
+                    .font(.system(size: 18, weight: .medium))
+                    .foregroundColor(level.color)
+            }
+            .frame(width: 40, height: 40)
+
+            VStack(alignment: .leading, spacing: 3) {
+                HStack(spacing: 6) {
+                    Text(isOvulationDay ? "Ovulation Day" : "Fertile Window")
+                        .font(.custom("Raleway-SemiBold", size: 14))
+                        .foregroundColor(DesignColors.text)
+                    Text(level.displayName)
+                        .font(.custom("Raleway-Medium", size: 10))
+                        .foregroundColor(level.color)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background {
+                            Capsule()
+                                .fill(level.color.opacity(0.12))
+                                .overlay { Capsule().strokeBorder(level.color.opacity(0.3), lineWidth: 0.5) }
+                        }
+                }
+                Text(fertilityDescription)
+                    .font(.custom("Raleway-Regular", size: 11.5))
+                    .foregroundColor(DesignColors.textSecondary.opacity(0.7))
+                    .fixedSize(horizontal: false, vertical: true)
+                    .lineSpacing(2)
+            }
+
+            Spacer()
+
+            // Probability badge
+            Text(level.probability)
+                .font(.custom("Raleway-Bold", size: 13))
+                .foregroundColor(level.color)
+        }
+        .padding(12)
+        .background {
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .fill(level.color.opacity(0.06))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .strokeBorder(level.color.opacity(0.15), lineWidth: 0.5)
+                }
+        }
+    }
+
+    private var fertilityDescription: String {
+        if isOvulationDay {
+            return "Egg is released today. Highest chance of conception within the next 12-24 hours."
+        }
+        switch level {
+        case .peak: return "Peak fertility. The egg may be released today or tomorrow."
+        case .high: return "High fertility. Sperm can survive up to 5 days waiting for ovulation."
+        case .medium: return "Moderate fertility. You're entering the fertile window."
+        case .low: return "Low but possible fertility. Early or late in the fertile window."
         }
     }
 }

@@ -11,6 +11,7 @@ public struct MenstrualClient: Sendable {
     public var logSymptom: @Sendable (String, LogSymptomRequest) async throws -> Void
     public var getSymptoms: @Sendable (String, Date) async throws -> [MenstrualSymptomResponse]
     public var generatePrediction: @Sendable (String) async throws -> Void
+    public var removePeriodDays: @Sendable (String, RemovePeriodDaysRequest) async throws -> Void
 
     public init(
         getStatus: @escaping @Sendable (String) async throws -> MenstrualStatusResponse,
@@ -19,7 +20,8 @@ public struct MenstrualClient: Sendable {
         confirmPeriod: @escaping @Sendable (String, ConfirmPeriodRequest) async throws -> Void,
         logSymptom: @escaping @Sendable (String, LogSymptomRequest) async throws -> Void,
         getSymptoms: @escaping @Sendable (String, Date) async throws -> [MenstrualSymptomResponse],
-        generatePrediction: @escaping @Sendable (String) async throws -> Void
+        generatePrediction: @escaping @Sendable (String) async throws -> Void,
+        removePeriodDays: @escaping @Sendable (String, RemovePeriodDaysRequest) async throws -> Void
     ) {
         self.getStatus = getStatus
         self.getInsights = getInsights
@@ -28,6 +30,7 @@ public struct MenstrualClient: Sendable {
         self.logSymptom = logSymptom
         self.getSymptoms = getSymptoms
         self.generatePrediction = generatePrediction
+        self.removePeriodDays = removePeriodDays
     }
 }
 
@@ -87,6 +90,11 @@ extension MenstrualClient {
                 try await apiClient.send(
                     MenstrualEndpoints.predict().authenticated(with: token)
                 )
+            },
+            removePeriodDays: { token, request in
+                try await apiClient.send(
+                    MenstrualEndpoints.removePeriodDays(request).authenticated(with: token)
+                )
             }
         )
     }
@@ -103,7 +111,8 @@ extension MenstrualClient {
             confirmPeriod: { _, _ in },
             logSymptom: { _, _ in },
             getSymptoms: { _, _ in [] },
-            generatePrediction: { _ in }
+            generatePrediction: { _ in },
+            removePeriodDays: { _, _ in }
         )
     }
 }

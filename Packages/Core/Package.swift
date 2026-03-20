@@ -55,7 +55,7 @@ let package = Package(
         ),
         .target(
             name: "DesignSystem",
-            dependencies: [],
+            dependencies: ["Models"],
             path: "DesignSystem"
         ),
     ]

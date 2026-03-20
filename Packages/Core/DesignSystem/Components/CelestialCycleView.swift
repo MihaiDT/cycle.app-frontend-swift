@@ -7,14 +7,13 @@ import SwiftUI
 /// tap phases for detail tooltips. Canvas + TimelineView at 30fps with multi-layer particle system.
 /// Supports VoiceOver adjustable action and reduced-motion preferences.
 public struct CelestialCycleView: View {
-    public let cycleDay: Int
-    public let cycleLength: Int
-    public let phase: String
-    public let nextPeriodIn: Int?
-    public let fertileWindowActive: Bool
+    public let cycle: CycleContext
     public var collapseProgress: CGFloat
+    /// Ring drag exploring day (1-based, current cycle only). Nil = show current day.
     @Binding public var exploringDay: Int?
-    public var onLogPeriod: (() -> Void)?
+    /// Calendar-selected date (any date in range). Nil = no calendar selection.
+    @Binding public var calendarDate: Date?
+    public var onLogPeriod: ((Date?) -> Void)?
 
     @State private var isDragging = false
     @State private var lastHapticPhase: CyclePhase?
@@ -23,70 +22,151 @@ public struct CelestialCycleView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     public init(
-        cycleDay: Int,
-        cycleLength: Int,
-        phase: String,
-        nextPeriodIn: Int?,
-        fertileWindowActive: Bool,
-        collapseProgress: CGFloat = 0,
-        exploringDay: Binding<Int?>
-    ) {
-        self.cycleDay = cycleDay
-        self.cycleLength = cycleLength
-        self.phase = phase
-        self.nextPeriodIn = nextPeriodIn
-        self.fertileWindowActive = fertileWindowActive
-        self.collapseProgress = collapseProgress
-        self._exploringDay = exploringDay
-        self.onLogPeriod = nil
-    }
-
-    public init(
-        cycleDay: Int,
-        cycleLength: Int,
-        phase: String,
-        nextPeriodIn: Int?,
-        fertileWindowActive: Bool,
+        cycle: CycleContext,
         collapseProgress: CGFloat = 0,
         exploringDay: Binding<Int?>,
-        onLogPeriod: @escaping () -> Void
+        calendarDate: Binding<Date?> = .constant(nil),
+        onLogPeriod: ((Date?) -> Void)? = nil
     ) {
-        self.cycleDay = cycleDay
-        self.cycleLength = cycleLength
-        self.phase = phase
-        self.nextPeriodIn = nextPeriodIn
-        self.fertileWindowActive = fertileWindowActive
+        self.cycle = cycle
         self.collapseProgress = collapseProgress
         self._exploringDay = exploringDay
+        self._calendarDate = calendarDate
         self.onLogPeriod = onLogPeriod
     }
 
     private var currentPhase: CyclePhase {
-        CyclePhase(rawValue: phase) ?? .follicular
+        cycle.currentPhase
     }
 
+    // MARK: - Display Properties
+    //
+    // ALL cycle day math delegated to CycleContext — no local arithmetic.
+    // Priority: isDragging → calendarDate → exploringDay (post-drag) → default (today)
+
+    /// The effective date for display — calendar selection or today.
+    private var effectiveDate: Date {
+        calendarDate ?? Calendar.current.startOfDay(for: Date())
+    }
+
+    /// Cycle day for the effective date (delegates to CycleContext).
+    /// For today with no selection: returns server cycle day (can be > cycleLength for overdue).
+    /// For other dates: uses CycleContext which handles predicted blocks correctly.
+    private var effectiveCycleDay: Int {
+        if calendarDate == nil { return cycle.cycleDay }
+        return cycle.cycleDayNumber(for: effectiveDate) ?? cycle.cycleDay
+    }
+
+    /// Cycle day (1-based) for center text — can be > cycleLength for overdue today.
     private var displayDay: Int {
-        exploringDay ?? cycleDay
+        exploringDay ?? effectiveCycleDay
     }
 
+    /// Phase for center text display — server-aware, suppresses math-based menstrual for future cycles.
     private var displayPhase: CyclePhase {
-        phaseForDay(displayDay)
+        if exploringDay == nil {
+            return cycle.phase(for: effectiveDate) ?? cycle.phase(forCycleDay: min(effectiveCycleDay, cycle.cycleLength))
+        }
+        return cycle.phase(forCycleDay: exploringDay!)
+    }
+
+    private var daysUntilPeriodForDisplay: Int {
+        if exploringDay == nil {
+            return cycle.daysUntilPeriod(from: effectiveDate)
+        }
+        return cycle.daysUntilPeriod(fromCycleDay: exploringDay!)
+    }
+
+    private var isOverdue: Bool {
+        exploringDay == nil && calendarDate == nil && cycle.cycleDay > cycle.cycleLength
+    }
+
+    private var overdueDays: Int {
+        cycle.cycleDay - cycle.cycleLength
+    }
+
+    /// Whether the calendar is pointing at a future cycle date
+    private var isEstimatedDate: Bool {
+        guard let date = calendarDate else { return false }
+        guard let info = cycle.cycleDayInfo(for: date) else { return false }
+        return info.offset > 0
+    }
+
+    // MARK: - Center Text (Flo/Stardust-style contextual message)
+    //
+    // Display matrix (title / subtitle):
+    //   Menstrual day (current or predicted)    → "Period"   / "Day N"
+    //   Overdue (no exploring, day > length)    → "Period"   / "N days late"
+    //   Period expected today                   → "Period"   / "expected today" or "today"
+    //   Period tomorrow                         → "Period"   / "starts tomorrow" or "may start\ntomorrow"
+    //   Period within 7 days                    → "Period in"/ "N days"
+    //   Fertile/ovulatory (current cycle)       → "Fertile"  / "Window"
+    //   Normal day (current cycle)              → phase name / "Day N"
+    //   Non-period day in future cycle          → "Period in"/ "N days"
+
+    private var periodContextTitle: String {
+        // 1. On a period day — works for both current cycle and next-cycle predicted
+        if displayPhase == .menstrual { return "Period" }
+
+        // 2. Overdue: past expected date, period hasn't come
+        if isOverdue { return "Period" }
+
+        // 3. Days-until-period flow
+        let days = daysUntilPeriodForDisplay
+        let isEstimated = exploringDay != nil || isEstimatedDate
+        if days <= 0 { return isEstimated ? "Period expected" : "Period" }
+        if days == 1 { return "Period" }
+        if days <= 7 { return "Period in" }
+
+        // 4. Fertile window (current cycle only)
+        if displayPhase == .ovulatory && !isEstimatedDate { return "Fertile" }
+
+        // 5. Future cycle non-period days or normal current-cycle day
+        return isEstimatedDate ? "Period in" : displayPhase.displayName
+    }
+
+    private var periodContextSubtitle: String {
+        // 1. On a period day — show cycle day (matches ring position)
+        if displayPhase == .menstrual {
+            return "Day \(min(displayDay, cycle.cycleLength))"
+        }
+
+        // 2. Overdue
+        if isOverdue {
+            return overdueDays == 1 ? "1 day late" : "\(overdueDays) days late"
+        }
+
+        // 3. Days-until-period flow
+        let days = daysUntilPeriodForDisplay
+        let isEstimated = exploringDay != nil || isEstimatedDate
+        if days <= 0 { return isEstimated ? "today" : "expected today" }
+        if days == 1 { return isEstimated ? "starts tomorrow" : "may start\ntomorrow" }
+        if days <= 7 { return "\(days) days" }
+
+        // 4. Fertile window (current cycle only)
+        if displayPhase == .ovulatory && !isEstimatedDate { return "Window" }
+
+        // 5. Future cycle non-period days
+        if isEstimatedDate { return "\(days) days" }
+
+        // 6. Normal current-cycle day
+        return "Day \(displayDay)"
     }
 
     public var body: some View {
         mainContent
             .accessibilityElement(children: .combine)
             .accessibilityLabel(accessibilityDescription)
-            .accessibilityValue("Day \(displayDay) of \(cycleLength)")
+            .accessibilityValue("Day \(displayDay) of \(cycle.cycleLength)")
             .accessibilityHint("Swipe up or down to explore cycle days")
             .accessibilityAdjustableAction { direction in
                 switch direction {
                 case .increment:
-                    let next = min(cycleLength, (exploringDay ?? cycleDay) + 1)
+                    let next = min(cycle.cycleLength, (exploringDay ?? cycle.cycleDay) + 1)
                     exploringDay = next
                     triggerHaptic(.light)
                 case .decrement:
-                    let prev = max(1, (exploringDay ?? cycleDay) - 1)
+                    let prev = max(1, (exploringDay ?? cycle.cycleDay) - 1)
                     exploringDay = prev
                     triggerHaptic(.light)
                 @unknown default:
@@ -94,9 +174,10 @@ public struct CelestialCycleView: View {
                 }
             }
             .onChange(of: collapseProgress) { _, newValue in
-                if newValue > 0.1 && exploringDay != nil {
+                if newValue > 0.1 && (exploringDay != nil || calendarDate != nil) {
                     withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
                         exploringDay = nil
+                        calendarDate = nil
                         isDragging = false
                     }
                 }
@@ -114,6 +195,12 @@ public struct CelestialCycleView: View {
         min(1, max(0, (collapseProgress - 0.6) / 0.3))
     }
 
+    /// Ring position — capped at cycleLength so overdue shows nearly-full, not wrapped to day 1.
+    private var ringDay: Int {
+        if let exploringDay { return exploringDay }
+        return min(effectiveCycleDay, cycle.cycleLength)
+    }
+
     @ViewBuilder
     private var mainContent: some View {
         VStack(spacing: 0) {
@@ -124,10 +211,11 @@ public struct CelestialCycleView: View {
                     .allowsHitTesting(false)
 
                 CelestialOrbitCanvas(
-                    cycleDay: cycleDay,
-                    cycleLength: cycleLength,
+                    displayDay: ringDay,
+                    cycleLength: cycle.cycleLength,
+                    bleedingDays: cycle.effectiveBleedingDays,
                     phase: currentPhase,
-                    exploringDay: exploringDay,
+                    displayPhase: displayPhase,
                     isDragging: isDragging,
                     reduceMotion: reduceMotion,
                     collapseProgress: collapseProgress
@@ -137,9 +225,8 @@ public struct CelestialCycleView: View {
                 .overlay {
                     if !reduceMotion {
                         CosmicParticleEmitter(
-                            cycleDay: cycleDay,
-                            cycleLength: cycleLength,
-                            exploringDay: exploringDay
+                            displayDay: ringDay,
+                            cycleLength: cycle.cycleLength
                         )
                         .frame(width: 340, height: 340)
                         .allowsHitTesting(false)
@@ -152,13 +239,14 @@ public struct CelestialCycleView: View {
                         .animation(.spring(response: 0.3, dampingFraction: 0.8), value: displayDay)
 
                     if let onLogPeriod, collapseProgress < 0.1 {
+                        let isOnPeriodDay = displayPhase == .menstrual
                         Button {
-                            onLogPeriod()
+                            onLogPeriod(calendarDate)
                         } label: {
                             HStack(spacing: 6) {
-                                Image(systemName: "drop.fill")
+                                Image(systemName: isOnPeriodDay ? "pencil" : "drop.fill")
                                     .font(.system(size: 11, weight: .semibold))
-                                Text("Log Period")
+                                Text(isOnPeriodDay ? "Edit Period" : "Log Period")
                                     .font(.custom("Raleway-SemiBold", size: 13))
                             }
                             .foregroundColor(CyclePhase.menstrual.orbitColor)
@@ -194,12 +282,12 @@ public struct CelestialCycleView: View {
     private var accessibilityDescription: String {
         let phaseName = displayPhase.displayName
         let exploring = exploringDay != nil
-        var desc = "\(phaseName) phase, day \(displayDay) of \(cycleLength) day cycle"
+        var desc = "\(phaseName) phase, day \(displayDay) of \(cycle.cycleLength) day cycle"
         if exploring { desc += ", exploring" }
-        if let daysUntil = nextPeriodIn, daysUntil > 0 {
+        if let daysUntil = cycle.nextPeriodIn, daysUntil > 0 {
             desc += ", \(daysUntil) days until next period"
         }
-        if fertileWindowActive { desc += ", fertile window active" }
+        if cycle.fertileWindowActive { desc += ", fertile window active" }
         return desc
     }
 
@@ -255,12 +343,13 @@ public struct CelestialCycleView: View {
                             let angle = atan2(dy, dx)
 
                             if !isDragging {
-                                // First touch — snap to nearest day
+                                // First touch — snap to nearest day, clear calendar selection
                                 isDragging = true
+                                calendarDate = nil
                                 lastDragAngle = angle
                                 let day = dayForAngle(angle)
                                 exploringDay = day
-                                lastHapticPhase = phaseForDay(day)
+                                lastHapticPhase = cycle.phase(forCycleDay: day)
                                 triggerHaptic(.light)
                                 return
                             }
@@ -277,11 +366,11 @@ public struct CelestialCycleView: View {
                             if delta < -.pi { delta += 2 * .pi }
 
                             // Convert angular delta to fractional days
-                            let dayAngle = (2 * .pi) / Double(max(cycleLength, 1))
+                            let dayAngle = (2 * .pi) / Double(max(cycle.cycleLength, 1))
                             let dayDelta = delta / dayAngle
 
                             // Only advance when accumulated movement crosses a day boundary
-                            let currentDay = exploringDay ?? cycleDay
+                            let currentDay = exploringDay ?? cycle.cycleDay
                             let daysMoved = Int(dayDelta.rounded())
 
                             if daysMoved != 0 {
@@ -290,7 +379,7 @@ public struct CelestialCycleView: View {
                                 let newDay = currentDay + clampedMove
 
                                 // Clamp to valid range — no wrapping
-                                guard newDay >= 1 && newDay <= cycleLength else {
+                                guard newDay >= 1 && newDay <= cycle.cycleLength else {
                                     lastDragAngle = angle
                                     return
                                 }
@@ -302,7 +391,7 @@ public struct CelestialCycleView: View {
                                 // Haptic tick on every day change
                                 triggerHaptic(.light)
 
-                                let newPhase = phaseForDay(newDay)
+                                let newPhase = cycle.phase(forCycleDay: newDay)
                                 if newPhase != lastHapticPhase {
                                     lastHapticPhase = newPhase
                                     triggerHaptic(.medium)
@@ -313,7 +402,7 @@ public struct CelestialCycleView: View {
                             lastDragAngle = nil
                             withAnimation(.spring(response: 0.4, dampingFraction: 0.75)) {
                                 isDragging = false
-                                if exploringDay == cycleDay {
+                                if exploringDay == cycle.cycleDay {
                                     exploringDay = nil
                                 }
                             }
@@ -328,6 +417,7 @@ public struct CelestialCycleView: View {
     private func dismissSelection() {
         withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
             exploringDay = nil
+            calendarDate = nil
             isDragging = false
         }
         triggerHaptic(.light)
@@ -395,23 +485,60 @@ public struct CelestialCycleView: View {
         let counterScale: CGFloat = 1.0 + collapse * 1.2
 
         VStack(spacing: 2) {
-            // Phase description — hidden when collapsing
-            Text(displayPhase.description)
-                .font(.custom("Raleway-Regular", size: 11))
-                .foregroundColor(DesignColors.textSecondary)
-                .contentTransition(.numericText())
-                .opacity(1 - collapse)
-                .frame(height: (1 - collapse) * 16, alignment: .center)
-                .clipped()
+            if isDragging {
+                // Dragging on orbit: show Day number
+                VStack(spacing: 0) {
+                    Text("Day")
+                        .font(.custom("Raleway-Medium", size: 14))
+                        .foregroundColor(DesignColors.textSecondary)
 
-            // Day + Number block
-            VStack(spacing: 0) {
-                Text("Day")
-                    .font(.custom("Raleway-Medium", size: 14))
-                    .foregroundColor(DesignColors.textSecondary)
+                    Text("\(displayDay)")
+                        .font(.custom("Raleway-Bold", size: 48))
+                        .foregroundStyle(
+                            LinearGradient(
+                                colors: [
+                                    displayPhase.orbitColor.opacity(0.85),
+                                    displayPhase.glowColor.opacity(0.75)
+                                ],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                        .overlay {
+                            Text("\(displayDay)")
+                                .font(.custom("Raleway-Bold", size: 48))
+                                .foregroundStyle(.ultraThinMaterial)
+                                .blendMode(.overlay)
+                        }
+                        .contentTransition(.numericText(countsDown: displayDay < cycle.cycleDay))
+                        .scaleEffect(1.08)
+                }
+                .scaleEffect(counterScale)
 
-                Text("\(displayDay)")
-                    .font(.custom("Raleway-Bold", size: isDragging ? 48 : 44))
+                Text(displayPhase.displayName)
+                    .font(.custom("Raleway-SemiBold", size: 13))
+                    .foregroundColor(displayPhase.orbitColor.opacity(0.8))
+                    .contentTransition(.numericText())
+            } else {
+                // Flo-style contextual message
+                Text(periodContextTitle)
+                    .font(.custom("Raleway-Bold", size: 22))
+                    .foregroundStyle(
+                        LinearGradient(
+                            colors: [
+                                displayPhase.orbitColor.opacity(0.9),
+                                displayPhase.glowColor.opacity(0.8)
+                            ],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .multilineTextAlignment(.center)
+                    .contentTransition(.numericText())
+                    .opacity(1 - collapse * 0.5)
+
+                Text(periodContextSubtitle)
+                    .font(.custom("Raleway-Bold", size: 28))
                     .foregroundStyle(
                         LinearGradient(
                             colors: [
@@ -423,24 +550,48 @@ public struct CelestialCycleView: View {
                         )
                     )
                     .overlay {
-                        Text("\(displayDay)")
-                            .font(.custom("Raleway-Bold", size: isDragging ? 48 : 44))
+                        Text(periodContextSubtitle)
+                            .font(.custom("Raleway-Bold", size: 28))
                             .foregroundStyle(.ultraThinMaterial)
                             .blendMode(.overlay)
                     }
-                    .contentTransition(.numericText(countsDown: displayDay < cycleDay))
-                    .scaleEffect(isDragging ? 1.08 : 1.0)
-            }
-            .scaleEffect(counterScale)
+                    .multilineTextAlignment(.center)
+                    .contentTransition(.numericText())
+                    .scaleEffect(counterScale)
 
-            // Phase name — hidden when collapsing
-            Text(displayPhase.displayName)
-                .font(.custom("Raleway-SemiBold", size: 13))
-                .foregroundColor(displayPhase.orbitColor.opacity(0.8))
-                .contentTransition(.numericText())
+                // Cycle day pill + phase
+                HStack(spacing: 6) {
+                    Text("Day \(displayDay)")
+                        .font(.custom("Raleway-SemiBold", size: 11))
+                        .foregroundColor(displayPhase.orbitColor.opacity(0.8))
+
+                    Circle()
+                        .fill(displayPhase.orbitColor.opacity(0.4))
+                        .frame(width: 3, height: 3)
+
+                    Text(displayPhase.displayName)
+                        .font(.custom("Raleway-Medium", size: 11))
+                        .foregroundColor(DesignColors.textSecondary.opacity(0.7))
+                }
                 .opacity(1 - collapse)
-                .frame(height: (1 - collapse) * 18, alignment: .center)
+                .frame(height: (1 - collapse) * 16, alignment: .center)
                 .clipped()
+
+                // Future/past cycle indicator
+                if isEstimatedDate {
+                    Text("Estimated")
+                        .font(.custom("Raleway-Medium", size: 10))
+                        .foregroundColor(DesignColors.textSecondary.opacity(0.6))
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 2)
+                        .background {
+                            Capsule()
+                                .fill(DesignColors.textSecondary.opacity(0.08))
+                        }
+                        .transition(.opacity.combined(with: .move(edge: .top)))
+                        .opacity(1 - collapse)
+                }
+            }
         }
         .animation(.spring(response: 0.3, dampingFraction: 0.8), value: isDragging)
     }
@@ -448,7 +599,7 @@ public struct CelestialCycleView: View {
     // MARK: - Context Pills
 
     private var isExploring: Bool {
-        isDragging || exploringDay != nil
+        isDragging || exploringDay != nil || calendarDate != nil
     }
 
     private var contextPills: some View {
@@ -467,7 +618,7 @@ public struct CelestialCycleView: View {
                     .transition(.scale.combined(with: .opacity))
                 }
             } else {
-                if let daysUntil = nextPeriodIn {
+                if let daysUntil = cycle.nextPeriodIn {
                     contextPill(
                         icon: "calendar",
                         text: daysUntil == 0 ? "Period today" : "\(daysUntil)d until period",
@@ -475,7 +626,7 @@ public struct CelestialCycleView: View {
                     )
                 }
 
-                if fertileWindowActive {
+                if cycle.fertileWindowActive {
                     contextPill(
                         icon: "sparkles",
                         text: "Fertile window",
@@ -483,7 +634,7 @@ public struct CelestialCycleView: View {
                     )
                 }
 
-                if !fertileWindowActive && nextPeriodIn == nil {
+                if !cycle.fertileWindowActive && cycle.nextPeriodIn == nil {
                     contextPill(
                         icon: "heart.fill",
                         text: currentPhase.insight,
@@ -525,14 +676,7 @@ public struct CelestialCycleView: View {
         let normalized = (angle + .pi / 2).truncatingRemainder(dividingBy: 2 * .pi)
         let positive = normalized < 0 ? normalized + 2 * .pi : normalized
         let fraction = positive / (2 * .pi)
-        return max(1, min(cycleLength, Int(fraction * Double(cycleLength)) + 1))
-    }
-
-    private func phaseForDay(_ day: Int) -> CyclePhase {
-        for p in CyclePhase.allCases {
-            if p.dayRange(cycleLength: cycleLength).contains(day) { return p }
-        }
-        return .luteal
+        return max(1, min(cycle.cycleLength, Int(fraction * Double(cycle.cycleLength)) + 1))
     }
 }
 
@@ -540,20 +684,33 @@ public struct CelestialCycleView: View {
 
 /// Canvas that draws the cycle orbit with phase arcs, glass effects, and orb marker.
 private struct CelestialOrbitCanvas: View {
-    let cycleDay: Int
+    /// The resolved cycle day to display (1-based, already capped at cycleLength by caller).
+    let displayDay: Int
     let cycleLength: Int
+    let bleedingDays: Int
     let phase: CyclePhase
-    let exploringDay: Int?
+    /// The resolved phase for the current display day (from CycleContext, server-aware)
+    let displayPhase: CyclePhase
     let isDragging: Bool
     let reduceMotion: Bool
     var collapseProgress: CGFloat = 0
 
     @State private var fillAngle: Double = -.pi / 2
 
-    private var displayDay: Int { exploringDay ?? cycleDay }
+    /// Wrapped display day (1-based) for ring position.
+    private var wrappedDay: Int {
+        guard cycleLength > 0 else { return 1 }
+        return ((displayDay - 1) % cycleLength) + 1
+    }
 
+    /// Target angle = exact proportional position of the current (wrapped) day on the circle.
     private var targetAngle: Double {
-        exactAngle(forDay: displayDay + 1, of: cycleLength)
+        exactAngle(forDay: wrappedDay, of: cycleLength)
+    }
+
+    /// Combined key so the fill animation re-triggers when day or cycle length changes
+    private var fillTaskKey: Int {
+        return displayDay &* 31 &+ cycleLength
     }
 
     var body: some View {
@@ -574,7 +731,7 @@ private struct CelestialOrbitCanvas: View {
             drawPhaseArcs(context: &context, center: center, radius: radius, fillAngle: currentFill)
             drawOrbMarker(context: &context, center: center, radius: radius, orbAngle: currentFill)
         }
-        .task(id: displayDay) {
+        .task(id: fillTaskKey) {
             let target = targetAngle
             let start = fillAngle
             let duration: Double = isDragging ? 0.15 : reduceMotion ? 0.0 : 0.5
@@ -671,7 +828,7 @@ private struct CelestialOrbitCanvas: View {
         let arcWidth: CGFloat = 14
 
         for phaseItem in CyclePhase.allCases {
-            let range = phaseItem.dayRange(cycleLength: cycleLength)
+            let range = phaseItem.dayRange(cycleLength: cycleLength, bleedingDays: bleedingDays)
             let phaseStart = Double(range.lowerBound - 1) / Double(max(cycleLength, 1)) * 2 * .pi + startAngle
             let phaseEnd = Double(range.upperBound) / Double(max(cycleLength, 1)) * 2 * .pi + startAngle
 
@@ -753,8 +910,7 @@ private struct CelestialOrbitCanvas: View {
         radius: Double,
         orbAngle: Double
     ) {
-        let displayDay = exploringDay ?? cycleDay
-        let orbPhase = phaseForDay(displayDay)
+        let orbPhase = displayPhase
 
         let orbCenter = CGPoint(
             x: center.x + cos(orbAngle) * radius,
@@ -824,7 +980,9 @@ private struct CelestialOrbitCanvas: View {
     // MARK: - Helpers
 
     private func exactAngle(forDay day: Int, of total: Int) -> Double {
-        let fraction = Double(day - 1) / Double(max(total, 1))
+        // Center of the current day's arc segment: Day 1 → 0.5/28 (small visible arc),
+        // Day 28 → 27.5/28 (nearly full, gap before top). Never reaches 100%.
+        let fraction = (Double(day) - 0.5) / Double(max(total, 1))
         return fraction * 2 * .pi - .pi / 2
     }
 
@@ -842,7 +1000,7 @@ private struct CelestialOrbitCanvas: View {
 
     private func phaseForDay(_ day: Int) -> CyclePhase {
         for p in CyclePhase.allCases {
-            if p.dayRange(cycleLength: cycleLength).contains(day) { return p }
+            if p.dayRange(cycleLength: cycleLength, bleedingDays: bleedingDays).contains(day) { return p }
         }
         return .luteal
     }
@@ -853,11 +1011,8 @@ private struct CelestialOrbitCanvas: View {
 /// Hardware-accelerated particle emitter that renders cosmic dust along the unfilled
 /// arc of the cycle. Uses multiple CAEmitterCells per phase for a realistic nebula effect.
 private struct CosmicParticleEmitter: UIViewRepresentable {
-    let cycleDay: Int
+    let displayDay: Int
     let cycleLength: Int
-    let exploringDay: Int?
-
-    private var displayDay: Int { exploringDay ?? cycleDay }
 
     func makeUIView(context: Context) -> CosmicParticleView {
         let view = CosmicParticleView()
@@ -1438,47 +1593,35 @@ public struct CelestialMiniBar: View {
 
 // MARK: - Previews
 
+private func previewCycle(_ day: Int, _ phase: CyclePhase, _ nextPeriod: Int?, _ fertile: Bool) -> CycleContext {
+    CycleContext(
+        cycleDay: day, cycleLength: 28, bleedingDays: 5,
+        cycleStartDate: Calendar.current.date(byAdding: .day, value: -(day - 1), to: Date())!,
+        currentPhase: phase, nextPeriodIn: nextPeriod, fertileWindowActive: fertile,
+        periodDays: [], predictedDays: []
+    )
+}
+
 #Preview("Follicular - Day 8") {
     ZStack {
         DesignColors.background.ignoresSafeArea()
-        CelestialCycleView(
-            cycleDay: 8,
-            cycleLength: 28,
-            phase: "follicular",
-            nextPeriodIn: 21,
-            fertileWindowActive: false,
-            exploringDay: .constant(nil)
-        )
-        .padding()
+        CelestialCycleView(cycle: previewCycle(8, .follicular, 21, false), exploringDay: .constant(nil))
+            .padding()
     }
 }
 
 #Preview("Ovulatory - Day 14") {
     ZStack {
         DesignColors.background.ignoresSafeArea()
-        CelestialCycleView(
-            cycleDay: 14,
-            cycleLength: 28,
-            phase: "ovulatory",
-            nextPeriodIn: 14,
-            fertileWindowActive: true,
-            exploringDay: .constant(nil)
-        )
-        .padding()
+        CelestialCycleView(cycle: previewCycle(14, .ovulatory, 14, true), exploringDay: .constant(nil))
+            .padding()
     }
 }
 
 #Preview("Menstrual - Day 2") {
     ZStack {
         DesignColors.background.ignoresSafeArea()
-        CelestialCycleView(
-            cycleDay: 2,
-            cycleLength: 28,
-            phase: "menstrual",
-            nextPeriodIn: nil,
-            fertileWindowActive: false,
-            exploringDay: .constant(nil)
-        )
-        .padding()
+        CelestialCycleView(cycle: previewCycle(2, .menstrual, nil, false), exploringDay: .constant(nil))
+            .padding()
     }
 }

@@ -98,7 +98,14 @@ public struct HomeFeature: Sendable {
             case .loadUser:
                 state.isLoading = true
                 return .run { send in
-                    guard let token = await sessionClient.getAccessToken() else {
+                    // Retry token fetch — Firebase may not have it ready immediately after registration
+                    var token: String?
+                    for _ in 0..<3 {
+                        token = await sessionClient.getAccessToken()
+                        if token != nil { break }
+                        try? await Task.sleep(nanoseconds: 500_000_000)
+                    }
+                    guard let token else {
                         await send(.delegate(.didLogout))
                         return
                     }

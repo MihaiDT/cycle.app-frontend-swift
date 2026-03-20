@@ -1,4 +1,5 @@
 import Foundation
+import SwiftUI
 
 // MARK: - Menstrual Status Response (GET /api/menstrual/status)
 
@@ -7,17 +8,29 @@ public struct MenstrualStatusResponse: Codable, Equatable, Sendable {
     public let profile: MenstrualProfileInfo
     public let nextPrediction: PredictionInfo?
     public let fertileWindow: FertileWindowInfo?
+    public let hasCycleData: Bool
 
     public init(
         currentCycle: CycleInfo,
         profile: MenstrualProfileInfo,
         nextPrediction: PredictionInfo? = nil,
-        fertileWindow: FertileWindowInfo? = nil
+        fertileWindow: FertileWindowInfo? = nil,
+        hasCycleData: Bool = true
     ) {
         self.currentCycle = currentCycle
         self.profile = profile
         self.nextPrediction = nextPrediction
         self.fertileWindow = fertileWindow
+        self.hasCycleData = hasCycleData
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        currentCycle = try container.decode(CycleInfo.self, forKey: .currentCycle)
+        profile = try container.decode(MenstrualProfileInfo.self, forKey: .profile)
+        nextPrediction = try container.decodeIfPresent(PredictionInfo.self, forKey: .nextPrediction)
+        fertileWindow = try container.decodeIfPresent(FertileWindowInfo.self, forKey: .fertileWindow)
+        hasCycleData = (try? container.decodeIfPresent(Bool.self, forKey: .hasCycleData)) ?? true
     }
 }
 
@@ -155,11 +168,51 @@ public struct MenstrualCalendarEntry: Codable, Equatable, Sendable {
     public let date: Date
     public let type: String
     public let label: String
+    public let fertilityLevel: String?
 
-    public init(date: Date, type: String, label: String) {
+    public init(date: Date, type: String, label: String, fertilityLevel: String? = nil) {
         self.date = date
         self.type = type
         self.label = label
+        self.fertilityLevel = fertilityLevel
+    }
+}
+
+// MARK: - Fertility Level
+
+public enum FertilityLevel: String, Codable, Equatable, Sendable, CaseIterable {
+    case low
+    case medium
+    case high
+    case peak
+
+    public var displayName: String {
+        switch self {
+        case .low: "Low"
+        case .medium: "Medium"
+        case .high: "High"
+        case .peak: "Peak"
+        }
+    }
+
+    /// Color for calendar visualization (warm gradient: teal → gold)
+    public var color: Color {
+        switch self {
+        case .low: Color(red: 0.36, green: 0.72, blue: 0.65).opacity(0.4) // Teal light
+        case .medium: Color(red: 0.36, green: 0.72, blue: 0.65)           // Teal
+        case .high: Color(red: 0.91, green: 0.66, blue: 0.22).opacity(0.7) // Amber warm
+        case .peak: Color(red: 0.91, green: 0.66, blue: 0.22)             // Amber Gold
+        }
+    }
+
+    /// Probability of conception (Wilcox et al. 2000 BMJ)
+    public var probability: String {
+        switch self {
+        case .low: "~4%"
+        case .medium: "~15%"
+        case .high: "~25%"
+        case .peak: "~30%"
+        }
     }
 }
 

@@ -47,7 +47,7 @@ public struct AppFeature: Sendable {
         public var personalGoals: Set<PersonalGoal> = []
 
         // Cycle Data (matching backend API)
-        public var lastPeriodDate: Date = Date()
+        public var lastPeriodDate: Date?
         public var cycleDuration: Int = 28  // avgCycleLength (21-40)
         public var periodDuration: Int = 5  // avgBleedingDays (2-10)
         public var cycleRegularity: CycleRegularity = .regular

@@ -70,6 +70,7 @@ public struct IdentityBasicRequest: Encodable, Sendable {
     ) {
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "yyyy-MM-dd"
+        dateFormatter.locale = Locale(identifier: "en_US_POSIX")
         self.birthDate = dateFormatter.string(from: birthDate)
 
         if let time = birthTime {
@@ -136,7 +137,7 @@ public struct SpiritualInterestsRequest: Encodable, Sendable {
 
 /// Menstrual setup matching backend MenstrualSetupRequest
 public struct MenstrualSetupRequest: Encodable, Sendable {
-    public let lastPeriodStartDate: String  // Format: YYYY-MM-DD
+    public let lastPeriodStartDate: String?  // Format: YYYY-MM-DD, nil if user didn't set
     public let avgCycleLength: Int  // 21-40 days
     public let avgBleedingDays: Int  // 2-10 days
     public let cycleRegularity: String  // regular, somewhat_regular, irregular
@@ -146,7 +147,7 @@ public struct MenstrualSetupRequest: Encodable, Sendable {
     public let contraceptionType: String?
 
     public init(
-        lastPeriodStartDate: Date,
+        lastPeriodStartDate: Date?,
         avgCycleLength: Int,
         avgBleedingDays: Int,
         cycleRegularity: CycleRegularityAPI,
@@ -155,9 +156,14 @@ public struct MenstrualSetupRequest: Encodable, Sendable {
         usesContraception: Bool = false,
         contraceptionType: ContraceptionTypeAPI? = nil
     ) {
-        let dateFormatter = DateFormatter()
-        dateFormatter.dateFormat = "yyyy-MM-dd"
-        self.lastPeriodStartDate = dateFormatter.string(from: lastPeriodStartDate)
+        if let date = lastPeriodStartDate {
+            let dateFormatter = DateFormatter()
+            dateFormatter.dateFormat = "yyyy-MM-dd"
+            dateFormatter.locale = Locale(identifier: "en_US_POSIX")
+            self.lastPeriodStartDate = dateFormatter.string(from: date)
+        } else {
+            self.lastPeriodStartDate = nil
+        }
         self.avgCycleLength = max(21, min(40, avgCycleLength))
         self.avgBleedingDays = max(2, min(10, avgBleedingDays))
         self.cycleRegularity = cycleRegularity.rawValue

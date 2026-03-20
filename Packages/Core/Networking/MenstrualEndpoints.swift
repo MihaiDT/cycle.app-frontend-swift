@@ -18,6 +18,8 @@ public enum MenstrualEndpoints {
     public static func calendar(start: Date, end: Date) -> Endpoint {
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd"
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = TimeZone(identifier: "UTC")!
         return .get(
             "/api/menstrual/calendar",
             queryItems: [
@@ -34,6 +36,8 @@ public enum MenstrualEndpoints {
     public static func symptoms(date: Date) -> Endpoint {
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd"
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = TimeZone(identifier: "UTC")!
         return .get(
             "/api/menstrual/symptoms",
             queryItems: [
@@ -44,6 +48,10 @@ public enum MenstrualEndpoints {
 
     public static func predict() -> Endpoint {
         .post("/api/menstrual/predict", body: EmptyBody())
+    }
+
+    public static func removePeriodDays(_ request: RemovePeriodDaysRequest) -> Endpoint {
+        .post("/api/menstrual/remove-days", body: request)
     }
 }
 
@@ -60,6 +68,14 @@ public struct ConfirmPeriodRequest: Encodable, Sendable {
         self.actualStartDate = actualStartDate
         self.bleedingDays = bleedingDays
         self.notes = notes
+    }
+}
+
+public struct RemovePeriodDaysRequest: Encodable, Sendable {
+    public let dates: [String]  // Format: "yyyy-MM-dd"
+
+    public init(dates: Set<String>) {
+        self.dates = Array(dates)
     }
 }
 

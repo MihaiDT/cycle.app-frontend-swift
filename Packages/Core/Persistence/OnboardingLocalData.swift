@@ -16,7 +16,7 @@ public struct OnboardingLocalData: Codable, Sendable, Equatable {
     public var professionalContext: String?
     public var lifestyleType: Int?
     public var personalGoals: [String]
-    public var lastPeriodDate: Date
+    public var lastPeriodDate: Date?
     public var cycleDuration: Int
     public var periodDuration: Int
     public var cycleRegularity: String
@@ -39,7 +39,7 @@ public struct OnboardingLocalData: Codable, Sendable, Equatable {
         professionalContext: String?,
         lifestyleType: Int?,
         personalGoals: [String],
-        lastPeriodDate: Date,
+        lastPeriodDate: Date?,
         cycleDuration: Int,
         periodDuration: Int,
         cycleRegularity: String,

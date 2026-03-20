@@ -2,295 +2,300 @@ import SwiftUI
 
 // MARK: - Glass Week Calendar
 
-/// Week calendar strip with paged swipe, full-width, no box.
+/// Infinite cycle-day loop strip: shows days 1..cycleLength repeating forever.
+/// Centered on today's cycle day; swipe to scroll through the loop.
+/// Tapping a day selects it, updating the ring and center text.
 public struct GlassWeekCalendar: View {
-    public let cycleDay: Int
-    public let cycleLength: Int
-    public let cycleStartDate: Date
-    public let bleedingDays: Int
-    public let predictedPeriodStart: Date?
-    @Binding public var selectedDay: Int?
+    public let cycle: CycleContext
+    @Binding public var selectedDate: Date?
     public var isCompact: Bool
-    public var onExpandTapped: (() -> Void)?
 
-    @State private var weekOffset: Int = 0
+    @State private var pageOffset: Int = 0
+    @State private var highlightSlot: Int = 3
+    /// Whether the user has interacted (tap or swipe) — prevents auto-selecting on load
+    @State private var userHasInteracted: Bool = false
 
-    private let calendar = Calendar.current
-    private let weekRange = -12...6
+    private let cal = Calendar.current
+    private let slotsPerPage = 7
+    private let centerSlot = 3
+
+    /// Today's 0-based index in the infinite sequence (anchored at 0)
+    private var todayIndex: Int { 0 }
+
+    /// Page range matching full calendar: ±12 months (~365 days ÷ 7 = ~52 pages each way)
+    private var pageRange: ClosedRange<Int> { -52...52 }
 
     public init(
-        cycleDay: Int,
-        cycleLength: Int,
-        cycleStartDate: Date,
-        bleedingDays: Int = 5,
-        predictedPeriodStart: Date? = nil,
-        selectedDay: Binding<Int?>,
-        isCompact: Bool = false,
-        onExpandTapped: (() -> Void)? = nil
+        cycle: CycleContext,
+        selectedDate: Binding<Date?>,
+        isCompact: Bool = false
     ) {
-        self.cycleDay = cycleDay
-        self.cycleLength = cycleLength
-        self.cycleStartDate = cycleStartDate
-        self.bleedingDays = bleedingDays
-        self.predictedPeriodStart = predictedPeriodStart
-        self._selectedDay = selectedDay
+        self.cycle = cycle
+        self._selectedDate = selectedDate
         self.isCompact = isCompact
-        self.onExpandTapped = onExpandTapped
     }
 
-    private var displayDay: Int {
-        selectedDay ?? cycleDay
+    // MARK: - Day Index Helpers
+
+    /// Returns 7 indices for a given page (relative to todayIndex)
+    private func dayIndices(for page: Int) -> [Int] {
+        let centerIndex = todayIndex + page * slotsPerPage
+        return (-centerSlot...(slotsPerPage - 1 - centerSlot)).map { centerIndex + $0 }
     }
 
-    private func weekDates(for offset: Int) -> [Date] {
-        let today = calendar.startOfDay(for: Date())
-        // Center today (3 days before, today, 3 days after)
-        let centerDate = calendar.date(byAdding: .day, value: offset * 7, to: today) ?? today
-        return (-3...3).compactMap { calendar.date(byAdding: .day, value: $0, to: centerDate) }
+    /// Cycle day number (1‑based) — delegates to CycleContext for predicted block awareness.
+    private func cycleDay(for index: Int) -> Int {
+        let date = dateForIndex(index)
+        return cycle.cycleDayNumber(for: date) ?? {
+            // Fallback: modular math for dates outside CycleContext's range
+            guard cycle.cycleLength > 0 else { return 1 }
+            let raw = (cycle.cycleDay - 1) + index
+            let mod = raw % cycle.cycleLength
+            return (mod < 0 ? mod + cycle.cycleLength : mod) + 1
+        }()
     }
 
-    private func cycleDayFor(date: Date) -> Int? {
-        let daysDiff = calendar.dateComponents([.day], from: calendar.startOfDay(for: cycleStartDate), to: calendar.startOfDay(for: date)).day ?? 0
-        let day = daysDiff + 1
-        guard day >= 1 && day <= cycleLength else { return nil }
-        return day
+    /// Convert an index to a real Date (for period/predicted lookups)
+    private func dateForIndex(_ index: Int) -> Date {
+        cal.date(byAdding: .day, value: index, to: cal.startOfDay(for: Date())) ?? Date()
     }
 
-    private func phaseForDay(_ day: Int) -> CyclePhase {
-        let ovulationDay = cycleLength - 14
-        switch day {
-        case 1...bleedingDays: return .menstrual
-        case (bleedingDays + 1)...(ovulationDay - 2): return .follicular
-        case (ovulationDay - 1)...(ovulationDay + 1): return .ovulatory
-        default: return .luteal
-        }
+    /// Phase label for the selected day
+    private var phaseLabel: String {
+        let indices = dayIndices(for: pageOffset)
+        let highlightIndex = indices[highlightSlot]
+        let date = dateForIndex(highlightIndex)
+        let phase = cycle.phase(for: date) ?? cycle.phase(forCycleDay: cycleDay(for: highlightIndex))
+        return phase.displayName
     }
 
-    private func isToday(_ date: Date) -> Bool {
-        calendar.isDateInToday(date)
+    /// Short date label: "20 Mar"
+    private func shortDateLabel(_ date: Date) -> String {
+        let day = cal.component(.day, from: date)
+        let month = cal.shortMonthSymbols[cal.component(.month, from: date) - 1]
+        return "\(day) \(month)"
     }
 
-    private func isPredictedPeriod(_ date: Date) -> Bool {
-        guard let start = predictedPeriodStart else { return false }
-        let d = calendar.startOfDay(for: date)
-        let s = calendar.startOfDay(for: start)
-        let diff = calendar.dateComponents([.day], from: s, to: d).day ?? -1
-        return diff >= 0 && diff < bleedingDays
-    }
-
-    private var weekdayLabels: [String] {
-        // Labels match centered layout: 3 days before today, today, 3 days after
-        let today = Date()
-        return (-3...3).map { offset in
-            let date = calendar.date(byAdding: .day, value: offset, to: today)!
-            let idx = calendar.component(.weekday, from: date) - 1
-            return String(calendar.shortWeekdaySymbols[idx].prefix(3))
-        }
-    }
-
-    private var weekMonthLabel: String {
-        let dates = weekDates(for: weekOffset)
-        guard let first = dates.first, let last = dates.last else { return "" }
-        let fmt = DateFormatter()
-        fmt.locale = Locale.current
-        let firstMonth = calendar.component(.month, from: first)
-        let lastMonth = calendar.component(.month, from: last)
-        if firstMonth == lastMonth {
-            fmt.dateFormat = "MMMM yyyy"
-            return fmt.string(from: first)
-        } else {
-            fmt.dateFormat = "MMM"
-            let m1 = fmt.string(from: first)
-            let m2 = fmt.string(from: last)
-            fmt.dateFormat = "yyyy"
-            return "\(m1) – \(m2) \(fmt.string(from: last))"
-        }
-    }
+    // MARK: - Body
 
     public var body: some View {
         VStack(spacing: isCompact ? 2 : 6) {
             if !isCompact {
-                // Month label
-                Text(weekMonthLabel)
-                    .font(.custom("Raleway-SemiBold", size: 13))
-                    .foregroundColor(DesignColors.textSecondary.opacity(0.7))
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .animation(.none, value: weekOffset)
+                // Phase name header
+                HStack {
+                    Text(phaseLabel)
+                        .font(.custom("Raleway-SemiBold", size: 13))
+                        .foregroundColor(DesignColors.textSecondary.opacity(0.7))
+                    Spacer()
+                }
+            }
 
-                // Weekday labels
-                HStack(spacing: 0) {
-                    ForEach(weekdayLabels, id: \.self) { label in
-                        Text(label)
-                            .font(.custom("Raleway-Medium", size: 12))
-                            .foregroundColor(DesignColors.textSecondary.opacity(0.5))
-                            .frame(maxWidth: .infinity)
+            // Day cells + highlight overlay
+            ZStack {
+                highlightOverlay
+
+                TabView(selection: $pageOffset) {
+                    ForEach(pageRange, id: \.self) { page in
+                        dayRow(for: page)
+                            .tag(page)
+                    }
+                }
+                .tabViewStyle(.page(indexDisplayMode: .never))
+                .frame(height: isCompact ? 38 : 52)
+            }
+            .frame(height: isCompact ? 38 : 52)
+        }
+        .animation(.spring(response: 0.3, dampingFraction: 0.85), value: isCompact)
+        .onChange(of: selectedDate) { _, newDate in
+            if newDate == nil {
+                userHasInteracted = false
+                highlightSlot = centerSlot
+                if pageOffset != 0 {
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.85)) {
+                        pageOffset = 0
                     }
                 }
             }
-
-            // Paged week carousel
-            TabView(selection: $weekOffset) {
-                ForEach(weekRange, id: \.self) { offset in
-                    weekRow(for: offset)
-                        .tag(offset)
-                }
-            }
-            .tabViewStyle(.page(indexDisplayMode: .never))
-            .frame(height: isCompact ? 38 : 62)
         }
-        .animation(.spring(response: 0.3, dampingFraction: 0.85), value: isCompact)
-        .onChange(of: weekOffset) { _, newOffset in
-            // Select the center day (index 3) of the new week
-            let dates = weekDates(for: newOffset)
-            guard dates.count == 7 else { return }
-            let centerDate = dates[3]
-            if let cd = cycleDayFor(date: centerDate) {
-                withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-                    selectedDay = cd
+        .onChange(of: pageOffset) { _, newPage in
+            if newPage != 0 { userHasInteracted = true }
+            guard userHasInteracted else { return }
+            updateSelectionForCurrentSlot()
+        }
+    }
+
+    // MARK: - Fixed Highlight Overlay
+
+    private var highlightOverlay: some View {
+        let cellSize: CGFloat = isCompact ? 34 : 44
+        return HStack(spacing: 0) {
+            ForEach(0..<slotsPerPage, id: \.self) { idx in
+                VStack(spacing: 2) {
+                    ZStack {
+                        if idx == highlightSlot {
+                            Circle()
+                                .fill(Color(red: 0.85, green: 0.82, blue: 0.78).opacity(0.5))
+                                .frame(width: cellSize, height: cellSize)
+                        }
+                    }
+                    .frame(width: cellSize, height: cellSize)
+
+                    if !isCompact {
+                        Color.clear.frame(height: 8)
+                    }
                 }
-            } else {
-                withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-                    selectedDay = nil
-                }
+                .frame(maxWidth: .infinity)
             }
         }
     }
 
-    // MARK: - Week Row
+    // MARK: - Day Row
 
-    private func weekRow(for offset: Int) -> some View {
-        HStack(spacing: 0) {
-            ForEach(weekDates(for: offset), id: \.self) { date in
-                let dayCycle = cycleDayFor(date: date)
-                let isSelected = dayCycle != nil && dayCycle == displayDay
-                let isTodayDate = isToday(date)
-
-                dayCell(
-                    date: date,
-                    cycleDayNum: dayCycle,
-                    isSelected: isSelected,
-                    isToday: isTodayDate,
-                    isPredicted: isPredictedPeriod(date)
-                )
-                .frame(maxWidth: .infinity)
+    private func dayRow(for page: Int) -> some View {
+        let indices = dayIndices(for: page)
+        return HStack(spacing: 0) {
+            ForEach(Array(indices.enumerated()), id: \.offset) { slotIdx, dayIdx in
+                dayCell(dayIndex: dayIdx, slotIndex: slotIdx)
+                    .frame(maxWidth: .infinity)
             }
         }
     }
 
     // MARK: - Day Cell
 
-    private func dayCell(date: Date, cycleDayNum: Int?, isSelected: Bool, isToday: Bool, isPredicted: Bool) -> some View {
-        let dayNumber = calendar.component(.day, from: date)
-        let phase = cycleDayNum.map { phaseForDay($0) }
-        let highlighted = isSelected || isToday
-        let isPeriodDay = phase == .menstrual
-        let isFuture = calendar.startOfDay(for: date) > calendar.startOfDay(for: Date())
+    private func dayCell(dayIndex: Int, slotIndex: Int) -> some View {
+        let isTodayDay = dayIndex == todayIndex
+        let date = dateForIndex(dayIndex)
+        let calendarDay = cal.component(.day, from: date)
+        let periodDay = cycle.isPeriodDay(date)
+        let predictedDay = cycle.isPredictedDay(date)
+        let confirmedPeriod = cycle.isConfirmedPeriod(date)
+        let isPast = dayIndex < todayIndex
+        let menstrualColor = CyclePhase.menstrual.orbitColor
+        let dateKey = cycle.dateKey(for: date)
+        let fertilityLevel = cycle.fertileDays[dateKey]
+        let isFertile = fertilityLevel != nil
+        let isOvulation = cycle.ovulationDays.contains(dateKey)
+        let oColor = CyclePhase.ovulatory.orbitColor
+        let circleSize: CGFloat = isCompact ? 26 : 34
 
         return VStack(spacing: 2) {
             ZStack {
-                // Predicted period: dashed circle with light fill
-                if isPredicted && !isPeriodDay && !isSelected {
+                // Ovulation day: golden tint fill
+                if isOvulation && !periodDay {
                     Circle()
-                        .fill(CyclePhase.menstrual.orbitColor.opacity(0.15))
+                        .fill(oColor.opacity(0.18))
+                        .frame(width: circleSize, height: circleSize)
+                }
+
+                // Fertile day (non-ovulation, non-period): subtle tint fill
+                if isFertile && !isOvulation && !periodDay {
+                    Circle()
+                        .fill((fertilityLevel?.color ?? oColor).opacity(0.12))
+                        .frame(width: circleSize, height: circleSize)
+                }
+
+                // Fertile/ovulation ring
+                if (isFertile || isOvulation) && !periodDay {
+                    Circle()
+                        .strokeBorder(
+                            fertilityLevel?.color ?? oColor.opacity(0.4),
+                            lineWidth: isOvulation ? 2 : 1.5
+                        )
+                        .frame(width: circleSize, height: circleSize)
+                }
+
+                // Predicted period day: dashed pink circle
+                if predictedDay {
+                    Circle()
+                        .fill(menstrualColor.opacity(0.2))
                         .overlay {
                             Circle()
                                 .strokeBorder(
                                     style: StrokeStyle(lineWidth: 1.5, dash: [4, 3])
                                 )
-                                .foregroundColor(CyclePhase.menstrual.orbitColor.opacity(0.45))
+                                .foregroundColor(menstrualColor.opacity(0.6))
                         }
+                        .frame(width: circleSize, height: circleSize)
                 }
 
-                // Period day: solid past, dashed future
-                if isPeriodDay && !isSelected {
-                    if isFuture {
-                        Circle()
-                            .fill(CyclePhase.menstrual.orbitColor.opacity(0.25))
-                            .overlay {
-                                Circle()
-                                    .strokeBorder(
-                                        style: StrokeStyle(lineWidth: 1.5, dash: [4, 3])
-                                    )
-                                    .foregroundColor(CyclePhase.menstrual.orbitColor.opacity(0.6))
-                            }
-                    } else {
-                        Circle()
-                            .fill(CyclePhase.menstrual.orbitColor.opacity(0.75))
-                            .overlay {
-                                if isToday {
-                                    Circle()
-                                        .strokeBorder(Color.white.opacity(0.9), lineWidth: 2)
-                                }
-                            }
-                    }
-                }
-
-                // Selected
-                if isSelected {
+                // Confirmed period day: solid pink circle
+                if confirmedPeriod {
                     Circle()
-                        .fill(phase?.orbitColor ?? DesignColors.accent)
-                        .overlay {
-                            Circle()
-                                .fill(
-                                    LinearGradient(
-                                        colors: [Color.white.opacity(0.25), Color.white.opacity(0.05), Color.clear],
-                                        startPoint: .top,
-                                        endPoint: .center
-                                    )
-                                )
-                        }
+                        .fill(menstrualColor.opacity(isPast ? 0.75 : 0.45))
+                        .frame(width: circleSize, height: circleSize)
                 }
 
-                // Today (not selected, not period): dashed
-                if isToday && !isSelected && !isPeriodDay {
-                    Circle()
-                        .strokeBorder(
-                            style: StrokeStyle(lineWidth: 1.5, dash: [4, 3])
-                        )
-                        .foregroundColor(DesignColors.accentWarm)
+                // Ovulation sparkle icon
+                if isOvulation && !periodDay && !isCompact {
+                    Image(systemName: "sparkle")
+                        .font(.system(size: 7, weight: .bold))
+                        .foregroundColor(oColor)
+                        .offset(x: 13, y: -13)
                 }
 
-                Text("\(dayNumber)")
-                    .font(.custom(highlighted || isPeriodDay || isPredicted ? "Raleway-Bold" : "Raleway-SemiBold", size: isCompact ? 14 : 16))
+                // Calendar date number
+                Text("\(calendarDay)")
+                    .font(.custom(periodDay || isTodayDay ? "Raleway-Bold" : "Raleway-SemiBold", size: isCompact ? 14 : 16))
                     .foregroundColor(
-                        isSelected || (isPeriodDay && !isFuture)
+                        confirmedPeriod
                             ? .white
-                            : isPredicted
-                                ? CyclePhase.menstrual.orbitColor
-                                : isToday
+                            : predictedDay
+                                ? menstrualColor
+                                : isTodayDay
                                     ? DesignColors.text
-                                    : cycleDayNum != nil
-                                        ? DesignColors.text.opacity(0.75)
-                                        : DesignColors.textPlaceholder.opacity(0.5)
+                                    : DesignColors.text.opacity(0.8)
                     )
             }
             .frame(width: isCompact ? 34 : 44, height: isCompact ? 34 : 44)
+            .shadow(
+                color: isOvulation && !periodDay
+                    ? oColor.opacity(0.2)
+                    : .clear,
+                radius: 6, x: 0, y: 2
+            )
 
-            // Phase dot / Today label
+            // Dot indicator
             if !isCompact {
-                if isToday {
-                    Text("Today")
-                        .font(.custom("Raleway-Bold", size: 8))
-                        .foregroundColor(DesignColors.accentWarm)
-                        .frame(height: 10)
-                } else if let phase = phase {
+                if periodDay {
                     Circle()
-                        .fill(phase.orbitColor.opacity(0.7))
+                        .fill(menstrualColor.opacity(isPast ? 0.7 : 0.4))
                         .frame(width: 5, height: 5)
-                        .frame(height: 10)
+                        .frame(height: 8)
+                } else if isFertile || isOvulation {
+                    Circle()
+                        .fill(fertilityLevel?.color ?? oColor.opacity(0.5))
+                        .frame(width: 5, height: 5)
+                        .frame(height: 8)
                 } else {
-                    Color.clear.frame(height: 10)
+                    Color.clear.frame(height: 8)
                 }
             }
         }
         .contentShape(Rectangle())
         .onTapGesture {
-            guard let cd = cycleDayNum else { return }
+            let tappedDate = cal.startOfDay(for: date)
+
+            if highlightSlot == slotIndex && isTodayDay && selectedDate == nil {
+                return
+            }
+
             withAnimation(.spring(response: 0.35, dampingFraction: 0.75)) {
-                selectedDay = cd == cycleDay ? nil : cd
+                userHasInteracted = true
+                highlightSlot = slotIndex
+                selectedDate = tappedDate
             }
             UIImpactFeedbackGenerator(style: .light).impactOccurred()
         }
+    }
+
+    // MARK: - Selection Logic
+
+    private func updateSelectionForCurrentSlot() {
+        let indices = dayIndices(for: pageOffset)
+        guard highlightSlot < indices.count else { return }
+        let dayIdx = indices[highlightSlot]
+        selectedDate = cal.startOfDay(for: dateForIndex(dayIdx))
     }
 }
 
@@ -302,12 +307,18 @@ public struct GlassWeekCalendar: View {
             .ignoresSafeArea()
 
         GlassWeekCalendar(
-            cycleDay: 8,
-            cycleLength: 28,
-            cycleStartDate: Calendar.current.date(byAdding: .day, value: -7, to: Date())!,
-            bleedingDays: 5,
-            predictedPeriodStart: Calendar.current.date(byAdding: .day, value: 21, to: Date())!,
-            selectedDay: .constant(nil)
+            cycle: CycleContext(
+                cycleDay: 14,
+                cycleLength: 28,
+                bleedingDays: 5,
+                cycleStartDate: Calendar.current.date(byAdding: .day, value: -13, to: Date())!,
+                currentPhase: .ovulatory,
+                nextPeriodIn: 15,
+                fertileWindowActive: true,
+                periodDays: [],
+                predictedDays: []
+            ),
+            selectedDate: .constant(nil)
         )
         .padding(.horizontal, 20)
     }

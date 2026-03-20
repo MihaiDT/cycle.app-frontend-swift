@@ -38,6 +38,7 @@
 		5183F12DDE66A90DA3DBFBA7 /* APIError.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA867F396B072ED863219115 /* APIError.swift */; };
 		51F71B48CBEB89F28CD13E3F /* DailyCheckInFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1D8BDCDF2263B793576D8E /* DailyCheckInFeature.swift */; };
 		53BBEBB468E1946BF1682D48 /* ValidationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6512D0891C474022446C2D98 /* ValidationTests.swift */; };
+		54524DDB714E01B0A7CF3A8F /* CycleContext.swift in Sources */ = {isa = PBXBuildFile; fileRef = E438E6CA574859596F3B8702 /* CycleContext.swift */; };
 		54BBA1A69E4714934F1D8300 /* ModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60A69777B121E02CCD9ED6FD /* ModelTests.swift */; };
 		54ED2CA1FEB9CA766734709B /* ConsentAnimation.json in Resources */ = {isa = PBXBuildFile; fileRef = C583F02AC2453EA8B7C971D2 /* ConsentAnimation.json */; };
 		5791F41BCD82D8F186E235D6 /* GlassTextField.swift in Sources */ = {isa = PBXBuildFile; fileRef = E6443B1A872FD8D9CA385C44 /* GlassTextField.swift */; };
@@ -236,6 +237,7 @@
 		CF7B0C6DF47843E7CD58CEDB /* String+Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "String+Extensions.swift"; sourceTree = "<group>"; };
 		D6C462B9D1B01812BDB61714 /* GlassDateButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassDateButton.swift; sourceTree = "<group>"; };
 		E1D75A3020910AA2ED96FB84 /* CycleDataComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CycleDataComponents.swift; sourceTree = "<group>"; };
+		E438E6CA574859596F3B8702 /* CycleContext.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CycleContext.swift; sourceTree = "<group>"; };
 		E6443B1A872FD8D9CA385C44 /* GlassTextField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassTextField.swift; sourceTree = "<group>"; };
 		E687F11BA153A2DF683BD9B0 /* logo_animation.splineswift */ = {isa = PBXFileReference; lastKnownFileType = file; path = logo_animation.splineswift; sourceTree = "<group>"; };
 		E911916B959EE91C14269049 /* WellnessPillarCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WellnessPillarCard.swift; sourceTree = "<group>"; };
@@ -300,6 +302,7 @@
 			isa = PBXGroup;
 			children = (
 				A243DABD3CB28A8750C405B8 /* Components */,
+				E438E6CA574859596F3B8702 /* CycleContext.swift */,
 				925024F96EEC4267179A9CA3 /* DesignColors.swift */,
 				4BCD05B0769F861D03E644E9 /* Layout.swift */,
 				21F7C0B5678F3BB91C0D896A /* LiquidGlassModifier.swift */,
@@ -717,6 +720,7 @@
 				BF2C740D0AB78C44011546CE /* ConsentCheckbox.swift in Sources */,
 				A6BC497E837963A03368AD0D /* CycleApp.swift in Sources */,
 				649BEAA6D724578FB0AEE918 /* CycleCalendarViews.swift in Sources */,
+				54524DDB714E01B0A7CF3A8F /* CycleContext.swift in Sources */,
 				A596B878E800DB62DEB87F52 /* CycleDataComponents.swift in Sources */,
 				A407562C236BB09CD92434A9 /* CycleDataView.swift in Sources */,
 				EC48873774AE0069D16F2105 /* CycleModels.swift in Sources */,

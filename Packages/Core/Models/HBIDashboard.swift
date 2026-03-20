@@ -157,9 +157,9 @@ public enum CyclePhase: String, Codable, Equatable, Sendable, CaseIterable {
         }
     }
 
-    /// Typical day ranges within a 28-day cycle
-    public func dayRange(cycleLength: Int) -> ClosedRange<Int> {
-        let bleedingDays = 5
+    /// Typical day ranges within a cycle, using actual bleeding days
+    public func dayRange(cycleLength: Int, bleedingDays: Int = 5) -> ClosedRange<Int> {
+        let bleedingDays = max(1, bleedingDays)
         let ovulationDay = cycleLength - 14
         switch self {
         case .menstrual: return 1...bleedingDays

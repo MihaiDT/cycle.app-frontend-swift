@@ -67,10 +67,23 @@ extension Endpoint {
         Endpoint(path: path, method: .get, queryItems: queryItems)
     }
 
+    /// Date encoding: extracts local calendar components and encodes as UTC midnight ISO 8601.
+    /// This prevents timezone-induced date shifts (e.g., local Feb 22 00:00 EET → "2025-02-21T22:00:00Z").
+    private static let dateEncoder: JSONEncoder.DateEncodingStrategy = .custom { date, encoder in
+        let comps = Calendar.current.dateComponents([.year, .month, .day, .hour, .minute, .second], from: date)
+        var utcCal = Calendar(identifier: .gregorian)
+        utcCal.timeZone = TimeZone(identifier: "UTC")!
+        let utcDate = utcCal.date(from: comps) ?? date
+        var container = encoder.singleValueContainer()
+        let fmt = ISO8601DateFormatter()
+        fmt.formatOptions = [.withInternetDateTime]
+        try container.encode(fmt.string(from: utcDate))
+    }
+
     public static func post(_ path: String, body: some Encodable & Sendable) -> Endpoint {
         let encoder = JSONEncoder()
         encoder.keyEncodingStrategy = .convertToSnakeCase
-        encoder.dateEncodingStrategy = .iso8601
+        encoder.dateEncodingStrategy = dateEncoder
         let data = try? encoder.encode(body)
         return Endpoint(path: path, method: .post, body: data)
     }
@@ -78,7 +91,7 @@ extension Endpoint {
     public static func put(_ path: String, body: some Encodable & Sendable) -> Endpoint {
         let encoder = JSONEncoder()
         encoder.keyEncodingStrategy = .convertToSnakeCase
-        encoder.dateEncodingStrategy = .iso8601
+        encoder.dateEncodingStrategy = dateEncoder
         let data = try? encoder.encode(body)
         return Endpoint(path: path, method: .put, body: data)
     }
@@ -86,7 +99,7 @@ extension Endpoint {
     public static func patch(_ path: String, body: some Encodable & Sendable) -> Endpoint {
         let encoder = JSONEncoder()
         encoder.keyEncodingStrategy = .convertToSnakeCase
-        encoder.dateEncodingStrategy = .iso8601
+        encoder.dateEncodingStrategy = dateEncoder
         let data = try? encoder.encode(body)
         return Endpoint(path: path, method: .patch, body: data)
     }

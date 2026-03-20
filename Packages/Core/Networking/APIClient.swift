@@ -52,6 +52,7 @@ extension APIClient {
                 let dfDate = DateFormatter()
                 dfDate.dateFormat = "yyyy-MM-dd"
                 dfDate.locale = Locale(identifier: "en_US_POSIX")
+                dfDate.timeZone = TimeZone(identifier: "UTC")!
                 if let date = dfDate.date(from: str) { return date }
                 throw DecodingError.dataCorruptedError(in: container, debugDescription: "Cannot decode date: \(str)")
             }

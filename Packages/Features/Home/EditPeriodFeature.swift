@@ -12,10 +12,12 @@ public struct EditPeriodFeature: Sendable {
         public var periodDays: Set<String>
         public var periodFlowIntensity: [String: FlowIntensity]
         public var selectedPeriodDay: String?
-        public var isSaving: Bool = false
-        public var isSaved: Bool = false
+        public var isUpdatingPredictions: Bool = false
+        public var predictionsDone: Bool = false
         public var originalPeriodDays: Set<String> = []
         public var originalFlowIntensity: [String: FlowIntensity] = [:]
+        /// Predicted period days from server (read-only, shown with dashed style)
+        public var predictedPeriodDays: Set<String> = []
 
         public var hasChanges: Bool {
             periodDays != originalPeriodDays || periodFlowIntensity != originalFlowIntensity
@@ -30,17 +32,20 @@ public struct EditPeriodFeature: Sendable {
             cycleStartDate: Date,
             cycleLength: Int,
             bleedingDays: Int,
-            periodDays: Set<String>,
-            periodFlowIntensity: [String: FlowIntensity]
+            periodDays: Set<String> = [],
+            periodFlowIntensity: [String: FlowIntensity] = [:],
+            predictedPeriodDays: Set<String> = [],
+            focusDate: Date? = nil
         ) {
-            let today = Calendar.current.startOfDay(for: Date())
-            var comps = Calendar.current.dateComponents([.year, .month], from: today)
+            let target = focusDate ?? Date()
+            var comps = Calendar.current.dateComponents([.year, .month], from: target)
             comps.day = 1
-            self.initialMonth = Calendar.current.date(from: comps) ?? today
+            self.initialMonth = Calendar.current.date(from: comps) ?? target
             self.periodDays = periodDays
             self.periodFlowIntensity = periodFlowIntensity
             self.originalPeriodDays = periodDays
             self.originalFlowIntensity = periodFlowIntensity
+            self.predictedPeriodDays = predictedPeriodDays
             self.selectedPeriodDay = nil
             self.cycleStartDate = cycleStartDate
             self.cycleLength = cycleLength
@@ -50,6 +55,8 @@ public struct EditPeriodFeature: Sendable {
 
     public enum Action: BindableAction, Sendable {
         case binding(BindingAction<State>)
+        case appeared
+        case calendarLoaded(Result<MenstrualCalendarResponse, Error>)
         case dayTapped(Date)
         case flowIntensityChanged(String, FlowIntensity)
         case saveTapped
@@ -57,12 +64,14 @@ public struct EditPeriodFeature: Sendable {
             periodDays: Set<String>,
             periodFlowIntensity: [String: FlowIntensity]
         )
+        case predictionsUpdated
         case cancelTapped
         case delegate(Delegate)
 
         public enum Delegate: Sendable, Equatable {
             case didSave(
                 periodDays: Set<String>,
+                predictedPeriodDays: Set<String>,
                 periodFlowIntensity: [String: FlowIntensity]
             )
         }
@@ -78,6 +87,44 @@ public struct EditPeriodFeature: Sendable {
         BindingReducer()
         Reduce { state, action in
             switch action {
+            case .appeared:
+                // Load saved period days from backend calendar
+                let start = Calendar.current.date(byAdding: .month, value: -24, to: Date())!
+                let end = Calendar.current.date(byAdding: .month, value: 3, to: Date())!
+                return .run { [menstrualClient, sessionClient] send in
+                    guard let token = try? await sessionClient.getAccessToken() else { return }
+                    let result = await Result {
+                        try await menstrualClient.getCalendar(token, start, end)
+                    }
+                    await send(.calendarLoaded(result))
+                }
+
+            case .calendarLoaded(.success(let response)):
+                var serverDays: Set<String> = []
+                var predicted: Set<String> = []
+                let todayKey = Self.dateKey(Calendar.current.startOfDay(for: Date()))
+                for entry in response.entries {
+                    let localDay = Self.localDate(from: entry.date)
+                    let key = Self.dateKey(localDay)
+                    if entry.type == "period" {
+                        serverDays.insert(key)
+                        // Future bleeding days from current cycle → show as predicted
+                        if key > todayKey {
+                            predicted.insert(key)
+                        }
+                    } else if entry.type == "predicted_period" {
+                        predicted.insert(key)
+                    }
+                }
+                // Always use server as source of truth (even if empty)
+                state.periodDays = serverDays
+                state.originalPeriodDays = serverDays
+                state.predictedPeriodDays = predicted
+                return .none
+
+            case .calendarLoaded(.failure):
+                return .none
+
             case .dayTapped(let date):
                 let cal = Calendar.current
                 let key = Self.dateKey(date)
@@ -88,7 +135,7 @@ public struct EditPeriodFeature: Sendable {
                     state.periodFlowIntensity.removeValue(forKey: key)
                     for i in 1...30 {
                         guard let d = cal.date(byAdding: .day, value: i, to: date),
-                              cal.startOfDay(for: d) > today
+                              cal.startOfDay(for: d) >= today
                         else { continue }
                         let k = Self.dateKey(d)
                         if state.periodDays.contains(k) {
@@ -114,8 +161,9 @@ public struct EditPeriodFeature: Sendable {
                         state.periodDays.insert(key)
                         state.periodFlowIntensity[key] = .medium
                     } else {
-                        // Auto-fill 5 days (tapped + 4 after)
-                        for i in 0..<5 {
+                        // Auto-fill using user's average bleeding days
+                        let fillCount = max(state.bleedingDays, 3)
+                        for i in 0..<fillCount {
                             guard let d = cal.date(byAdding: .day, value: i, to: date)
                             else { break }
                             let k = Self.dateKey(d)
@@ -132,37 +180,68 @@ public struct EditPeriodFeature: Sendable {
                 return .none
 
             case .saveTapped:
-                state.isSaving = true
-                state.isSaved = false
+                state.isUpdatingPredictions = true
                 let periodDays = state.periodDays
                 let flowIntensity = state.periodFlowIntensity
-                // Compute earliest start date and bleeding day count
-                let sortedDays = periodDays.sorted()
-                let fmt = DateFormatter()
-                fmt.dateFormat = "yyyy-MM-dd"
-                let startDate = sortedDays.first.flatMap { fmt.date(from: $0) } ?? Date()
-                let bleedingCount = periodDays.count
+                let originalPeriodDays = state.originalPeriodDays
+                let periodGroups = Self.groupConsecutivePeriods(periodDays)
+                let removedDays = originalPeriodDays.subtracting(periodDays)
                 return .run { [menstrualClient, sessionClient] send in
                     if let token = await sessionClient.getAccessToken() {
-                        let request = ConfirmPeriodRequest(
-                            actualStartDate: startDate,
-                            bleedingDays: bleedingCount
-                        )
-                        try? await menstrualClient.confirmPeriod(token, request)
+                        // Phase 1: Save period data
+                        if !removedDays.isEmpty {
+                            let request = RemovePeriodDaysRequest(dates: removedDays)
+                            try? await menstrualClient.removePeriodDays(token, request)
+                        }
+                        for group in periodGroups {
+                            let request = ConfirmPeriodRequest(
+                                actualStartDate: group.startDate,
+                                bleedingDays: group.dayCount
+                            )
+                            try? await menstrualClient.confirmPeriod(token, request)
+                        }
+
+                        // Phase 2: Show "Improving predictions" banner
+                        await send(.saveDone(
+                            periodDays: periodDays,
+                            periodFlowIntensity: flowIntensity
+                        ), animation: .easeInOut(duration: 0.3))
+
+                        // Phase 3: Regenerate predictions + reload calendar
+                        try? await menstrualClient.generatePrediction(token)
+                        let start = Calendar.current.date(byAdding: .month, value: -24, to: Date())!
+                        let end = Calendar.current.date(byAdding: .month, value: 12, to: Date())!
+                        if let response = try? await menstrualClient.getCalendar(token, start, end) {
+                            await send(.calendarLoaded(.success(response)), animation: .easeInOut(duration: 0.4))
+                        }
+                        // Banner visible for 2.5s so user sees feedback
+                        try? await Task.sleep(nanoseconds: 2_500_000_000)
+                        await send(.predictionsUpdated)
+                    } else {
+                        await send(.saveDone(
+                            periodDays: periodDays,
+                            periodFlowIntensity: flowIntensity
+                        ), animation: .easeInOut(duration: 0.3))
                     }
-                    await send(.saveDone(
-                        periodDays: periodDays,
-                        periodFlowIntensity: flowIntensity
-                    ), animation: .easeInOut(duration: 0.3))
                 }
 
-            case .saveDone(let periodDays, let flowIntensity):
-                state.isSaving = false
-                state.isSaved = true
+            case .saveDone(let days, let flow):
+                state.originalPeriodDays = days
+                state.originalFlowIntensity = flow
+                return .none
+
+            case .predictionsUpdated:
+                state.isUpdatingPredictions = false
+                state.predictionsDone = true
+                let freshPeriodDays = state.periodDays
+                let predictedDays = state.predictedPeriodDays
+                let flowIntensity = state.periodFlowIntensity
                 return .run { send in
+                    // Show checkmark for 1s then dismiss
                     try? await Task.sleep(nanoseconds: 1_000_000_000)
                     await send(.delegate(.didSave(
-                        periodDays: periodDays,
+                        periodDays: freshPeriodDays,
+                        predictedPeriodDays: predictedDays,
                         periodFlowIntensity: flowIntensity
                     )))
                 }
@@ -180,6 +259,51 @@ public struct EditPeriodFeature: Sendable {
         let fmt = DateFormatter()
         fmt.dateFormat = "yyyy-MM-dd"
         return fmt.string(from: date)
+    }
+
+    /// Converts a server date (UTC midnight) to local midnight for the same calendar day.
+    static func localDate(from serverDate: Date) -> Date {
+        var utcCal = Calendar(identifier: .gregorian)
+        utcCal.timeZone = TimeZone(identifier: "UTC")!
+        let comps = utcCal.dateComponents([.year, .month, .day], from: serverDate)
+        return Calendar.current.date(from: comps) ?? serverDate
+    }
+
+    /// Groups a flat set of period day strings into consecutive streaks.
+    /// Each streak becomes a separate period with its own start date and day count.
+    struct PeriodGroup: Sendable {
+        let startDate: Date
+        let dayCount: Int
+    }
+
+    static func groupConsecutivePeriods(_ dayKeys: Set<String>) -> [PeriodGroup] {
+        let cal = Calendar.current
+        let fmt = DateFormatter()
+        fmt.dateFormat = "yyyy-MM-dd"
+        // dateKey() uses local timezone, so parse back with local timezone
+        let dates = dayKeys
+            .compactMap { fmt.date(from: $0) }
+            .map { cal.startOfDay(for: $0) }
+            .sorted()
+        guard let first = dates.first else { return [] }
+
+        var groups: [PeriodGroup] = []
+        var streakStart = first
+        var streakCount = 1
+
+        for i in 1..<dates.count {
+            let diff = cal.dateComponents([.day], from: dates[i - 1], to: dates[i]).day ?? 0
+            if diff <= 2 {
+                // Allow 1-day gap within same period (spotting pattern)
+                streakCount += diff
+            } else {
+                groups.append(PeriodGroup(startDate: streakStart, dayCount: streakCount))
+                streakStart = dates[i]
+                streakCount = 1
+            }
+        }
+        groups.append(PeriodGroup(startDate: streakStart, dayCount: streakCount))
+        return groups
     }
 }
 
@@ -216,6 +340,12 @@ public struct EditPeriodView: View {
 
             VStack(spacing: 0) {
                 editHeader
+
+                // Prediction update banner
+                if store.isUpdatingPredictions || store.predictionsDone {
+                    predictionBanner
+                        .transition(.move(edge: .top).combined(with: .opacity))
+                }
 
                 weekdayLabels
                     .padding(.horizontal, 16)
@@ -258,16 +388,124 @@ public struct EditPeriodView: View {
                         .padding(.bottom, 8)
                         .transition(.move(edge: .bottom).combined(with: .opacity))
                 }
-                if store.hasChanges || store.isSaving || store.isSaved {
+                if store.hasChanges && !store.isUpdatingPredictions {
                     saveButton
                         .transition(.move(edge: .bottom).combined(with: .opacity))
                 }
             }
             .animation(.spring(response: 0.35, dampingFraction: 0.85), value: store.selectedPeriodDay)
             .animation(.spring(response: 0.35, dampingFraction: 0.85), value: store.hasChanges)
+            .animation(.spring(response: 0.35, dampingFraction: 0.85), value: store.isUpdatingPredictions)
         }
+        .animation(.spring(response: 0.4, dampingFraction: 0.85), value: store.isUpdatingPredictions)
+        .animation(.spring(response: 0.4, dampingFraction: 0.85), value: store.predictionsDone)
+        .onAppear { store.send(.appeared) }
         .enableInjection()
     }
+
+    // MARK: - Prediction Banner
+
+    private var predictionBanner: some View {
+        let isDone = store.predictionsDone
+
+        return HStack(spacing: 14) {
+            ZStack {
+                if isDone {
+                    // Checkmark
+                    Circle()
+                        .fill(
+                            LinearGradient(
+                                colors: [DesignColors.accentWarm, DesignColors.accentSecondary],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                        .frame(width: 32, height: 32)
+
+                    Image(systemName: "checkmark")
+                        .font(.system(size: 14, weight: .bold))
+                        .foregroundColor(.white)
+                } else {
+                    // Pulsing rings
+                    Circle()
+                        .stroke(DesignColors.accentSecondary.opacity(0.3), lineWidth: 1.5)
+                        .frame(width: 32, height: 32)
+                        .scaleEffect(pulseScale)
+
+                    Circle()
+                        .stroke(DesignColors.accentWarm.opacity(0.2), lineWidth: 1)
+                        .frame(width: 24, height: 24)
+                        .scaleEffect(pulseScale * 0.9)
+
+                    Image(systemName: "sparkles")
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundStyle(
+                            LinearGradient(
+                                colors: [DesignColors.accentWarm, DesignColors.accentSecondary],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                }
+            }
+            .frame(width: 36, height: 36)
+            .animation(.spring(response: 0.4, dampingFraction: 0.7), value: isDone)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(isDone ? "Predictions updated" : "Updating predictions")
+                    .font(.custom("Raleway-SemiBold", size: 14))
+                    .foregroundColor(DesignColors.text)
+                    .contentTransition(.numericText())
+
+                Text(isDone ? "Your calendar is up to date" : "Analyzing your cycle patterns...")
+                    .font(.custom("Raleway-Regular", size: 12))
+                    .foregroundColor(DesignColors.textSecondary)
+                    .contentTransition(.numericText())
+            }
+
+            Spacer()
+        }
+        .padding(.vertical, 14)
+        .padding(.horizontal, 18)
+        .background {
+            RoundedRectangle(cornerRadius: 16)
+                .fill(.ultraThinMaterial)
+                .overlay {
+                    RoundedRectangle(cornerRadius: 16)
+                        .fill(
+                            LinearGradient(
+                                colors: [
+                                    DesignColors.accent.opacity(0.15),
+                                    DesignColors.roseTaupeLight.opacity(0.08),
+                                ],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                }
+                .overlay {
+                    RoundedRectangle(cornerRadius: 16)
+                        .strokeBorder(
+                            LinearGradient(
+                                colors: [
+                                    DesignColors.accentSecondary.opacity(0.4),
+                                    DesignColors.structure.opacity(0.2),
+                                    DesignColors.accent.opacity(0.15),
+                                ],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            ),
+                            lineWidth: 0.75
+                        )
+                }
+                .shadow(color: DesignColors.accentSecondary.opacity(0.08), radius: 12, x: 0, y: 4)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 8)
+        .onAppear { withAnimation(.easeInOut(duration: 1.2).repeatForever(autoreverses: true)) { pulseScale = 1.15 } }
+    }
+
+    @State private var pulseScale: CGFloat = 1.0
 
     // MARK: - Header
 
@@ -347,7 +585,7 @@ public struct EditPeriodView: View {
             ForEach(Array(days.enumerated()), id: \.offset) { _, info in
                 editDayCell(info: info)
                     .onTapGesture {
-                        guard info.isCurrentMonth else { return }
+                        guard info.isCurrentMonth, !info.isFuture else { return }
                         UIImpactFeedbackGenerator(style: .light).impactOccurred()
                         store.send(.dayTapped(info.date), animation: .spring(response: 0.3, dampingFraction: 0.7))
                     }
@@ -361,6 +599,7 @@ public struct EditPeriodView: View {
         let isCurrentMonth: Bool
         let isToday: Bool
         let isPeriodDay: Bool
+        let isPredictedPeriod: Bool
         let isFuture: Bool
         let flowIntensity: FlowIntensity?
     }
@@ -389,6 +628,7 @@ public struct EditPeriodView: View {
                 isCurrentMonth: isCurrentMonth,
                 isToday: d == today,
                 isPeriodDay: store.periodDays.contains(key),
+                isPredictedPeriod: store.predictedPeriodDays.contains(key),
                 isFuture: d > today,
                 flowIntensity: store.periodFlowIntensity[key]
             )
@@ -425,7 +665,20 @@ public struct EditPeriodView: View {
                     }
                 }
 
-                if info.isToday && !info.isPeriodDay {
+                // Predicted period: dashed circle (non-editable visual hint)
+                if info.isPredictedPeriod && !info.isPeriodDay && info.isCurrentMonth {
+                    Circle()
+                        .fill(CyclePhase.menstrual.orbitColor.opacity(0.15))
+                        .overlay {
+                            Circle()
+                                .strokeBorder(
+                                    style: StrokeStyle(lineWidth: 1.5, dash: [4, 3])
+                                )
+                                .foregroundColor(CyclePhase.menstrual.orbitColor.opacity(0.5))
+                        }
+                }
+
+                if info.isToday && !info.isPeriodDay && !info.isPredictedPeriod {
                     Circle()
                         .strokeBorder(
                             style: StrokeStyle(lineWidth: 1.5, dash: [4, 3])
@@ -465,7 +718,7 @@ public struct EditPeriodView: View {
             }
         }
         .frame(maxWidth: .infinity)
-        .opacity(info.isCurrentMonth ? (info.isFuture && !info.isPeriodDay ? 0.35 : 1) : 0.18)
+        .opacity(info.isCurrentMonth ? (info.isFuture && !info.isPeriodDay && !info.isPredictedPeriod ? 0.35 : 1) : 0.18)
     }
 
     private func dayTextColor(_ info: EditDayInfo) -> Color {
@@ -612,48 +865,34 @@ public struct EditPeriodView: View {
             Button {
                 store.send(.saveTapped, animation: .easeInOut(duration: 0.3))
             } label: {
-                HStack(spacing: 8) {
-                    if store.isSaving {
-                        ProgressView()
-                            .tint(.white)
-                            .scaleEffect(0.8)
-                    } else if store.isSaved {
-                        Image(systemName: "checkmark")
-                            .font(.system(size: 15, weight: .bold))
-                            .foregroundColor(.white)
-                    }
-                    Text(store.isSaved ? "Saved!" : store.isSaving ? "Saving..." : "Save Period")
-                        .font(.custom("Raleway-Bold", size: 17))
-                        .foregroundColor(.white)
-                }
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 16)
-                .background {
-                    Capsule()
-                        .fill(
-                            LinearGradient(
-                                colors: store.isSaved
-                                    ? [Color.green, Color.green]
-                                    : [CyclePhase.menstrual.orbitColor, CyclePhase.menstrual.orbitColor.opacity(0.8)],
-                                startPoint: .leading,
-                                endPoint: .trailing
-                            )
-                        )
-                        .overlay {
-                            Capsule()
-                                .fill(
-                                    LinearGradient(
-                                        colors: [Color.white.opacity(0.2), Color.clear],
-                                        startPoint: .top,
-                                        endPoint: .center
-                                    )
+                Text("Save Period")
+                    .font(.custom("Raleway-Bold", size: 17))
+                    .foregroundColor(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 16)
+                    .background {
+                        Capsule()
+                            .fill(
+                                LinearGradient(
+                                    colors: [CyclePhase.menstrual.orbitColor, CyclePhase.menstrual.orbitColor.opacity(0.8)],
+                                    startPoint: .leading,
+                                    endPoint: .trailing
                                 )
-                        }
-                        .shadow(color: (store.isSaved ? Color.green : CyclePhase.menstrual.glowColor).opacity(0.4), radius: 12, x: 0, y: 4)
-                }
+                            )
+                            .overlay {
+                                Capsule()
+                                    .fill(
+                                        LinearGradient(
+                                            colors: [Color.white.opacity(0.2), Color.clear],
+                                            startPoint: .top,
+                                            endPoint: .center
+                                        )
+                                    )
+                            }
+                            .shadow(color: CyclePhase.menstrual.glowColor.opacity(0.4), radius: 12, x: 0, y: 4)
+                    }
             }
             .buttonStyle(.plain)
-            .disabled(store.isSaving || store.isSaved)
             .padding(.horizontal, 20)
             .padding(.bottom, 32)
         }
@@ -665,6 +904,7 @@ public struct EditPeriodView: View {
     private func dateLabel(for key: String) -> String {
         let fmt = DateFormatter()
         fmt.dateFormat = "yyyy-MM-dd"
+        // Keys are local timezone (from dateKey()), parse consistently
         guard let date = fmt.date(from: key) else { return key }
         let display = DateFormatter()
         display.dateFormat = "MMM d"

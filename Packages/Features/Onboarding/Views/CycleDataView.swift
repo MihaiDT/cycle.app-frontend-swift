@@ -6,7 +6,7 @@ import SwiftUI
 public struct CycleDataView: View {
     @ObserveInjection var inject
     // Required fields (matching backend API)
-    @Binding public var lastPeriodDate: Date
+    @Binding public var lastPeriodDate: Date?
     @Binding public var cycleDuration: Int  // avgCycleLength (21-40)
     @Binding public var periodDuration: Int  // avgBleedingDays (2-10)
     @Binding public var cycleRegularity: CycleRegularity
@@ -29,7 +29,7 @@ public struct CycleDataView: View {
     }()
 
     public init(
-        lastPeriodDate: Binding<Date>,
+        lastPeriodDate: Binding<Date?>,
         cycleDuration: Binding<Int>,
         periodDuration: Binding<Int>,
         cycleRegularity: Binding<CycleRegularity>,
@@ -54,6 +54,7 @@ public struct CycleDataView: View {
 
     // Current page state (6 pages total)
     @State private var currentPage = 0
+    @State private var calendarDate: Date = Date()
     private let totalPages = 6
 
     public var body: some View {
@@ -84,9 +85,12 @@ public struct CycleDataView: View {
                 HStack(spacing: 0) {
                     // Page 0: Calendar
                     InlinePeriodCalendarPage(
-                        selectedDate: $lastPeriodDate,
+                        selectedDate: $calendarDate,
                         periodDuration: $periodDuration
                     )
+                    .onChange(of: calendarDate) { _, newDate in
+                        lastPeriodDate = newDate
+                    }
                     .frame(width: geometry.size.width)
 
                     // Page 1: Cycle & Period Duration
@@ -178,7 +182,7 @@ public struct CycleDataView: View {
 
 #Preview("Cycle Data") {
     CycleDataView(
-        lastPeriodDate: .constant(Date()),
+        lastPeriodDate: .constant(nil),
         cycleDuration: .constant(28),
         periodDuration: .constant(5),
         cycleRegularity: .constant(.regular),
