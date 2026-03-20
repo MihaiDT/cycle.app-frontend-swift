@@ -242,7 +242,8 @@ public struct CalendarFeature: Sendable {
                         serverPeriodDays.insert(key)
                         serverPredictedDays.insert(key)
                     } else if entry.type == "fertile", let levelStr = entry.fertilityLevel,
-                              let level = FertilityLevel(rawValue: levelStr) {
+                        let level = FertilityLevel(rawValue: levelStr)
+                    {
                         serverFertileDays[key] = level
                     } else if entry.type == "ovulation" {
                         serverOvulationDays.insert(key)
@@ -296,9 +297,12 @@ public struct CalendarFeature: Sendable {
 
                     if periodDays.isEmpty {
                         let today = Calendar.current.startOfDay(for: Date())
-                        state.cycleStartDate = state.menstrualStatus.map {
-                            Calendar.current.startOfDay(for: CalendarFeature.localDate(from: $0.currentCycle.startDate))
-                        } ?? Calendar.current.date(byAdding: .day, value: -14, to: today) ?? today
+                        state.cycleStartDate =
+                            state.menstrualStatus.map {
+                                Calendar.current.startOfDay(
+                                    for: CalendarFeature.localDate(from: $0.currentCycle.startDate)
+                                )
+                            } ?? Calendar.current.date(byAdding: .day, value: -14, to: today) ?? today
                         state.bleedingDays = state.menstrualStatus?.currentCycle.bleedingDays ?? 5
                     } else {
                         CalendarFeature.recomputeCycle(from: &state)
@@ -358,19 +362,26 @@ public struct CalendarFeature: Sendable {
 
         switch (hasMood, hasPain, hasLowEnergy, phase) {
         case (true, _, _, .menstrual):
-            return "I noticed you're feeling emotionally heavy today. During your period, hormone shifts can amplify everything. Want to talk through it? I'm here."
+            return
+                "I noticed you're feeling emotionally heavy today. During your period, hormone shifts can amplify everything. Want to talk through it? I'm here."
         case (true, _, _, .luteal):
-            return "The luteal phase can bring waves of emotion that feel bigger than usual. You're not imagining it — and you don't have to carry it alone."
+            return
+                "The luteal phase can bring waves of emotion that feel bigger than usual. You're not imagining it — and you don't have to carry it alone."
         case (true, _, _, _):
-            return "I see what you're feeling today. Sometimes just putting it into words helps. Want to explore this together?"
+            return
+                "I see what you're feeling today. Sometimes just putting it into words helps. Want to explore this together?"
         case (_, true, _, .menstrual):
-            return "Your body is working hard right now. I have some gentle relief ideas that might help — want me to walk you through them?"
+            return
+                "Your body is working hard right now. I have some gentle relief ideas that might help — want me to walk you through them?"
         case (_, true, _, _):
-            return "Pain can be draining in ways that go beyond the physical. I'd love to help you find some comfort today."
+            return
+                "Pain can be draining in ways that go beyond the physical. I'd love to help you find some comfort today."
         case (_, _, true, _):
-            return "Low energy days deserve gentleness, not guilt. I can suggest a few things that might help you recharge — shall we chat?"
+            return
+                "Low energy days deserve gentleness, not guilt. I can suggest a few things that might help you recharge — shall we chat?"
         default:
-            return "Thank you for checking in with yourself today. Tracking these patterns helps me understand you better. Want to talk about how you're feeling?"
+            return
+                "Thank you for checking in with yourself today. Tracking these patterns helps me understand you better. Want to talk about how you're feeling?"
         }
     }
 
@@ -443,11 +454,15 @@ private enum SymptomCategory: String, CaseIterable {
     var symptoms: [SymptomType] {
         switch self {
         case .physical:
-            [.cramping, .headache, .backPain, .bloating, .breastTenderness, .nausea,
-             .acne, .dizziness, .hotFlashes, .jointPain, .allGood, .fever]
+            [
+                .cramping, .headache, .backPain, .bloating, .breastTenderness, .nausea,
+                .acne, .dizziness, .hotFlashes, .jointPain, .allGood, .fever,
+            ]
         case .mood:
-            [.calm, .happy, .sensitive, .sad, .apathetic, .tired, .angry,
-             .lively, .motivated, .anxious, .confident, .irritable, .emotional, .moodSwings]
+            [
+                .calm, .happy, .sensitive, .sad, .apathetic, .tired, .angry,
+                .lively, .motivated, .anxious, .confident, .irritable, .emotional, .moodSwings,
+            ]
         case .energy:
             [.lowEnergy, .normalEnergy, .highEnergy, .noStress, .manageableStress, .intenseStress]
         case .sleep:
@@ -455,8 +470,10 @@ private enum SymptomCategory: String, CaseIterable {
         case .digestive:
             [.constipation, .diarrhea, .appetiteChanges, .cravings, .hunger]
         case .skin:
-            [.normalSkin, .drySkin, .oilySkin, .skinBreakouts, .itchySkin,
-             .normalHair, .shinyHair, .oilyHair, .dryHair, .hairLoss]
+            [
+                .normalSkin, .drySkin, .oilySkin, .skinBreakouts, .itchySkin,
+                .normalHair, .shinyHair, .oilyHair, .dryHair, .hairLoss,
+            ]
         }
     }
 }
@@ -606,9 +623,12 @@ public struct CalendarView: View {
                 .presentationCornerRadius(28)
                 .presentationBackground(.ultraThinMaterial)
         }
-        .sheet(isPresented: $store.isShowingSymptomSheet, onDismiss: {
-            store.send(.symptomSheetDismissed)
-        }) {
+        .sheet(
+            isPresented: $store.isShowingSymptomSheet,
+            onDismiss: {
+                store.send(.symptomSheetDismissed)
+            }
+        ) {
             SymptomLoggingSheet(store: store)
                 .presentationDetents([.medium, .large])
                 .presentationDragIndicator(.visible)
@@ -622,7 +642,9 @@ public struct CalendarView: View {
                 AriaPromptOverlay(
                     message: store.ariaPromptMessage,
                     onTalk: { store.send(.ariaPromptTalkTapped) },
-                    onDismiss: { store.send(.ariaPromptDismissed, animation: .spring(response: 0.35, dampingFraction: 0.85)) }
+                    onDismiss: {
+                        store.send(.ariaPromptDismissed, animation: .spring(response: 0.35, dampingFraction: 0.85))
+                    }
                 )
                 .transition(.opacity.combined(with: .scale(scale: 0.9)))
                 .animation(.spring(response: 0.4, dampingFraction: 0.85), value: store.showAriaPrompt)
@@ -639,7 +661,9 @@ private struct FeedTopBar: View {
 
     var body: some View {
         HStack(spacing: 0) {
-            Button { store.send(.dismissTapped) } label: {
+            Button {
+                store.send(.dismissTapped)
+            } label: {
                 Image(systemName: "chevron.left")
                     .font(.system(size: 15, weight: .semibold))
                     .foregroundColor(DesignColors.text)
@@ -660,7 +684,9 @@ private struct FeedTopBar: View {
 
             Spacer()
 
-            Button { store.send(.editPeriodTapped) } label: {
+            Button {
+                store.send(.editPeriodTapped)
+            } label: {
                 Image(systemName: "drop.fill")
                     .font(.system(size: 16, weight: .semibold))
                     .foregroundColor(CyclePhase.menstrual.orbitColor)
@@ -777,7 +803,10 @@ private struct PhaseLegendView: View {
                 }
                 HStack(spacing: 5) {
                     RoundedRectangle(cornerRadius: 2)
-                        .strokeBorder(DesignColors.textSecondary.opacity(0.4), style: StrokeStyle(lineWidth: 1, dash: [3, 2]))
+                        .strokeBorder(
+                            DesignColors.textSecondary.opacity(0.4),
+                            style: StrokeStyle(lineWidth: 1, dash: [3, 2])
+                        )
                         .frame(width: 12, height: 12)
                     Text("Predicted")
                         .font(.custom("Raleway-Medium", size: 11))
@@ -813,7 +842,6 @@ private struct MonthGridView: View {
     private let cal = Calendar.current
     private let columns = Array(repeating: GridItem(.flexible(), spacing: 2), count: 7)
 
-
     private var days: [CalendarDayInfo] {
         let cycleStart = cal.startOfDay(for: store.cycleStartDate)
         let cycleLength = store.cycleLength
@@ -847,10 +875,16 @@ private struct MonthGridView: View {
             // ONLY server data — no local math for period days
             let isServerPeriod = periodDays.contains(key)
             let isServerPredicted = predictedPeriodDays.contains(key)
-            let info = phaseInfo(for: d, cycleStartDate: cycleStart, cycleLength: cycleLength, bleedingDays: bleedingDays)
+            let info = phaseInfo(
+                for: d,
+                cycleStartDate: cycleStart,
+                cycleLength: cycleLength,
+                bleedingDays: bleedingDays
+            )
             let cycleDay = info?.cycleDay
             // Phase from server period status; otherwise use local math for non-period phases only
-            let phase: CyclePhase? = isServerPeriod ? .menstrual : (info.map { $0.phase == .menstrual ? .follicular : $0.phase })
+            let phase: CyclePhase? =
+                isServerPeriod ? .menstrual : (info.map { $0.phase == .menstrual ? .follicular : $0.phase })
             // Server-driven fertility data
             let serverFertilityLevel = fertileDays[key]
             let isFertile = serverFertilityLevel != nil
@@ -990,7 +1024,9 @@ private struct CalendarDayCell: View {
                     : info.isOvulationDay && !info.isPeriodDay
                         ? CyclePhase.ovulatory.glowColor.opacity(0.2)
                         : .clear,
-                radius: 6, x: 0, y: 2
+                radius: 6,
+                x: 0,
+                y: 2
             )
             .animation(.spring(response: 0.28, dampingFraction: 0.75), value: info.isSelected)
             .animation(.spring(response: 0.25, dampingFraction: 0.8), value: info.isUserMarkedPeriod)
@@ -1060,9 +1096,9 @@ private struct CalendarDayCell: View {
 
     private var phaseDotColor: Color {
         guard info.isCurrentMonth,
-              !info.isUserMarkedPeriod,
-              !info.isPeriodDay,
-              let phase = info.phase
+            !info.isUserMarkedPeriod,
+            !info.isPeriodDay,
+            let phase = info.phase
         else { return .clear }
         return phase.orbitColor
     }
@@ -1100,7 +1136,12 @@ private struct DayDetailPanel: View {
     @Bindable var store: StoreOf<CalendarFeature>
 
     private var selectedPhaseInfo: (phase: CyclePhase, cycleDay: Int, isPredicted: Bool)? {
-        let info = phaseInfo(for: store.selectedDate, cycleStartDate: store.cycleStartDate, cycleLength: store.cycleLength, bleedingDays: store.bleedingDays)
+        let info = phaseInfo(
+            for: store.selectedDate,
+            cycleStartDate: store.cycleStartDate,
+            cycleLength: store.cycleLength,
+            bleedingDays: store.bleedingDays
+        )
         guard let info else { return nil }
 
         let isPast = store.selectedDate <= Calendar.current.startOfDay(for: Date())
@@ -1151,7 +1192,6 @@ private struct DayDetailPanel: View {
                     isPredicted: selectedPhaseInfo?.isPredicted ?? false
                 )
 
-
             }
             .padding(.horizontal, 20)
             .padding(.top, 28)
@@ -1196,7 +1236,10 @@ private struct PhaseBannerRow: View {
                                 .padding(.vertical, 2)
                                 .background {
                                     Capsule()
-                                        .strokeBorder(phase.orbitColor.opacity(0.4), style: StrokeStyle(lineWidth: 1, dash: [3, 2]))
+                                        .strokeBorder(
+                                            phase.orbitColor.opacity(0.4),
+                                            style: StrokeStyle(lineWidth: 1, dash: [3, 2])
+                                        )
                                 }
                         }
                     }
@@ -1320,70 +1363,138 @@ private struct AriaInsightCard: View {
         }
         let p = isPredicted
         switch day {
-        case 1:  return p ? "Your period is about to begin. Rest, warmth, and iron-rich foods will make a real difference in the days ahead."
-                          : "Day 1 — your cycle resets. Honour the heaviness with rest. Warm compresses and magnesium-rich foods ease cramps."
-        case 2:  return p ? "Flow will likely be at its heaviest. Clear your schedule where you can and lean into slower movement."
-                          : "Flow peaks today for most. Energy is at its lowest — this is not the day to push hard. Your body is doing profound work."
-        case 3:  return p ? "The sharpest fatigue starts to ease. Gentle walks and warming meals will support your recovery."
-                          : "The edge softens today. A little iron and vitamin C together — think spinach with lemon — will help replenish what you're losing."
-        case 4:  return p ? "Flow lightens and mood begins to lift. A good day to re-engage with light tasks."
-                          : "Lighter flow, lighter mood. Estrogen is quietly beginning its rise. You may notice a small but real shift in your energy."
-        case 5:  return p ? "Your period is nearly over. Expect a noticeable lift in energy in the coming days."
-                          : "Last day of bleeding for most. The fog is clearing — notice how differently your body feels compared to day 1."
-        case 6:  return p ? "Follicular phase begins. Curiosity and motivation will build steadily over the next week."
-                          : "Estrogen climbs and so does your drive. A great day to revisit goals or start something you've been putting off."
-        case 7:  return p ? "Mental clarity will sharpen. This is an excellent window for focused, deep work."
-                          : "Your brain is running cleaner today. Verbal fluency and memory are measurably stronger in the follicular phase — use it."
-        case 8:  return p ? "Creative energy is building. Plan space for ideas, writing, or any work that rewards fresh thinking."
-                          : "Creativity is near its peak. Ideas flow more freely now. A whiteboard session, a new recipe, a song — go for it."
-        case 9:  return p ? "Social magnetism increases. Conversations, networking, and connection will feel more natural and rewarding."
-                          : "You're more persuasive and charismatic today than at almost any other point in your cycle. Own it."
-        case 10: return p ? "Confidence and focus compound. Ambitious projects started now tend to gain real momentum."
-                          : "Estrogen is high and your threshold for stress is elevated. Tackle the hard conversation or the bold project today."
-        case 11: return p ? "Energy approaches its monthly peak. Schedule the things that demand your best."
-                          : "You're close to your peak — physically and mentally. Your body is primed for intensity, connection, and performance."
-        case 12: return p ? "LH surge is imminent. Expect a noticeable spike in drive and confidence."
-                          : "The pre-ovulation surge is here. Your body temperature rises slightly and so does your appetite for challenge."
-        case 13: return p ? "Tomorrow may be ovulation. Your magnetism and verbal skills are at their monthly high."
-                          : "Peak estrogen and rising LH. Your face, voice, and posture subtly shift — research confirms you appear and feel most confident today."
-        case 14: return p ? "Ovulation is likely today. High energy, strong communication, and heightened senses are all normal."
-                          : "Ovulation day. You are at peak vitality — strong, social, and sharp. Schedule your most important meeting or workout today."
-        case 15: return p ? "Progesterone begins rising. Energy stays high but will gradually soften inward."
-                          : "The shift begins. Progesterone climbs and your body starts a quieter, more inward phase. You still have plenty of fuel."
-        case 16: return p ? "Energy remains good but starts transitioning. Begin wrapping up high-output work."
-                          : "A bridge day — still capable of high output, but your nervous system will thank you for starting to taper intensity."
-        case 17: return p ? "Luteal phase begins. Structured routines and nourishing meals become more important now."
-                          : "Progesterone dominates. Stability and routine feel more grounding than novelty today. Lean in."
-        case 18: return p ? "Introspective energy rises. Good for journaling, detailed work, and creative finishing."
-                          : "You're entering a 'finishing' mode — detail-oriented, discerning. Great for editing, refining, and deep solo work."
-        case 19: return p ? "A calmer, more grounded window. Steady output is very achievable with the right pacing."
-                          : "Progesterone's calming effect is real. Use this steadier emotional state for meaningful conversations you've been postponing."
-        case 20: return p ? "Your body will need more nourishment. Prioritise protein, healthy fats, and complex carbs."
-                          : "Metabolism speeds up slightly in the luteal phase — your body genuinely needs more fuel. Don't fight the hunger."
-        case 21: return p ? "PMS symptoms may begin. Reduce caffeine and alcohol, increase magnesium and omega-3s."
-                          : "If PMS arrives, it typically starts around now. Magnesium-rich foods — dark chocolate, pumpkin seeds, avocado — genuinely help."
-        case 22: return p ? "Cravings will likely increase. They're hormonal, not a lack of willpower — nourish yourself without guilt."
-                          : "Carbohydrate cravings peak because serotonin dips with progesterone. Complex carbs stabilise both blood sugar and mood."
-        case 23: return p ? "Energy dips become more pronounced. Protect your sleep and reduce high-intensity training."
-                          : "Your body is working hard beneath the surface. Swap intense workouts for yoga or walking — recovery is the real work now."
-        case 24: return p ? "Emotional sensitivity heightens. Extra rest and boundary-setting will serve you well."
-                          : "Your amygdala is more reactive today. It's not you overreacting — it's biology. Name it, and give yourself more space."
-        case 25: return p ? "Pre-menstrual phase deepens. Slow down, hydrate, and reduce commitments where possible."
-                          : "Inflammation can rise in the late luteal phase. Anti-inflammatory foods — turmeric, berries, oily fish — ease the approach to your period."
-        case 26: return p ? "Fatigue and irritability may peak. Protect your evenings and communicate your needs clearly."
-                          : "You're in the final descent. Be gentle with yourself and honest with others about your capacity right now."
-        case 27: return p ? "One or two days remain. Rest as much as possible and prepare your body for the reset ahead."
-                          : "Almost there. Your body is preparing to shed. Heat, rest, and solitude are the best gifts you can give yourself today."
-        case 28: return p ? "Your cycle completes tomorrow. The rhythm continues — each cycle is data about your health."
-                          : "Cycle day 28 — the last page before a new chapter. Reflect on this month: what your body asked for, what you gave it."
+        case 1:
+            return p
+                ? "Your period is about to begin. Rest, warmth, and iron-rich foods will make a real difference in the days ahead."
+                : "Day 1 — your cycle resets. Honour the heaviness with rest. Warm compresses and magnesium-rich foods ease cramps."
+        case 2:
+            return p
+                ? "Flow will likely be at its heaviest. Clear your schedule where you can and lean into slower movement."
+                : "Flow peaks today for most. Energy is at its lowest — this is not the day to push hard. Your body is doing profound work."
+        case 3:
+            return p
+                ? "The sharpest fatigue starts to ease. Gentle walks and warming meals will support your recovery."
+                : "The edge softens today. A little iron and vitamin C together — think spinach with lemon — will help replenish what you're losing."
+        case 4:
+            return p
+                ? "Flow lightens and mood begins to lift. A good day to re-engage with light tasks."
+                : "Lighter flow, lighter mood. Estrogen is quietly beginning its rise. You may notice a small but real shift in your energy."
+        case 5:
+            return p
+                ? "Your period is nearly over. Expect a noticeable lift in energy in the coming days."
+                : "Last day of bleeding for most. The fog is clearing — notice how differently your body feels compared to day 1."
+        case 6:
+            return p
+                ? "Follicular phase begins. Curiosity and motivation will build steadily over the next week."
+                : "Estrogen climbs and so does your drive. A great day to revisit goals or start something you've been putting off."
+        case 7:
+            return p
+                ? "Mental clarity will sharpen. This is an excellent window for focused, deep work."
+                : "Your brain is running cleaner today. Verbal fluency and memory are measurably stronger in the follicular phase — use it."
+        case 8:
+            return p
+                ? "Creative energy is building. Plan space for ideas, writing, or any work that rewards fresh thinking."
+                : "Creativity is near its peak. Ideas flow more freely now. A whiteboard session, a new recipe, a song — go for it."
+        case 9:
+            return p
+                ? "Social magnetism increases. Conversations, networking, and connection will feel more natural and rewarding."
+                : "You're more persuasive and charismatic today than at almost any other point in your cycle. Own it."
+        case 10:
+            return p
+                ? "Confidence and focus compound. Ambitious projects started now tend to gain real momentum."
+                : "Estrogen is high and your threshold for stress is elevated. Tackle the hard conversation or the bold project today."
+        case 11:
+            return p
+                ? "Energy approaches its monthly peak. Schedule the things that demand your best."
+                : "You're close to your peak — physically and mentally. Your body is primed for intensity, connection, and performance."
+        case 12:
+            return p
+                ? "LH surge is imminent. Expect a noticeable spike in drive and confidence."
+                : "The pre-ovulation surge is here. Your body temperature rises slightly and so does your appetite for challenge."
+        case 13:
+            return p
+                ? "Tomorrow may be ovulation. Your magnetism and verbal skills are at their monthly high."
+                : "Peak estrogen and rising LH. Your face, voice, and posture subtly shift — research confirms you appear and feel most confident today."
+        case 14:
+            return p
+                ? "Ovulation is likely today. High energy, strong communication, and heightened senses are all normal."
+                : "Ovulation day. You are at peak vitality — strong, social, and sharp. Schedule your most important meeting or workout today."
+        case 15:
+            return p
+                ? "Progesterone begins rising. Energy stays high but will gradually soften inward."
+                : "The shift begins. Progesterone climbs and your body starts a quieter, more inward phase. You still have plenty of fuel."
+        case 16:
+            return p
+                ? "Energy remains good but starts transitioning. Begin wrapping up high-output work."
+                : "A bridge day — still capable of high output, but your nervous system will thank you for starting to taper intensity."
+        case 17:
+            return p
+                ? "Luteal phase begins. Structured routines and nourishing meals become more important now."
+                : "Progesterone dominates. Stability and routine feel more grounding than novelty today. Lean in."
+        case 18:
+            return p
+                ? "Introspective energy rises. Good for journaling, detailed work, and creative finishing."
+                : "You're entering a 'finishing' mode — detail-oriented, discerning. Great for editing, refining, and deep solo work."
+        case 19:
+            return p
+                ? "A calmer, more grounded window. Steady output is very achievable with the right pacing."
+                : "Progesterone's calming effect is real. Use this steadier emotional state for meaningful conversations you've been postponing."
+        case 20:
+            return p
+                ? "Your body will need more nourishment. Prioritise protein, healthy fats, and complex carbs."
+                : "Metabolism speeds up slightly in the luteal phase — your body genuinely needs more fuel. Don't fight the hunger."
+        case 21:
+            return p
+                ? "PMS symptoms may begin. Reduce caffeine and alcohol, increase magnesium and omega-3s."
+                : "If PMS arrives, it typically starts around now. Magnesium-rich foods — dark chocolate, pumpkin seeds, avocado — genuinely help."
+        case 22:
+            return p
+                ? "Cravings will likely increase. They're hormonal, not a lack of willpower — nourish yourself without guilt."
+                : "Carbohydrate cravings peak because serotonin dips with progesterone. Complex carbs stabilise both blood sugar and mood."
+        case 23:
+            return p
+                ? "Energy dips become more pronounced. Protect your sleep and reduce high-intensity training."
+                : "Your body is working hard beneath the surface. Swap intense workouts for yoga or walking — recovery is the real work now."
+        case 24:
+            return p
+                ? "Emotional sensitivity heightens. Extra rest and boundary-setting will serve you well."
+                : "Your amygdala is more reactive today. It's not you overreacting — it's biology. Name it, and give yourself more space."
+        case 25:
+            return p
+                ? "Pre-menstrual phase deepens. Slow down, hydrate, and reduce commitments where possible."
+                : "Inflammation can rise in the late luteal phase. Anti-inflammatory foods — turmeric, berries, oily fish — ease the approach to your period."
+        case 26:
+            return p
+                ? "Fatigue and irritability may peak. Protect your evenings and communicate your needs clearly."
+                : "You're in the final descent. Be gentle with yourself and honest with others about your capacity right now."
+        case 27:
+            return p
+                ? "One or two days remain. Rest as much as possible and prepare your body for the reset ahead."
+                : "Almost there. Your body is preparing to shed. Heat, rest, and solitude are the best gifts you can give yourself today."
+        case 28:
+            return p
+                ? "Your cycle completes tomorrow. The rhythm continues — each cycle is data about your health."
+                : "Cycle day 28 — the last page before a new chapter. Reflect on this month: what your body asked for, what you gave it."
         default:
             let phase = phase
             switch phase {
-            case .menstrual:  return p ? "Your period is near. Rest and warmth are your allies." : "Rest deeply. Your body is doing important work."
-            case .follicular: return p ? "Energy and clarity are building. Make space for bold ideas." : "Estrogen is rising — your focus and creativity follow."
-            case .ovulatory:  return p ? "Peak energy approaches. Show up fully." : "You're at your most vital. Make it count."
-            case .luteal:     return p ? "Turn inward. Nourish and protect your energy." : "Slow down with intention. This phase rewards rest and reflection."
-            case nil:         return "Log your cycle start date to receive personalized AI-powered insights for every day of your cycle."
+            case .menstrual:
+                return p
+                    ? "Your period is near. Rest and warmth are your allies."
+                    : "Rest deeply. Your body is doing important work."
+            case .follicular:
+                return p
+                    ? "Energy and clarity are building. Make space for bold ideas."
+                    : "Estrogen is rising — your focus and creativity follow."
+            case .ovulatory:
+                return p ? "Peak energy approaches. Show up fully." : "You're at your most vital. Make it count."
+            case .luteal:
+                return p
+                    ? "Turn inward. Nourish and protect your energy."
+                    : "Slow down with intention. This phase rewards rest and reflection."
+            case nil:
+                return
+                    "Log your cycle start date to receive personalized AI-powered insights for every day of your cycle."
             }
         }
     }
@@ -1396,7 +1507,8 @@ private struct AriaInsightCard: View {
                     .foregroundStyle(
                         LinearGradient(
                             colors: [DesignColors.accentWarm, DesignColors.accentSecondary],
-                            startPoint: .topLeading, endPoint: .bottomTrailing
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
                         )
                     )
                 Text("Aria")
@@ -1435,7 +1547,8 @@ private struct AriaInsightCard: View {
                                     DesignColors.accentSecondary.opacity(0.2),
                                     Color.white.opacity(0.08),
                                 ],
-                                startPoint: .topLeading, endPoint: .bottomTrailing
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
                             ),
                             lineWidth: 1
                         )
@@ -1573,7 +1686,7 @@ private struct AriaPromptOverlay: View {
                                     LinearGradient(
                                         colors: [
                                             DesignColors.accentWarm.opacity(0.8),
-                                            DesignColors.accent.opacity(0.6)
+                                            DesignColors.accent.opacity(0.6),
                                         ],
                                         startPoint: .topLeading,
                                         endPoint: .bottomTrailing
@@ -1596,7 +1709,9 @@ private struct AriaPromptOverlay: View {
 
                         Spacer()
 
-                        Button { onDismiss() } label: {
+                        Button {
+                            onDismiss()
+                        } label: {
                             Image(systemName: "xmark")
                                 .font(.system(size: 11, weight: .bold))
                                 .foregroundColor(DesignColors.textSecondary.opacity(0.5))
@@ -1619,7 +1734,9 @@ private struct AriaPromptOverlay: View {
                     // Action buttons
                     if showButtons {
                         VStack(spacing: 10) {
-                            Button { onTalk() } label: {
+                            Button {
+                                onTalk()
+                            } label: {
                                 HStack(spacing: 8) {
                                     Image(systemName: "message.fill")
                                         .font(.system(size: 13, weight: .semibold))
@@ -1643,7 +1760,9 @@ private struct AriaPromptOverlay: View {
                             }
                             .buttonStyle(.plain)
 
-                            Button { onDismiss() } label: {
+                            Button {
+                                onDismiss()
+                            } label: {
                                 Text("Maybe later")
                                     .font(.custom("Raleway-Medium", size: 14))
                                     .foregroundColor(DesignColors.textSecondary)
@@ -1664,7 +1783,7 @@ private struct AriaPromptOverlay: View {
                                         colors: [
                                             DesignColors.accentWarm.opacity(0.3),
                                             Color.white.opacity(0.1),
-                                            Color.white.opacity(0.05)
+                                            Color.white.opacity(0.05),
                                         ],
                                         startPoint: .topLeading,
                                         endPoint: .bottomTrailing
@@ -1718,7 +1837,12 @@ private struct SymptomLoggingSheet: View {
     }
 
     private var selectedPhase: CyclePhase? {
-        phaseInfo(for: store.selectedDate, cycleStartDate: store.cycleStartDate, cycleLength: store.cycleLength, bleedingDays: store.bleedingDays)?.phase
+        phaseInfo(
+            for: store.selectedDate,
+            cycleStartDate: store.cycleStartDate,
+            cycleLength: store.cycleLength,
+            bleedingDays: store.bleedingDays
+        )?.phase
     }
 
     private var accentColor: Color {
@@ -1734,9 +1858,12 @@ private struct SymptomLoggingSheet: View {
     private var filteredCategories: [(SymptomCategory, [SymptomType])] {
         let search = store.symptomSearchText.lowercased().trimmingCharacters(in: .whitespaces)
         return SymptomCategory.allCases.compactMap { cat in
-            let filtered = search.isEmpty ? cat.symptoms : cat.symptoms.filter {
-                $0.displayName.lowercased().contains(search)
-            }
+            let filtered =
+                search.isEmpty
+                ? cat.symptoms
+                : cat.symptoms.filter {
+                    $0.displayName.lowercased().contains(search)
+                }
             return filtered.isEmpty ? nil : (cat, filtered)
         }
     }
@@ -1755,7 +1882,9 @@ private struct SymptomLoggingSheet: View {
                             .foregroundColor(DesignColors.textSecondary)
                     }
                     Spacer()
-                    Button { store.send(.symptomSheetDismissed) } label: {
+                    Button {
+                        store.send(.symptomSheetDismissed)
+                    } label: {
                         Image(systemName: "xmark")
                             .font(.system(size: 13, weight: .bold))
                             .foregroundColor(DesignColors.textSecondary)
@@ -1779,7 +1908,10 @@ private struct SymptomLoggingSheet: View {
                             .foregroundColor(DesignColors.textSecondary.opacity(0.65))
                             .tracking(2)
 
-                        LazyVGrid(columns: [GridItem(.flexible(), spacing: 8), GridItem(.flexible(), spacing: 8)], spacing: 8) {
+                        LazyVGrid(
+                            columns: [GridItem(.flexible(), spacing: 8), GridItem(.flexible(), spacing: 8)],
+                            spacing: 8
+                        ) {
                             ForEach(selectedSymptomTypes) { symptom in
                                 HStack(spacing: 8) {
                                     Image(systemName: symptom.sfSymbol)
@@ -1796,7 +1928,10 @@ private struct SymptomLoggingSheet: View {
                                         .lineLimit(1)
                                     Spacer()
                                     Button {
-                                        store.send(.symptomToggled(symptom), animation: .spring(response: 0.25, dampingFraction: 0.75))
+                                        store.send(
+                                            .symptomToggled(symptom),
+                                            animation: .spring(response: 0.25, dampingFraction: 0.75)
+                                        )
                                     } label: {
                                         Image(systemName: "xmark")
                                             .font(.system(size: 9, weight: .bold))
@@ -1830,7 +1965,9 @@ private struct SymptomLoggingSheet: View {
                         .font(.custom("Raleway-Regular", size: 14))
                         .foregroundColor(DesignColors.text)
                     if !store.symptomSearchText.isEmpty {
-                        Button { store.symptomSearchText = "" } label: {
+                        Button {
+                            store.symptomSearchText = ""
+                        } label: {
                             Image(systemName: "xmark.circle.fill")
                                 .font(.system(size: 14))
                                 .foregroundColor(DesignColors.textSecondary.opacity(0.4))
@@ -1860,7 +1997,10 @@ private struct SymptomLoggingSheet: View {
                                 selectedSymptoms: selectedSymptoms,
                                 selectedPhase: selectedPhase,
                                 onToggle: {
-                                    store.send(.symptomToggled($0), animation: .spring(response: 0.25, dampingFraction: 0.75))
+                                    store.send(
+                                        .symptomToggled($0),
+                                        animation: .spring(response: 0.25, dampingFraction: 0.75)
+                                    )
                                 }
                             )
                         }
@@ -1894,9 +2034,15 @@ private struct SymptomLoggingSheet: View {
                                     .font(.system(size: 15, weight: .bold))
                                     .foregroundColor(.white)
                             }
-                            Text(store.symptomsSaved ? "Saved!" : store.isSavingSymptoms ? "Saving..." : "Save \(selectedSymptoms.count) symptom\(selectedSymptoms.count == 1 ? "" : "s")")
-                                .font(.custom("Raleway-Bold", size: 16))
-                                .foregroundColor(.white)
+                            Text(
+                                store.symptomsSaved
+                                    ? "Saved!"
+                                    : store.isSavingSymptoms
+                                        ? "Saving..."
+                                        : "Save \(selectedSymptoms.count) symptom\(selectedSymptoms.count == 1 ? "" : "s")"
+                            )
+                            .font(.custom("Raleway-Bold", size: 16))
+                            .foregroundColor(.white)
                         }
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 15)
@@ -1911,7 +2057,12 @@ private struct SymptomLoggingSheet: View {
                                         endPoint: .trailing
                                     )
                                 )
-                                .shadow(color: (store.symptomsSaved ? Color.green : accentColor).opacity(0.4), radius: 12, x: 0, y: 4)
+                                .shadow(
+                                    color: (store.symptomsSaved ? Color.green : accentColor).opacity(0.4),
+                                    radius: 12,
+                                    x: 0,
+                                    y: 4
+                                )
                         }
                     }
                     .buttonStyle(.plain)

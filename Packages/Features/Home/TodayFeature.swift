@@ -165,7 +165,8 @@ public struct TodayFeature: Sendable {
                         days.insert(key)
                         predicted.insert(key)
                     } else if entry.type == "fertile", let levelStr = entry.fertilityLevel,
-                              let level = FertilityLevel(rawValue: levelStr) {
+                        let level = FertilityLevel(rawValue: levelStr)
+                    {
                         fertile[key] = level
                     } else if entry.type == "ovulation" {
                         ovulation.insert(key)
@@ -212,9 +213,10 @@ public struct TodayFeature: Sendable {
             case .logPeriodTapped(let focusDate):
                 let today = Calendar.current.startOfDay(for: Date())
                 let status = state.menstrualStatus
-                let startDate = status.flatMap { s in
-                    s.hasCycleData ? CalendarFeature.localDate(from: s.currentCycle.startDate) : nil
-                } ?? today
+                let startDate =
+                    status.flatMap { s in
+                        s.hasCycleData ? CalendarFeature.localDate(from: s.currentCycle.startDate) : nil
+                    } ?? today
                 let cycleLength = status?.profile.avgCycleLength ?? 28
                 let bleedingDays = status?.currentCycle.bleedingDays ?? 5
 
@@ -342,7 +344,7 @@ private struct CelestialSnapBehavior: ScrollTargetBehavior {
         // If we're in the transition zone (between 0 and collapseOffset),
         // snap to either fully expanded (0) or fully collapsed (collapseOffset)
         guard y > 0 && y < collapseOffset else { return }
-        
+
         if y > collapseOffset * 0.35 {
             // Past 35% → snap to collapsed
             target.rect.origin.y = collapseOffset
@@ -446,7 +448,7 @@ public struct TodayView: View {
 
     private var smoothCollapse: CGFloat {
         let t = collapseProgress
-        return t * t * (3 - 2 * t) // smoothstep
+        return t * t * (3 - 2 * t)  // smoothstep
     }
 
     private var celestialScale: CGFloat {
@@ -502,7 +504,7 @@ public struct TodayView: View {
     }
 
     private var calendarOpacity: CGFloat {
-        1.0 // Always visible — it's a sticky header
+        1.0  // Always visible — it's a sticky header
     }
 
     public var body: some View {
@@ -685,7 +687,9 @@ public struct TodayView: View {
 
             Spacer()
 
-            Button { store.send(.calendarTapped) } label: {
+            Button {
+                store.send(.calendarTapped)
+            } label: {
                 Image(systemName: "calendar")
                     .font(.system(size: 20, weight: .medium))
                     .foregroundColor(DesignColors.textSecondary.opacity(0.7))
@@ -739,7 +743,7 @@ public struct TodayView: View {
                             colors: [
                                 DesignColors.accentWarm.opacity(0.3),
                                 DesignColors.accentWarm.opacity(0.1),
-                                Color.purple.opacity(0.15)
+                                Color.purple.opacity(0.15),
                             ],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
@@ -754,7 +758,8 @@ public struct TodayView: View {
                         .foregroundStyle(
                             LinearGradient(
                                 colors: [DesignColors.accentWarm.opacity(0.7), Color.purple.opacity(0.5)],
-                                startPoint: .top, endPoint: .bottom
+                                startPoint: .top,
+                                endPoint: .bottom
                             )
                         )
 
@@ -786,7 +791,8 @@ public struct TodayView: View {
                         .fill(
                             LinearGradient(
                                 colors: [DesignColors.accentWarm, Color.pink.opacity(0.8)],
-                                startPoint: .leading, endPoint: .trailing
+                                startPoint: .leading,
+                                endPoint: .trailing
                             )
                         )
                 }

@@ -135,7 +135,7 @@ public struct EditPeriodFeature: Sendable {
                     state.periodFlowIntensity.removeValue(forKey: key)
                     for i in 1...30 {
                         guard let d = cal.date(byAdding: .day, value: i, to: date),
-                              cal.startOfDay(for: d) >= today
+                            cal.startOfDay(for: d) >= today
                         else { continue }
                         let k = Self.dateKey(d)
                         if state.periodDays.contains(k) {
@@ -152,7 +152,7 @@ public struct EditPeriodFeature: Sendable {
                     // Check if tapped day is adjacent to existing period days
                     let isAdjacent = (-1...1).contains(where: { offset in
                         guard offset != 0,
-                              let neighbor = cal.date(byAdding: .day, value: offset, to: date)
+                            let neighbor = cal.date(byAdding: .day, value: offset, to: date)
                         else { return false }
                         return state.periodDays.contains(Self.dateKey(neighbor))
                     })
@@ -202,10 +202,13 @@ public struct EditPeriodFeature: Sendable {
                         }
 
                         // Phase 2: Show "Improving predictions" banner
-                        await send(.saveDone(
-                            periodDays: periodDays,
-                            periodFlowIntensity: flowIntensity
-                        ), animation: .easeInOut(duration: 0.3))
+                        await send(
+                            .saveDone(
+                                periodDays: periodDays,
+                                periodFlowIntensity: flowIntensity
+                            ),
+                            animation: .easeInOut(duration: 0.3)
+                        )
 
                         // Phase 3: Regenerate predictions + reload calendar
                         try? await menstrualClient.generatePrediction(token)
@@ -218,10 +221,13 @@ public struct EditPeriodFeature: Sendable {
                         try? await Task.sleep(nanoseconds: 2_500_000_000)
                         await send(.predictionsUpdated)
                     } else {
-                        await send(.saveDone(
-                            periodDays: periodDays,
-                            periodFlowIntensity: flowIntensity
-                        ), animation: .easeInOut(duration: 0.3))
+                        await send(
+                            .saveDone(
+                                periodDays: periodDays,
+                                periodFlowIntensity: flowIntensity
+                            ),
+                            animation: .easeInOut(duration: 0.3)
+                        )
                     }
                 }
 
@@ -239,11 +245,15 @@ public struct EditPeriodFeature: Sendable {
                 return .run { send in
                     // Show checkmark for 1s then dismiss
                     try? await Task.sleep(nanoseconds: 1_000_000_000)
-                    await send(.delegate(.didSave(
-                        periodDays: freshPeriodDays,
-                        predictedPeriodDays: predictedDays,
-                        periodFlowIntensity: flowIntensity
-                    )))
+                    await send(
+                        .delegate(
+                            .didSave(
+                                periodDays: freshPeriodDays,
+                                predictedPeriodDays: predictedDays,
+                                periodFlowIntensity: flowIntensity
+                            )
+                        )
+                    )
                 }
 
             case .cancelTapped:
@@ -281,7 +291,8 @@ public struct EditPeriodFeature: Sendable {
         let fmt = DateFormatter()
         fmt.dateFormat = "yyyy-MM-dd"
         // dateKey() uses local timezone, so parse back with local timezone
-        let dates = dayKeys
+        let dates =
+            dayKeys
             .compactMap { fmt.date(from: $0) }
             .map { cal.startOfDay(for: $0) }
             .sorted()
@@ -382,7 +393,8 @@ public struct EditPeriodView: View {
             // Bottom overlay: flow selector + save button
             VStack(spacing: 0) {
                 if let selectedKey = store.selectedPeriodDay,
-                   store.periodDays.contains(selectedKey) {
+                    store.periodDays.contains(selectedKey)
+                {
                     flowIntensitySelector(for: selectedKey)
                         .padding(.horizontal, 20)
                         .padding(.bottom, 8)
@@ -511,7 +523,9 @@ public struct EditPeriodView: View {
 
     private var editHeader: some View {
         HStack(spacing: 12) {
-            Button { store.send(.cancelTapped) } label: {
+            Button {
+                store.send(.cancelTapped)
+            } label: {
                 Image(systemName: "chevron.left")
                     .font(.system(size: 15, weight: .semibold))
                     .foregroundColor(DesignColors.text)
@@ -687,10 +701,12 @@ public struct EditPeriodView: View {
                 }
 
                 Text("\(info.dayNumber)")
-                    .font(.custom(
-                        info.isPeriodDay || info.isToday ? "Raleway-Bold" : "Raleway-SemiBold",
-                        size: 14
-                    ))
+                    .font(
+                        .custom(
+                            info.isPeriodDay || info.isToday ? "Raleway-Bold" : "Raleway-SemiBold",
+                            size: 14
+                        )
+                    )
                     .foregroundColor(dayTextColor(info))
                     .offset(y: info.isPeriodDay && info.isCurrentMonth ? -3 : 0)
 
@@ -704,7 +720,9 @@ public struct EditPeriodView: View {
                 color: info.isPeriodDay
                     ? CyclePhase.menstrual.glowColor.opacity(0.25)
                     : .clear,
-                radius: 6, x: 0, y: 2
+                radius: 6,
+                x: 0,
+                y: 2
             )
             .animation(.spring(response: 0.25, dampingFraction: 0.8), value: info.isPeriodDay)
 
@@ -718,7 +736,9 @@ public struct EditPeriodView: View {
             }
         }
         .frame(maxWidth: .infinity)
-        .opacity(info.isCurrentMonth ? (info.isFuture && !info.isPeriodDay && !info.isPredictedPeriod ? 0.35 : 1) : 0.18)
+        .opacity(
+            info.isCurrentMonth ? (info.isFuture && !info.isPeriodDay && !info.isPredictedPeriod ? 0.35 : 1) : 0.18
+        )
     }
 
     private func dayTextColor(_ info: EditDayInfo) -> Color {
@@ -846,7 +866,9 @@ public struct EditPeriodView: View {
                 }
                 .shadow(
                     color: isSelected ? CyclePhase.menstrual.glowColor.opacity(0.3) : .clear,
-                    radius: 6, x: 0, y: 2
+                    radius: 6,
+                    x: 0,
+                    y: 2
                 )
         }
     }
@@ -874,7 +896,9 @@ public struct EditPeriodView: View {
                         Capsule()
                             .fill(
                                 LinearGradient(
-                                    colors: [CyclePhase.menstrual.orbitColor, CyclePhase.menstrual.orbitColor.opacity(0.8)],
+                                    colors: [
+                                        CyclePhase.menstrual.orbitColor, CyclePhase.menstrual.orbitColor.opacity(0.8),
+                                    ],
                                     startPoint: .leading,
                                     endPoint: .trailing
                                 )

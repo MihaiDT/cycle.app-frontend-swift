@@ -65,7 +65,8 @@ public struct CelestialCycleView: View {
     /// Phase for center text display — server-aware, suppresses math-based menstrual for future cycles.
     private var displayPhase: CyclePhase {
         if exploringDay == nil {
-            return cycle.phase(for: effectiveDate) ?? cycle.phase(forCycleDay: min(effectiveCycleDay, cycle.cycleLength))
+            return cycle.phase(for: effectiveDate)
+                ?? cycle.phase(forCycleDay: min(effectiveCycleDay, cycle.cycleLength))
         }
         return cycle.phase(forCycleDay: exploringDay!)
     }
@@ -256,7 +257,10 @@ public struct CelestialCycleView: View {
                                 Capsule()
                                     .fill(.ultraThinMaterial)
                                     .overlay {
-                                        Capsule().strokeBorder(CyclePhase.menstrual.orbitColor.opacity(0.3), lineWidth: 0.5)
+                                        Capsule().strokeBorder(
+                                            CyclePhase.menstrual.orbitColor.opacity(0.3),
+                                            lineWidth: 0.5
+                                        )
                                     }
                             }
                         }
@@ -498,7 +502,7 @@ public struct CelestialCycleView: View {
                             LinearGradient(
                                 colors: [
                                     displayPhase.orbitColor.opacity(0.85),
-                                    displayPhase.glowColor.opacity(0.75)
+                                    displayPhase.glowColor.opacity(0.75),
                                 ],
                                 startPoint: .topLeading,
                                 endPoint: .bottomTrailing
@@ -527,7 +531,7 @@ public struct CelestialCycleView: View {
                         LinearGradient(
                             colors: [
                                 displayPhase.orbitColor.opacity(0.9),
-                                displayPhase.glowColor.opacity(0.8)
+                                displayPhase.glowColor.opacity(0.8),
                             ],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
@@ -543,7 +547,7 @@ public struct CelestialCycleView: View {
                         LinearGradient(
                             colors: [
                                 displayPhase.orbitColor.opacity(0.85),
-                                displayPhase.glowColor.opacity(0.75)
+                                displayPhase.glowColor.opacity(0.75),
                             ],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
@@ -710,7 +714,7 @@ private struct CelestialOrbitCanvas: View {
 
     /// Combined key so the fill animation re-triggers when day or cycle length changes
     private var fillTaskKey: Int {
-        return displayDay &* 31 &+ cycleLength
+        displayDay &* 31 &+ cycleLength
     }
 
     var body: some View {
@@ -763,8 +767,10 @@ private struct CelestialOrbitCanvas: View {
         let arcWidth: CGFloat = 14
         var trackPath = Path()
         trackPath.addArc(
-            center: center, radius: radius,
-            startAngle: .degrees(0), endAngle: .degrees(360),
+            center: center,
+            radius: radius,
+            startAngle: .degrees(0),
+            endAngle: .degrees(360),
             clockwise: false
         )
         context.stroke(
@@ -789,7 +795,13 @@ private struct CelestialOrbitCanvas: View {
 
         // --- Layer 1: Frosted glass body ---
         var glassPath = Path()
-        glassPath.addArc(center: center, radius: radius, startAngle: .radians(startAngle), endAngle: .radians(fillAngle), clockwise: false)
+        glassPath.addArc(
+            center: center,
+            radius: radius,
+            startAngle: .radians(startAngle),
+            endAngle: .radians(fillAngle),
+            clockwise: false
+        )
         context.stroke(
             glassPath,
             with: .color(Color(red: 0xDE / 255.0, green: 0xCB / 255.0, blue: 0xC1 / 255.0).opacity(0.10)),
@@ -798,7 +810,13 @@ private struct CelestialOrbitCanvas: View {
 
         // --- Layer 2: Inner rim highlight ---
         var innerPath = Path()
-        innerPath.addArc(center: center, radius: radius - Double(arcWidth / 2) + 0.8, startAngle: .radians(startAngle), endAngle: .radians(fillAngle), clockwise: false)
+        innerPath.addArc(
+            center: center,
+            radius: radius - Double(arcWidth / 2) + 0.8,
+            startAngle: .radians(startAngle),
+            endAngle: .radians(fillAngle),
+            clockwise: false
+        )
         context.stroke(
             innerPath,
             with: .color(Color.white.opacity(0.14)),
@@ -807,7 +825,13 @@ private struct CelestialOrbitCanvas: View {
 
         // --- Layer 3: Outer rim depth ---
         var outerPath = Path()
-        outerPath.addArc(center: center, radius: radius + Double(arcWidth / 2) - 0.8, startAngle: .radians(startAngle), endAngle: .radians(fillAngle), clockwise: false)
+        outerPath.addArc(
+            center: center,
+            radius: radius + Double(arcWidth / 2) - 0.8,
+            startAngle: .radians(startAngle),
+            endAngle: .radians(fillAngle),
+            clockwise: false
+        )
         context.stroke(
             outerPath,
             with: .color(Color.black.opacity(0.04)),
@@ -837,7 +861,13 @@ private struct CelestialOrbitCanvas: View {
 
             // --- Layer 1: Phase color ---
             var bodyPath = Path()
-            bodyPath.addArc(center: center, radius: radius, startAngle: .radians(phaseStart), endAngle: .radians(clampedEnd), clockwise: false)
+            bodyPath.addArc(
+                center: center,
+                radius: radius,
+                startAngle: .radians(phaseStart),
+                endAngle: .radians(clampedEnd),
+                clockwise: false
+            )
             context.stroke(
                 bodyPath,
                 with: .color(phaseItem.orbitColor.opacity(0.55)),
@@ -846,7 +876,13 @@ private struct CelestialOrbitCanvas: View {
 
             // --- Layer 2: Inner highlight ---
             var innerPath = Path()
-            innerPath.addArc(center: center, radius: radius - Double(arcWidth / 2) + 1, startAngle: .radians(phaseStart), endAngle: .radians(clampedEnd), clockwise: false)
+            innerPath.addArc(
+                center: center,
+                radius: radius - Double(arcWidth / 2) + 1,
+                startAngle: .radians(phaseStart),
+                endAngle: .radians(clampedEnd),
+                clockwise: false
+            )
             context.stroke(
                 innerPath,
                 with: .color(Color.white.opacity(0.25)),
@@ -855,7 +891,13 @@ private struct CelestialOrbitCanvas: View {
 
             // --- Layer 3: Specular shine ---
             var shinePath = Path()
-            shinePath.addArc(center: center, radius: radius - Double(arcWidth * 0.15), startAngle: .radians(phaseStart), endAngle: .radians(clampedEnd), clockwise: false)
+            shinePath.addArc(
+                center: center,
+                radius: radius - Double(arcWidth * 0.15),
+                startAngle: .radians(phaseStart),
+                endAngle: .radians(clampedEnd),
+                clockwise: false
+            )
             context.stroke(
                 shinePath,
                 with: .color(Color.white.opacity(0.12)),
@@ -864,7 +906,13 @@ private struct CelestialOrbitCanvas: View {
 
             // --- Layer 4: Outer depth ---
             var outerPath = Path()
-            outerPath.addArc(center: center, radius: radius + Double(arcWidth / 2) - 1, startAngle: .radians(phaseStart), endAngle: .radians(clampedEnd), clockwise: false)
+            outerPath.addArc(
+                center: center,
+                radius: radius + Double(arcWidth / 2) - 1,
+                startAngle: .radians(phaseStart),
+                endAngle: .radians(clampedEnd),
+                clockwise: false
+            )
             context.stroke(
                 outerPath,
                 with: .color(phaseItem.orbitColor.opacity(0.15)),
@@ -888,7 +936,8 @@ private struct CelestialOrbitCanvas: View {
 
                 var seg = Path()
                 seg.addArc(
-                    center: center, radius: radius,
+                    center: center,
+                    radius: radius,
                     startAngle: .radians(startAngle + t * clampedFade),
                     endAngle: .radians(startAngle + tNext * clampedFade),
                     clockwise: false
@@ -1595,10 +1644,15 @@ public struct CelestialMiniBar: View {
 
 private func previewCycle(_ day: Int, _ phase: CyclePhase, _ nextPeriod: Int?, _ fertile: Bool) -> CycleContext {
     CycleContext(
-        cycleDay: day, cycleLength: 28, bleedingDays: 5,
+        cycleDay: day,
+        cycleLength: 28,
+        bleedingDays: 5,
         cycleStartDate: Calendar.current.date(byAdding: .day, value: -(day - 1), to: Date())!,
-        currentPhase: phase, nextPeriodIn: nextPeriod, fertileWindowActive: fertile,
-        periodDays: [], predictedDays: []
+        currentPhase: phase,
+        nextPeriodIn: nextPeriod,
+        fertileWindowActive: fertile,
+        periodDays: [],
+        predictedDays: []
     )
 }
 

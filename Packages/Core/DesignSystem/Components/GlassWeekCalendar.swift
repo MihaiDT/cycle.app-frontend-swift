@@ -46,13 +46,14 @@ public struct GlassWeekCalendar: View {
     /// Cycle day number (1‑based) — delegates to CycleContext for predicted block awareness.
     private func cycleDay(for index: Int) -> Int {
         let date = dateForIndex(index)
-        return cycle.cycleDayNumber(for: date) ?? {
-            // Fallback: modular math for dates outside CycleContext's range
-            guard cycle.cycleLength > 0 else { return 1 }
-            let raw = (cycle.cycleDay - 1) + index
-            let mod = raw % cycle.cycleLength
-            return (mod < 0 ? mod + cycle.cycleLength : mod) + 1
-        }()
+        return cycle.cycleDayNumber(for: date)
+            ?? {
+                // Fallback: modular math for dates outside CycleContext's range
+                guard cycle.cycleLength > 0 else { return 1 }
+                let raw = (cycle.cycleDay - 1) + index
+                let mod = raw % cycle.cycleLength
+                return (mod < 0 ? mod + cycle.cycleLength : mod) + 1
+            }()
     }
 
     /// Convert an index to a real Date (for period/predicted lookups)
@@ -236,7 +237,12 @@ public struct GlassWeekCalendar: View {
 
                 // Calendar date number
                 Text("\(calendarDay)")
-                    .font(.custom(periodDay || isTodayDay ? "Raleway-Bold" : "Raleway-SemiBold", size: isCompact ? 14 : 16))
+                    .font(
+                        .custom(
+                            periodDay || isTodayDay ? "Raleway-Bold" : "Raleway-SemiBold",
+                            size: isCompact ? 14 : 16
+                        )
+                    )
                     .foregroundColor(
                         confirmedPeriod
                             ? .white
@@ -252,7 +258,9 @@ public struct GlassWeekCalendar: View {
                 color: isOvulation && !periodDay
                     ? oColor.opacity(0.2)
                     : .clear,
-                radius: 6, x: 0, y: 2
+                radius: 6,
+                x: 0,
+                y: 2
             )
 
             // Dot indicator

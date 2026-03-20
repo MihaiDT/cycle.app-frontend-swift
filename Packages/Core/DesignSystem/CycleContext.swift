@@ -74,7 +74,7 @@ public struct CycleContext: Equatable, Sendable {
             if periodDays.contains(dateKey(for: date)) {
                 count += 1
             } else if count > 0 {
-                break // end of consecutive period block
+                break  // end of consecutive period block
             }
         }
         return max(count, bleedingDays)
@@ -117,7 +117,8 @@ public struct CycleContext: Equatable, Sendable {
         if predictedDays.contains(key) && !isCurrentCycle {
             let blockStart = predictedBlockStart(for: d)
             let dayInPeriod = (cal.dateComponents([.day], from: blockStart, to: d).day ?? 0) + 1
-            let baseDiff = cal.dateComponents([.day], from: cal.startOfDay(for: cycleStartDate), to: blockStart).day ?? 0
+            let baseDiff =
+                cal.dateComponents([.day], from: cal.startOfDay(for: cycleStartDate), to: blockStart).day ?? 0
             let offset = baseDiff > 0 ? baseDiff / cycleLength + 1 : 1
             return (dayInPeriod, offset)
         }
@@ -283,7 +284,7 @@ extension CycleContext {
         // The server wraps cycleDay via modular arithmetic which can give Day 1
         // while the prediction says period is only a few days away.
         if let daysUntil = status.nextPrediction?.daysUntil,
-           daysUntil > 0, daysUntil < cycleLength
+            daysUntil > 0, daysUntil < cycleLength
         {
             let expectedCycleDay = cycleLength - daysUntil + 1
             // Only override when the server's wrapping gave a clearly wrong value
@@ -296,7 +297,8 @@ extension CycleContext {
             }
         }
 
-        let phase = CyclePhase(rawValue: status.currentCycle.phase)
+        let phase =
+            CyclePhase(rawValue: status.currentCycle.phase)
             ?? CycleContext.mathPhaseStatic(forCycleDay: cycleDay, cycleLength: cycleLength, bleedingDays: bleedingDays)
 
         return CycleContext(
