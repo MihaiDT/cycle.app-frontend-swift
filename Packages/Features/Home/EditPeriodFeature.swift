@@ -120,6 +120,9 @@ public struct EditPeriodFeature: Sendable {
                 state.periodDays = serverDays
                 state.originalPeriodDays = serverDays
                 state.predictedPeriodDays = predicted
+                print(
+                    "[EditPeriod] calendarLoaded: periodDays=\(serverDays.sorted()), predictedDays=\(predicted.sorted())"
+                )
                 return .none
 
             case .calendarLoaded(.failure):
@@ -191,14 +194,26 @@ public struct EditPeriodFeature: Sendable {
                         // Phase 1: Save period data
                         if !removedDays.isEmpty {
                             let request = RemovePeriodDaysRequest(dates: removedDays)
-                            try? await menstrualClient.removePeriodDays(token, request)
+                            do {
+                                try await menstrualClient.removePeriodDays(token, request)
+                                print("[EditPeriod] removePeriodDays succeeded, removed \(removedDays.count) days")
+                            } catch {
+                                print("[EditPeriod] removePeriodDays FAILED: \(error)")
+                            }
                         }
                         for group in periodGroups {
                             let request = ConfirmPeriodRequest(
                                 actualStartDate: group.startDate,
                                 bleedingDays: group.dayCount
                             )
-                            try? await menstrualClient.confirmPeriod(token, request)
+                            do {
+                                try await menstrualClient.confirmPeriod(token, request)
+                                print(
+                                    "[EditPeriod] confirmPeriod succeeded: start=\(group.startDate), days=\(group.dayCount)"
+                                )
+                            } catch {
+                                print("[EditPeriod] confirmPeriod FAILED: \(error)")
+                            }
                         }
 
                         // Phase 2: Show "Improving predictions" banner
@@ -211,11 +226,23 @@ public struct EditPeriodFeature: Sendable {
                         )
 
                         // Phase 3: Regenerate predictions + reload calendar
-                        try? await menstrualClient.generatePrediction(token)
+                        do {
+                            try await menstrualClient.generatePrediction(token)
+                            print("[EditPeriod] generatePrediction succeeded")
+                        } catch {
+                            print("[EditPeriod] generatePrediction FAILED: \(error)")
+                        }
                         let start = Calendar.current.date(byAdding: .month, value: -24, to: Date())!
                         let end = Calendar.current.date(byAdding: .month, value: 12, to: Date())!
                         if let response = try? await menstrualClient.getCalendar(token, start, end) {
+                            let periodEntries = response.entries.filter { $0.type == "period" }
+                            let predictedEntries = response.entries.filter { $0.type == "predicted_period" }
+                            print(
+                                "[EditPeriod] getCalendar: \(periodEntries.count) period, \(predictedEntries.count) predicted_period entries"
+                            )
                             await send(.calendarLoaded(.success(response)), animation: .easeInOut(duration: 0.4))
+                        } else {
+                            print("[EditPeriod] getCalendar FAILED")
                         }
                         // Banner visible for 2.5s so user sees feedback
                         try? await Task.sleep(nanoseconds: 2_500_000_000)
@@ -271,11 +298,13 @@ public struct EditPeriodFeature: Sendable {
         return fmt.string(from: date)
     }
 
-    /// Converts a server date (UTC midnight) to local midnight for the same calendar day.
+    /// Converts a server date to local midnight for the same calendar day.
+    /// Adding 12h before extracting UTC components handles non-UTC server timezones.
     static func localDate(from serverDate: Date) -> Date {
+        let noon = serverDate.addingTimeInterval(12 * 3600)
         var utcCal = Calendar(identifier: .gregorian)
         utcCal.timeZone = TimeZone(identifier: "UTC")!
-        let comps = utcCal.dateComponents([.year, .month, .day], from: serverDate)
+        let comps = utcCal.dateComponents([.year, .month, .day], from: noon)
         return Calendar.current.date(from: comps) ?? serverDate
     }
 

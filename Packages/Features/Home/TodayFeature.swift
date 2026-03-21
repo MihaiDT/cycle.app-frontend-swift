@@ -28,11 +28,17 @@ public struct TodayFeature: Sendable {
         @Presents var editPeriod: EditPeriodFeature.State?
 
         public var hasAppeared: Bool = false
+        public var hasTriggeredScoreAnimation: Bool = false
         public var scoreAnimationProgress: Double = 0
+        /// Whether calendar entries have been fetched at least once (success or failure).
+        /// Prevents the circle from rendering with incomplete data before calendar arrives.
+        public var hasCompletedCalendarLoad: Bool = false
 
-        /// Single source of truth for all cycle data — derived from server responses
+        /// Single source of truth for all cycle data — derived from server responses.
+        /// Requires both menstrual status AND calendar entries to have loaded to avoid
+        /// rendering the circle with empty period data while calendar is still in-flight.
         public var cycle: CycleContext? {
-            guard let status = menstrualStatus else { return nil }
+            guard let status = menstrualStatus, hasCompletedCalendarLoad else { return nil }
             return CycleContext.from(
                 status: status,
                 periodDays: serverPeriodDays,
@@ -94,9 +100,6 @@ public struct TodayFeature: Sendable {
             case .loadDashboard:
                 state.isLoadingDashboard = true
                 state.dashboardError = nil
-                if !state.hasAppeared {
-                    state.hasAppeared = true
-                }
                 return .merge(
                     .run { send in
                         guard let token = try? await sessionClient.getAccessToken() else {
@@ -149,43 +152,52 @@ public struct TodayFeature: Sendable {
                 var predicted: Set<String> = []
                 var fertile: [String: FertilityLevel] = [:]
                 var ovulation: Set<String> = []
-                let fmt = DateFormatter()
-                fmt.dateFormat = "yyyy-MM-dd"
-                let todayKey = fmt.string(from: Calendar.current.startOfDay(for: Date()))
+                let cal = Calendar.current
                 for entry in response.entries {
                     let localDay = CalendarFeature.localDate(from: entry.date)
-                    let key = fmt.string(from: localDay)
-                    if entry.type == "period" {
+                    let comps = cal.dateComponents([.year, .month, .day], from: localDay)
+                    let key = String(
+                        format: "%04d-%02d-%02d",
+                        comps.year ?? 0,
+                        comps.month ?? 0,
+                        comps.day ?? 0
+                    )
+                    switch entry.type {
+                    case "period":
+                        // Server says confirmed — trust it, no local date comparison
                         days.insert(key)
-                        // Future bleeding days from current cycle → show as predicted
-                        if key > todayKey {
-                            predicted.insert(key)
-                        }
-                    } else if entry.type == "predicted_period" {
+                    case "predicted_period":
                         days.insert(key)
                         predicted.insert(key)
-                    } else if entry.type == "fertile", let levelStr = entry.fertilityLevel,
-                        let level = FertilityLevel(rawValue: levelStr)
-                    {
-                        fertile[key] = level
-                    } else if entry.type == "ovulation" {
+                    case "fertile":
+                        if let levelStr = entry.fertilityLevel,
+                            let level = FertilityLevel(rawValue: levelStr)
+                        {
+                            fertile[key] = level
+                        }
+                    case "ovulation":
                         ovulation.insert(key)
+                    default:
+                        break
                     }
                 }
                 state.serverPeriodDays = days
                 state.serverPredictedDays = predicted
                 state.serverFertileDays = fertile
                 state.serverOvulationDays = ovulation
+                state.hasCompletedCalendarLoad = true
                 return .none
 
             case .calendarEntriesLoaded(.failure):
+                state.hasCompletedCalendarLoad = true
                 return .none
 
             case .dashboardLoaded(.success(let dashboard)):
                 state.isLoadingDashboard = false
                 state.dashboard = dashboard
-                if !state.hasAppeared {
-                    state.hasAppeared = true
+                if !state.hasAppeared { state.hasAppeared = true }
+                if !state.hasTriggeredScoreAnimation {
+                    state.hasTriggeredScoreAnimation = true
                     return .send(.triggerScoreAnimation)
                 }
                 return .none
@@ -193,7 +205,7 @@ public struct TodayFeature: Sendable {
             case .dashboardLoaded(.failure(let error)):
                 state.isLoadingDashboard = false
                 state.dashboardError = error.localizedDescription
-                state.hasAppeared = true
+                if !state.hasAppeared { state.hasAppeared = true }
                 return .none
 
             case .checkInTapped:
@@ -248,32 +260,25 @@ public struct TodayFeature: Sendable {
                 return .send(.delegate(.openAriaChat(context: context)))
 
             case .calendar(.dismiss):
-                // Grab fresh data from CalendarFeature before it's dismissed
-                if let calState = state.calendar {
-                    state.serverPeriodDays = calState.periodDays
-                    state.serverPredictedDays = calState.predictedPeriodDays
-                }
-                // Refresh status in background (for cycleDay, phase, etc.)
-                return .merge(
-                    .send(.loadDashboard),
-                    .send(.loadMenstrualStatus)
-                )
+                // Invalidate all stale cycle data so the view shows loading
+                // until fresh status + calendar arrive together. Without this,
+                // old cycleStartDate combined with new periodDays causes a date flash.
+                state.menstrualStatus = nil
+                state.hasCompletedCalendarLoad = false
+                return .send(.loadDashboard)
 
             case .calendar:
                 return .none
 
             case .editPeriod(.presented(.delegate(let delegate))):
-                if case .didSave(let periodDays, let predictedDays, _) = delegate {
-                    // Use fresh data from EditPeriod instantly
-                    state.serverPeriodDays = periodDays.union(predictedDays)
-                    state.serverPredictedDays = predictedDays
-                }
+                if case .didSave = delegate {}
                 state.editPeriod = nil
-                // Also refresh menstrual status for cycleDay etc.
-                return .merge(
-                    .send(.loadDashboard),
-                    .send(.loadMenstrualStatus)
-                )
+                // Invalidate all stale cycle data so the view shows loading
+                // until fresh status + calendar arrive together. Without this,
+                // old cycleStartDate combined with new periodDays causes a date flash.
+                state.menstrualStatus = nil
+                state.hasCompletedCalendarLoad = false
+                return .send(.loadDashboard)
 
             case .editPeriod:
                 return .none

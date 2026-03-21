@@ -228,25 +228,26 @@ public struct CalendarFeature: Sendable {
                 var serverPredictedDays: Set<String> = []
                 var serverFertileDays: [String: FertilityLevel] = [:]
                 var serverOvulationDays: Set<String> = []
-                let todayKey = Self.dateKey(Calendar.current.startOfDay(for: Date()))
                 for entry in response.entries {
                     let localDay = Self.localDate(from: entry.date)
                     let key = Self.dateKey(localDay)
-                    if entry.type == "period" {
+                    switch entry.type {
+                    case "period":
+                        // Server says confirmed — trust it, no local date comparison
                         serverPeriodDays.insert(key)
-                        // Future bleeding days from current cycle → show as predicted
-                        if key > todayKey {
-                            serverPredictedDays.insert(key)
-                        }
-                    } else if entry.type == "predicted_period" {
+                    case "predicted_period":
                         serverPeriodDays.insert(key)
                         serverPredictedDays.insert(key)
-                    } else if entry.type == "fertile", let levelStr = entry.fertilityLevel,
-                        let level = FertilityLevel(rawValue: levelStr)
-                    {
-                        serverFertileDays[key] = level
-                    } else if entry.type == "ovulation" {
+                    case "fertile":
+                        if let levelStr = entry.fertilityLevel,
+                            let level = FertilityLevel(rawValue: levelStr)
+                        {
+                            serverFertileDays[key] = level
+                        }
+                    case "ovulation":
                         serverOvulationDays.insert(key)
+                    default:
+                        break
                     }
                 }
                 // Always use server as source of truth (even if empty)
@@ -331,12 +332,16 @@ public struct CalendarFeature: Sendable {
         return fmt.string(from: date)
     }
 
-    /// Converts a server date (UTC midnight) to local midnight for the same calendar day.
-    /// Prevents off-by-one when local timezone is west of UTC.
+    /// Converts a server date to local midnight for the same calendar day.
+    /// Server dates represent calendar days (midnight in server timezone). When the server
+    /// timezone differs from UTC (e.g. EEST UTC+3), the UTC representation can fall on
+    /// the previous day (e.g. "2026-03-22T00:00:00+03:00" = "2026-03-21T21:00:00Z").
+    /// Adding 12 hours before extracting UTC components corrects for any timezone offset (max ±14h).
     public static func localDate(from serverDate: Date) -> Date {
+        let noon = serverDate.addingTimeInterval(12 * 3600)
         var utcCal = Calendar(identifier: .gregorian)
         utcCal.timeZone = TimeZone(identifier: "UTC")!
-        let comps = utcCal.dateComponents([.year, .month, .day], from: serverDate)
+        let comps = utcCal.dateComponents([.year, .month, .day], from: noon)
         return Calendar.current.date(from: comps) ?? serverDate
     }
 

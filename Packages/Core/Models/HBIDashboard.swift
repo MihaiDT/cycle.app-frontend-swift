@@ -157,15 +157,28 @@ public enum CyclePhase: String, Codable, Equatable, Sendable, CaseIterable {
         }
     }
 
-    /// Typical day ranges within a cycle, using actual bleeding days
+    /// Typical day ranges within a cycle, using actual bleeding days.
+    /// Boundaries are clamped so that ranges never crash for short cycles.
+    /// The backend uses `ovDay = max(10, cycleLength - 14)` — we mirror that here
+    /// but also ensure each phase gets at least 1 day and ranges tile without overlap.
     public func dayRange(cycleLength: Int, bleedingDays: Int = 5) -> ClosedRange<Int> {
-        let bleedingDays = max(1, bleedingDays)
-        let ovulationDay = cycleLength - 14
+        let cl = max(1, cycleLength)
+        let bd = min(max(1, bleedingDays), cl)
+
+        // Mirror backend: ovulation at least day bd+3 so follicular gets ≥1 day
+        let idealOv = cl - 14
+        let ovDay = max(bd + 3, idealOv)
+
+        // Sequential, non-overlapping boundaries
+        let b1 = bd                              // menstrual end
+        let b2 = max(b1 + 1, ovDay - 2)          // follicular end
+        let b3 = max(b2 + 1, min(cl, ovDay + 1)) // ovulatory end
+
         switch self {
-        case .menstrual: return 1...bleedingDays
-        case .follicular: return (bleedingDays + 1)...(ovulationDay - 2)
-        case .ovulatory: return (ovulationDay - 1)...(ovulationDay + 1)
-        case .luteal: return (ovulationDay + 2)...cycleLength
+        case .menstrual: return 1...b1
+        case .follicular: return (b1 + 1)...b2
+        case .ovulatory: return (b2 + 1)...b3
+        case .luteal: return b3 < cl ? (b3 + 1)...cl : cl...cl
         }
     }
 }
