@@ -12,6 +12,25 @@ public struct CycleContext: Equatable, Sendable {
     public let cycleStartDate: Date
     public let currentPhase: CyclePhase
     public let nextPeriodIn: Int?
+
+    /// Effective length for ring/calendar display: extends past `cycleLength` when the
+    /// server prediction falls later than the profile average. This ensures the
+    /// full predicted period block is visible on the ring/strip.
+    public var effectiveCycleLength: Int {
+        // When period is late, extend calendar to at least today's cycle day
+        // so the week strip doesn't cut off before the current date.
+        let lateExtension = isLate ? cycleDay : 0
+
+        guard let nextPeriodIn, nextPeriodIn > 0 else {
+            return max(cycleLength, lateExtension)
+        }
+        // nextPeriodIn = days from *today* to prediction start.
+        // Predicted period starts on cycle day: cycleDay + nextPeriodIn
+        // (e.g. cycleDay 27, nextPeriodIn 2 → predicted period starts day 29)
+        // Extend by bleedingDays to include the full predicted block.
+        let predictedEndDay = cycleDay + nextPeriodIn + bleedingDays - 1
+        return max(cycleLength, predictedEndDay, lateExtension)
+    }
     public let fertileWindowActive: Bool
     /// All period days from server calendar: confirmed + predicted (keys: "yyyy-MM-dd")
     public let periodDays: Set<String>
@@ -26,8 +45,27 @@ public struct CycleContext: Equatable, Sendable {
     public let fertileWindowEnd: Date?
     public let fertileWindowPeak: Date?
     public let daysUntilOvulation: Int?
+    /// Period is late — predicted date passed without confirmation
+    public let isLate: Bool
+    /// How many days late the period is (from today)
+    public let daysLate: Int
+
+    /// The date the period was expected to start (only valid when isLate)
+    public var expectedPeriodDate: Date? {
+        guard isLate, daysLate > 0 else { return nil }
+        return cal.date(byAdding: .day, value: -daysLate, to: cal.startOfDay(for: Date()))
+    }
+
+    /// How many days late a specific date is relative to expected period.
+    /// Positive = late, 0 = expected day, negative = before expected date.
+    public func lateness(for date: Date) -> Int? {
+        guard let expected = expectedPeriodDate else { return nil }
+        return cal.dateComponents([.day], from: expected, to: cal.startOfDay(for: date)).day
+    }
 
     private let cal = Calendar.current
+    /// Pre-computed sorted anchors for cycleDayInfo (avoids recomputation per call)
+    private let _sortedAnchors: [Date]
 
     public init(
         cycleDay: Int,
@@ -44,7 +82,9 @@ public struct CycleContext: Equatable, Sendable {
         fertileWindowStart: Date? = nil,
         fertileWindowEnd: Date? = nil,
         fertileWindowPeak: Date? = nil,
-        daysUntilOvulation: Int? = nil
+        daysUntilOvulation: Int? = nil,
+        isLate: Bool = false,
+        daysLate: Int = 0
     ) {
         self.cycleDay = cycleDay
         self.cycleLength = cycleLength
@@ -61,6 +101,44 @@ public struct CycleContext: Equatable, Sendable {
         self.fertileWindowEnd = fertileWindowEnd
         self.fertileWindowPeak = fertileWindowPeak
         self.daysUntilOvulation = daysUntilOvulation
+        self.isLate = isLate
+        self.daysLate = daysLate
+
+        // Pre-compute sorted anchors once (used by cycleDayInfo)
+        let cal = Calendar.current
+        let startOfCycle = cal.startOfDay(for: cycleStartDate)
+        var anchorSet = Set<Date>()
+        anchorSet.insert(startOfCycle)
+        // Inline allPeriodBlockStarts logic to compute at init time
+        // When late, exclude predicted-only days so the predicted block
+        // doesn't create a spurious "next cycle" anchor.
+        let anchorSourceDays = isLate ? periodDays.subtracting(predictedDays) : periodDays
+        if !anchorSourceDays.isEmpty {
+            let sorted = anchorSourceDays.sorted()
+            var prevKey: String?
+            for key in sorted {
+                let comps = key.split(separator: "-")
+                guard comps.count == 3,
+                    let y = Int(comps[0]), let m = Int(comps[1]), let d = Int(comps[2]),
+                    let date = cal.date(from: DateComponents(year: y, month: m, day: d))
+                else { continue }
+                if let pk = prevKey {
+                    let prevComps = pk.split(separator: "-")
+                    if let py = Int(prevComps[0]), let pm = Int(prevComps[1]), let pd = Int(prevComps[2]),
+                        let prevDate = cal.date(from: DateComponents(year: py, month: pm, day: pd))
+                    {
+                        let gap = cal.dateComponents([.day], from: prevDate, to: date).day ?? 0
+                        if gap > 1 { anchorSet.insert(cal.startOfDay(for: date)) }
+                    } else {
+                        anchorSet.insert(cal.startOfDay(for: date))
+                    }
+                } else {
+                    anchorSet.insert(cal.startOfDay(for: date))
+                }
+                prevKey = key
+            }
+        }
+        self._sortedAnchors = anchorSet.sorted()
     }
 
     /// Actual bleeding days derived from server period data (confirmed + predicted).
@@ -94,15 +172,119 @@ public struct CycleContext: Equatable, Sendable {
     // MARK: - Period Detection (server only)
 
     public func isPeriodDay(_ date: Date) -> Bool {
-        periodDays.contains(dateKey(for: date))
+        let key = dateKey(for: date)
+        let isOnlyPredicted = predictedDays.contains(key)
+            && !periodDays.subtracting(predictedDays).contains(key)
+        if isOnlyPredicted {
+            // When period is late, skip predicted days in the CURRENT late window only
+            // (not future cycle predictions which are still valid)
+            if isLate {
+                if let lateness = lateness(for: date), lateness >= -1, lateness < cycleLength {
+                    return false
+                }
+                // Future cycle predictions are still valid period days
+            }
+            // Past predicted days that weren't confirmed → not period days
+            let today = cal.startOfDay(for: Date())
+            if cal.startOfDay(for: date) < today { return false }
+        }
+        return periodDays.contains(key)
     }
 
     public func isPredictedDay(_ date: Date) -> Bool {
-        predictedDays.contains(dateKey(for: date))
+        let key = dateKey(for: date)
+        guard predictedDays.contains(key) else { return false }
+        // When period is late, don't show predicted days in the current late window
+        if isLate {
+            if let lateness = lateness(for: date), lateness >= -1, lateness < cycleLength {
+                return false
+            }
+            // Future cycle predictions are still valid
+        }
+        // Past predicted days that weren't confirmed → hidden
+        let today = cal.startOfDay(for: Date())
+        let d = cal.startOfDay(for: date)
+        if d < today { return false }
+        return true
     }
 
     public func isConfirmedPeriod(_ date: Date) -> Bool {
-        isPeriodDay(date) && !isPredictedDay(date)
+        let key = dateKey(for: date)
+        return periodDays.contains(key) && !predictedDays.contains(key)
+    }
+
+    /// True when date is a predicted period day (today or future, not confirmed)
+    public func isPredictedOnly(_ date: Date) -> Bool {
+        isPredictedDay(date) && !isConfirmedPeriod(date)
+    }
+
+    /// True when the current cycle has at least one confirmed (non-predicted) period day.
+    /// When this is true, the period already happened and the cycle is NOT late.
+    /// Only checks days on or after cycleStartDate to avoid false positives from previous cycles.
+    public var hasConfirmedPeriodInCurrentCycle: Bool {
+        let start = cal.startOfDay(for: cycleStartDate)
+        let confirmedDays = periodDays.subtracting(predictedDays)
+        return confirmedDays.contains { key in
+            guard let date = Self.dateFormatter.date(from: key) else { return false }
+            return cal.startOfDay(for: date) >= start
+        }
+    }
+
+    /// Frontend-side late period detection — catches cases the backend may miss.
+    /// True when predicted period days exist in the past but none are confirmed.
+    public var isPeriodLateOrMissing: Bool {
+        if isLate { return true }
+        guard !hasConfirmedPeriodInCurrentCycle else { return false }
+        let today = cal.startOfDay(for: Date())
+        let hasPastPredicted = predictedDays.contains(where: { key in
+            guard let date = Self.dateFormatter.date(from: key) else { return false }
+            return cal.startOfDay(for: date) < today
+        })
+        return hasPastPredicted
+    }
+
+    /// Days late — frontend calculation when backend doesn't provide it.
+    public var effectiveDaysLate: Int {
+        if daysLate > 0 { return daysLate }
+        guard isPeriodLateOrMissing else { return 0 }
+        let today = cal.startOfDay(for: Date())
+        // Find the earliest predicted day in the past
+        let pastPredictedDates = predictedDays.compactMap { key -> Date? in
+            guard let date = Self.dateFormatter.date(from: key) else { return nil }
+            let d = cal.startOfDay(for: date)
+            return d < today ? d : nil
+        }
+        guard let earliest = pastPredictedDates.min() else { return 0 }
+        return cal.dateComponents([.day], from: earliest, to: today).day ?? 0
+    }
+
+    /// The date the period was expected — works with both backend and frontend detection.
+    public var effectiveExpectedDate: Date? {
+        if let d = expectedPeriodDate { return d }
+        guard isPeriodLateOrMissing else { return nil }
+        let today = cal.startOfDay(for: Date())
+        return predictedDays.compactMap { key -> Date? in
+            guard let date = Self.dateFormatter.date(from: key) else { return nil }
+            let d = cal.startOfDay(for: date)
+            return d < today ? d : nil
+        }.min()
+    }
+
+    private static let dateFormatter: DateFormatter = {
+        let fmt = DateFormatter()
+        fmt.dateFormat = "yyyy-MM-dd"
+        return fmt
+    }()
+
+    /// True when date is a predicted period day in the late window (hidden by isPeriodDay/isPredictedDay).
+    /// Use this to still show these days visually on calendars with dashed styling.
+    public func isLatePrediction(_ date: Date) -> Bool {
+        guard isLate else { return false }
+        let key = dateKey(for: date)
+        guard predictedDays.contains(key) else { return false }
+        guard !periodDays.subtracting(predictedDays).contains(key) else { return false }
+        if let l = lateness(for: date), l >= -1, l < cycleLength { return true }
+        return false
     }
 
     // MARK: - Cycle Day Calculation
@@ -113,14 +295,7 @@ public struct CycleContext: Equatable, Sendable {
         let startOfCycle = cal.startOfDay(for: cycleStartDate)
         guard cycleLength > 0 else { return nil }
 
-        // Build sorted anchors from ALL period block starts (confirmed + predicted)
-        // plus the current cycleStartDate.
-        var anchorSet = Set<Date>()
-        anchorSet.insert(startOfCycle)
-        for s in allPeriodBlockStarts() {
-            anchorSet.insert(cal.startOfDay(for: s))
-        }
-        let anchors = anchorSet.sorted()
+        let anchors = _sortedAnchors
 
         // Find which anchor-based cycle this date belongs to
         for i in (0..<anchors.count).reversed() {
@@ -186,27 +361,33 @@ public struct CycleContext: Equatable, Sendable {
     /// Phase for a specific date — menstrual ONLY from server periodDays, never from math.
     public func phase(for date: Date) -> CyclePhase? {
         if isPeriodDay(date) { return .menstrual }
+        // Check calendar fertile days directly
+        if fertileDays[dateKey(for: date)] != nil { return .ovulatory }
         guard let info = cycleDayInfo(for: date) else { return nil }
-        let p = mathPhase(forCycleDay: info.day)
+        let p = mathPhase(forCycleDay: info.day, for: date)
         return p == .menstrual ? .follicular : p
     }
 
     /// Phase for a cycle day number — menstrual ONLY from server periodDays, never from math.
     public func phase(forCycleDay day: Int) -> CyclePhase {
-        if let date = cal.date(byAdding: .day, value: day - 1, to: cal.startOfDay(for: cycleStartDate)) {
-            if periodDays.contains(dateKey(for: date)) {
-                return .menstrual
-            }
+        let date = cal.date(byAdding: .day, value: day - 1, to: cal.startOfDay(for: cycleStartDate))
+        if let date, isPeriodDay(date) {
+            return .menstrual
         }
-        let p = mathPhase(forCycleDay: day)
+        if let date, fertileDays[dateKey(for: date)] != nil {
+            return .ovulatory
+        }
+        let p = mathPhase(forCycleDay: day, for: date)
         return p == .menstrual ? .follicular : p
     }
 
     /// Phase for the dot indicator — same rule: menstrual only from server.
+    /// When period is late, shows "late" color instead of menstrual for predicted days.
     public func dotPhase(for date: Date) -> CyclePhase? {
         if isPeriodDay(date) { return .menstrual }
+        if fertileDays[dateKey(for: date)] != nil { return .ovulatory }
         guard let cd = cycleDayNumber(for: date) else { return nil }
-        let p = mathPhase(forCycleDay: cd)
+        let p = mathPhase(forCycleDay: cd, for: date)
         return p == .menstrual ? .follicular : p
     }
 
@@ -214,26 +395,28 @@ public struct CycleContext: Equatable, Sendable {
 
     /// Days until next period from a given display day (searches server calendar entries).
     /// Searches up to 2× cycleLength to handle irregular cycles. Never returns negative.
+    /// Anchors from cycleStartDate (same as phase(forCycleDay:)) to avoid timezone mismatch.
     public func daysUntilPeriod(fromCycleDay displayDay: Int) -> Int {
+        let startOfCycle = cal.startOfDay(for: cycleStartDate)
         if !periodDays.isEmpty {
-            let today = cal.startOfDay(for: Date())
-            let dayOffset = displayDay - cycleDay
-            let displayDate = cal.date(byAdding: .day, value: dayOffset, to: today) ?? today
+            let displayDate = cal.date(byAdding: .day, value: displayDay - 1, to: startOfCycle)
+                ?? cal.startOfDay(for: Date())
             let searchLimit = cycleLength * 2
 
             for i in 1...searchLimit {
                 if let futureDate = cal.date(byAdding: .day, value: i, to: displayDate) {
-                    if periodDays.contains(dateKey(for: futureDate)) {
+                    // Use isPeriodDay to respect late state (skips predicted days when late)
+                    if isPeriodDay(futureDate) {
                         return i
                     }
                 }
             }
         }
-        if let nextPeriodIn {
+        if let nextPeriodIn, nextPeriodIn > 0 {
             let dayOffset = displayDay - cycleDay
             return max(0, nextPeriodIn - dayOffset)
         }
-        return max(0, cycleLength - displayDay + 1)
+        return max(0, effectiveCycleLength - displayDay + 1)
     }
 
     /// Days until next period from a specific date (accurate for any cycle offset).
@@ -245,7 +428,8 @@ public struct CycleContext: Equatable, Sendable {
 
             for i in 1...searchLimit {
                 if let futureDate = cal.date(byAdding: .day, value: i, to: d) {
-                    if periodDays.contains(dateKey(for: futureDate)) {
+                    // Use isPeriodDay to respect late state (skips predicted days when late)
+                    if isPeriodDay(futureDate) {
                         return i
                     }
                 }
@@ -258,14 +442,52 @@ public struct CycleContext: Equatable, Sendable {
         return cycleLength
     }
 
-    // MARK: - Private
+    // MARK: - Fertile Window Day Range
 
-    private func mathPhase(forCycleDay day: Int) -> CyclePhase {
-        for p in CyclePhase.allCases {
-            if p.dayRange(cycleLength: cycleLength, bleedingDays: bleedingDays).contains(day) {
-                return p
+    /// Fertile window as cycle-day range for a specific date's cycle.
+    /// Looks up the ovulation day from `ovulationDays` (calendar API) that belongs
+    /// to the same cycle as `date`, then computes Wilcox window (ov-5 to ov+1).
+    /// Falls back to prediction peak, then math formula.
+    public func fertileWindowDayRange(for date: Date) -> ClosedRange<Int> {
+        // Find the cycle anchor (period block start) for this date
+        if let info = cycleDayInfo(for: date) {
+            let anchor = cal.date(byAdding: .day, value: -(info.day - 1), to: cal.startOfDay(for: date))!
+            // Search ovulationDays within this cycle
+            for dayOffset in 0..<cycleLength {
+                if let d = cal.date(byAdding: .day, value: dayOffset, to: anchor) {
+                    if ovulationDays.contains(dateKey(for: d)) {
+                        let ovDay = dayOffset + 1
+                        return max(1, ovDay - 5)...min(cycleLength, ovDay + 1)
+                    }
+                }
             }
         }
+        // Fallback: prediction peak for current cycle
+        if let peak = fertileWindowPeak {
+            let start = cal.startOfDay(for: cycleStartDate)
+            let peakDay = (cal.dateComponents([.day], from: start, to: cal.startOfDay(for: peak)).day ?? -1) + 1
+            if peakDay >= 1, peakDay <= cycleLength {
+                return max(1, peakDay - 5)...min(cycleLength, peakDay + 1)
+            }
+        }
+        // Final fallback: math formula
+        let ovDay = max(10, cycleLength - 14)
+        return max(1, ovDay - 5)...min(cycleLength, ovDay + 1)
+    }
+
+    /// Default fertile window (for today / current cycle)
+    public var fertileWindowDayRange: ClosedRange<Int> {
+        fertileWindowDayRange(for: Date())
+    }
+
+    // MARK: - Private
+
+    private func mathPhase(forCycleDay day: Int, for date: Date? = nil) -> CyclePhase {
+        let fw = date.map { fertileWindowDayRange(for: $0) } ?? fertileWindowDayRange
+        let bd = min(max(1, bleedingDays), cycleLength)
+        if day >= 1 && day <= bd { return .menstrual }
+        if day < fw.lowerBound { return .follicular }
+        if fw.contains(day) { return .ovulatory }
         return .luteal
     }
 
@@ -345,15 +567,14 @@ public struct CycleContext: Equatable, Sendable {
     }
 
     /// Day number (1-based) within the contiguous period block containing `date`.
-    /// Works for both confirmed and predicted period blocks.
+    /// Skips past predicted-only days that weren't confirmed.
     public func periodBlockDay(for date: Date) -> Int? {
         let d = cal.startOfDay(for: date)
-        let key = dateKey(for: d)
-        guard periodDays.contains(key) else { return nil }
+        guard isPeriodDay(d) else { return nil }
         var start = d
         for i in 1...10 {
             guard let prev = cal.date(byAdding: .day, value: -i, to: d) else { break }
-            if periodDays.contains(dateKey(for: prev)) {
+            if isPeriodDay(prev) {
                 start = prev
             } else {
                 break
@@ -425,7 +646,9 @@ extension CycleContext {
             fertileWindowStart: status.fertileWindow?.start,
             fertileWindowEnd: status.fertileWindow?.end,
             fertileWindowPeak: status.fertileWindow?.peak,
-            daysUntilOvulation: status.fertileWindow?.daysUntilPeak
+            daysUntilOvulation: status.fertileWindow?.daysUntilPeak,
+            isLate: status.nextPrediction?.isLate ?? false,
+            daysLate: status.nextPrediction?.daysLate ?? 0
         )
     }
 

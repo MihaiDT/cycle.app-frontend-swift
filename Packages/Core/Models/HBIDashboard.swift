@@ -109,51 +109,51 @@ public enum CyclePhase: String, Codable, Equatable, Sendable, CaseIterable {
 
     public var insight: String {
         switch self {
-        case .menstrual: "Rest and gentle movement are key during this phase."
-        case .follicular: "Great time for new activities and challenges!"
-        case .ovulatory: "You may feel more social and energetic."
-        case .luteal: "Focus on self-care and gentle routines."
+        case .menstrual: "Your body is asking for stillness. Honor the quiet."
+        case .follicular: "Something new is waking up inside you. Follow it."
+        case .ovulatory: "You're radiating. This is your moment to shine."
+        case .luteal: "Your inner critic is actually your inner editor. Use it wisely."
         }
     }
 
     public var icon: String {
         switch self {
-        case .menstrual: "moon.stars"
-        case .follicular: "leaf"
-        case .ovulatory: "sun.max"
-        case .luteal: "cloud.sun"
+        case .menstrual: "moon.stars.fill"
+        case .follicular: "leaf.fill"
+        case .ovulatory: "sun.max.fill"
+        case .luteal: "wind"
         }
     }
 
     public var emoji: String {
         switch self {
-        case .menstrual: "🩸"
-        case .follicular: "🌸"
-        case .ovulatory: "✨"
-        case .luteal: "🌙"
+        case .menstrual: "🌙"
+        case .follicular: "🌱"
+        case .ovulatory: "☀️"
+        case .luteal: "🍂"
         }
     }
 
     public var description: String {
         switch self {
-        case .menstrual: "Rest & restore"
-        case .follicular: "Rising energy"
-        case .ovulatory: "Peak vitality"
-        case .luteal: "Wind down"
+        case .menstrual: "Retreat, rest, release"
+        case .follicular: "Renewal, rising energy"
+        case .ovulatory: "Peak radiance, magnetism"
+        case .luteal: "Reflection, slowing down"
         }
     }
 
-    /// Medical description with hormonal context
+    /// Deeper context for each phase
     public var medicalDescription: String {
         switch self {
         case .menstrual:
-            return "Estrogen & progesterone are at their lowest. The uterine lining sheds. Rest, warmth, and iron-rich foods support recovery."
+            return "Your energy is at its lowest — and that's by design. This is your body's reset. Rest, warmth, and nourishing foods help you rebuild for the cycle ahead."
         case .follicular:
-            return "FSH stimulates follicle growth. Estrogen rises gradually — boosting energy, focus, and mood. Great time for new challenges."
+            return "Your energy is climbing day by day. Your mind is sharper, your mood is lifting, and new ideas come easily. Plant seeds now — creative and literal."
         case .ovulatory:
-            return "LH surge triggers egg release. Estrogen peaks — expect peak confidence, libido, and communication skills. Fertile window active."
+            return "Everything peaks here — confidence, communication, presence. People are drawn to you. Use these days for what matters most."
         case .luteal:
-            return "Progesterone rises to prepare the uterus. If no pregnancy occurs, both hormones drop, which can trigger PMS in the final days."
+            return "You're turning inward. Your tolerance for nonsense drops, your attention to detail rises. This isn't negativity — it's clarity. Finish what you started."
         }
     }
 
@@ -179,6 +179,89 @@ public enum CyclePhase: String, Codable, Equatable, Sendable, CaseIterable {
         case .follicular: return (b1 + 1)...b2
         case .ovulatory: return (b2 + 1)...b3
         case .luteal: return b3 < cl ? (b3 + 1)...cl : cl...cl
+        }
+    }
+}
+
+// MARK: - Phase Guidance
+
+extension CyclePhase {
+
+    public var energyLevel: Int {   // 1-5
+        switch self {
+        case .menstrual: 1
+        case .follicular: 3
+        case .ovulatory: 5
+        case .luteal: 2
+        }
+    }
+
+    public var moodLevel: Int {     // 1-5
+        switch self {
+        case .menstrual: 2
+        case .follicular: 4
+        case .ovulatory: 5
+        case .luteal: 3
+        }
+    }
+
+    public var focusLevel: Int {    // 1-5
+        switch self {
+        case .menstrual: 2
+        case .follicular: 4
+        case .ovulatory: 4
+        case .luteal: 5
+        }
+    }
+
+    public var bestFor: [String] {
+        switch self {
+        case .menstrual: ["Journaling", "Light walks", "Setting intentions", "Deep conversations"]
+        case .follicular: ["Starting projects", "Brainstorming", "Learning new skills", "Social plans"]
+        case .ovulatory: ["Presentations", "Difficult conversations", "Dates", "Negotiating"]
+        case .luteal: ["Editing work", "Organizing", "Honest self-assessment", "Finishing projects"]
+        }
+    }
+
+    public var avoid: [String] {
+        switch self {
+        case .menstrual: ["Overcommitting", "Intense workouts", "Big decisions"]
+        case .follicular: ["Routine tasks", "Playing it safe", "Ignoring new ideas"]
+        case .ovulatory: ["Isolation", "Underestimating your impact", "People-pleasing"]
+        case .luteal: ["Starting new things", "Ignoring your boundaries", "Suppressing emotions"]
+        }
+    }
+
+    public var readings: [String] {
+        switch self {
+        case .menstrual: [
+            "Your body is asking for stillness. The quieter you become, the more you hear.",
+            "This is your reset. Old energy is leaving — let it. What remains is what matters.",
+            "You're not lazy, you're recharging. The women who rest here are the ones who rise strongest.",
+            "Your intuition is sharpest when your body is still. Listen to what surfaces today.",
+            "Nothing grows without rest first. Honor the pause."
+        ]
+        case .follicular: [
+            "Something in you is waking up. Follow the curiosity — it knows where to go.",
+            "Your energy is climbing. Today favors the new — new ideas, new conversations, new risks.",
+            "You're entering your most creative window. The ideas that come now are worth writing down.",
+            "Your mind is sharp and your mood is lifting. Use this momentum before it peaks.",
+            "Your body is building momentum. Plant the seeds now — you'll harvest them soon."
+        ]
+        case .ovulatory: [
+            "Your magnetic energy is at its highest. People are drawn to you — use it wisely.",
+            "This is your moment. Say the thing, make the ask, take the stage. Your confidence isn't an illusion.",
+            "You're radiating. The boldest version of you is the truest version right now.",
+            "Your communication is at its peak. The words you speak today carry extra weight.",
+            "You're in your power. Don't shrink to make others comfortable — they'll adjust."
+        ]
+        case .luteal: [
+            "Your inner editor is awake. The things that bother you now are showing you what needs to change.",
+            "You see through everything right now. That sharp eye isn't negativity — it's clarity.",
+            "This is your finishing phase. What you started two weeks ago? Complete it now.",
+            "Your tolerance for nonsense drops here. That's not a flaw — it's a boundary forming.",
+            "The discomfort you feel is transformation. You're turning raw experience into wisdom."
+        ]
         }
     }
 }

@@ -2,28 +2,51 @@ import SwiftUI
 
 // MARK: - Glass Week Calendar
 
-/// Infinite cycle-day loop strip: shows days 1..cycleLength repeating forever.
-/// Centered on today's cycle day; swipe to scroll through the loop.
+/// Bounded cycle-day strip: shows days 1..cycleLength of the current cycle only.
+/// Centered on today's cycle day; swipe to explore within the cycle.
 /// Tapping a day selects it, updating the ring and center text.
+/// Does NOT show past or future cycles — only the active one.
 public struct GlassWeekCalendar: View {
     public let cycle: CycleContext
     @Binding public var selectedDate: Date?
     public var isCompact: Bool
 
-    @State private var pageOffset: Int = 0
-    @State private var highlightSlot: Int = 3
+    @State private var currentPage: Int = 0
+    @State private var highlightSlot: Int = 0
     /// Whether the user has interacted (tap or swipe) — prevents auto-selecting on load
     @State private var userHasInteracted: Bool = false
+    /// Track initial page setup
+    @State private var didSetInitialPage: Bool = false
 
     private let cal = Calendar.current
     private let slotsPerPage = 7
-    private let centerSlot = 3
 
-    /// Today's 0-based index in the infinite sequence (anchored at 0)
-    private var todayIndex: Int { 0 }
+    // MARK: - Bounded Cycle Geometry
 
-    /// Page range matching full calendar: ±12 months (~365 days ÷ 7 = ~52 pages each way)
-    private var pageRange: ClosedRange<Int> { -52...52 }
+    /// Total number of days shown — extends past avgCycleLength when the
+    /// server prediction falls later, so the predicted period day is reachable.
+    private var totalDays: Int { max(cycle.effectiveCycleLength, 1) }
+
+    /// Number of pages needed to display all cycle days (7 per page)
+    private var totalPages: Int { max(1, Int(ceil(Double(totalDays) / Double(slotsPerPage)))) }
+
+    /// Valid page range: 0 to totalPages-1
+    private var pageRange: ClosedRange<Int> { 0...totalPages - 1 }
+
+    /// Today's cycle day (1-based) clamped within cycle bounds
+    private var todayCycleDay: Int {
+        min(max(cycle.cycleDay, 1), totalDays)
+    }
+
+    /// Page that contains today's cycle day
+    private var todayPage: Int {
+        (todayCycleDay - 1) / slotsPerPage
+    }
+
+    /// Slot within todayPage that corresponds to today
+    private var todaySlotInPage: Int {
+        (todayCycleDay - 1) % slotsPerPage
+    }
 
     public init(
         cycle: CycleContext,
@@ -37,44 +60,40 @@ public struct GlassWeekCalendar: View {
 
     // MARK: - Day Index Helpers
 
-    /// Returns 7 indices for a given page (relative to todayIndex)
-    private func dayIndices(for page: Int) -> [Int] {
-        let centerIndex = todayIndex + page * slotsPerPage
-        return (-centerSlot...(slotsPerPage - 1 - centerSlot)).map { centerIndex + $0 }
+    /// Returns cycle days (1-based) for a given page. Last page may have fewer than 7.
+    private func cycleDaysForPage(_ page: Int) -> [Int] {
+        let startDay = page * slotsPerPage + 1
+        let endDay = min(startDay + slotsPerPage - 1, totalDays)
+        guard startDay <= totalDays else { return [] }
+        return Array(startDay...endDay)
     }
 
-    /// Cycle day number (1‑based) — delegates to CycleContext for predicted block awareness.
-    private func cycleDay(for index: Int) -> Int {
-        let date = dateForIndex(index)
-        return cycle.cycleDayNumber(for: date)
-            ?? {
-                // Fallback: modular math for dates outside CycleContext's range
-                guard cycle.cycleLength > 0 else { return 1 }
-                let raw = (cycle.cycleDay - 1) + index
-                let mod = raw % cycle.cycleLength
-                return (mod < 0 ? mod + cycle.cycleLength : mod) + 1
-            }()
+    /// Convert a cycle day (1-based) to a real Date
+    private func dateForCycleDay(_ day: Int) -> Date {
+        let cycleStart = cal.startOfDay(for: cycle.cycleStartDate)
+        return cal.date(byAdding: .day, value: day - 1, to: cycleStart) ?? cycleStart
     }
 
-    /// Convert an index to a real Date (for period/predicted lookups)
-    private func dateForIndex(_ index: Int) -> Date {
-        cal.date(byAdding: .day, value: index, to: cal.startOfDay(for: Date())) ?? Date()
-    }
-
-    /// Phase label for the selected day
+    /// Phase label for the highlighted day
     private var phaseLabel: String {
-        let indices = dayIndices(for: pageOffset)
-        let highlightIndex = indices[highlightSlot]
-        let date = dateForIndex(highlightIndex)
-        let phase = cycle.phase(for: date) ?? cycle.phase(forCycleDay: cycleDay(for: highlightIndex))
+        if cycle.isLate { return "Period Late" }
+        let days = cycleDaysForPage(currentPage)
+        guard highlightSlot < days.count else {
+            return cycle.currentPhase.displayName
+        }
+        let day = days[highlightSlot]
+        let date = dateForCycleDay(day)
+        // Future predicted period → "Future Period"
+        if cycle.isPredictedOnly(date) {
+            return "Future Period"
+        }
+        let today = cal.startOfDay(for: Date())
+        let d = cal.startOfDay(for: date)
+        let phase = cycle.phase(for: date) ?? cycle.phase(forCycleDay: day)
+        if d < today {
+            return "Past \(phase.displayName)"
+        }
         return phase.displayName
-    }
-
-    /// Short date label: "20 Mar"
-    private func shortDateLabel(_ date: Date) -> String {
-        let day = cal.component(.day, from: date)
-        let month = cal.shortMonthSymbols[cal.component(.month, from: date) - 1]
-        return "\(day) \(month)"
     }
 
     // MARK: - Body
@@ -93,9 +112,9 @@ public struct GlassWeekCalendar: View {
 
             // Day cells + highlight overlay
             ZStack {
-                highlightOverlay
+                highlightOverlay(slotCount: cycleDaysForPage(currentPage).count)
 
-                TabView(selection: $pageOffset) {
+                TabView(selection: $currentPage) {
                     ForEach(pageRange, id: \.self) { page in
                         dayRow(for: page)
                             .tag(page)
@@ -107,19 +126,23 @@ public struct GlassWeekCalendar: View {
             .frame(height: isCompact ? 38 : 52)
         }
         .animation(.spring(response: 0.3, dampingFraction: 0.85), value: isCompact)
+        .onAppear {
+            if !didSetInitialPage {
+                currentPage = todayPage
+                highlightSlot = todaySlotInPage
+                didSetInitialPage = true
+            }
+        }
         .onChange(of: selectedDate) { _, newDate in
             if newDate == nil {
                 userHasInteracted = false
-                highlightSlot = centerSlot
-                if pageOffset != 0 {
-                    withAnimation(.spring(response: 0.3, dampingFraction: 0.85)) {
-                        pageOffset = 0
-                    }
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.85)) {
+                    currentPage = todayPage
+                    highlightSlot = todaySlotInPage
                 }
             }
         }
-        .onChange(of: pageOffset) { _, newPage in
-            if newPage != 0 { userHasInteracted = true }
+        .onChange(of: currentPage) { _, _ in
             guard userHasInteracted else { return }
             updateSelectionForCurrentSlot()
         }
@@ -127,15 +150,22 @@ public struct GlassWeekCalendar: View {
 
     // MARK: - Fixed Highlight Overlay
 
-    private var highlightOverlay: some View {
+    private func highlightOverlay(slotCount: Int) -> some View {
         let cellSize: CGFloat = isCompact ? 34 : 44
         return HStack(spacing: 0) {
             ForEach(0..<slotsPerPage, id: \.self) { idx in
                 VStack(spacing: 2) {
                     ZStack {
-                        if idx == highlightSlot {
+                        if userHasInteracted && idx == highlightSlot && idx < slotCount {
                             Circle()
-                                .fill(Color(red: 0.85, green: 0.82, blue: 0.78).opacity(0.5))
+                                .strokeBorder(
+                                    Color(red: 0.85, green: 0.82, blue: 0.78).opacity(0.45),
+                                    lineWidth: 1.5
+                                )
+                                .background(
+                                    Circle()
+                                        .fill(Color(red: 0.85, green: 0.82, blue: 0.78).opacity(0.12))
+                                )
                                 .frame(width: cellSize, height: cellSize)
                         }
                     }
@@ -153,25 +183,34 @@ public struct GlassWeekCalendar: View {
     // MARK: - Day Row
 
     private func dayRow(for page: Int) -> some View {
-        let indices = dayIndices(for: page)
+        let days = cycleDaysForPage(page)
         return HStack(spacing: 0) {
-            ForEach(Array(indices.enumerated()), id: \.offset) { slotIdx, dayIdx in
-                dayCell(dayIndex: dayIdx, slotIndex: slotIdx)
+            ForEach(Array(days.enumerated()), id: \.offset) { slotIdx, cycleDay in
+                dayCellForCycleDay(cycleDay, slotIndex: slotIdx)
                     .frame(maxWidth: .infinity)
+            }
+            // Pad remaining slots if the last page has fewer than 7 days
+            if days.count < slotsPerPage {
+                ForEach(days.count..<slotsPerPage, id: \.self) { _ in
+                    Color.clear
+                        .frame(maxWidth: .infinity)
+                        .frame(height: isCompact ? 34 : 44)
+                }
             }
         }
     }
 
     // MARK: - Day Cell
 
-    private func dayCell(dayIndex: Int, slotIndex: Int) -> some View {
-        let isTodayDay = dayIndex == todayIndex
-        let date = dateForIndex(dayIndex)
+    private func dayCellForCycleDay(_ day: Int, slotIndex: Int) -> some View {
+        let date = dateForCycleDay(day)
+        let isToday = day == todayCycleDay
         let calendarDay = cal.component(.day, from: date)
         let periodDay = cycle.isPeriodDay(date)
-        let predictedDay = cycle.isPredictedDay(date)
+        // When late, still show predicted days in the week calendar for visual reference
+        let rawPredicted = cycle.isLate && cycle.predictedDays.contains(cycle.dateKey(for: date))
+        let predictedDay = cycle.isPredictedDay(date) || rawPredicted
         let confirmedPeriod = cycle.isConfirmedPeriod(date)
-        let isPast = dayIndex < todayIndex
         let menstrualColor = CyclePhase.menstrual.orbitColor
         let dateKey = cycle.dateKey(for: date)
         let fertilityLevel = cycle.fertileDays[dateKey]
@@ -182,64 +221,53 @@ public struct GlassWeekCalendar: View {
 
         return VStack(spacing: 2) {
             ZStack {
-                // Ovulation day: golden tint fill
+                // Ovulation day: stronger golden fill + solid ring
                 if isOvulation && !periodDay {
+                    Circle()
+                        .fill(oColor.opacity(0.3))
+                        .frame(width: circleSize, height: circleSize)
+                    Circle()
+                        .strokeBorder(oColor.opacity(0.6), lineWidth: 1.5)
+                        .frame(width: circleSize, height: circleSize)
+                }
+
+                // Other fertile days: subtle fill + dashed ring
+                if isFertile && !isOvulation && !periodDay {
                     Circle()
                         .fill(oColor.opacity(0.18))
                         .frame(width: circleSize, height: circleSize)
-                }
-
-                // Fertile day (non-ovulation, non-period): subtle tint fill
-                if isFertile && !isOvulation && !periodDay {
                     Circle()
-                        .fill((fertilityLevel?.color ?? oColor).opacity(0.12))
+                        .strokeBorder(style: StrokeStyle(lineWidth: 0.75, dash: [3, 3]))
+                        .foregroundColor(oColor.opacity(0.4))
                         .frame(width: circleSize, height: circleSize)
                 }
 
-                // Fertile/ovulation ring
-                if (isFertile || isOvulation) && !periodDay {
+                // Predicted period day: dashed pink circle (matching full calendar)
+                if predictedDay && !confirmedPeriod {
                     Circle()
-                        .strokeBorder(
-                            fertilityLevel?.color ?? oColor.opacity(0.4),
-                            lineWidth: isOvulation ? 2 : 1.5
-                        )
-                        .frame(width: circleSize, height: circleSize)
-                }
-
-                // Predicted period day: dashed pink circle
-                if predictedDay {
-                    Circle()
-                        .fill(menstrualColor.opacity(0.2))
+                        .fill(menstrualColor.opacity(0.18))
                         .overlay {
                             Circle()
                                 .strokeBorder(
-                                    style: StrokeStyle(lineWidth: 1.5, dash: [4, 3])
+                                    style: StrokeStyle(lineWidth: 0.75, dash: [3, 3])
                                 )
-                                .foregroundColor(menstrualColor.opacity(0.6))
+                                .foregroundColor(menstrualColor.opacity(0.4))
                         }
                         .frame(width: circleSize, height: circleSize)
                 }
 
-                // Confirmed period day: solid pink circle
+                // Confirmed period day: solid circle (matching full calendar opacity)
                 if confirmedPeriod {
                     Circle()
-                        .fill(menstrualColor.opacity(isPast ? 0.75 : 0.45))
+                        .fill(menstrualColor.opacity(0.75))
                         .frame(width: circleSize, height: circleSize)
-                }
-
-                // Ovulation sparkle icon
-                if isOvulation && !periodDay && !isCompact {
-                    Image(systemName: "sparkle")
-                        .font(.system(size: 7, weight: .bold))
-                        .foregroundColor(oColor)
-                        .offset(x: 13, y: -13)
                 }
 
                 // Calendar date number
                 Text("\(calendarDay)")
                     .font(
                         .custom(
-                            periodDay || isTodayDay ? "Raleway-Bold" : "Raleway-SemiBold",
+                            periodDay || isToday ? "Raleway-Bold" : "Raleway-SemiBold",
                             size: isCompact ? 14 : 16
                         )
                     )
@@ -247,33 +275,20 @@ public struct GlassWeekCalendar: View {
                         confirmedPeriod
                             ? .white
                             : predictedDay
-                                ? menstrualColor
-                                : isTodayDay
+                                ? DesignColors.text.opacity(0.75)
+                                : isToday
                                     ? DesignColors.text
                                     : DesignColors.text.opacity(0.8)
                     )
             }
             .frame(width: isCompact ? 34 : 44, height: isCompact ? 34 : 44)
-            .shadow(
-                color: isOvulation && !periodDay
-                    ? oColor.opacity(0.2)
-                    : .clear,
-                radius: 6,
-                x: 0,
-                y: 2
-            )
 
-            // Dot indicator
+            // Ovulation sparkle indicator below day
             if !isCompact {
-                if periodDay {
-                    Circle()
-                        .fill(menstrualColor.opacity(isPast ? 0.7 : 0.4))
-                        .frame(width: 5, height: 5)
-                        .frame(height: 8)
-                } else if isFertile || isOvulation {
-                    Circle()
-                        .fill(fertilityLevel?.color ?? oColor.opacity(0.5))
-                        .frame(width: 5, height: 5)
+                if isOvulation && !periodDay {
+                    Image(systemName: "sparkle")
+                        .font(.system(size: 7, weight: .bold))
+                        .foregroundColor(oColor)
                         .frame(height: 8)
                 } else {
                     Color.clear.frame(height: 8)
@@ -284,7 +299,7 @@ public struct GlassWeekCalendar: View {
         .onTapGesture {
             let tappedDate = cal.startOfDay(for: date)
 
-            if highlightSlot == slotIndex && isTodayDay && selectedDate == nil {
+            if highlightSlot == slotIndex && isToday && selectedDate == nil {
                 return
             }
 
@@ -300,10 +315,10 @@ public struct GlassWeekCalendar: View {
     // MARK: - Selection Logic
 
     private func updateSelectionForCurrentSlot() {
-        let indices = dayIndices(for: pageOffset)
-        guard highlightSlot < indices.count else { return }
-        let dayIdx = indices[highlightSlot]
-        selectedDate = cal.startOfDay(for: dateForIndex(dayIdx))
+        let days = cycleDaysForPage(currentPage)
+        guard highlightSlot < days.count else { return }
+        let day = days[highlightSlot]
+        selectedDate = cal.startOfDay(for: dateForCycleDay(day))
     }
 }
 

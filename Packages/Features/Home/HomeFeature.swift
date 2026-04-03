@@ -1,6 +1,8 @@
 import ComposableArchitecture
 import Inject
+import RiveRuntime
 import SwiftUI
+
 
 // MARK: - Home Feature
 
@@ -14,6 +16,9 @@ public struct HomeFeature: Sendable {
 
         // Child features
         public var todayState: TodayFeature.State = TodayFeature.State()
+        public var profileState: ProfileFeature.State = ProfileFeature.State()
+        public var cycleInsightsState: CycleInsightsFeature.State = CycleInsightsFeature.State()
+        public var isCycleInsightsVisible: Bool = false
 
         public enum Tab: Int, Equatable, Sendable, CaseIterable {
             case today = 0
@@ -66,6 +71,9 @@ public struct HomeFeature: Sendable {
 
         // Child features
         case today(TodayFeature.Action)
+        case profile(ProfileFeature.Action)
+        case cycleInsights(CycleInsightsFeature.Action)
+
 
         case delegate(Delegate)
 
@@ -87,13 +95,24 @@ public struct HomeFeature: Sendable {
             TodayFeature()
         }
 
+        Scope(state: \.profileState, action: \.profile) {
+            ProfileFeature()
+        }
+
+        Scope(state: \.cycleInsightsState, action: \.cycleInsights) {
+            CycleInsightsFeature()
+        }
+
         Reduce { state, action in
             switch action {
             case .binding:
                 return .none
 
             case .onAppear:
-                return .send(.loadUser)
+                return .merge(
+                    .send(.loadUser),
+                    .send(.today(.loadDashboard))
+                )
 
             case .loadUser:
                 state.isLoading = true
@@ -119,11 +138,19 @@ public struct HomeFeature: Sendable {
             case .userLoaded(.success(let user)):
                 state.isLoading = false
                 state.user = user
-                return .send(.today(.loadDashboard))
+                state.profileState.user = user
+                // Retry if parallel load failed (token wasn't ready post-registration)
+                if state.todayState.menstrualStatus == nil, !state.todayState.isLoadingMenstrual {
+                    return .send(.today(.loadDashboard))
+                }
+                return .none
 
             case .userLoaded(.failure):
                 state.isLoading = false
-                return .send(.today(.loadDashboard))
+                if state.todayState.menstrualStatus == nil, !state.todayState.isLoadingMenstrual {
+                    return .send(.today(.loadDashboard))
+                }
+                return .none
 
             case .logoutTapped:
                 return .run { [firebaseAuth, sessionClient] send in
@@ -139,7 +166,34 @@ public struct HomeFeature: Sendable {
                 state.selectedTab = .chat
                 return .none
 
-            case .today, .delegate:
+            case .today(.delegate(.openCycleInsights)):
+                // Hydrate insights state with already-loaded data for instant render
+                state.cycleInsightsState.cycleContext = state.todayState.cycle
+                state.cycleInsightsState.menstrualStatus = state.todayState.menstrualStatus
+                state.cycleInsightsState.hbiDashboard = state.todayState.dashboard
+                state.isCycleInsightsVisible = true
+                return .none
+
+            case .cycleInsights(.delegate(.dismiss)):
+                // Cache stats for entry card sparkline on Today tab
+                state.todayState.cachedCycleStats = state.cycleInsightsState.stats
+                state.isCycleInsightsVisible = false
+                return .none
+
+            case .today(.menstrualStatusLoaded(.success(let status))):
+                state.profileState.menstrualStatus = status
+                state.cycleInsightsState.menstrualStatus = status
+                return .none
+
+            case .today(.dashboardLoaded(.success(let dashboard))):
+                state.profileState.hbiDashboard = dashboard
+                state.cycleInsightsState.hbiDashboard = dashboard
+                return .none
+
+            case .profile(.delegate(.didLogout)):
+                return .send(.logoutTapped)
+
+            case .today, .profile, .cycleInsights, .delegate:
                 return .none
             }
         }
@@ -151,12 +205,14 @@ public struct HomeFeature: Sendable {
 public struct HomeView: View {
     @ObserveInjection var inject
     @Bindable var store: StoreOf<HomeFeature>
+    @State private var safeAreaTop: CGFloat = 0
 
     public init(store: StoreOf<HomeFeature>) {
         self.store = store
     }
 
     public var body: some View {
+        GeometryReader { rootGeo in
         ZStack {
             GradientBackground()
                 .ignoresSafeArea()
@@ -190,7 +246,9 @@ public struct HomeView: View {
 
                 // Me Tab
                 NavigationStack {
-                    profileTabView
+                    ProfileView(
+                        store: store.scope(state: \.profileState, action: \.profile)
+                    )
                 }
                 .tabItem {
                     Label(
@@ -203,22 +261,52 @@ public struct HomeView: View {
                 .tag(HomeFeature.State.Tab.me)
             }
             .tint(DesignColors.accentWarm)
+
+            if store.todayState.isCalendarVisible {
+                ZStack {
+                    DesignColors.background.ignoresSafeArea()
+                    CalendarView(
+                        store: store.scope(
+                            state: \.todayState.calendarState,
+                            action: \.today.calendar
+                        )
+                    )
+                }
+                .transition(.move(edge: .trailing))
+                .zIndex(1)
+            }
+
         }
+        .animation(.easeInOut(duration: 0.25), value: store.todayState.isCalendarVisible)
+        .fullScreenCover(isPresented: Binding(
+            get: { store.isCycleInsightsVisible },
+            set: { if !$0 { store.send(.cycleInsights(.delegate(.dismiss))) } }
+        )) {
+            CycleInsightsView(
+                store: store.scope(
+                    state: \.cycleInsightsState,
+                    action: \.cycleInsights
+                )
+            )
+            .background(DesignColors.background.ignoresSafeArea())
+        }
+        .onAppear { safeAreaTop = rootGeo.safeAreaInsets.top }
         .task {
             store.send(.onAppear)
         }
         .enableInjection()
+        } // GeometryReader
     }
 
     // MARK: - Chat Tab (Placeholder)
 
     private var chatTabView: some View {
-        VStack(spacing: AppLayout.spacingL) {
+        VStack(spacing: 0) {
             Spacer()
 
-            Image(systemName: "bubble.left.and.text.bubble.right")
-                .font(.system(size: 48, weight: .light))
-                .foregroundColor(DesignColors.accentWarm.opacity(0.6))
+            RiveViewModel(fileName: "glowing_orb", stateMachineName: "State Machine 1")
+                .view()
+                .frame(width: 200, height: 200)
 
             VStack(spacing: 8) {
                 Text("Aria")
@@ -240,98 +328,17 @@ public struct HomeView: View {
                     .foregroundColor(DesignColors.textPlaceholder)
                     .padding(.top, 4)
             }
+            .padding(.top, AppLayout.spacingL)
 
             Spacer()
         }
     }
 
-    // MARK: - Profile Tab
-
-    private var profileTabView: some View {
-        ScrollView {
-            VStack(spacing: AppLayout.spacingL) {
-                // User info card
-                if let user = store.user {
-                    VStack(spacing: AppLayout.spacingM) {
-                        // Avatar
-                        Circle()
-                            .fill(DesignColors.accent.opacity(0.4))
-                            .frame(width: 80, height: 80)
-                            .overlay {
-                                Text(user.initials)
-                                    .font(.custom("Raleway-Bold", size: 28))
-                                    .foregroundColor(DesignColors.text)
-                            }
-
-                        VStack(spacing: 4) {
-                            if let fullName = user.fullName {
-                                Text(fullName)
-                                    .font(.custom("Raleway-SemiBold", size: 20))
-                                    .foregroundColor(DesignColors.text)
-                            }
-
-                            Text(user.email)
-                                .font(.custom("Raleway-Regular", size: 14))
-                                .foregroundColor(DesignColors.textSecondary)
-                        }
-                    }
-                    .padding(.vertical, AppLayout.spacingL)
-                    .frame(maxWidth: .infinity)
-                    .background {
-                        RoundedRectangle(cornerRadius: AppLayout.cornerRadiusL)
-                            .fill(.ultraThinMaterial)
-                            .overlay {
-                                RoundedRectangle(cornerRadius: AppLayout.cornerRadiusL)
-                                    .strokeBorder(
-                                        LinearGradient(
-                                            colors: [Color.white.opacity(0.5), Color.white.opacity(0.1)],
-                                            startPoint: .topLeading,
-                                            endPoint: .bottomTrailing
-                                        ),
-                                        lineWidth: 0.5
-                                    )
-                            }
-                            .shadow(color: .black.opacity(0.06), radius: 8, x: 0, y: 2)
-                    }
-                }
-
-                // Sign Out
-                Button(action: { store.send(.logoutTapped) }) {
-                    HStack {
-                        Image(systemName: "rectangle.portrait.and.arrow.right")
-                            .font(.system(size: 16))
-                        Text("Sign Out")
-                            .font(.custom("Raleway-Medium", size: 15))
-                    }
-                    .foregroundColor(DesignColors.textSecondary)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 14)
-                    .background {
-                        RoundedRectangle(cornerRadius: AppLayout.cornerRadiusM)
-                            .fill(.ultraThinMaterial)
-                            .overlay {
-                                RoundedRectangle(cornerRadius: AppLayout.cornerRadiusM)
-                                    .strokeBorder(
-                                        LinearGradient(
-                                            colors: [Color.white.opacity(0.3), Color.white.opacity(0.05)],
-                                            startPoint: .topLeading,
-                                            endPoint: .bottomTrailing
-                                        ),
-                                        lineWidth: 0.5
-                                    )
-                            }
-                    }
-                }
-                .buttonStyle(.plain)
-            }
-            .padding(.horizontal, AppLayout.horizontalPadding)
-            .padding(.top, AppLayout.spacingL)
-        }
-        .navigationTitle("Me")
-    }
 }
 
+
 // MARK: - Preview
+
 
 #Preview {
     HomeView(

@@ -41,6 +41,9 @@ packages:
   Inject:
     url: https://github.com/krzysztofzablocki/Inject
     from: "1.5.2"
+  RiveRuntime:
+    url: https://github.com/rive-app/rive-ios
+    from: "6.0.0"
   Firebase:
     url: https://github.com/firebase/firebase-ios-sdk
     from: "11.0.0"
@@ -70,6 +73,7 @@ targets:
           - "Sources"
     resources:
       - path: CycleApp/Resources/logo_animation.splineswift
+      - path: CycleApp/Resources/glowing_orb.riv
     dependencies:
       - package: ComposableArchitecture
       - package: Tagged
@@ -81,6 +85,7 @@ targets:
       - package: Firebase
         product: FirebaseAuth
       - package: GoogleSignIn
+      - package: RiveRuntime
       - sdk: HealthKit.framework
     entitlements:
       path: CycleApp/Resources/CycleApp.entitlements

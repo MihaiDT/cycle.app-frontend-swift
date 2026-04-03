@@ -289,6 +289,7 @@ public struct AppFeature: Sendable {
             case .auth(.delegate(.didAuthenticate)):
                 if state.authState.mode == .login {
                     // Returning user — skip onboarding, go straight to home
+                    state.homeState = HomeFeature.State()
                     state.destination = .home
                     return .none
                 }
@@ -507,6 +508,7 @@ public struct AppFeature: Sendable {
             case .onboardingSubmitCompleted:
                 state.isSubmittingOnboarding = false
                 state.onboardingError = nil
+                state.homeState = HomeFeature.State()
                 state.destination = .home
                 return .none
 
@@ -514,6 +516,7 @@ public struct AppFeature: Sendable {
                 state.isSubmittingOnboarding = false
                 state.onboardingError = errorMessage
                 // Still navigate to home — data can be resubmitted later
+                state.homeState = HomeFeature.State()
                 state.destination = .home
                 return .none
 

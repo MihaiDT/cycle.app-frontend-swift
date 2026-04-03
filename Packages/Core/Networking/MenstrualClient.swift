@@ -12,6 +12,7 @@ public struct MenstrualClient: Sendable {
     public var getSymptoms: @Sendable (String, Date) async throws -> [MenstrualSymptomResponse]
     public var generatePrediction: @Sendable (String) async throws -> Void
     public var removePeriodDays: @Sendable (String, RemovePeriodDaysRequest) async throws -> Void
+    public var getCycleStats: @Sendable (String) async throws -> CycleStatsDetailedResponse
 
     public init(
         getStatus: @escaping @Sendable (String) async throws -> MenstrualStatusResponse,
@@ -21,7 +22,8 @@ public struct MenstrualClient: Sendable {
         logSymptom: @escaping @Sendable (String, LogSymptomRequest) async throws -> Void,
         getSymptoms: @escaping @Sendable (String, Date) async throws -> [MenstrualSymptomResponse],
         generatePrediction: @escaping @Sendable (String) async throws -> Void,
-        removePeriodDays: @escaping @Sendable (String, RemovePeriodDaysRequest) async throws -> Void
+        removePeriodDays: @escaping @Sendable (String, RemovePeriodDaysRequest) async throws -> Void,
+        getCycleStats: @escaping @Sendable (String) async throws -> CycleStatsDetailedResponse
     ) {
         self.getStatus = getStatus
         self.getInsights = getInsights
@@ -31,6 +33,7 @@ public struct MenstrualClient: Sendable {
         self.getSymptoms = getSymptoms
         self.generatePrediction = generatePrediction
         self.removePeriodDays = removePeriodDays
+        self.getCycleStats = getCycleStats
     }
 }
 
@@ -95,6 +98,11 @@ extension MenstrualClient {
                 try await apiClient.send(
                     MenstrualEndpoints.removePeriodDays(request).authenticated(with: token)
                 )
+            },
+            getCycleStats: { token in
+                try await apiClient.send(
+                    MenstrualEndpoints.cycleStats().authenticated(with: token)
+                )
             }
         )
     }
@@ -112,7 +120,8 @@ extension MenstrualClient {
             logSymptom: { _, _ in },
             getSymptoms: { _, _ in [] },
             generatePrediction: { _ in },
-            removePeriodDays: { _, _ in }
+            removePeriodDays: { _, _ in },
+            getCycleStats: { _ in .mock }
         )
     }
 }

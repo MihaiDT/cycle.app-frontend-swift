@@ -14,9 +14,9 @@ public struct TodayFeature: Sendable {
 
         public var menstrualStatus: MenstrualStatusResponse?
         public var isLoadingMenstrual: Bool = false
-        /// Period day keys from server calendar entries (source of truth for week calendar)
+        /// Period day keys from server calendar entries
         public var serverPeriodDays: Set<String> = []
-        /// Predicted period day keys (subset of serverPeriodDays) — for dashed styling
+        /// Predicted period day keys (subset of serverPeriodDays)
         public var serverPredictedDays: Set<String> = []
         /// Fertile days with their level from server calendar (keys: "yyyy-MM-dd")
         public var serverFertileDays: [String: FertilityLevel] = [:]
@@ -24,21 +24,37 @@ public struct TodayFeature: Sendable {
         public var serverOvulationDays: Set<String> = []
 
         @Presents var checkIn: DailyCheckInFeature.State?
-        @Presents var calendar: CalendarFeature.State?
-        @Presents var editPeriod: EditPeriodFeature.State?
+        @Presents var moodArc: MoodArcFeature.State?
+        /// Always-present calendar state — pre-loaded so opening is instant
+        public var calendarState: CalendarFeature.State = CalendarFeature.State()
+        /// Controls calendar visibility (fullScreenCover)
+        public var isCalendarVisible: Bool = false
 
-        public var hasAppeared: Bool = false
-        public var hasTriggeredScoreAnimation: Bool = false
-        public var scoreAnimationProgress: Double = 0
-        /// Whether calendar entries have been fetched at least once (success or failure).
-        /// Prevents the circle from rendering with incomplete data before calendar arrives.
+        /// True while reloading cycle data after an edit (shows loading on hero)
+        public var isRefreshingCycleData: Bool = false
         public var hasCompletedCalendarLoad: Bool = false
 
+        /// Pending calendar data — held until refresh animation finishes
+        public var pendingCalendarData: PendingCalendarData?
+        public struct PendingCalendarData: Equatable, Sendable {
+            public var periodDays: Set<String>
+            public var predictedDays: Set<String>
+            public var fertileDays: [String: FertilityLevel]
+            public var ovulationDays: Set<String>
+        }
+
+        /// Sync status for the toast on Home
+        public enum SyncStatus: Equatable, Sendable {
+            case idle
+            case syncing
+            case synced
+        }
+        public var syncStatus: SyncStatus = .idle
+
         /// Single source of truth for all cycle data — derived from server responses.
-        /// Requires both menstrual status AND calendar entries to have loaded to avoid
-        /// rendering the circle with empty period data while calendar is still in-flight.
+        /// Shows immediately with menstrualStatus; calendar data enriches when ready.
         public var cycle: CycleContext? {
-            guard let status = menstrualStatus, hasCompletedCalendarLoad else { return nil }
+            guard let status = menstrualStatus else { return nil }
             return CycleContext.from(
                 status: status,
                 periodDays: serverPeriodDays,
@@ -47,6 +63,16 @@ public struct TodayFeature: Sendable {
                 ovulationDays: serverOvulationDays
             )
         }
+
+        /// Cached stats from last CycleInsights visit (for entry card sparkline)
+        public var cachedCycleStats: CycleStatsDetailedResponse?
+
+        // Late period confirm sheet
+        public var isShowingLateConfirmSheet: Bool = false
+
+        public var hasAppeared: Bool = false
+        public var hasTriggeredScoreAnimation: Bool = false
+        public var scoreAnimationProgress: Double = 0
 
         public var hasCompletedCheckIn: Bool {
             dashboard?.latestReport != nil
@@ -60,28 +86,50 @@ public struct TodayFeature: Sendable {
             dashboard?.today?.trendDirection
         }
 
+        // Card stack
+        public var cardStackState: CardStackFeature.State = CardStackFeature.State()
+
         public init() {}
     }
 
     public enum Action: BindableAction, Sendable {
         case binding(BindingAction<State>)
         case loadDashboard
+        case cardStack(CardStackFeature.Action)
         case dashboardLoaded(Result<HBIDashboardResponse, Error>)
         case loadMenstrualStatus
         case menstrualStatusLoaded(Result<MenstrualStatusResponse, Error>)
-        case calendarEntriesLoaded(Result<MenstrualCalendarResponse, Error>)
         case checkInTapped
         case calendarTapped
-        case logPeriodTapped(focusDate: Date? = nil)
+        case calendarDismissed
+        case calendarEntriesLoaded(Result<MenstrualCalendarResponse, Error>)
         case checkIn(PresentationAction<DailyCheckInFeature.Action>)
-        case calendar(PresentationAction<CalendarFeature.Action>)
-        case editPeriod(PresentationAction<EditPeriodFeature.Action>)
+        case moodArc(PresentationAction<MoodArcFeature.Action>)
+        case moodTapped
+        case calendar(CalendarFeature.Action)
         case triggerScoreAnimation
         case scoreAnimationTick(Double)
         case refreshTapped
+        case logPeriodTapped(Date)
+        case logPeriodCompleted
+        case latePeriodConfirmTapped
+        case latePeriodStartedOnPredicted
+        case latePeriodStartedDifferent
+        case latePeriodNotStarted
+        case hideSyncStatus
+        case finishRefreshAnimation
+        /// Background save + predict + reload — survives child dismissals
+        case backgroundSyncPeriod(
+            periodDays: Set<String>,
+            originalPeriodDays: Set<String>,
+            periodFlowIntensity: [String: FlowIntensity],
+            bleedingDays: Int
+        )
+        case backgroundSyncCompleted
         case delegate(Delegate)
         public enum Delegate: Sendable, Equatable {
             case openAriaChat(context: String)
+            case openCycleInsights
         }
     }
 
@@ -134,14 +182,35 @@ public struct TodayFeature: Sendable {
                         let result = await Result {
                             try await menstrualClient.getCalendar(token, start, end)
                         }
-                        await send(.calendarEntriesLoaded(result))
+                        await send(.calendarEntriesLoaded(result), animation: .easeInOut(duration: 0.3))
                     }
                 )
 
             case .menstrualStatusLoaded(.success(let status)):
                 state.isLoadingMenstrual = false
                 state.menstrualStatus = status
-                return .none
+                // Sync to always-present calendar state
+                state.calendarState.menstrualStatus = status
+                let hasCycleData = status.hasCycleData
+                let localCal = Calendar.current
+                if hasCycleData {
+                    let startDate = CalendarFeature.localDate(from: status.currentCycle.startDate)
+                    state.calendarState.cycleStartDate = localCal.startOfDay(for: startDate)
+                }
+                state.calendarState.cycleLength = status.profile.avgCycleLength ?? 28
+                state.calendarState.bleedingDays = status.currentCycle.bleedingDays ?? 5
+                // Pre-load full calendar data (36 months) so opening is instant
+                var effects: [Effect<Action>] = []
+                // Pre-load calendar
+                if !state.calendarState.hasPreloaded {
+                    state.calendarState.hasPreloaded = true
+                    effects.append(.send(.calendar(.loadCalendar)))
+                }
+                // Load card stack for current phase
+                if let cycle = state.cycle, state.cardStackState.cards.isEmpty {
+                    effects.append(.send(.cardStack(.loadCards(cycle.currentPhase, cycle.cycleDay))))
+                }
+                return effects.isEmpty ? .none : .merge(effects)
 
             case .menstrualStatusLoaded(.failure):
                 state.isLoadingMenstrual = false
@@ -164,7 +233,6 @@ public struct TodayFeature: Sendable {
                     )
                     switch entry.type {
                     case "period":
-                        // Server says confirmed — trust it, no local date comparison
                         days.insert(key)
                     case "predicted_period":
                         days.insert(key)
@@ -181,15 +249,51 @@ public struct TodayFeature: Sendable {
                         break
                     }
                 }
+                state.hasCompletedCalendarLoad = true
+                let wasSyncing = state.syncStatus == .syncing
+                if wasSyncing {
+                    state.syncStatus = .synced
+                }
+                // Always sync to calendar state for instant open
+                state.calendarState.periodDays = days
+                state.calendarState.predictedPeriodDays = predicted
+                state.calendarState.fertileDays = fertile
+                state.calendarState.ovulationDays = ovulation
+
+                // Always update server state immediately so cycle context is available
                 state.serverPeriodDays = days
                 state.serverPredictedDays = predicted
                 state.serverFertileDays = fertile
                 state.serverOvulationDays = ovulation
-                state.hasCompletedCalendarLoad = true
+                if state.isRefreshingCycleData {
+                    // Also hold a copy for animation sync
+                    state.pendingCalendarData = .init(
+                        periodDays: days,
+                        predictedDays: predicted,
+                        fertileDays: fertile,
+                        ovulationDays: ovulation
+                    )
+                    return .run { send in
+                        // Minimum 2.5s of refresh animation
+                        try? await Task.sleep(nanoseconds: 2_500_000_000)
+                        await send(.finishRefreshAnimation)
+                        if wasSyncing {
+                            try? await Task.sleep(nanoseconds: 1_000_000_000)
+                            await send(.hideSyncStatus, animation: .easeOut(duration: 0.3))
+                        }
+                    }
+                } else if wasSyncing {
+                    return .run { send in
+                        try? await Task.sleep(nanoseconds: 1_000_000_000)
+                        await send(.hideSyncStatus, animation: .easeOut(duration: 0.3))
+                    }
+                }
                 return .none
 
             case .calendarEntriesLoaded(.failure):
                 state.hasCompletedCalendarLoad = true
+                state.isRefreshingCycleData = false
+                state.syncStatus = .idle
                 return .none
 
             case .dashboardLoaded(.success(let dashboard)):
@@ -212,37 +316,23 @@ public struct TodayFeature: Sendable {
                 state.checkIn = DailyCheckInFeature.State()
                 return .none
 
+            case .moodTapped:
+                state.moodArc = MoodArcFeature.State()
+                return .none
+
+            case .moodArc(.presented(.delegate(.didLogMood))):
+                return .send(.loadDashboard)
+
+            case .moodArc:
+                return .none
+
             case .calendarTapped:
-                state.calendar = CalendarFeature.State(
-                    menstrualStatus: state.menstrualStatus,
-                    periodDays: state.serverPeriodDays,
-                    predictedPeriodDays: state.serverPredictedDays,
-                    fertileDays: state.serverFertileDays,
-                    ovulationDays: state.serverOvulationDays
-                )
-                return .send(.calendar(.presented(.loadCalendar)))
-
-            case .logPeriodTapped(let focusDate):
-                let today = Calendar.current.startOfDay(for: Date())
-                let status = state.menstrualStatus
-                let startDate =
-                    status.flatMap { s in
-                        s.hasCycleData ? CalendarFeature.localDate(from: s.currentCycle.startDate) : nil
-                    } ?? today
-                let cycleLength = status?.profile.avgCycleLength ?? 28
-                let bleedingDays = status?.currentCycle.bleedingDays ?? 5
-
-                // Exclude predicted days from periodDays — EditPeriod shows them separately
-                let confirmedDays = state.serverPeriodDays.subtracting(state.serverPredictedDays)
-                state.editPeriod = EditPeriodFeature.State(
-                    cycleStartDate: startDate,
-                    cycleLength: cycleLength,
-                    bleedingDays: bleedingDays,
-                    periodDays: confirmedDays,
-                    periodFlowIntensity: [:],
-                    predictedPeriodDays: state.serverPredictedDays,
-                    focusDate: focusDate
-                )
+                // Reset displayedMonth to current month so scrollTo targets it
+                var comps = Calendar.current.dateComponents([.year, .month], from: Date())
+                comps.day = 1
+                state.calendarState.displayedMonth = Calendar.current.date(from: comps) ?? Date()
+                state.calendarState.selectedDate = Calendar.current.startOfDay(for: Date())
+                state.isCalendarVisible = true
                 return .none
 
             case .checkIn(.presented(.delegate(.didCompleteCheckIn(_)))):
@@ -251,36 +341,41 @@ public struct TodayFeature: Sendable {
             case .checkIn:
                 return .none
 
-            case .calendar(.presented(.delegate(.didDismiss))):
-                // Server will be refreshed via .calendar(.dismiss) → .loadDashboard
-                return .none
+            case .calendar(.delegate(.didDismiss)):
+                state.isCalendarVisible = false
+                return .send(.loadDashboard)
 
-            case .calendar(.presented(.delegate(.openAriaChat(let context)))):
-                state.calendar = nil
+            case .calendarDismissed:
+                state.isCalendarVisible = false
+                state.isRefreshingCycleData = false
+                state.pendingCalendarData = nil
+                state.syncStatus = .idle
+                return .send(.loadDashboard)
+
+            case .calendar(.delegate(.periodDataChanged)):
+                state.isRefreshingCycleData = true
+                if state.syncStatus == .idle {
+                    state.syncStatus = .syncing
+                }
+                return .send(.loadMenstrualStatus)
+
+            case .calendar(.delegate(.periodDataNeedsSync(
+                let periodDays, let originalPeriodDays, let flowIntensity, let bleedingDays
+            ))):
+                state.isRefreshingCycleData = true
+                state.syncStatus = .syncing
+                return .send(.backgroundSyncPeriod(
+                    periodDays: periodDays,
+                    originalPeriodDays: originalPeriodDays,
+                    periodFlowIntensity: flowIntensity,
+                    bleedingDays: bleedingDays
+                ))
+
+            case .calendar(.delegate(.openAriaChat(let context))):
+                state.isCalendarVisible = false
                 return .send(.delegate(.openAriaChat(context: context)))
 
-            case .calendar(.dismiss):
-                // Invalidate all stale cycle data so the view shows loading
-                // until fresh status + calendar arrive together. Without this,
-                // old cycleStartDate combined with new periodDays causes a date flash.
-                state.menstrualStatus = nil
-                state.hasCompletedCalendarLoad = false
-                return .send(.loadDashboard)
-
             case .calendar:
-                return .none
-
-            case .editPeriod(.presented(.delegate(let delegate))):
-                if case .didSave = delegate {}
-                state.editPeriod = nil
-                // Invalidate all stale cycle data so the view shows loading
-                // until fresh status + calendar arrive together. Without this,
-                // old cycleStartDate combined with new periodDays causes a date flash.
-                state.menstrualStatus = nil
-                state.hasCompletedCalendarLoad = false
-                return .send(.loadDashboard)
-
-            case .editPeriod:
                 return .none
 
             case .triggerScoreAnimation:
@@ -302,6 +397,110 @@ public struct TodayFeature: Sendable {
             case .refreshTapped:
                 return .send(.loadDashboard)
 
+            case .logPeriodTapped(let date):
+                state.isRefreshingCycleData = true
+                state.syncStatus = .syncing
+                let logDate = date
+                let bleedingDays = state.cycle?.bleedingDays ?? 5
+                return .run { [menstrualClient, sessionClient] send in
+                    guard let token = await sessionClient.getAccessToken() else { return }
+                    try? await menstrualClient.confirmPeriod(
+                        token,
+                        ConfirmPeriodRequest(actualStartDate: logDate, bleedingDays: bleedingDays)
+                    )
+                    try? await menstrualClient.generatePrediction(token)
+                    await send(.logPeriodCompleted)
+                }
+
+            case .logPeriodCompleted:
+                return .send(.loadMenstrualStatus)
+
+            case .latePeriodConfirmTapped:
+                state.isShowingLateConfirmSheet = true
+                return .none
+
+            case .latePeriodStartedOnPredicted:
+                state.isShowingLateConfirmSheet = false
+                // Confirm period on predicted date
+                guard let expectedDate = state.cycle?.effectiveExpectedDate else {
+                    return .none
+                }
+                return .send(.logPeriodTapped(expectedDate))
+
+            case .latePeriodStartedDifferent:
+                state.isShowingLateConfirmSheet = false
+                // Open calendar in edit period mode
+                state.isCalendarVisible = true
+                return .send(.calendar(.editPeriodToggled))
+
+            case .latePeriodNotStarted:
+                state.isShowingLateConfirmSheet = false
+                return .none
+
+            case .hideSyncStatus:
+                state.syncStatus = .idle
+                return .none
+
+            case .finishRefreshAnimation:
+                state.isRefreshingCycleData = false
+                // Apply held calendar data in sync with animation end
+                if let pending = state.pendingCalendarData {
+                    state.serverPeriodDays = pending.periodDays
+                    state.serverPredictedDays = pending.predictedDays
+                    state.serverFertileDays = pending.fertileDays
+                    state.serverOvulationDays = pending.ovulationDays
+                    state.pendingCalendarData = nil
+                }
+                return .none
+
+            case .backgroundSyncPeriod(let periodDays, let originalPeriodDays, let flowIntensity, let bleedingDays):
+                let periodGroups = EditPeriodFeature.groupConsecutivePeriods(periodDays)
+                let removedDays = originalPeriodDays.subtracting(periodDays)
+                return .run { [menstrualClient, sessionClient] send in
+                    defer { Task { await send(.backgroundSyncCompleted) } }
+                    guard let token = await sessionClient.getAccessToken() else { return }
+                    // Remove days first
+                    if !removedDays.isEmpty {
+                        try? await menstrualClient.removePeriodDays(
+                            token, RemovePeriodDaysRequest(dates: removedDays)
+                        )
+                    }
+                    // Confirm remaining period groups
+                    for group in periodGroups {
+                        try? await menstrualClient.confirmPeriod(
+                            token,
+                            ConfirmPeriodRequest(
+                                actualStartDate: group.startDate,
+                                bleedingDays: group.dayCount
+                            )
+                        )
+                    }
+                    // Regenerate predictions only if we have period data
+                    if !periodGroups.isEmpty {
+                        try? await menstrualClient.generatePrediction(token)
+                    }
+                }
+
+            case .backgroundSyncCompleted:
+                return .send(.loadMenstrualStatus)
+
+            case .cardStack(.delegate(.openLens)):
+                return .send(.delegate(.openCycleInsights))
+
+            case .cardStack(.delegate(.openCheckIn)):
+                return .send(.moodTapped)
+
+            case .cardStack(.delegate(.startBreathing)):
+                // Future: present breathing modal
+                return .none
+
+            case .cardStack(.delegate(.openJournal)):
+                // Future: present journal modal
+                return .none
+
+            case .cardStack:
+                return .none
+
             case .binding, .delegate:
                 return .none
             }
@@ -309,56 +508,19 @@ public struct TodayFeature: Sendable {
         .ifLet(\.$checkIn, action: \.checkIn) {
             DailyCheckInFeature()
         }
-        .ifLet(\.$calendar, action: \.calendar) {
+        .ifLet(\.$moodArc, action: \.moodArc) {
+            MoodArcFeature()
+        }
+        Scope(state: \.calendarState, action: \.calendar) {
             CalendarFeature()
         }
-        .ifLet(\.$editPeriod, action: \.editPeriod) {
-            EditPeriodFeature()
+        Scope(state: \.cardStackState, action: \.cardStack) {
+            CardStackFeature()
         }
     }
 }
 
 private enum MenstrualError: Error { case noToken }
-
-// MARK: - Wellness Pillar Model
-
-public struct WellnessPillar: Equatable, Sendable, Identifiable {
-    public let id: String
-    public let name: String
-    public let score: Int
-    public let icon: String
-    public let trend: String?
-
-    public init(name: String, score: Int, icon: String, trend: String?) {
-        self.id = name
-        self.name = name
-        self.score = score
-        self.icon = icon
-        self.trend = trend
-    }
-}
-
-// MARK: - Celestial Snap Behavior
-
-private struct CelestialSnapBehavior: ScrollTargetBehavior {
-    /// The scroll offset at which the circle becomes fully collapsed
-    let collapseOffset: CGFloat
-
-    func updateTarget(_ target: inout ScrollTarget, context: TargetContext) {
-        let y = target.rect.minY
-        // If we're in the transition zone (between 0 and collapseOffset),
-        // snap to either fully expanded (0) or fully collapsed (collapseOffset)
-        guard y > 0 && y < collapseOffset else { return }
-
-        if y > collapseOffset * 0.35 {
-            // Past 35% → snap to collapsed
-            target.rect.origin.y = collapseOffset
-        } else {
-            // Before 35% → snap back to expanded
-            target.rect.origin.y = 0
-        }
-    }
-}
 
 // MARK: - Today View
 
@@ -366,760 +528,403 @@ public struct TodayView: View {
     @ObserveInjection var inject
     @Bindable var store: StoreOf<TodayFeature>
 
-    @State private var showHeader = false
-    @State private var showCalendar = false
-    @State private var showCelestial = false
-    @State private var containerMinY: CGFloat = 0
-    @State private var celestialMinY: CGFloat = 0
-    @State private var calendarMinY: CGFloat = 0
-    @State private var showCheckIn = false
-    @State private var showScore = false
-    @State private var showPillars = false
-    @State private var showInsights = false
-    /// Ring drag exploring day (1-based, current cycle only)
-    @State private var ringExploringDay: Int?
-    /// Calendar-selected date (any date in cycle range)
-    @State private var calendarDate: Date?
-
+    @State private var showHero = false
+    @State private var selectedDate: Date?
+    @State private var scrollOffset: CGFloat = 0
+    @State private var initialScrollY: CGFloat?
+    @State private var safeAreaTop: CGFloat = 0
     public init(store: StoreOf<TodayFeature>) {
         self.store = store
     }
 
-    private var greeting: String {
-        let hour = Calendar.current.component(.hour, from: Date())
-        switch hour {
-        case 5..<12: return "Good Morning"
-        case 12..<17: return "Good Afternoon"
-        case 17..<22: return "Good Evening"
-        default: return "Good Night"
-        }
-    }
+    private static let confirmDateFormatter: DateFormatter = {
+        let fmt = DateFormatter()
+        fmt.dateFormat = "MMM d"
+        return fmt
+    }()
 
-    private var dateString: String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "EEEE, MMM d"
-        return formatter.string(from: Date())
-    }
+    // MARK: - Layout Constants
 
-    private var pillars: [WellnessPillar] {
-        guard let today = store.dashboard?.today else {
-            return [
-                WellnessPillar(name: "Energy", score: 0, icon: "bolt.fill", trend: nil),
-                WellnessPillar(name: "Mood", score: 0, icon: "face.smiling.fill", trend: nil),
-                WellnessPillar(name: "Sleep", score: 0, icon: "moon.fill", trend: nil),
-                WellnessPillar(name: "Calm", score: 0, icon: "leaf.fill", trend: nil),
-            ]
-        }
-        return [
-            WellnessPillar(name: "Energy", score: today.energyScore, icon: "bolt.fill", trend: today.trendDirection),
-            WellnessPillar(
-                name: "Mood",
-                score: today.moodScore,
-                icon: "face.smiling.fill",
-                trend: today.trendDirection
-            ),
-            WellnessPillar(name: "Sleep", score: today.sleepScore, icon: "moon.fill", trend: today.trendDirection),
-            WellnessPillar(name: "Calm", score: today.anxietyScore, icon: "leaf.fill", trend: today.trendDirection),
-        ]
-    }
+    private let expandedHeroHeight: CGFloat = 250
+    private let collapsedHeroHeight: CGFloat = 64
+    private let collapseThreshold: CGFloat = 220
 
-    private var displayedScore: Int {
-        store.dashboard?.today?.hbiAdjusted ?? 0
-    }
-
-    private var displayedTrendDirection: String {
-        store.trendDirection ?? "stable"
-    }
-
-    private var displayedInsights: [String] {
-        if let insights = store.dashboard?.insights, !insights.isEmpty {
-            return insights
-        }
-        if store.dashboard == nil {
-            return ["Complete your daily check-in to see wellness insights."]
-        }
-        return ["Complete your daily check-in to see wellness insights."]
-    }
-
-    private var relativeMinY: CGFloat {
-        celestialMinY - containerMinY
-    }
-
+    /// Collapse progress: 0 = expanded, 1 = collapsed. Driven by scroll offset.
+    /// Steep S-curve so it snaps visually — stays near 0/1, jumps through middle.
     private var collapseProgress: CGFloat {
-        let start: CGFloat = 80
-        let end: CGFloat = -100
-        return min(1, max(0, (start - relativeMinY) / (start - end)))
+        let t = min(max(scrollOffset / collapseThreshold, 0), 1)
+        // Steep logistic-style curve: t²/(t²+(1-t)²)
+        let tSq = t * t
+        let inv = (1 - t) * (1 - t)
+        let denom = tSq + inv
+        return denom > 0 ? tSq / denom : 0
     }
 
-    private var smoothCollapse: CGFloat {
-        let t = collapseProgress
-        return t * t * (3 - 2 * t)  // smoothstep
+    private var currentHeroHeight: CGFloat {
+        expandedHeroHeight + (collapsedHeroHeight - expandedHeroHeight) * collapseProgress + safeAreaTop
     }
 
-    private var celestialScale: CGFloat {
-        max(0.194, 1.0 - smoothCollapse * 0.806)
-    }
-
-    // Calendar height smoothly interpolated: full=86pt → compact=40pt
-    private var calendarVisualHeight: CGFloat {
-        let full: CGFloat = 86
-        let compact: CGFloat = 40
-        return full + (compact - full) * smoothCollapse
-    }
-
-    private var calendarIsCompact: Bool {
-        collapseProgress > 0.3
-    }
-
-    private var celestialFloatY: CGFloat {
-        // Circle center = offset + 190. Orbit radius = 170pt.
-        // Visible top of circle = offset + 190 - 170 * scale.
-        // Calendar bottom = calendarFloatY + calendarVisualHeight.
-        // Constraint: visible top >= calendar bottom
-        //   → offset >= calendarFloatY + calendarVisualHeight - 190 + 170*scale
-        let restOffset = relativeMinY
-        let collapsedOffset: CGFloat = -95
-        let baseY = restOffset + (collapsedOffset - restOffset) * smoothCollapse
-
-        let minOffset = calendarFloatY + calendarVisualHeight - 190 + 170 * celestialScale
-        return max(baseY, minOffset)
-    }
-
-    private var celestialFloatX: CGFloat {
-        // At rest: centered → offset = 0
-        // Collapsed: align circle left edge with calendar left edge (horizontalPadding)
-        // Circle diameter collapsed = 340 * minScale ≈ 66pt, radius ≈ 33pt
-        // Circle center = horizontalPadding + radius
-        let screenW = UIScreen.main.bounds.width
-        let collapsedRadius = (340 * 0.194) / 2
-        let collapsedCenterX = AppLayout.horizontalPadding + collapsedRadius
-        let collapsedX = collapsedCenterX - screenW / 2
-        return collapsedX * smoothCollapse
-    }
-
-    // MARK: - Calendar Collapse (synced with circle)
-
-    private var calendarRelativeMinY: CGFloat {
-        calendarMinY - containerMinY
-    }
-
-    private var calendarFloatY: CGFloat {
-        // Float with scroll, but pin at top (never go above 0)
-        max(0, calendarRelativeMinY)
-    }
-
-    private var calendarOpacity: CGFloat {
-        1.0  // Always visible — it's a sticky header
+    /// Spacer height that keeps content pinned to hero bottom during collapse.
+    /// Matches scrollOffset 1:1 during collapse, then caps so normal scrolling resumes.
+    private var collapseCompensation: CGFloat {
+        min(scrollOffset, collapseThreshold)
     }
 
     public var body: some View {
-        ZStack(alignment: .top) {
+        GeometryReader { rootGeo in
+        VStack(spacing: 0) {
+            // MARK: Sticky Hero (above scroll — content never goes behind it)
+            if let cycle = store.cycle, store.hasCompletedCalendarLoad {
+                CycleHeroView(
+                    cycle: cycle,
+                    selectedDate: $selectedDate,
+                    isRefreshing: store.isRefreshingCycleData,
+                    isSynced: store.syncStatus == .synced,
+                    onEditPeriod: { store.send(.calendarTapped) },
+                    onLogPeriod: {
+                        let date = selectedDate ?? Calendar.current.startOfDay(for: Date())
+                        store.send(.logPeriodTapped(date))
+                    },
+                    onCalendarTapped: { store.send(.calendarTapped) },
+                    collapseProgress: collapseProgress,
+                    safeAreaTop: safeAreaTop
+                )
+                .opacity(showHero ? 1 : 0)
+                .allowsHitTesting(true)
+            } else if store.menstrualStatus != nil, store.menstrualStatus?.hasCycleData == false {
+                // No cycle data — prompt to log first period
+                noCycleDataHero
+                    .opacity(showHero ? 1 : 0)
+            } else {
+                // Skeleton hero while cycle data loads
+                heroSkeleton
+                    .opacity(showHero ? 1 : 0)
+            }
+
+            // MARK: Scrollable Content
             ScrollView(.vertical, showsIndicators: false) {
-                VStack(spacing: AppLayout.spacingL) {
-                    // MARK: Header
-                    todayHeader
-                        .opacity(showHeader ? 1 : 0)
-                        .offset(y: showHeader ? 0 : 12)
+                VStack(spacing: 0) {
+                    // Scroll tracker (must be direct child with non-zero height)
+                    GeometryReader { geo in
+                        Color.clear
+                            .preference(
+                                key: ScrollOffsetKey.self,
+                                value: geo.frame(in: .global).minY
+                            )
+                    }
+                    .frame(height: 1)
 
-                    // MARK: Week Calendar Placeholder
-                    Color.clear
-                        .frame(height: 86)
-                        .background {
-                            GeometryReader { geo in
-                                let minY = geo.frame(in: .global).minY
-                                Color.clear
-                                    .onAppear { calendarMinY = minY }
-                                    .onChange(of: minY) { _, val in calendarMinY = val }
-                            }
-                        }
-
-                    // MARK: Celestial Placeholder
-                    Color.clear
-                        .frame(height: 380)
-                        .background {
-                            GeometryReader { geo in
-                                let minY = geo.frame(in: .global).minY
-                                Color.clear
-                                    .onAppear { celestialMinY = minY }
-                                    .onChange(of: minY) { _, val in celestialMinY = val }
-                            }
-                        }
-
-                    // MARK: Check-in CTA
-                    checkInCard
-                        .opacity(showCheckIn ? 1 : 0)
-                        .offset(y: showCheckIn ? 0 : 16)
-
-                    // MARK: Fertile Window Banner
-                    if let cycle = store.cycle, shouldShowFertileBanner(cycle: cycle) {
-                        FertileWindowBanner(cycle: cycle)
-                            .opacity(showCheckIn ? 1 : 0)
-                            .offset(y: showCheckIn ? 0 : 16)
+                    // Compensate for hero collapse — pins content to hero bottom
+                    if store.cycle != nil {
+                        Color.clear.frame(height: collapseCompensation)
                     }
 
-                    // MARK: HBI Score Hero
-                    hbiScoreHero
-                        .opacity(showScore ? 1 : 0)
-                        .offset(y: showScore ? 0 : 16)
+                    // MARK: Content
+                    VStack(spacing: 0) {
+                        if !store.cardStackState.cards.isEmpty {
+                            CardStackView(
+                                store: store.scope(
+                                    state: \.cardStackState,
+                                    action: \.cardStack
+                                )
+                            )
+                            .padding(.top, AppLayout.spacingL)
+                        }
 
-                    // MARK: Wellness Pillars
-                    wellnessPillarsGrid
-                        .opacity(showPillars ? 1 : 0)
-                        .offset(y: showPillars ? 0 : 16)
+                        VerticalSpace.xl
 
-                    // MARK: Insights
-                    insightsSection(displayedInsights)
-                        .opacity(showInsights ? 1 : 0)
-                        .offset(y: showInsights ? 0 : 16)
+                        // Dummy content for scroll testing
+                        ForEach(0..<6, id: \.self) { i in
+                            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                                .fill(DesignColors.structure.opacity(0.08))
+                                .frame(height: 80)
+                                .overlay {
+                                    Text("Section \(i + 1)")
+                                        .font(.custom("Raleway-Medium", size: 14))
+                                        .foregroundStyle(DesignColors.textPlaceholder)
+                                }
+                                .padding(.horizontal, AppLayout.horizontalPadding)
+                                .padding(.bottom, 12)
+                        }
 
-                    VerticalSpace.xl
+                        VerticalSpace.xxl
+                    }
                 }
-                .padding(.horizontal, AppLayout.horizontalPadding)
-                .padding(.top, AppLayout.spacingM)
             }
-            .scrollTargetBehavior(CelestialSnapBehavior(collapseOffset: 420))
-            .background {
-                GeometryReader { geo in
-                    let minY = geo.frame(in: .global).minY
-                    Color.clear
-                        .onAppear { containerMinY = minY }
-                        .onChange(of: minY) { _, val in containerMinY = val }
+            .scrollTargetBehavior(CollapseSnapBehavior(threshold: collapseThreshold))
+            .trackingScrollOffset($scrollOffset)
+            .onPreferenceChange(ScrollOffsetKey.self) { value in
+                // iOS 17 fallback only
+                if #unavailable(iOS 18.0) {
+                    if initialScrollY == nil { initialScrollY = value }
+                    scrollOffset = max(0, (initialScrollY ?? 0) - value)
                 }
             }
             .refreshable {
                 store.send(.refreshTapped)
             }
-            .sheet(item: $store.scope(state: \.checkIn, action: \.checkIn)) { checkInStore in
-                DailyCheckInView(store: checkInStore)
-                    .presentationDetents([.large])
-                    .presentationDragIndicator(.visible)
-                    .presentationCornerRadius(AppLayout.cornerRadiusL)
-            }
-            .fullScreenCover(item: $store.scope(state: \.calendar, action: \.calendar)) { calendarStore in
-                CalendarView(store: calendarStore)
-            }
-            .fullScreenCover(item: $store.scope(state: \.editPeriod, action: \.editPeriod)) { editStore in
-                EditPeriodView(store: editStore)
-            }
-            .onChange(of: store.hasAppeared) { _, appeared in
-                guard appeared else { return }
-                triggerStaggeredAnimations()
-            }
-            .onChange(of: calendarDate) { _, newDate in
-                // Calendar selection clears ring exploration (mutually exclusive)
-                if newDate != nil && ringExploringDay != nil {
-                    ringExploringDay = nil
-                }
-            }
-            .onChange(of: store.calendar == nil) { _, dismissed in
-                // Reset exploration state when calendar/editPeriod is dismissed
-                if dismissed {
-                    ringExploringDay = nil
-                    calendarDate = nil
-                }
-            }
-            .onChange(of: store.editPeriod == nil) { _, dismissed in
-                if dismissed {
-                    ringExploringDay = nil
-                    calendarDate = nil
-                }
-            }
-
-            // MARK: Floating Celestial Circle
-            celestialCycleSection
-                .frame(height: 380, alignment: .top)
-                .scaleEffect(celestialScale)
-                .offset(x: celestialFloatX, y: celestialFloatY)
-                .opacity(showCelestial ? 1 : 0)
-                .allowsHitTesting(collapseProgress < 0.3)
-
-            // MARK: Floating Week Calendar (above circle)
-            VStack(spacing: 0) {
-                weekCalendarSection
-                    .padding(.horizontal, 12)
-                Spacer(minLength: 0)
-            }
-            .offset(y: calendarFloatY)
-            .opacity(showCalendar ? calendarOpacity : 0)
-            .allowsHitTesting(collapseProgress < 0.5)
-
-            // MARK: Collapsed Info
-            collapsedCycleInfo
         }
+        .ignoresSafeArea(edges: .top)
+        .sheet(item: $store.scope(state: \.checkIn, action: \.checkIn)) { checkInStore in
+            DailyCheckInView(store: checkInStore)
+                .presentationDetents([.large])
+                .presentationDragIndicator(.visible)
+                .presentationCornerRadius(AppLayout.cornerRadiusL)
+        }
+        .sheet(item: $store.scope(state: \.moodArc, action: \.moodArc)) { moodStore in
+            MoodArcView(store: moodStore)
+                .presentationDetents([.large])
+                .presentationDragIndicator(.hidden)
+                .presentationCornerRadius(AppLayout.cornerRadiusL)
+        }
+        .confirmationDialog(
+            "Log your period",
+            isPresented: $store.isShowingLateConfirmSheet,
+            titleVisibility: .visible
+        ) {
+            if let expectedDate = store.cycle?.effectiveExpectedDate {
+                Button("Started on \(Self.confirmDateFormatter.string(from: expectedDate))") {
+                    store.send(.latePeriodStartedOnPredicted)
+                }
+            }
+            Button("Started on a different date") {
+                store.send(.latePeriodStartedDifferent)
+            }
+            Button("It hasn't started yet", role: .cancel) {
+                store.send(.latePeriodNotStarted)
+            }
+        } message: {
+            Text("Did your new cycle start around the expected date, or would you like to pick the correct dates?")
+        }
+        .onChange(of: store.hasAppeared) { _, appeared in
+            guard appeared else { return }
+            triggerStaggeredAnimations()
+        }
+        .onAppear { safeAreaTop = rootGeo.safeAreaInsets.top }
         .enableInjection()
+        } // GeometryReader
     }
 
     // MARK: - Staggered Animations
 
     private func triggerStaggeredAnimations() {
-        withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
-            showHeader = true
-        }
-        withAnimation(.spring(response: 0.6, dampingFraction: 0.8).delay(0.08)) {
-            showCalendar = true
-        }
-        withAnimation(.spring(response: 0.7, dampingFraction: 0.75).delay(0.16)) {
-            showCelestial = true
-        }
-        withAnimation(.spring(response: 0.6, dampingFraction: 0.8).delay(0.34)) {
-            showCheckIn = true
-        }
-        withAnimation(.spring(response: 0.6, dampingFraction: 0.8).delay(0.45)) {
-            showScore = true
-        }
-        withAnimation(.spring(response: 0.6, dampingFraction: 0.8).delay(0.60)) {
-            showPillars = true
-        }
-        withAnimation(.spring(response: 0.6, dampingFraction: 0.8).delay(0.75)) {
-            showInsights = true
+        withAnimation(.spring(response: 0.7, dampingFraction: 0.75)) {
+            showHero = true
         }
     }
 
-    // MARK: - Header
+    // MARK: - No Cycle Data Hero
 
     @ViewBuilder
-    private var todayHeader: some View {
-        HStack {
-            Text(greeting)
-                .font(.custom("Raleway-Bold", size: 28))
-                .foregroundStyle(
-                    LinearGradient(
-                        colors: [DesignColors.text, DesignColors.textPrincipal, DesignColors.accentWarm],
-                        startPoint: .leading,
-                        endPoint: .trailing
-                    )
-                )
+    private var noCycleDataHero: some View {
+        let creamTop = Color(hex: 0xFEFCF7)
+        let creamBottom = Color(red: 0.95, green: 0.91, blue: 0.88)
 
-            Spacer()
-
-            Button {
-                store.send(.calendarTapped)
-            } label: {
-                Image(systemName: "calendar")
-                    .font(.system(size: 20, weight: .medium))
-                    .foregroundColor(DesignColors.textSecondary.opacity(0.7))
-            }
-            .buttonStyle(.plain)
-        }
-    }
-
-    // MARK: - Week Calendar
-
-    @ViewBuilder
-    private var weekCalendarSection: some View {
-        if let cycle = store.cycle {
-            GlassWeekCalendar(
-                cycle: cycle,
-                selectedDate: $calendarDate,
-                isCompact: calendarIsCompact
+        VStack(spacing: 0) {
+            LinearGradient(
+                colors: [creamTop, creamBottom],
+                startPoint: .top, endPoint: .bottom
             )
-        } else {
-            Color.clear
-        }
-    }
+            .overlay {
+                VStack(spacing: 16) {
+                    Spacer().frame(height: safeAreaTop + 20)
 
-    // MARK: - Celestial Cycle
+                    Image(systemName: "calendar.badge.plus")
+                        .font(.system(size: 36, weight: .light))
+                        .foregroundStyle(DesignColors.accentWarm.opacity(0.6))
 
-    @ViewBuilder
-    private var celestialCycleSection: some View {
-        if let cycle = store.cycle {
-            CelestialCycleView(
-                cycle: cycle,
-                collapseProgress: collapseProgress,
-                exploringDay: $ringExploringDay,
-                calendarDate: $calendarDate,
-                onLogPeriod: { date in store.send(.logPeriodTapped(focusDate: date)) }
-            )
-        } else if store.menstrualStatus != nil {
-            // Has profile but no cycle data — show empty state
-            noCycleDataView
-        } else {
-            noCycleDataView
-        }
-    }
+                    Text("No cycle logged")
+                        .font(.custom("Raleway-Bold", size: 22, relativeTo: .title3))
+                        .foregroundStyle(DesignColors.text)
 
-    @ViewBuilder
-    private var noCycleDataView: some View {
-        VStack(spacing: 16) {
-            ZStack {
-                Circle()
-                    .stroke(
-                        LinearGradient(
-                            colors: [
-                                DesignColors.accentWarm.opacity(0.3),
-                                DesignColors.accentWarm.opacity(0.1),
-                                Color.purple.opacity(0.15),
-                            ],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        ),
-                        lineWidth: 8
-                    )
-                    .frame(width: 200, height: 200)
-
-                VStack(spacing: 8) {
-                    Image(systemName: "drop")
-                        .font(.system(size: 32, weight: .light))
-                        .foregroundStyle(
-                            LinearGradient(
-                                colors: [DesignColors.accentWarm.opacity(0.7), Color.purple.opacity(0.5)],
-                                startPoint: .top,
-                                endPoint: .bottom
-                            )
-                        )
-
-                    Text("No cycle data yet")
-                        .font(.custom("Raleway-SemiBold", size: 16))
-                        .foregroundColor(DesignColors.text.opacity(0.8))
-
-                    Text("Log your period to start tracking")
-                        .font(.custom("Raleway-Regular", size: 13))
-                        .foregroundColor(DesignColors.textSecondary)
+                    Text("Start logging to discover your inner rhythm")
+                        .font(.custom("Raleway-Regular", size: 14, relativeTo: .body))
+                        .foregroundStyle(DesignColors.textSecondary)
                         .multilineTextAlignment(.center)
-                }
-            }
 
-            Button {
-                store.send(.logPeriodTapped())
-            } label: {
-                HStack(spacing: 8) {
-                    Image(systemName: "drop.fill")
-                        .font(.system(size: 14, weight: .medium))
-                    Text("Log Period")
-                        .font(.custom("Raleway-SemiBold", size: 15))
-                }
-                .foregroundColor(.white)
-                .padding(.horizontal, 24)
-                .padding(.vertical, 12)
-                .background {
-                    Capsule()
-                        .fill(
-                            LinearGradient(
-                                colors: [DesignColors.accentWarm, Color.pink.opacity(0.8)],
-                                startPoint: .leading,
-                                endPoint: .trailing
-                            )
-                        )
-                }
-            }
-        }
-        .frame(height: 340)
-    }
-
-    // MARK: - Collapsed Cycle Info
-
-    @ViewBuilder
-    private var collapsedCycleInfo: some View {
-        let phase = store.cycle?.currentPhase ?? .follicular
-        let infoOpacity = min(1.0, max(0, (Double(collapseProgress) - 0.85) / 0.15))
-
-        // Circle visible diameter = 340 * celestialScale
-        // Circle center X when collapsed = horizontalPadding + collapsedRadius
-        let collapsedRadius: CGFloat = (340 * 0.194) / 2
-        let circleCenterX: CGFloat = AppLayout.horizontalPadding + collapsedRadius
-        let circleRightEdge: CGFloat = circleCenterX + (340 * celestialScale) / 2
-        // Circle center Y = frame center (190) + celestialFloatY
-        let circleCenterY = 190 + celestialFloatY
-
-        HStack(spacing: 6) {
-            Text(phase.displayName)
-                .font(.custom("Raleway-SemiBold", size: 15))
-                .foregroundColor(phase.orbitColor)
-        }
-        .padding(.leading, circleRightEdge + 20)
-        .padding(.top, circleCenterY - 10)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .opacity(infoOpacity)
-        .allowsHitTesting(false)
-    }
-
-    // MARK: - Check-In Card
-
-    @ViewBuilder
-    private var checkInCard: some View {
-        if store.hasCompletedCheckIn {
-            // Completed state
-            HStack(spacing: 12) {
-                Image(systemName: "checkmark.circle.fill")
-                    .font(.system(size: 22, weight: .medium))
-                    .foregroundColor(DesignColors.accentWarm)
-
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Check-in Complete")
-                        .font(.custom("Raleway-SemiBold", size: 15))
-                        .foregroundColor(DesignColors.text)
-
-                    Text("Your HBI score has been updated")
-                        .font(.custom("Raleway-Regular", size: 13))
-                        .foregroundColor(DesignColors.textSecondary)
-                }
-
-                Spacer()
-            }
-            .padding(AppLayout.spacingM)
-            .background {
-                RoundedRectangle(cornerRadius: AppLayout.cornerRadiusL)
-                    .fill(.ultraThinMaterial)
-                    .overlay {
-                        RoundedRectangle(cornerRadius: AppLayout.cornerRadiusL)
-                            .strokeBorder(
-                                LinearGradient(
-                                    colors: [
-                                        DesignColors.accentWarm.opacity(0.6), DesignColors.accentSecondary.opacity(0.3),
-                                    ],
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                ),
-                                lineWidth: 1
-                            )
+                    Button {
+                        store.send(.calendarTapped)
+                    } label: {
+                        Text("Open Calendar")
+                            .font(.custom("Raleway-SemiBold", size: 15))
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 24)
+                            .padding(.vertical, 12)
+                            .background {
+                                Capsule()
+                                    .fill(DesignColors.accentWarm)
+                            }
                     }
-                    .shadow(color: DesignColors.accentWarm.opacity(0.1), radius: 8, x: 0, y: 2)
-            }
-            .transition(
-                .asymmetric(
-                    insertion: .opacity.combined(with: .scale(scale: 0.95)),
-                    removal: .opacity
-                )
-            )
-        } else {
-            // CTA state
-            Button(action: { store.send(.checkInTapped) }) {
-                VStack(spacing: 12) {
-                    Image(systemName: "sun.and.horizon")
-                        .font(.system(size: 28, weight: .light))
-                        .foregroundColor(DesignColors.accentWarm)
+                    .buttonStyle(.plain)
+                    .padding(.top, 4)
 
-                    Text("How are you feeling today?")
-                        .font(.custom("Raleway-SemiBold", size: 17))
-                        .foregroundColor(DesignColors.text)
-
-                    Text("Take a quick check-in to track your wellness")
-                        .font(.custom("Raleway-Regular", size: 13))
-                        .foregroundColor(DesignColors.textSecondary)
-
-                    Text("Start Check-in")
-                        .font(.custom("Raleway-SemiBold", size: 15))
-                        .foregroundColor(DesignColors.text)
-                        .padding(.horizontal, 24)
-                        .padding(.vertical, 10)
-                        .glassEffectCapsule()
-                        .shadow(color: .black.opacity(0.06), radius: 4, x: 0, y: 2)
+                    Spacer()
                 }
-                .padding(.vertical, AppLayout.spacingL)
-                .frame(maxWidth: .infinity)
-                .background {
-                    RoundedRectangle(cornerRadius: AppLayout.cornerRadiusL)
-                        .fill(.ultraThinMaterial)
-                        .overlay {
-                            RoundedRectangle(cornerRadius: AppLayout.cornerRadiusL)
-                                .strokeBorder(
-                                    LinearGradient(
-                                        colors: [Color.white.opacity(0.5), Color.white.opacity(0.1)],
-                                        startPoint: .topLeading,
-                                        endPoint: .bottomTrailing
-                                    ),
-                                    lineWidth: 0.5
-                                )
+                .padding(.horizontal, AppLayout.horizontalPadding)
+            }
+        }
+        .frame(height: 320)
+    }
+
+    // MARK: - Skeleton Hero
+
+    @ViewBuilder
+    private var heroSkeleton: some View {
+        let creamTop = Color(hex: 0xFEFCF7)
+        let creamBottom = Color(red: 0.95, green: 0.91, blue: 0.88)
+        let shimmer = Color.white.opacity(0.45)
+
+        VStack(spacing: 0) {
+            Color.clear.frame(height: safeAreaTop)
+
+            VStack(spacing: 0) {
+                // Top row placeholders
+                HStack {
+                    Circle()
+                        .fill(shimmer)
+                        .frame(width: 36, height: 36)
+                    Spacer()
+                    Circle()
+                        .fill(shimmer)
+                        .frame(width: 36, height: 36)
+                }
+                .padding(.horizontal, 16)
+                .padding(.top, 16)
+
+                // Week calendar placeholder
+                HStack(spacing: 10) {
+                    ForEach(0..<7, id: \.self) { _ in
+                        VStack(spacing: 6) {
+                            RoundedRectangle(cornerRadius: 3)
+                                .fill(shimmer)
+                                .frame(width: 16, height: 8)
+                            RoundedRectangle(cornerRadius: 8)
+                                .fill(shimmer)
+                                .frame(width: 34, height: 34)
                         }
-                        .shadow(color: .black.opacity(0.06), radius: 8, x: 0, y: 2)
+                    }
                 }
+                .padding(.top, 14)
+
+                Spacer(minLength: 12)
+
+                // Phase label placeholder
+                RoundedRectangle(cornerRadius: 6)
+                    .fill(shimmer)
+                    .frame(width: 90, height: 14)
+
+                // Day number placeholder
+                RoundedRectangle(cornerRadius: 10)
+                    .fill(shimmer)
+                    .frame(width: 120, height: 44)
+                    .padding(.top, 8)
+
+                // Subtitle placeholder
+                RoundedRectangle(cornerRadius: 5)
+                    .fill(shimmer)
+                    .frame(width: 140, height: 12)
+                    .padding(.top, 8)
+
+                Spacer(minLength: 16)
+
+                // Button placeholders
+                HStack(spacing: 10) {
+                    Capsule()
+                        .fill(shimmer)
+                        .frame(width: 110, height: 36)
+                    Capsule()
+                        .fill(shimmer)
+                        .frame(width: 90, height: 36)
+                }
+                .padding(.bottom, 20)
             }
-            .buttonStyle(.plain)
-            .transition(.opacity)
         }
-    }
-
-    // MARK: - Fertile Window Banner
-
-    private func shouldShowFertileBanner(cycle: CycleContext) -> Bool {
-        // Show if fertile window is active or approaching (within 3 days)
-        if cycle.fertileWindowActive { return true }
-        if let days = cycle.daysUntilOvulation, days > 0, days <= 8 { return true }
-        // Also show if today is a fertile day from calendar data
-        let today = Calendar.current.startOfDay(for: Date())
-        let c = Calendar.current.dateComponents([.year, .month, .day], from: today)
-        let key = String(format: "%04d-%02d-%02d", c.year ?? 0, c.month ?? 0, c.day ?? 0)
-        return cycle.fertileDays[key] != nil
-    }
-
-    // MARK: - HBI Score Hero
-
-    @ViewBuilder
-    private var hbiScoreHero: some View {
-        VStack(spacing: AppLayout.spacingM) {
-            HBIScoreRing(
-                score: displayedScore,
-                animationProgress: store.scoreAnimationProgress,
-                size: 180
+        .frame(height: expandedHeroHeight + safeAreaTop)
+        .background(
+            LinearGradient(
+                colors: [creamTop, creamBottom],
+                startPoint: .top,
+                endPoint: .bottom
             )
-
-            // Trend indicator
-            HStack(spacing: 4) {
-                Image(
-                    systemName: displayedTrendDirection == "up"
-                        ? "arrow.up.right" : displayedTrendDirection == "down" ? "arrow.down.right" : "arrow.right"
-                )
-                .font(.system(size: 12, weight: .bold))
-                Text(
-                    displayedTrendDirection == "up"
-                        ? "Trending Up" : displayedTrendDirection == "down" ? "Trending Down" : "Stable"
-                )
-                .font(.custom("Raleway-Medium", size: 13))
-            }
-            .foregroundColor(displayedTrendDirection == "up" ? DesignColors.accentWarm : DesignColors.textSecondary)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, AppLayout.spacingM)
+        )
+        .clipShape(Rectangle())
+        .modifier(ShimmerModifier())
     }
 
-    // MARK: - Wellness Pillars Grid
+}
 
-    @ViewBuilder
-    private var wellnessPillarsGrid: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("WELLNESS")
-                .font(.custom("Raleway-Regular", size: 13))
-                .foregroundColor(DesignColors.textSecondary.opacity(0.7))
-                .tracking(3)
+// MARK: - Scroll Offset Preference Key
 
-            LazyVGrid(columns: [.init(), .init()], spacing: 12) {
-                ForEach(pillars) { pillar in
-                    WellnessPillarCard(
-                        name: pillar.name,
-                        score: pillar.score,
-                        icon: pillar.icon,
-                        trend: pillar.trend
-                    )
-                }
-            }
-        }
+private struct ScrollOffsetKey: PreferenceKey {
+    nonisolated(unsafe) static var defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = nextValue()
     }
+}
 
-    // MARK: - Insights
+// MARK: - Collapse Snap Behavior
 
-    @ViewBuilder
-    private func insightsSection(_ insights: [String]) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("INSIGHTS")
-                .font(.custom("Raleway-Regular", size: 13))
-                .foregroundColor(DesignColors.textSecondary.opacity(0.7))
-                .tracking(3)
+/// Snaps scroll to either fully expanded (0) or fully collapsed (threshold).
+/// Prevents the hero from resting at intermediate collapse states.
+private struct CollapseSnapBehavior: ScrollTargetBehavior {
+    let threshold: CGFloat
 
-            ForEach(Array(insights.enumerated()), id: \.offset) { _, insight in
-                InsightCard(text: insight)
-            }
+    func updateTarget(_ target: inout ScrollTarget, context: TargetContext) {
+        let y = target.rect.origin.y
+        if y > 0 && y < threshold {
+            // Snap at 35% — collapses easily, resists expanding back
+            target.rect.origin.y = y < threshold * 0.35 ? 0 : threshold
         }
     }
 }
 
-// MARK: - Fertile Window Banner
+// MARK: - Scroll Offset Tracking (iOS 18+ uses onScrollGeometryChange)
 
-private struct FertileWindowBanner: View {
-    let cycle: CycleContext
-
-    private var todayKey: String {
-        let c = Calendar.current.dateComponents([.year, .month, .day], from: Date())
-        return String(format: "%04d-%02d-%02d", c.year ?? 0, c.month ?? 0, c.day ?? 0)
-    }
-
-    private var todayLevel: FertilityLevel? { cycle.fertileDays[todayKey] }
-    private var isOvulationToday: Bool { cycle.ovulationDays.contains(todayKey) }
-
-    var body: some View {
-        HStack(spacing: 14) {
-            // Fertility icon
-            ZStack {
-                Circle()
-                    .fill(accentColor.opacity(0.12))
-                Image(systemName: iconName)
-                    .font(.system(size: 20, weight: .medium))
-                    .foregroundColor(accentColor)
+private extension View {
+    @ViewBuilder
+    func trackingScrollOffset(_ offset: Binding<CGFloat>) -> some View {
+        if #available(iOS 18.0, *) {
+            self.onScrollGeometryChange(for: CGFloat.self) { geo in
+                geo.contentOffset.y
+            } action: { _, newValue in
+                offset.wrappedValue = max(0, newValue)
             }
-            .frame(width: 44, height: 44)
-
-            VStack(alignment: .leading, spacing: 3) {
-                Text(title)
-                    .font(.custom("Raleway-SemiBold", size: 15))
-                    .foregroundColor(DesignColors.text)
-                Text(subtitle)
-                    .font(.custom("Raleway-Regular", size: 12))
-                    .foregroundColor(DesignColors.textSecondary)
-                    .lineLimit(2)
-            }
-
-            Spacer()
-
-            // Level badge
-            if let level = todayLevel {
-                VStack(spacing: 2) {
-                    Text(level.probability)
-                        .font(.custom("Raleway-Bold", size: 14))
-                        .foregroundColor(level.color)
-                    Text(level.displayName)
-                        .font(.custom("Raleway-Medium", size: 9))
-                        .foregroundColor(level.color.opacity(0.8))
-                }
-            } else if let days = cycle.daysUntilOvulation, days > 0 {
-                VStack(spacing: 2) {
-                    Text("\(days)")
-                        .font(.custom("Raleway-Bold", size: 18))
-                        .foregroundColor(CyclePhase.ovulatory.orbitColor)
-                    Text("days")
-                        .font(.custom("Raleway-Medium", size: 9))
-                        .foregroundColor(CyclePhase.ovulatory.orbitColor.opacity(0.7))
-                }
-            }
+        } else {
+            self
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 14)
-        .background {
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(accentColor.opacity(0.05))
-                .overlay {
-                    RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        .strokeBorder(accentColor.opacity(0.15), lineWidth: 0.5)
-                }
-        }
-    }
-
-    private var accentColor: Color {
-        if isOvulationToday { return CyclePhase.ovulatory.orbitColor }
-        return todayLevel?.color ?? CyclePhase.ovulatory.orbitColor.opacity(0.7)
-    }
-
-    private var iconName: String {
-        if isOvulationToday { return "sparkle" }
-        if cycle.fertileWindowActive { return "leaf.fill" }
-        return "calendar.badge.clock"
-    }
-
-    private var title: String {
-        if isOvulationToday { return "Ovulation Day" }
-        if cycle.fertileWindowActive {
-            if let level = todayLevel {
-                return "Fertile Window · \(level.displayName)"
-            }
-            return "Fertile Window Active"
-        }
-        if let days = cycle.daysUntilOvulation, days > 0 {
-            return "Ovulation in \(days) days"
-        }
-        return "Fertile Window"
-    }
-
-    private var subtitle: String {
-        if isOvulationToday {
-            return "Peak fertility today. The egg is viable for 12-24 hours."
-        }
-        if cycle.fertileWindowActive {
-            if let days = cycle.daysUntilOvulation, days > 0 {
-                return "Ovulation expected in \(days) days. Sperm can survive up to 5 days."
-            }
-            return "You're in your fertile window. Conception is possible."
-        }
-        if let days = cycle.daysUntilOvulation, days > 0 {
-            return "Your fertile window is approaching."
-        }
-        return "Track your cycle for fertility predictions."
     }
 }
+
+// MARK: - Shimmer Effect
+
+private struct ShimmerModifier: ViewModifier {
+    @State private var phase: CGFloat = 0
+
+    func body(content: Content) -> some View {
+        let leading = max(0, min(phase - 0.15, 1))
+        let center = max(0, min(phase, 1))
+        let trailing = max(0, min(phase + 0.15, 1))
+
+        content
+            .overlay {
+                LinearGradient(
+                    stops: [
+                        .init(color: .clear, location: leading),
+                        .init(color: .white.opacity(0.25), location: center),
+                        .init(color: .clear, location: trailing),
+                    ],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+                .allowsHitTesting(false)
+            }
+            .onAppear {
+                withAnimation(.linear(duration: 1.8).repeatForever(autoreverses: false)) {
+                    phase = 1.15
+                }
+            }
+    }
+}
+
+
+

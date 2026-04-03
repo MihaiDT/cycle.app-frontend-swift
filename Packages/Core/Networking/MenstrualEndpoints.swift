@@ -53,6 +53,10 @@ public enum MenstrualEndpoints {
     public static func removePeriodDays(_ request: RemovePeriodDaysRequest) -> Endpoint {
         .post("/api/menstrual/remove-days", body: request)
     }
+
+    public static func cycleStats() -> Endpoint {
+        .get("/api/menstrual/cycle-stats")
+    }
 }
 
 private struct EmptyBody: Encodable, Sendable {}

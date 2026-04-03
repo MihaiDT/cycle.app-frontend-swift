@@ -71,12 +71,23 @@ public struct PredictionInfo: Codable, Equatable, Sendable {
     public let daysUntil: Int
     public let confidenceScore: Double
     public let predictionRange: DateRangeInfo
+    public let isLate: Bool
+    public let daysLate: Int
 
-    public init(predictedDate: Date, daysUntil: Int, confidenceScore: Double, predictionRange: DateRangeInfo) {
+    public init(
+        predictedDate: Date,
+        daysUntil: Int,
+        confidenceScore: Double,
+        predictionRange: DateRangeInfo,
+        isLate: Bool = false,
+        daysLate: Int = 0
+    ) {
         self.predictedDate = predictedDate
         self.daysUntil = daysUntil
         self.confidenceScore = confidenceScore
         self.predictionRange = predictionRange
+        self.isLate = isLate
+        self.daysLate = daysLate
     }
 }
 
@@ -282,5 +293,55 @@ extension MenstrualCalendarResponse {
         startDate: Calendar.current.date(byAdding: .month, value: -1, to: Date())!,
         endDate: Calendar.current.date(byAdding: .month, value: 1, to: Date())!,
         entries: []
+    )
+}
+
+// MARK: - Cycle Stats Response (GET /api/menstrual/cycle-stats)
+
+public struct CycleStatsDetailedResponse: Codable, Equatable, Sendable {
+    public let cycleLength: CycleLengthStats
+    public let currentCycle: CurrentCycleStats
+    public let totalTracked: Int
+    public let trackingSince: Date?
+}
+
+public struct CycleLengthStats: Codable, Equatable, Sendable {
+    public let average: Double
+    public let min: Int
+    public let max: Int
+    public let stdDev: Double
+    public let history: [CycleHistoryPoint]
+    public let trend: String
+}
+
+public struct CycleHistoryPoint: Codable, Equatable, Sendable, Identifiable {
+    public let startDate: Date
+    public let length: Int
+    public let bleeding: Int
+
+    public var id: Date { startDate }
+}
+
+public struct CurrentCycleStats: Codable, Equatable, Sendable {
+    public let day: Int
+    public let cycleLength: Int
+    public let delayContext: String
+    public let delayDays: Int
+}
+
+extension CycleStatsDetailedResponse {
+    public static let mock = CycleStatsDetailedResponse(
+        cycleLength: CycleLengthStats(
+            average: 28.5, min: 26, max: 31, stdDev: 1.8,
+            history: [
+                CycleHistoryPoint(startDate: Date(), length: 28, bleeding: 5),
+                CycleHistoryPoint(startDate: Date(), length: 27, bleeding: 4),
+                CycleHistoryPoint(startDate: Date(), length: 31, bleeding: 5),
+            ],
+            trend: "stable"
+        ),
+        currentCycle: CurrentCycleStats(day: 35, cycleLength: 28, delayContext: "slightly_outside", delayDays: 7),
+        totalTracked: 6,
+        trackingSince: nil
     )
 }

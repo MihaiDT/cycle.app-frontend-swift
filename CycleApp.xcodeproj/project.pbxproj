@@ -13,6 +13,7 @@
 		0985C631CF3EC7089E779C31 /* HealthPermissionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 89AB632DD5D233D065ACF184 /* HealthPermissionView.swift */; };
 		103674BDFBF3E3412696BF5A /* HomeFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F9C55BFC287E7193D934779 /* HomeFeature.swift */; };
 		128EB6710703E9BA653C0ABB /* TodayFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C384BB38218230424E77203 /* TodayFeature.swift */; };
+		14ADF9898AA0738A9FA1478E /* MiniCycleCalendar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8192A637D07F3E16EAD1DB59 /* MiniCycleCalendar.swift */; };
 		1C1F2D5EC587BDF0B7346E84 /* Session.swift in Sources */ = {isa = PBXBuildFile; fileRef = 486C7ABFDDA5A44ACFAC587B /* Session.swift */; };
 		1D2E82BBC7F411B0F4F26009 /* Raleway-SemiBoldItalic.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 34A6F94AAF7182E46C4F885F /* Raleway-SemiBoldItalic.ttf */; };
 		1DAB0F6F4523F28DC097D1AF /* OnboardingHeader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88BF907DFB59809FEF766AE8 /* OnboardingHeader.swift */; };
@@ -26,13 +27,17 @@
 		2F9139B5B4BC95E76905B0AB /* AuthenticationFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = B28B51D5CCB675E5D110CAA7 /* AuthenticationFeature.swift */; };
 		304CB9F73790823C77100D91 /* Inject in Frameworks */ = {isa = PBXBuildFile; productRef = 0446831096B8B9BD8D89586C /* Inject */; };
 		304E418C0DF3BC7793B0D0DA /* Raleway-ExtraLight.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 6245417E8CDA74DC974841F8 /* Raleway-ExtraLight.ttf */; };
+		30B8F1F1D1487A0E406A4973 /* glowing_orb.riv in Resources */ = {isa = PBXBuildFile; fileRef = 5ED03F559F4A2F374AF86A5C /* glowing_orb.riv */; };
 		32F595C93C135A5FE8FE9717 /* UserDefaultsClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 107471505AD1ADFF34997E8D /* UserDefaultsClient.swift */; };
+		35B2D545B4CAF74233A118FF /* ProfileFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8AAA5EAA0B0713C6D0F9CAC /* ProfileFeature.swift */; };
 		395E6EB894714D5526249732 /* DesignColors.swift in Sources */ = {isa = PBXBuildFile; fileRef = 925024F96EEC4267179A9CA3 /* DesignColors.swift */; };
 		3D4939F89A63F1F49930037A /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = CA84224FE7398C7FF08D5BB5 /* GoogleService-Info.plist */; };
 		3DD5F64D427F4ED1639CE319 /* Layout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BCD05B0769F861D03E644E9 /* Layout.swift */; };
 		4162B806EEFAB072B473575F /* Raleway-Medium.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 8B25658F35072C37DA32E0E8 /* Raleway-Medium.ttf */; };
+		42BCE80B18AF903A1B03EC79 /* CalendarSymptomSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5886220E666CF879F28AA495 /* CalendarSymptomSheet.swift */; };
 		43871BC7610359114EBD9DF7 /* SplineIntroView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4674CEEA6B50FCAB809318E6 /* SplineIntroView.swift */; };
 		49B07A298102453EC330BB35 /* RelationshipStatusView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9951D5FE998C1DD8DE8B9958 /* RelationshipStatusView.swift */; };
+		4AC9FED42E81A3B2D054901F /* DailyCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 05C1863ED7A02D2799907F02 /* DailyCard.swift */; };
 		4D063F2BD8A56D021D957A5D /* GlassButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F1FB9070681EFDD7982FF5C /* GlassButton.swift */; };
 		4F4452D7D81A585BA930DDE4 /* NameGreetingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A9F95C44B71EFC08D5BAAAD /* NameGreetingView.swift */; };
 		5183F12DDE66A90DA3DBFBA7 /* APIError.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA867F396B072ED863219115 /* APIError.swift */; };
@@ -50,6 +55,7 @@
 		5B928A4A69F761CC8DAE2EBB /* logo_animation.splineswift in Resources */ = {isa = PBXBuildFile; fileRef = E687F11BA153A2DF683BD9B0 /* logo_animation.splineswift */; };
 		5C0CAB20DB0824AC800714AF /* GradientBackground.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4E7E9A068ECB15A84A721A7 /* GradientBackground.swift */; };
 		6018B99FE7EED18A8F67874B /* HBIDashboard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F9895D88CABF51577D545ED /* HBIDashboard.swift */; };
+		61DB977864F95905E746D522 /* RiveRuntime in Frameworks */ = {isa = PBXBuildFile; productRef = A0A2915D84F6987528AD86D8 /* RiveRuntime */; };
 		649BEAA6D724578FB0AEE918 /* CycleCalendarViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4322D31D6B828275DD65FC35 /* CycleCalendarViews.swift */; };
 		65962311B2B6C4CB93678BF3 /* APIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 71EF173A08EFFAA9EAF10A56 /* APIClient.swift */; };
 		65C96E5B313A2E5D7212C475 /* Validation.swift in Sources */ = {isa = PBXBuildFile; fileRef = FFD79DF9CED358A6F2B17C43 /* Validation.swift */; };
@@ -59,6 +65,7 @@
 		6A894FA2865F24E6EF268E10 /* HBIScoreRing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C5722C7E3AC41AE065FC9F2 /* HBIScoreRing.swift */; };
 		6B007C746D016D855B56C535 /* OnboardingLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = C7ABDE1F869500792816AF72 /* OnboardingLayout.swift */; };
 		6BE0ED40E9BBE330AE30556D /* ComposableArchitecture in Frameworks */ = {isa = PBXBuildFile; productRef = E34B6B4CD3FFA24A82AA97ED /* ComposableArchitecture */; };
+		7215422C36DCB684CF032594 /* CalendarYearView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8030F59AC5C6C3D0782DC89 /* CalendarYearView.swift */; };
 		768753B77A0E07A705B892F9 /* ProfessionalContextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0B6FD470F322B5A59DD7E00 /* ProfessionalContextView.swift */; };
 		7C13CC4BABF0121CDDA43C94 /* SplashView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 94278F98041D7E509F99939B /* SplashView.swift */; };
 		7D383F183C5E202BD1376605 /* Raleway-ExtraLightItalic.ttf in Resources */ = {isa = PBXBuildFile; fileRef = BB56C4D402DE76F749F5763C /* Raleway-ExtraLightItalic.ttf */; };
@@ -67,13 +74,17 @@
 		814DE68D6BDA1378A8D0E58C /* GlassDateButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6C462B9D1B01812BDB61714 /* GlassDateButton.swift */; };
 		826BEB12143C0751CD9B015F /* ShieldCheckIcon.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA6B79551465ACB3BDCA4C84 /* ShieldCheckIcon.swift */; };
 		87ED257C99FAA875969FEBE5 /* KeychainClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 226DF4A873C9600CC4F0B40D /* KeychainClient.swift */; };
+		884846A0471306F8D8063293 /* CalendarDayDetail.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67C8B598D2EF4F1218DF3C1C /* CalendarDayDetail.swift */; };
 		8886C73FA1452FEEA91322D0 /* PlacesClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C380CB9877F9EFBE8833FE6 /* PlacesClient.swift */; };
 		8B066E6992294CE37D004E7F /* CalendarFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F6B49711D3438DDFA91BAC5 /* CalendarFeature.swift */; };
 		8B258C02527F961E9F92D674 /* DailySelfReport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D235D9C76A26B122F55AFC7 /* DailySelfReport.swift */; };
 		8E65A945BC5E33B5394380E5 /* OnboardingRecapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C5173191F10BFB448ECF0C0 /* OnboardingRecapView.swift */; };
+		92F66262C3AA9D994D79D113 /* DailyCardMockData.swift in Sources */ = {isa = PBXBuildFile; fileRef = DF7BD20309B8691A8D1FB06E /* DailyCardMockData.swift */; };
+		93171D057A5C6A89B853B4F3 /* MoodArcFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = F20A3CE89B891747B164731C /* MoodArcFeature.swift */; };
 		9837F5D0FF85D8DD9A02B809 /* MenstrualClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D89356D7973CB8DFCC1A367 /* MenstrualClient.swift */; };
 		986DC0F5842157CD9402EE82 /* Raleway-Light.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 8706093A21A56ECBA0441334 /* Raleway-Light.ttf */; };
 		997031E520EBD700B61BCB14 /* Raleway-SemiBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = BA263FB218AF9228CF648E42 /* Raleway-SemiBold.ttf */; };
+		999CF4AFDCC8015DFDBB5439 /* CardStackFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA3DA29117E0B7B54191D57F /* CardStackFeature.swift */; };
 		9ADDE8EC93ED1B7A5DAFE612 /* NotificationPermissionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4D7237BEF2EC278AF39D03A /* NotificationPermissionView.swift */; };
 		9FD0403E0B238EFA24698733 /* SplineRuntime in Frameworks */ = {isa = PBXBuildFile; productRef = F2FDA67AF0C0C40263975CB9 /* SplineRuntime */; };
 		A149833A49EC9A7B165FE036 /* LiquidGlassModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 21F7C0B5678F3BB91C0D896A /* LiquidGlassModifier.swift */; };
@@ -88,9 +99,11 @@
 		AF5B9E7CE72C64BD80503E85 /* FirebaseCore in Frameworks */ = {isa = PBXBuildFile; productRef = 5E8E21D90A3FDA1726F30A93 /* FirebaseCore */; };
 		B0EE90F774BC99BB010198D3 /* PlacesAutocompleteTextField.swift in Sources */ = {isa = PBXBuildFile; fileRef = C204165EA2C9AECC39428586 /* PlacesAutocompleteTextField.swift */; };
 		B13F6E8CA76E6FA3755D9677 /* Raleway-ThinItalic.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 2F0D454B86650384C3709981 /* Raleway-ThinItalic.ttf */; };
+		B224E12C6ABB07914CE60F82 /* CalendarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E11CC02F06A23385C8E3602 /* CalendarView.swift */; };
 		B23822CF0AEC66D9A5A6F2D9 /* Raleway-LightItalic.ttf in Resources */ = {isa = PBXBuildFile; fileRef = FC20EA8D8D952D23A5847DDB /* Raleway-LightItalic.ttf */; };
 		B3C842534218672CCDC49B93 /* Endpoint.swift in Sources */ = {isa = PBXBuildFile; fileRef = 32C504F11889B24005F6A29C /* Endpoint.swift */; };
 		B51ED6F3C6525B10A6232474 /* GradientTagline.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0BC45BF7323F201338BFDA2E /* GradientTagline.swift */; };
+		B6F50DB4F0688FEBD7527589 /* CalendarMonthGrid.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2567F14009FEA37D5BBA815C /* CalendarMonthGrid.swift */; };
 		B716F459D680CEFDAE2F34C3 /* PrivacyConsentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0132B1F82A5F0287717FAF61 /* PrivacyConsentView.swift */; };
 		B88E58916279AE19E01D97C0 /* CycleSelectionSheets.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6425D254C1E1D5DCE2F328D6 /* CycleSelectionSheets.swift */; };
 		B8E2E6278B7F953E10E6EDE5 /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5D52170A5CA66317D773334 /* OnboardingView.swift */; };
@@ -99,9 +112,11 @@
 		BF2C740D0AB78C44011546CE /* ConsentCheckbox.swift in Sources */ = {isa = PBXBuildFile; fileRef = F7090C01E475E70BB3540924 /* ConsentCheckbox.swift */; };
 		C0FAC6A47DB3BC8E9DCC2656 /* GoogleSignIn in Frameworks */ = {isa = PBXBuildFile; productRef = 77A11505535D2C5D6A7CA105 /* GoogleSignIn */; };
 		C108129BF646802352F8B8E6 /* Logger.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01D3B37256BD926AA7EFCBC2 /* Logger.swift */; };
+		C14A64317E611C4790213551 /* CycleRingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 047CCAFD0E4BADAC49BE42AB /* CycleRingView.swift */; };
 		C14D38E7246D896515FCACF5 /* Raleway-BlackItalic.ttf in Resources */ = {isa = PBXBuildFile; fileRef = FCE9EEEE1356254E0537A9D8 /* Raleway-BlackItalic.ttf */; };
 		C31DA902B29C34AA3067ED18 /* OnboardingProgressBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5D3B77B6EF5F17F3E47EB83 /* OnboardingProgressBar.swift */; };
 		C7329B926A9B9FD03A252A18 /* EditPeriodFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 811FF511C8D318DF36018D2F /* EditPeriodFeature.swift */; };
+		CB72D85BADD89C68383AA4D3 /* CycleHeroView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81871A937E68353940DAD1C1 /* CycleHeroView.swift */; };
 		CE9E648A7DA44A10262A06B3 /* InsightCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = C42B971D9DFEDD03E5242413 /* InsightCard.swift */; };
 		CFA7F64C375F4333037CB6F0 /* NameInputView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5758D419558EBCD03AB48E87 /* NameInputView.swift */; };
 		D1CF7852379A9A2B365FCE80 /* User.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2DF4BFD7D70E092655588F9 /* User.swift */; };
@@ -121,6 +136,8 @@
 		F38C3DB0B0EB1DE32EE83688 /* Raleway-BoldItalic.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 0DDA4D46AFEF6322A76391AA /* Raleway-BoldItalic.ttf */; };
 		F553D5D7D1563E6D5DC62F51 /* ConsentPrivacy.json in Resources */ = {isa = PBXBuildFile; fileRef = 929A3B534A8BCD8044EA93C4 /* ConsentPrivacy.json */; };
 		F5EA81C29EE997219835D532 /* CelestialCycleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 91D49DDC5F4C3DAE7EF32645 /* CelestialCycleView.swift */; };
+		F6EE431810A1618291C3FF85 /* CycleInsightsFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA3B9C4C5B8CCFEC092F2EEE /* CycleInsightsFeature.swift */; };
+		F796B28C6F0B4EDD0F77BCA7 /* CalendarAriaInsight.swift in Sources */ = {isa = PBXBuildFile; fileRef = E234B15081BB567827B75E0E /* CalendarAriaInsight.swift */; };
 		F87DFD52B294C919139429EA /* AuthenticationFeatureTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A6E83503725369D0FB426A7 /* AuthenticationFeatureTests.swift */; };
 		FD106B325B0DCD2350FCE058 /* Raleway-Black.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 4DAC1FA0A5CD5600CE6E4376 /* Raleway-Black.ttf */; };
 		FDA70E485455D6E26478316E /* FirebaseAuthClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14C000015325FD70E13B1A80 /* FirebaseAuthClient.swift */; };
@@ -141,6 +158,8 @@
 /* Begin PBXFileReference section */
 		0132B1F82A5F0287717FAF61 /* PrivacyConsentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivacyConsentView.swift; sourceTree = "<group>"; };
 		01D3B37256BD926AA7EFCBC2 /* Logger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Logger.swift; sourceTree = "<group>"; };
+		047CCAFD0E4BADAC49BE42AB /* CycleRingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CycleRingView.swift; sourceTree = "<group>"; };
+		05C1863ED7A02D2799907F02 /* DailyCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyCard.swift; sourceTree = "<group>"; };
 		07E99F716BD6967D5C05C8A5 /* CycleApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CycleApp.swift; sourceTree = "<group>"; };
 		0AD75AABB9CE6FF41B8116AE /* Async+Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Async+Extensions.swift"; sourceTree = "<group>"; };
 		0BC45BF7323F201338BFDA2E /* GradientTagline.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GradientTagline.swift; sourceTree = "<group>"; };
@@ -154,8 +173,10 @@
 		14C000015325FD70E13B1A80 /* FirebaseAuthClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirebaseAuthClient.swift; sourceTree = "<group>"; };
 		15E5BBC3280206FB17B4DB65 /* AppFeatureTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppFeatureTests.swift; sourceTree = "<group>"; };
 		1D89356D7973CB8DFCC1A367 /* MenstrualClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenstrualClient.swift; sourceTree = "<group>"; };
+		1E11CC02F06A23385C8E3602 /* CalendarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarView.swift; sourceTree = "<group>"; };
 		21F7C0B5678F3BB91C0D896A /* LiquidGlassModifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiquidGlassModifier.swift; sourceTree = "<group>"; };
 		226DF4A873C9600CC4F0B40D /* KeychainClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainClient.swift; sourceTree = "<group>"; };
+		2567F14009FEA37D5BBA815C /* CalendarMonthGrid.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarMonthGrid.swift; sourceTree = "<group>"; };
 		2C384BB38218230424E77203 /* TodayFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayFeature.swift; sourceTree = "<group>"; };
 		2F0D454B86650384C3709981 /* Raleway-ThinItalic.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Raleway-ThinItalic.ttf"; sourceTree = "<group>"; };
 		2F1FB9070681EFDD7982FF5C /* GlassButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassButton.swift; sourceTree = "<group>"; };
@@ -174,15 +195,18 @@
 		4F9C55BFC287E7193D934779 /* HomeFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeFeature.swift; sourceTree = "<group>"; };
 		51194E26B3A815CB07BF5B59 /* SeparatedIcon.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SeparatedIcon.swift; sourceTree = "<group>"; };
 		5758D419558EBCD03AB48E87 /* NameInputView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NameInputView.swift; sourceTree = "<group>"; };
+		5886220E666CF879F28AA495 /* CalendarSymptomSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarSymptomSheet.swift; sourceTree = "<group>"; };
 		59E566E6F4EDE756B873427D /* MenstrualEndpoints.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenstrualEndpoints.swift; sourceTree = "<group>"; };
 		5A599EEAB5931BAEBC4207E9 /* Raleway-MediumItalic.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Raleway-MediumItalic.ttf"; sourceTree = "<group>"; };
 		5EC4B5B5DEB0E25A730E4507 /* HealthKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = HealthKit.framework; path = System/Library/Frameworks/HealthKit.framework; sourceTree = SDKROOT; };
+		5ED03F559F4A2F374AF86A5C /* glowing_orb.riv */ = {isa = PBXFileReference; lastKnownFileType = file; path = glowing_orb.riv; sourceTree = "<group>"; };
 		5EE4DCC03D0379B6682B40F6 /* OnboardingEndpoints.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingEndpoints.swift; sourceTree = "<group>"; };
 		5F90D69A90239DFEC866C703 /* CycleApp.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = CycleApp.entitlements; sourceTree = "<group>"; };
 		60A69777B121E02CCD9ED6FD /* ModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelTests.swift; sourceTree = "<group>"; };
 		6245417E8CDA74DC974841F8 /* Raleway-ExtraLight.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Raleway-ExtraLight.ttf"; sourceTree = "<group>"; };
 		6425D254C1E1D5DCE2F328D6 /* CycleSelectionSheets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CycleSelectionSheets.swift; sourceTree = "<group>"; };
 		6512D0891C474022446C2D98 /* ValidationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ValidationTests.swift; sourceTree = "<group>"; };
+		67C8B598D2EF4F1218DF3C1C /* CalendarDayDetail.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarDayDetail.swift; sourceTree = "<group>"; };
 		6A6E83503725369D0FB426A7 /* AuthenticationFeatureTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthenticationFeatureTests.swift; sourceTree = "<group>"; };
 		6BFE864C0E5835D700F0162D /* CyclePhaseBanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CyclePhaseBanner.swift; sourceTree = "<group>"; };
 		6E46C1A98E8B3B20BE1C7EAB /* CycleModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CycleModels.swift; sourceTree = "<group>"; };
@@ -191,6 +215,8 @@
 		79A0533D66600EF003BDFC79 /* Raleway-Thin.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Raleway-Thin.ttf"; sourceTree = "<group>"; };
 		7F9895D88CABF51577D545ED /* HBIDashboard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HBIDashboard.swift; sourceTree = "<group>"; };
 		811FF511C8D318DF36018D2F /* EditPeriodFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditPeriodFeature.swift; sourceTree = "<group>"; };
+		81871A937E68353940DAD1C1 /* CycleHeroView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CycleHeroView.swift; sourceTree = "<group>"; };
+		8192A637D07F3E16EAD1DB59 /* MiniCycleCalendar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MiniCycleCalendar.swift; sourceTree = "<group>"; };
 		823B14CA893AB18E490B49AD /* Date+Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Date+Extensions.swift"; sourceTree = "<group>"; };
 		8706093A21A56ECBA0441334 /* Raleway-Light.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Raleway-Light.ttf"; sourceTree = "<group>"; };
 		88BF907DFB59809FEF766AE8 /* OnboardingHeader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingHeader.swift; sourceTree = "<group>"; };
@@ -215,6 +241,7 @@
 		A92A0FCA4E1CB208FC65AEBE /* MenstrualStatus.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenstrualStatus.swift; sourceTree = "<group>"; };
 		A9E0CB1A41EEE4B3EBBA478F /* OnboardingClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingClient.swift; sourceTree = "<group>"; };
 		AA1D8BDCDF2263B793576D8E /* DailyCheckInFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyCheckInFeature.swift; sourceTree = "<group>"; };
+		AA3DA29117E0B7B54191D57F /* CardStackFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardStackFeature.swift; sourceTree = "<group>"; };
 		AAE2E54DEE19A7F71CEE3E72 /* Raleway-Italic.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Raleway-Italic.ttf"; sourceTree = "<group>"; };
 		AC21FE2951F51FFA372CB45A /* LifestyleRhythmView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LifestyleRhythmView.swift; sourceTree = "<group>"; };
 		B25F0848D5EE9FBB722FBAD6 /* CycleDataView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CycleDataView.swift; sourceTree = "<group>"; };
@@ -232,11 +259,14 @@
 		C42B971D9DFEDD03E5242413 /* InsightCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InsightCard.swift; sourceTree = "<group>"; };
 		C583F02AC2453EA8B7C971D2 /* ConsentAnimation.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = ConsentAnimation.json; sourceTree = "<group>"; };
 		C7ABDE1F869500792816AF72 /* OnboardingLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingLayout.swift; sourceTree = "<group>"; };
+		C8030F59AC5C6C3D0782DC89 /* CalendarYearView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarYearView.swift; sourceTree = "<group>"; };
 		CA84224FE7398C7FF08D5BB5 /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		CDEDFC948F9CDB715FAABF68 /* APIResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIResponse.swift; sourceTree = "<group>"; };
 		CF7B0C6DF47843E7CD58CEDB /* String+Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "String+Extensions.swift"; sourceTree = "<group>"; };
 		D6C462B9D1B01812BDB61714 /* GlassDateButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassDateButton.swift; sourceTree = "<group>"; };
+		DF7BD20309B8691A8D1FB06E /* DailyCardMockData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyCardMockData.swift; sourceTree = "<group>"; };
 		E1D75A3020910AA2ED96FB84 /* CycleDataComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CycleDataComponents.swift; sourceTree = "<group>"; };
+		E234B15081BB567827B75E0E /* CalendarAriaInsight.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarAriaInsight.swift; sourceTree = "<group>"; };
 		E438E6CA574859596F3B8702 /* CycleContext.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CycleContext.swift; sourceTree = "<group>"; };
 		E6443B1A872FD8D9CA385C44 /* GlassTextField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassTextField.swift; sourceTree = "<group>"; };
 		E687F11BA153A2DF683BD9B0 /* logo_animation.splineswift */ = {isa = PBXFileReference; lastKnownFileType = file; path = logo_animation.splineswift; sourceTree = "<group>"; };
@@ -245,11 +275,14 @@
 		EB87033FEE8193BBE8B3067D /* HBIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HBIClient.swift; sourceTree = "<group>"; };
 		F00316DAE6809EF9B087B33C /* PersonalGoalsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersonalGoalsView.swift; sourceTree = "<group>"; };
 		F1DAD850510FF8EEF911D87D /* GlassLogoCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassLogoCard.swift; sourceTree = "<group>"; };
+		F20A3CE89B891747B164731C /* MoodArcFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MoodArcFeature.swift; sourceTree = "<group>"; };
 		F2D301EC66D02408A5DE9371 /* AppFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppFeature.swift; sourceTree = "<group>"; };
 		F2DF4BFD7D70E092655588F9 /* User.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = User.swift; sourceTree = "<group>"; };
 		F7090C01E475E70BB3540924 /* ConsentCheckbox.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConsentCheckbox.swift; sourceTree = "<group>"; };
 		F78183272EA1538F9B855ED3 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		F8AAA5EAA0B0713C6D0F9CAC /* ProfileFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileFeature.swift; sourceTree = "<group>"; };
 		F8E62ACB6092862D952F78FB /* GlassSelectionCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassSelectionCard.swift; sourceTree = "<group>"; };
+		FA3B9C4C5B8CCFEC092F2EEE /* CycleInsightsFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CycleInsightsFeature.swift; sourceTree = "<group>"; };
 		FA6B79551465ACB3BDCA4C84 /* ShieldCheckIcon.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShieldCheckIcon.swift; sourceTree = "<group>"; };
 		FC20EA8D8D952D23A5847DDB /* Raleway-LightItalic.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Raleway-LightItalic.ttf"; sourceTree = "<group>"; };
 		FCE9EEEE1356254E0537A9D8 /* Raleway-BlackItalic.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Raleway-BlackItalic.ttf"; sourceTree = "<group>"; };
@@ -270,6 +303,7 @@
 				AF5B9E7CE72C64BD80503E85 /* FirebaseCore in Frameworks */,
 				A43322E63A3F77CD56E26125 /* FirebaseAuth in Frameworks */,
 				C0FAC6A47DB3BC8E9DCC2656 /* GoogleSignIn in Frameworks */,
+				61DB977864F95905E746D522 /* RiveRuntime in Frameworks */,
 				29BFDA19B6329572F624B629 /* HealthKit.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -343,6 +377,8 @@
 			isa = PBXGroup;
 			children = (
 				CDEDFC948F9CDB715FAABF68 /* APIResponse.swift */,
+				05C1863ED7A02D2799907F02 /* DailyCard.swift */,
+				DF7BD20309B8691A8D1FB06E /* DailyCardMockData.swift */,
 				0D235D9C76A26B122F55AFC7 /* DailySelfReport.swift */,
 				7F9895D88CABF51577D545ED /* HBIDashboard.swift */,
 				B2940CF932F7370E57C35B79 /* HBIScore.swift */,
@@ -371,6 +407,7 @@
 				B38AB06E18B5A4632AE2761A /* Assets.xcassets */,
 				929A3B534A8BCD8044EA93C4 /* ConsentPrivacy.json */,
 				5F90D69A90239DFEC866C703 /* CycleApp.entitlements */,
+				5ED03F559F4A2F374AF86A5C /* glowing_orb.riv */,
 				CA84224FE7398C7FF08D5BB5 /* GoogleService-Info.plist */,
 				F78183272EA1538F9B855ED3 /* Info.plist */,
 				E687F11BA153A2DF683BD9B0 /* logo_animation.splineswift */,
@@ -472,7 +509,9 @@
 			children = (
 				91D49DDC5F4C3DAE7EF32645 /* CelestialCycleView.swift */,
 				F7090C01E475E70BB3540924 /* ConsentCheckbox.swift */,
+				81871A937E68353940DAD1C1 /* CycleHeroView.swift */,
 				6BFE864C0E5835D700F0162D /* CyclePhaseBanner.swift */,
+				047CCAFD0E4BADAC49BE42AB /* CycleRingView.swift */,
 				2F1FB9070681EFDD7982FF5C /* GlassButton.swift */,
 				D6C462B9D1B01812BDB61714 /* GlassDateButton.swift */,
 				768AB686BAC4D9AE276C0E0F /* GlassDatePicker.swift */,
@@ -483,6 +522,7 @@
 				0BC45BF7323F201338BFDA2E /* GradientTagline.swift */,
 				0C5722C7E3AC41AE065FC9F2 /* HBIScoreRing.swift */,
 				C42B971D9DFEDD03E5242413 /* InsightCard.swift */,
+				8192A637D07F3E16EAD1DB59 /* MiniCycleCalendar.swift */,
 				88BF907DFB59809FEF766AE8 /* OnboardingHeader.swift */,
 				C7ABDE1F869500792816AF72 /* OnboardingLayout.swift */,
 				B5D3B77B6EF5F17F3E47EB83 /* OnboardingProgressBar.swift */,
@@ -521,10 +561,20 @@
 		D12F12B53142B04A149A7790 /* Home */ = {
 			isa = PBXGroup;
 			children = (
+				E234B15081BB567827B75E0E /* CalendarAriaInsight.swift */,
+				67C8B598D2EF4F1218DF3C1C /* CalendarDayDetail.swift */,
 				2F6B49711D3438DDFA91BAC5 /* CalendarFeature.swift */,
+				2567F14009FEA37D5BBA815C /* CalendarMonthGrid.swift */,
+				5886220E666CF879F28AA495 /* CalendarSymptomSheet.swift */,
+				1E11CC02F06A23385C8E3602 /* CalendarView.swift */,
+				C8030F59AC5C6C3D0782DC89 /* CalendarYearView.swift */,
+				AA3DA29117E0B7B54191D57F /* CardStackFeature.swift */,
+				FA3B9C4C5B8CCFEC092F2EEE /* CycleInsightsFeature.swift */,
 				AA1D8BDCDF2263B793576D8E /* DailyCheckInFeature.swift */,
 				811FF511C8D318DF36018D2F /* EditPeriodFeature.swift */,
 				4F9C55BFC287E7193D934779 /* HomeFeature.swift */,
+				F20A3CE89B891747B164731C /* MoodArcFeature.swift */,
+				F8AAA5EAA0B0713C6D0F9CAC /* ProfileFeature.swift */,
 				2C384BB38218230424E77203 /* TodayFeature.swift */,
 			);
 			path = Home;
@@ -608,6 +658,7 @@
 				5E8E21D90A3FDA1726F30A93 /* FirebaseCore */,
 				938F0B2B18B03B53B9C09B23 /* FirebaseAuth */,
 				77A11505535D2C5D6A7CA105 /* GoogleSignIn */,
+				A0A2915D84F6987528AD86D8 /* RiveRuntime */,
 			);
 			productName = CycleApp;
 			productReference = 3D613DF8875F1A90F07C4F34 /* CycleApp.app */;
@@ -656,6 +707,7 @@
 				E085DF906B109A73B0675083 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */,
 				88D30CDFB61380622FD7BC35 /* XCRemoteSwiftPackageReference "Inject" */,
 				59CEE840D7BD982E75452307 /* XCRemoteSwiftPackageReference "lottie-ios" */,
+				2436AFF13878CADA308A282A /* XCRemoteSwiftPackageReference "rive-ios" */,
 				AEF383D9F05536120F2B291B /* XCRemoteSwiftPackageReference "spline-ios" */,
 				FDE4EA748176C63BCCDC26BB /* XCRemoteSwiftPackageReference "swift-tagged" */,
 			);
@@ -695,6 +747,7 @@
 				1D2E82BBC7F411B0F4F26009 /* Raleway-SemiBoldItalic.ttf in Resources */,
 				2EBDD7F0BE4053F0A291E917 /* Raleway-Thin.ttf in Resources */,
 				B13F6E8CA76E6FA3755D9677 /* Raleway-ThinItalic.ttf in Resources */,
+				30B8F1F1D1487A0E406A4973 /* glowing_orb.riv in Resources */,
 				5B928A4A69F761CC8DAE2EBB /* logo_animation.splineswift in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -714,7 +767,14 @@
 				DBA7ED5F00F27DDC82A5770B /* AuthChoiceView.swift in Sources */,
 				2F9139B5B4BC95E76905B0AB /* AuthenticationFeature.swift in Sources */,
 				04FCF9C17DCAE18F21511B08 /* BirthDataView.swift in Sources */,
+				F796B28C6F0B4EDD0F77BCA7 /* CalendarAriaInsight.swift in Sources */,
+				884846A0471306F8D8063293 /* CalendarDayDetail.swift in Sources */,
 				8B066E6992294CE37D004E7F /* CalendarFeature.swift in Sources */,
+				B6F50DB4F0688FEBD7527589 /* CalendarMonthGrid.swift in Sources */,
+				42BCE80B18AF903A1B03EC79 /* CalendarSymptomSheet.swift in Sources */,
+				B224E12C6ABB07914CE60F82 /* CalendarView.swift in Sources */,
+				7215422C36DCB684CF032594 /* CalendarYearView.swift in Sources */,
+				999CF4AFDCC8015DFDBB5439 /* CardStackFeature.swift in Sources */,
 				F5EA81C29EE997219835D532 /* CelestialCycleView.swift in Sources */,
 				A5C69FB1F58AF2B763AF934F /* Collection+Extensions.swift in Sources */,
 				BF2C740D0AB78C44011546CE /* ConsentCheckbox.swift in Sources */,
@@ -723,9 +783,14 @@
 				54524DDB714E01B0A7CF3A8F /* CycleContext.swift in Sources */,
 				A596B878E800DB62DEB87F52 /* CycleDataComponents.swift in Sources */,
 				A407562C236BB09CD92434A9 /* CycleDataView.swift in Sources */,
+				CB72D85BADD89C68383AA4D3 /* CycleHeroView.swift in Sources */,
+				F6EE431810A1618291C3FF85 /* CycleInsightsFeature.swift in Sources */,
 				EC48873774AE0069D16F2105 /* CycleModels.swift in Sources */,
 				E6BF09B7234590FB170F524C /* CyclePhaseBanner.swift in Sources */,
+				C14A64317E611C4790213551 /* CycleRingView.swift in Sources */,
 				B88E58916279AE19E01D97C0 /* CycleSelectionSheets.swift in Sources */,
+				4AC9FED42E81A3B2D054901F /* DailyCard.swift in Sources */,
+				92F66262C3AA9D994D79D113 /* DailyCardMockData.swift in Sources */,
 				51F71B48CBEB89F28CD13E3F /* DailyCheckInFeature.swift in Sources */,
 				8B258C02527F961E9F92D674 /* DailySelfReport.swift in Sources */,
 				A22AE1F3C3632E9BF6143065 /* Date+Extensions.swift in Sources */,
@@ -759,6 +824,8 @@
 				9837F5D0FF85D8DD9A02B809 /* MenstrualClient.swift in Sources */,
 				80D264A34DCB989B208ADB33 /* MenstrualEndpoints.swift in Sources */,
 				D429B0E602D541E0E38E2104 /* MenstrualStatus.swift in Sources */,
+				14ADF9898AA0738A9FA1478E /* MiniCycleCalendar.swift in Sources */,
+				93171D057A5C6A89B853B4F3 /* MoodArcFeature.swift in Sources */,
 				4F4452D7D81A585BA930DDE4 /* NameGreetingView.swift in Sources */,
 				CFA7F64C375F4333037CB6F0 /* NameInputView.swift in Sources */,
 				9ADDE8EC93ED1B7A5DAFE612 /* NotificationPermissionView.swift in Sources */,
@@ -776,6 +843,7 @@
 				8886C73FA1452FEEA91322D0 /* PlacesClient.swift in Sources */,
 				B716F459D680CEFDAE2F34C3 /* PrivacyConsentView.swift in Sources */,
 				768753B77A0E07A705B892F9 /* ProfessionalContextView.swift in Sources */,
+				35B2D545B4CAF74233A118FF /* ProfileFeature.swift in Sources */,
 				49B07A298102453EC330BB35 /* RelationshipStatusView.swift in Sources */,
 				2792D4F69FFD2F4D6ECA8EBE /* SeparatedIcon.swift in Sources */,
 				1C1F2D5EC587BDF0B7346E84 /* Session.swift in Sources */,
@@ -1068,6 +1136,14 @@
 				minimumVersion = 1.17.0;
 			};
 		};
+		2436AFF13878CADA308A282A /* XCRemoteSwiftPackageReference "rive-ios" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/rive-app/rive-ios";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 6.0.0;
+			};
+		};
 		59CEE840D7BD982E75452307 /* XCRemoteSwiftPackageReference "lottie-ios" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/airbnb/lottie-ios";
@@ -1135,6 +1211,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 004806646DABC957A9152925 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
 			productName = FirebaseAuth;
+		};
+		A0A2915D84F6987528AD86D8 /* RiveRuntime */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 2436AFF13878CADA308A282A /* XCRemoteSwiftPackageReference "rive-ios" */;
+			productName = RiveRuntime;
 		};
 		E34B6B4CD3FFA24A82AA97ED /* ComposableArchitecture */ = {
 			isa = XCSwiftPackageProductDependency;

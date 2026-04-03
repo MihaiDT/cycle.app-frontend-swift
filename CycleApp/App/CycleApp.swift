@@ -20,7 +20,15 @@ class AppDelegate: NSObject, UIApplicationDelegate {
 struct CycleApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var delegate
 
+    // 0xFDFCF7 = DesignColors.background (Ivory Whisper)
+    private static let ivoryBackground = UIColor(
+        red: 0xFD / 255.0, green: 0xFC / 255.0, blue: 0xF7 / 255.0, alpha: 1
+    )
+
     init() {
+        // Match window background to app background (prevents white in safe areas)
+        UIWindow.appearance().backgroundColor = Self.ivoryBackground
+
         // Load InjectionIII bundle for hot reload
         #if DEBUG
             Bundle(path: "/Applications/InjectionIII.app/Contents/Resources/iOSInjection.bundle")?.load()

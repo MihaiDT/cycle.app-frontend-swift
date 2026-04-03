@@ -63,6 +63,11 @@ public struct CelestialCycleView: View {
 
     /// Phase for center text — menstrual ONLY from server periodDays.
     private var displayPhase: CyclePhase {
+        // When period is late and not dragging, use menstrual for late-window dates
+        if cycle.isLate && exploringDay == nil {
+            if calendarDate == nil { return .menstrual }
+            if let lateness = exploredLateness, lateness >= 0 { return .menstrual }
+        }
         if let day = exploringDay {
             return cycle.phase(forCycleDay: day)
         }
@@ -92,17 +97,15 @@ public struct CelestialCycleView: View {
         return cycle.periodBlockDay(for: effectiveDate)
     }
 
-    /// Whether we're looking at a future cycle (offset > 0).
-    private var isEstimatedDate: Bool {
-        guard let date = calendarDate else { return false }
-        return (cycle.cycleDayInfo(for: date)?.offset ?? 0) > 0
-    }
-
+    /// Whether the displayed state is "period overdue" (hides day pill).
     private var isOverdue: Bool {
-        exploringDay == nil && calendarDate == nil && todayCycleDay > cycle.cycleLength
+        guard cycle.isLate, exploringDay == nil else { return false }
+        if let cd = calendarDate {
+            guard let lateness = cycle.lateness(for: cd) else { return false }
+            return lateness >= 0
+        }
+        return true
     }
-
-    private var overdueDays: Int { todayCycleDay - cycle.cycleLength }
 
     private var isExploring: Bool {
         isDragging || exploringDay != nil || calendarDate != nil
@@ -111,11 +114,75 @@ public struct CelestialCycleView: View {
     // MARK: - Ring Position
 
     /// The cycle day that positions the orb on the ring.
-    /// For estimated dates: uses the effective cycle day within that future cycle.
-    /// For overdue: capped at cycleLength.
+    /// For overdue: pinned at cycleLength (end of ring).
     private var ringDay: Int {
         if let day = exploringDay { return day }
-        return min(effectiveCycleDay, cycle.cycleLength)
+        if cycle.isLate {
+            if calendarDate == nil { return cycle.effectiveCycleLength }
+            if let lateness = exploredLateness, lateness >= 0 { return cycle.effectiveCycleLength }
+        }
+        return min(effectiveCycleDay, cycle.effectiveCycleLength)
+    }
+
+    /// Pre-computed ring arcs from ACTUAL server data for each day of the cycle.
+    /// Groups consecutive days with the same phase into arc segments for efficient Canvas drawing.
+    /// This replaces all formula-based phase ranges (CyclePhase.dayRange).
+    private var ringArcs: [RingArc] {
+        // When period is late (current cycle), show a fully grey ring — phases are unknown
+        if cycle.isLate {
+            return [RingArc(startDay: 1, endDay: max(cycle.effectiveCycleLength, 1), phase: .luteal, isPredicted: false, isLate: true)]
+        }
+
+        let cal = Calendar.current
+        let today = cal.startOfDay(for: Date())
+        var arcs: [RingArc] = []
+
+        for day in 1...max(cycle.effectiveCycleLength, 1) {
+            // Convert cycle day → real date → look up server data
+            let date = cal.date(byAdding: .day, value: day - cycle.cycleDay, to: today)!
+            let key = cycle.dateKey(for: date)
+
+            // Determine phase from server data
+            let phase: CyclePhase
+            let isPredicted: Bool
+            let isFertile = cycle.fertileDays[key] != nil
+            let isOvulation = cycle.ovulationDays.contains(key)
+            let inPeriod = cycle.periodDays.contains(key)
+            let inPredicted = cycle.predictedDays.contains(key)
+
+            if inPeriod && !(cycle.isLate && inPredicted) {
+                // Show menstrual arc only for confirmed periods,
+                // or predicted periods that are NOT late/overdue.
+                phase = .menstrual
+                isPredicted = inPredicted
+            } else if cycle.isLate && inPredicted {
+                // Overdue predicted period — still show as menstrual with dashed styling
+                phase = .menstrual
+                isPredicted = true
+            } else if isOvulation || isFertile {
+                phase = .ovulatory
+                isPredicted = false
+            } else {
+                // Fallback: use position-based phase for non-period, non-fertile days
+                phase = cycle.phase(forCycleDay: day)
+                isPredicted = false
+            }
+
+            // Extend last arc if same phase and prediction status
+            if let last = arcs.last, last.phase == phase, last.isPredicted == isPredicted {
+                arcs[arcs.count - 1] = RingArc(
+                    startDay: last.startDay, endDay: day,
+                    phase: last.phase, isPredicted: isPredicted
+                )
+            } else {
+                arcs.append(RingArc(
+                    startDay: day, endDay: day,
+                    phase: phase, isPredicted: isPredicted
+                ))
+            }
+        }
+
+        return arcs
     }
 
     // MARK: - Collapse
@@ -125,34 +192,73 @@ public struct CelestialCycleView: View {
 
     // MARK: - Center Text
 
-    private var isEstimatedContext: Bool {
-        exploringDay != nil || isEstimatedDate
+    private var isExploringDay: Bool {
+        exploringDay != nil
+    }
+
+    /// Whether the effective date is a predicted-only period day (not confirmed by user)
+    private var isPredictedPeriod: Bool {
+        cycle.isPredictedOnly(effectiveDate)
+    }
+
+    /// How late the explored date is relative to expected period.
+    private var exploredLateness: Int? {
+        cycle.lateness(for: effectiveDate)
+    }
+
+    /// Days until fertile window starts from the effective date.
+    private var daysUntilFertileWindow: Int? {
+        guard let fwStart = cycle.fertileWindowStart else { return nil }
+        let cal = Calendar.current
+        let from = cal.startOfDay(for: effectiveDate)
+        let to = cal.startOfDay(for: fwStart)
+        guard let days = cal.dateComponents([.day], from: from, to: to).day, days > 0 else { return nil }
+        return days
     }
 
     private var centerTitle: String {
+        // Late period: show context relative to expected period date
+        if cycle.isLate, let lateness = exploredLateness {
+            if lateness >= 0 { return "Period" }
+            if lateness == -1 { return "Period" }
+            // More than 1 day before expected: show normal phase
+        }
+
+        if displayPhase == .menstrual && isPredictedPeriod { return "Period" }
         if displayPhase == .menstrual { return "Period" }
-        if isOverdue { return "Period" }
+
         let days = daysUntilPeriod
-        if days <= 0 { return isEstimatedContext ? "Period expected" : "Period" }
-        if days == 1 { return "Period" }
+        if days <= 0 { return isExploringDay ? "Period expected" : "Period" }
         if days <= 7 { return "Period in" }
-        if displayPhase == .ovulatory && !isEstimatedDate { return "Fertile" }
-        return isEstimatedDate ? "Period in" : displayPhase.displayName
+        if displayPhase == .ovulatory { return "Fertile" }
+        if let fwDays = daysUntilFertileWindow, fwDays <= 10 { return "Fertile window" }
+        return displayPhase.displayName
     }
 
     private var centerSubtitle: String {
+        // Late period: show lateness relative to expected period date
+        if cycle.isLate, let lateness = exploredLateness {
+            if lateness > 1 { return "\(lateness) days late" }
+            if lateness == 1 { return "1 day late" }
+            if lateness == 0 { return "expected today" }
+            if lateness == -1 { return "starts tomorrow" }
+            // More than 1 day before expected: fall through to normal
+        }
+
+        if displayPhase == .menstrual && isPredictedPeriod && calendarDate == nil && exploringDay == nil {
+            return "may start today"
+        }
         if displayPhase == .menstrual {
             return "Day \(periodDayFromServer ?? min(displayDay, cycle.cycleLength))"
         }
-        if isOverdue {
-            return overdueDays == 1 ? "1 day late" : "\(overdueDays) days late"
-        }
         let days = daysUntilPeriod
-        if days <= 0 { return isEstimatedContext ? "today" : "expected today" }
-        if days == 1 { return isEstimatedContext ? "starts tomorrow" : "may start\ntomorrow" }
+        if days <= 0 { return isExploringDay ? "today" : "expected today" }
+        if days == 1 { return "1 day" }
         if days <= 7 { return "\(days) days" }
-        if displayPhase == .ovulatory && !isEstimatedDate { return "Window" }
-        if isEstimatedDate { return "\(days) days" }
+        if displayPhase == .ovulatory { return "Window" }
+        if let fwDays = daysUntilFertileWindow, fwDays <= 10 {
+            return fwDays == 1 ? "in 1 day" : "in \(fwDays) days"
+        }
         return "Day \(displayDay)"
     }
 
@@ -168,7 +274,7 @@ public struct CelestialCycleView: View {
                 let current = exploringDay ?? todayCycleDay
                 switch direction {
                 case .increment:
-                    exploringDay = min(cycle.cycleLength, current + 1)
+                    exploringDay = min(cycle.effectiveCycleLength, current + 1)
                     haptic(.light)
                 case .decrement:
                     exploringDay = max(1, current - 1)
@@ -223,8 +329,8 @@ public struct CelestialCycleView: View {
                 // Orbit ring
                 CelestialOrbitCanvas(
                     displayDay: ringDay,
-                    cycleLength: cycle.cycleLength,
-                    bleedingDays: cycle.effectiveBleedingDays,
+                    cycleLength: cycle.effectiveCycleLength,
+                    arcs: ringArcs,
                     phase: displayPhase,
                     isDragging: isDragging,
                     reduceMotion: reduceMotion,
@@ -234,7 +340,7 @@ public struct CelestialCycleView: View {
                 .allowsHitTesting(false)
                 .overlay {
                     if !reduceMotion {
-                        CosmicParticleEmitter(displayDay: ringDay, cycleLength: cycle.cycleLength)
+                        CosmicParticleEmitter(displayDay: ringDay, cycleLength: cycle.effectiveCycleLength)
                             .frame(width: 340, height: 340)
                             .allowsHitTesting(false)
                             .opacity(1 - hideProgress)
@@ -334,8 +440,8 @@ public struct CelestialCycleView: View {
             .contentTransition(.numericText())
             .scaleEffect(counterScale)
 
-        // Day pill (hidden for estimated non-period dates)
-        if !isEstimatedDate || displayPhase == .menstrual {
+        // Day pill (hidden during late/overdue state)
+        if !isOverdue {
             let pillDay = periodDayFromServer ?? displayDay
             HStack(spacing: 6) {
                 Text("Day \(pillDay)")
@@ -352,24 +458,12 @@ public struct CelestialCycleView: View {
             .frame(height: (1 - collapse) * 16, alignment: .center)
             .clipped()
         }
-
-        // Estimated badge
-        if isEstimatedDate {
-            Text("Estimated")
-                .font(.custom("Raleway-Medium", size: 10))
-                .foregroundColor(DesignColors.textSecondary.opacity(0.6))
-                .padding(.horizontal, 8)
-                .padding(.vertical, 2)
-                .background { Capsule().fill(DesignColors.textSecondary.opacity(0.08)) }
-                .transition(.opacity.combined(with: .move(edge: .top)))
-                .opacity(1 - collapse)
-        }
     }
 
     // MARK: - Log Period Button
 
     private func logPeriodButton(_ action: @escaping (Date?) -> Void) -> some View {
-        let isOnPeriod = displayPhase == .menstrual
+        let isOnPeriod = cycle.isConfirmedPeriod(effectiveDate)
         return Button {
             action(calendarDate)
         } label: {
@@ -461,14 +555,14 @@ public struct CelestialCycleView: View {
         if delta > .pi { delta -= 2 * .pi }
         if delta < -.pi { delta += 2 * .pi }
 
-        let dayAngle = (2 * .pi) / Double(max(cycle.cycleLength, 1))
+        let dayAngle = (2 * .pi) / Double(max(cycle.effectiveCycleLength, 1))
         let daysMoved = Int((delta / dayAngle).rounded())
 
         if daysMoved != 0 {
             let step = daysMoved > 0 ? 1 : -1
             let current = exploringDay ?? todayCycleDay
             let newDay = current + step
-            guard newDay >= 1, newDay <= cycle.cycleLength else {
+            guard newDay >= 1, newDay <= cycle.effectiveCycleLength else {
                 lastDragAngle = angle
                 return
             }
@@ -502,7 +596,13 @@ public struct CelestialCycleView: View {
                     .transition(.scale.combined(with: .opacity))
                 }
             } else {
-                if let n = cycle.nextPeriodIn {
+                if cycle.isLate {
+                    pill(
+                        icon: "calendar",
+                        text: cycle.daysLate == 1 ? "1 day late" : "\(cycle.daysLate) days late",
+                        color: CyclePhase.menstrual.glowColor
+                    )
+                } else if let n = cycle.nextPeriodIn, n >= 0 {
                     pill(
                         icon: "calendar",
                         text: n == 0 ? "Period today" : "\(n)d until period",
@@ -574,7 +674,27 @@ public struct CelestialCycleView: View {
     private func dayForAngle(_ angle: Double) -> Int {
         let normalized = (angle + .pi / 2).truncatingRemainder(dividingBy: 2 * .pi)
         let positive = normalized < 0 ? normalized + 2 * .pi : normalized
-        return max(1, min(cycle.cycleLength, Int(positive / (2 * .pi) * Double(cycle.cycleLength)) + 1))
+        return max(1, min(cycle.effectiveCycleLength, Int(positive / (2 * .pi) * Double(cycle.effectiveCycleLength)) + 1))
+    }
+}
+
+// MARK: - Ring Arc (server data → ring segment)
+
+/// A contiguous arc segment on the ring, derived from actual server data.
+/// Consecutive days with the same phase are grouped for efficient drawing.
+struct RingArc: Equatable, Sendable {
+    let startDay: Int   // 1-based
+    let endDay: Int     // 1-based, inclusive
+    let phase: CyclePhase
+    let isPredicted: Bool
+    let isLate: Bool
+
+    init(startDay: Int, endDay: Int, phase: CyclePhase, isPredicted: Bool, isLate: Bool = false) {
+        self.startDay = startDay
+        self.endDay = endDay
+        self.phase = phase
+        self.isPredicted = isPredicted
+        self.isLate = isLate
     }
 }
 
@@ -584,23 +704,30 @@ public struct CelestialCycleView: View {
 private struct CelestialOrbitCanvas: View {
     let displayDay: Int
     let cycleLength: Int
-    let bleedingDays: Int
+    let arcs: [RingArc]
     let phase: CyclePhase
     let isDragging: Bool
     let reduceMotion: Bool
     var collapseProgress: CGFloat = 0
 
     @State private var fillAngle: Double = -.pi / 2
+    @State private var orbAngle: Double = -.pi / 2
 
     private var wrappedDay: Int {
         guard cycleLength > 0 else { return 1 }
         return ((displayDay - 1) % cycleLength) + 1
     }
 
-    private var targetAngle: Double {
+    /// Angle for the fill track and phase arcs — reaches full circle on last day.
+    private var targetFillAngle: Double {
         let cl = Double(max(cycleLength, 1))
-        // Place orb at end-of-day so it aligns with phase boundaries.
-        // Capped so the last day doesn't wrap to start position.
+        let fraction = Double(wrappedDay) / cl
+        return fraction * 2 * .pi - .pi / 2
+    }
+
+    /// Angle for the orb marker — capped slightly before the start to avoid overlap.
+    private var targetOrbAngle: Double {
+        let cl = Double(max(cycleLength, 1))
         let fraction = min(Double(wrappedDay) / cl, 1.0 - 0.5 / cl)
         return fraction * 2 * .pi - .pi / 2
     }
@@ -609,6 +736,7 @@ private struct CelestialOrbitCanvas: View {
 
     var body: some View {
         let currentFill = fillAngle
+        let currentOrb = orbAngle
         let collapse = collapseProgress
 
         Canvas { ctx, size in
@@ -622,20 +750,25 @@ private struct CelestialOrbitCanvas: View {
             }
             drawFilledTrack(ctx: &ctx, c: center, r: r, fill: currentFill)
             drawPhaseArcs(ctx: &ctx, c: center, r: r, fill: currentFill)
-            drawOrb(ctx: &ctx, c: center, r: r, angle: currentFill)
+            drawOrb(ctx: &ctx, c: center, r: r, angle: currentOrb)
         }
         .task(id: fillTaskKey) {
-            let target = targetAngle
-            let start = fillAngle
+            let targetFill = targetFillAngle
+            let targetOrb = targetOrbAngle
+            let startFill = fillAngle
+            let startOrb = orbAngle
             let duration: Double = isDragging ? 0.15 : reduceMotion ? 0.0 : 0.5
-            guard duration > 0, abs(target - start) > 0.001 else {
-                fillAngle = target
+            guard duration > 0, max(abs(targetFill - startFill), abs(targetOrb - startOrb)) > 0.001 else {
+                fillAngle = targetFill
+                orbAngle = targetOrb
                 return
             }
             let began = Date.now
             while !Task.isCancelled {
                 let t = min(1.0, Date.now.timeIntervalSince(began) / duration)
-                fillAngle = start + (target - start) * (1 - pow(1 - t, 3))
+                let ease = 1 - pow(1 - t, 3)
+                fillAngle = startFill + (targetFill - startFill) * ease
+                orbAngle = startOrb + (targetOrb - startOrb) * ease
                 if t >= 1.0 { break }
                 do { try await Task.sleep(for: .milliseconds(16)) } catch { break }
             }
@@ -689,25 +822,34 @@ private struct CelestialOrbitCanvas: View {
         ctx.stroke(outer, with: .color(Color.black.opacity(0.04)), lineWidth: 0.5)
     }
 
+    /// Draws ring arcs from pre-computed server data segments.
+    /// Each `RingArc` maps to real dates looked up via server calendar data.
+    /// NO formula-based phase ranges — colors match exactly what the server says.
     private func drawPhaseArcs(ctx: inout GraphicsContext, c: CGPoint, r: Double, fill: Double) {
         let cl = max(cycleLength, 1)
         let fullCircle = fill >= startAngle + 2 * .pi - 0.05
 
-        for p in CyclePhase.allCases {
-            let range = p.dayRange(cycleLength: cycleLength, bleedingDays: bleedingDays)
-            let pStart = Double(range.lowerBound - 1) / Double(cl) * 2 * .pi + startAngle
-            let pEnd = Double(range.upperBound) / Double(cl) * 2 * .pi + startAngle
+        for arc in arcs {
+            let pStart = Double(arc.startDay - 1) / Double(cl) * 2 * .pi + startAngle
+            let pEnd = Double(arc.endDay) / Double(cl) * 2 * .pi + startAngle
             guard fill > pStart else { continue }
             let cEnd = min(pEnd, fill)
 
-            // Phase color
+            let baseOpacity = arc.isLate ? 0.25 : arc.isPredicted ? 0.35 : 0.55
+            let arcColor: Color = arc.isLate
+                ? Color(red: 0.55, green: 0.52, blue: 0.50)
+                : arc.phase.orbitColor
+
+            // Phase color arc
             var body = Path()
             body.addArc(center: c, radius: r, startAngle: .radians(pStart), endAngle: .radians(cEnd), clockwise: false)
+
             ctx.stroke(
                 body,
-                with: .color(p.orbitColor.opacity(0.55)),
+                with: .color(arcColor.opacity(baseOpacity)),
                 style: StrokeStyle(lineWidth: arcW, lineCap: .butt)
             )
+
             // Inner highlight
             var hi = Path()
             hi.addArc(
@@ -717,7 +859,8 @@ private struct CelestialOrbitCanvas: View {
                 endAngle: .radians(cEnd),
                 clockwise: false
             )
-            ctx.stroke(hi, with: .color(Color.white.opacity(0.25)), lineWidth: 1.0)
+            ctx.stroke(hi, with: .color(Color.white.opacity(arc.isPredicted ? 0.15 : 0.25)), lineWidth: 1.0)
+
             // Specular
             var sp = Path()
             sp.addArc(
@@ -729,9 +872,10 @@ private struct CelestialOrbitCanvas: View {
             )
             ctx.stroke(
                 sp,
-                with: .color(Color.white.opacity(0.12)),
+                with: .color(Color.white.opacity(arc.isPredicted ? 0.06 : 0.12)),
                 style: StrokeStyle(lineWidth: arcW * 0.35, lineCap: .butt)
             )
+
             // Outer depth
             var od = Path()
             od.addArc(
@@ -741,7 +885,7 @@ private struct CelestialOrbitCanvas: View {
                 endAngle: .radians(cEnd),
                 clockwise: false
             )
-            ctx.stroke(od, with: .color(p.orbitColor.opacity(0.15)), lineWidth: 0.8)
+            ctx.stroke(od, with: .color(arcColor.opacity(arc.isPredicted || arc.isLate ? 0.08 : 0.15)), lineWidth: 0.8)
         }
 
         // Start fade
