@@ -76,6 +76,10 @@ struct AppFeatureTests {
         }
 
         await store.send(.healthPermissionSkipTapped) {
+            $0.destination = .notificationPermission
+        }
+
+        await store.send(.notificationPermissionSkipTapped) {
             $0.destination = .personalGoals
         }
 
@@ -84,7 +88,7 @@ struct AppFeatureTests {
         }
 
         await store.send(.recapFinishTapped) {
-            $0.destination = .authentication
+            $0.destination = .authChoice
         }
     }
 }

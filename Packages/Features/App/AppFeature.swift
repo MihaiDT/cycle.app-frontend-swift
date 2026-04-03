@@ -135,6 +135,7 @@ public struct AppFeature: Sendable {
     @Dependency(\.firebaseAuthClient) var firebaseAuth
     @Dependency(\.userProfileLocal) var userProfileLocal
     @Dependency(\.menstrualLocal) var menstrualLocal
+    @Dependency(\.localNotifications) var localNotifications
     @Dependency(\.userDefaultsClient) var userDefaults
 
     public init() {}
@@ -253,7 +254,10 @@ public struct AppFeature: Sendable {
                 state.notificationCheckinHour = hour
                 state.notificationCheckinMinute = minute
                 state.destination = .personalGoals
-                return .none
+                return .run { [localNotifications] _ in
+                    _ = try? await localNotifications.requestAuthorization()
+                    try? await localNotifications.scheduleDailyReminder(hour, minute)
+                }
 
             case .notificationPermissionSkipTapped:
                 state.destination = .personalGoals
