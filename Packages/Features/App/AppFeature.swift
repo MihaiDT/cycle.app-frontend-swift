@@ -476,51 +476,8 @@ public struct AppFeature: Sendable {
             // MARK: - Guest Mode
 
             case .guestContinueTapped:
-                state.isSubmittingOnboarding = true
-                let localData = OnboardingLocalData(
-                    userName: state.userName,
-                    birthDate: state.birthDate,
-                    birthTime: state.birthTime,
-                    birthPlace: state.selectedBirthPlace?.name ?? state.birthPlace,
-                    birthPlaceLat: state.selectedBirthPlace?.latitude ?? 0,
-                    birthPlaceLng: state.selectedBirthPlace?.longitude ?? 0,
-                    birthPlaceTimezone: state.selectedBirthPlace?.timezone,
-                    relationshipStatus: state.relationshipStatus?.rawValue,
-                    professionalContext: state.professionalContext?.rawValue,
-                    lifestyleType: state.lifestyleType?.rawValue,
-                    personalGoals: state.personalGoals.map(\.rawValue),
-                    lastPeriodDate: state.lastPeriodDate,
-                    cycleDuration: state.cycleDuration,
-                    periodDuration: state.periodDuration,
-                    cycleRegularity: state.cycleRegularity.rawValue,
-                    flowIntensity: state.flowIntensity,
-                    selectedSymptoms: state.selectedSymptoms.map(\.rawValue),
-                    usesContraception: state.usesContraception,
-                    contraceptionType: state.contraceptionType?.rawValue,
-                    healthDataConsent: state.healthDataConsent,
-                    termsConsent: state.termsConsent
-                )
-                return .run { [firebaseAuth, sessionClient, userDefaults, localData] send in
-                    let authUser = try await firebaseAuth.signInAnonymously()
-                    let token = try await firebaseAuth.getIDToken()
-                    let session = Session(
-                        id: Session.ID(authUser.uid),
-                        accessToken: token,
-                        refreshToken: "",
-                        expiresAt: Date().addingTimeInterval(3600),
-                        user: User(
-                            id: User.ID(authUser.uid),
-                            email: "",
-                            firstName: localData.userName.isEmpty ? nil : localData.userName,
-                            lastName: nil
-                        )
-                    )
-                    try await sessionClient.setSession(session)
-                    userDefaults.setCodable(localData, forKey: UserDefaultsClient.Keys.onboardingLocalData)
-                    await send(.onboardingSubmitCompleted)
-                } catch: { error, send in
-                    await send(.onboardingSubmitFailed(error.localizedDescription))
-                }
+                // Guest mode: same local storage as authenticated — no server needed
+                return .send(.submitOnboardingData)
             }
         }
     }

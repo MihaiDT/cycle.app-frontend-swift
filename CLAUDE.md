@@ -4,10 +4,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-CycleApp is a premium iOS wellness & menstrual cycle tracking app with an AI companion (Aria). The Go backend lives in a sibling directory (`dth-backend/`).
+CycleApp is a premium iOS wellness & menstrual cycle tracking app with an AI companion (Aria). All health data lives exclusively on-device (SwiftData + CloudKit E2E encryption). The Go backend (`dth-backend/`) is a minimal anonymous proxy for Aria chat and Google Places.
 
 - Bundle ID: `app.cycle.ios`
+- iCloud Container: `iCloud.app.cycle.ios`
 - Design: premium dark-first UI, glass morphism with warm gradients (rose gold, soft purple, peach), spacious layouts, slow elegant animations
+- Privacy: "We don't have your data" — zero health data on server
 
 ## Build & Development
 
@@ -18,10 +20,10 @@ CycleApp is a premium iOS wellness & menstrual cycle tracking app with an AI com
 xcodegen generate
 
 # Build
-xcodebuild -project CycleApp.xcodeproj -scheme CycleApp -destination 'platform=iOS Simulator,name=iPhone 16' build
+xcodebuild -project CycleApp.xcodeproj -scheme CycleApp -destination 'platform=iOS Simulator,name=iPhone 16' build -skipPackagePluginValidation
 
 # Run tests
-xcodebuild test -scheme CycleApp -destination 'platform=iOS Simulator,name=iPhone 16'
+xcodebuild test -scheme CycleApp -destination 'platform=iOS Simulator,name=iPhone 16' -skipPackagePluginValidation
 
 # Build + install on simulator
 ./scripts/dev.sh
@@ -29,7 +31,20 @@ xcodebuild test -scheme CycleApp -destination 'platform=iOS Simulator,name=iPhon
 
 After adding new Swift files or changing the package structure, always re-run `xcodegen generate`.
 
+**IMPORTANT — Flat compilation model:** XcodeGen compiles ALL Swift files from `Packages/Core/` and `Packages/Features/` into a single CycleApp target. Do NOT use `import Models`, `import Persistence`, `import CycleEngine`, or any internal module imports. Only import system frameworks (`Foundation`, `SwiftUI`, `SwiftData`) and external SPM packages (`ComposableArchitecture`, `Inject`, `FirebaseAuth`).
+
 ## Architecture
+
+### Local-First Data Architecture
+
+All health data (menstrual cycles, HBI scores, symptoms, daily reports) is stored on-device in SwiftData with CloudKit `encryptedValues` for E2E encrypted multi-device sync. The backend has zero access to health data.
+
+**Data flow:** User input → SwiftData → CycleEngine (local computation) → SwiftData → UI
+
+**Key components:**
+- `CycleDataStore` — ModelContainer setup with CloudKit fallback for simulator
+- `CycleEngine/` — Pure business logic: HBI calculator, menstrual prediction (V1-V4), cycle math
+- Local clients (`HBILocalClient`, `MenstrualLocalClient`, `UserProfileLocalClient`) — TCA dependencies wrapping SwiftData CRUD
 
 ### TCA (The Composable Architecture)
 
@@ -81,7 +96,7 @@ extension DependencyValues {
 
 **Navigation:** Flat state machine in `AppFeature.State.Destination` enum — no coordinator pattern, no `@Presents` for the main flow. The entire app navigation is a single `switch` on `state.destination`. Child features (Auth, Home) are composed via `Scope`.
 
-**Flow:** `splash → onboarding (14 screens) → authChoice → auth/guest → home`. Returning users: `splash → home` (session check).
+**Flow:** `splash → onboarding (14 screens) → authChoice → auth/guest → home`. Returning users: `splash → home` (session check). Guest mode uses same local storage as authenticated — no difference in data handling.
 
 **Home tabs:** Today (TodayFeature), Chat/Aria (placeholder), Me (profile + logout). Only TodayFeature is a composed child feature; Chat and Me are inline views in HomeFeature.
 
@@ -92,9 +107,10 @@ extension DependencyValues {
 ```
 Packages/
 ├── Core/
-│   ├── Models/           # Tagged IDs, User, Session, API request/response models
-│   ├── Networking/       # APIClient, Endpoint, FirebaseAuthClient, domain clients (HBI, Menstrual, Onboarding, Places)
-│   ├── Persistence/      # SessionClient, KeychainClient, UserDefaultsClient, OnboardingLocalData
+│   ├── CycleEngine/      # HBICalculator, MenstrualPredictor (V1-V4), CycleMath utilities
+│   ├── Models/           # Tagged IDs, User, Session, CyclePhase, HBIScore, MenstrualStatus types
+│   ├── Networking/       # APIClient, Endpoint, FirebaseAuthClient, PlacesClient (only Places proxy remains)
+│   ├── Persistence/      # SwiftData models, local clients, CycleDataStore, SessionClient, KeychainClient
 │   ├── DesignSystem/     # DesignColors, AppLayout, Components/ (Glass*, GradientBackground, OnboardingHeader)
 │   └── Utilities/        # Validation, Logger, Extensions
 └── Features/
@@ -104,13 +120,30 @@ Packages/
     └── Onboarding/       # 14-screen flow + CycleModels enums + Views/
 ```
 
-### API Integration
+### On-Device Data (SwiftData + CloudKit)
 
-- `Endpoint` builder with `.get()`, `.post()`, `.put()`, `.patch()`, `.delete()` static methods
-- Auth: `.authenticated(with: token)` extension on `Endpoint`
-- Endpoints grouped in `*Endpoints` enums (AuthEndpoints, OnboardingEndpoints, HBIEndpoints, etc.)
-- JSON: snake_case encoding/decoding (Go backend), ISO 8601 dates
-- Domain clients (HBIClient, MenstrualClient, etc.) wrap `APIClient` and expose typed async methods
+All health data stored locally with `@Attribute(.allowsCloudEncryption)` for E2E encrypted iCloud sync.
+
+**SwiftData models** (in `Persistence/`):
+- `UserProfileRecord` — identity, birth data, preferences, consent
+- `MenstrualProfileRecord` — cycle averages, regularity, symptoms
+- `CycleRecord` — individual period records with accuracy tracking
+- `SymptomRecord` — daily symptom logs with severity
+- `PredictionRecord` — generated predictions with fertile window + confidence
+- `SelfReportRecord` — daily check-in (energy, stress, sleep, mood)
+- `HBIScoreRecord` — computed HBI with phase-adjusted scoring
+
+**CycleEngine** (pure business logic, no persistence):
+- `HBICalculator` — Composite score: Energy 30%, Sleep 25%, Stress 25%, Mood 20% with cycle phase multipliers
+- `MenstrualPredictor` — 4 algorithm tiers: V1 Basic → V2 WMA → V3 Ogino-Knaus → V4 ML (seasonal patterns, bias correction)
+- `CycleMath` — Statistics, cycle phases, fertile window, confidence scoring
+
+**Local TCA clients:**
+- `HBILocalClient` — getDashboard, getToday, submitDailyReport (computes HBI locally)
+- `MenstrualLocalClient` — getStatus, getCalendar, confirmPeriod, logSymptom, generatePrediction
+- `UserProfileLocalClient` — getProfile, saveProfile, deleteProfile
+- `LocalNotificationClient` — daily check-in reminders via UNUserNotificationCenter
+- `AriaContextProvider` — builds ephemeral health context for chat messages
 
 ### Key Models (cross-package)
 
@@ -121,23 +154,29 @@ Packages/
 
 ### Key Dependencies
 
-- TCA 1.17+, Tagged 0.10+, Firebase 11+, GoogleSignIn 8+, SplineRuntime, Lottie 4.5+, Inject, HealthKit
+- TCA 1.17+, Tagged 0.10+, Firebase 11+, GoogleSignIn 8+, SplineRuntime, Lottie 4.5+, Inject, HealthKit, SwiftData, CloudKit
 
 ## Critical Rules
 
 1. **Sendable everywhere** — all State, Action, models, clients MUST be `Sendable`
-2. **DesignSystem first** — use GlassButton, GlassTextField, GlassSelectionCard, DesignColors, AppLayout before creating new components
-3. **Tagged IDs** — `Tagged<Model, String>`, never raw String for IDs
-4. **Feature + View co-location** — reducer and SwiftUI view live in the same file
-5. **Delegate actions** — child→parent communication via `Action.delegate(Delegate)`
-6. **State isolation** — capture all state values before `.run { send in }` blocks (Swift 6 `@Sendable` requirement)
-7. **Swift Testing** — `import Testing` + `@Test` + `TestStore`, NOT XCTest
-8. **Custom font** — Raleway family (Bold, SemiBold, Medium, Regular)
-9. **Hot reload** — Inject framework is integrated; views use `@ObserveInjection var inject` + `.enableInjection()`
+2. **No internal module imports** — flat compilation model, everything is in one target
+3. **Local-first** — all health data operations use local clients (`hbiLocal`, `menstrualLocal`, `userProfileLocal`), never API calls
+4. **SwiftData defaults** — all `@Model` properties must have default values (CloudKit requirement)
+5. **DesignSystem first** — use GlassButton, GlassTextField, GlassSelectionCard, DesignColors, AppLayout before creating new components
+6. **Tagged IDs** — `Tagged<Model, String>`, never raw String for IDs
+7. **Feature + View co-location** — reducer and SwiftUI view live in the same file
+8. **Delegate actions** — child→parent communication via `Action.delegate(Delegate)`
+9. **State isolation** — capture all state values before `.run { send in }` blocks (Swift 6 `@Sendable` requirement)
+10. **Swift Testing** — `@testable import CycleApp` + `import Testing` + `@Test` + `TestStore`, NOT XCTest
+11. **Custom font** — Raleway family (Bold, SemiBold, Medium, Regular)
+12. **Hot reload** — Inject framework is integrated; views use `@ObserveInjection var inject` + `.enableInjection()`
 
 ## Testing
 
 ```swift
+@testable import CycleApp
+import Testing
+
 @Test func testFeature() async {
     let store = TestStore(initialState: MyFeature.State()) {
         MyFeature()
@@ -152,12 +191,15 @@ Packages/
 
 ## Backend Quick Reference (Go — `dth-backend/`)
 
-- Architecture: `handler → service → repository` (clean architecture, raw SQL with pgx, no ORM)
-- Auth: Firebase Bearer token middleware
-- Encryption: AES-256-GCM for PII/medical data at rest
-- Key endpoints: `/api/onboarding/screens/*`, `/api/hbi/*`, `/api/menstrual/*`, `/api/self-decode/*`, `/ws` (AI chat)
-- JSON tags must match Swift model property names (snake_case)
-- Local dev: `go build -o /tmp/dth-server ./cmd/server/ && /tmp/dth-server` (DB via Cloud SQL Proxy on port 5433)
-- Context propagation: `context.Context` as first param in service/repo methods
-- Parameterized SQL: always `$1, $2`, never string interpolation
-- UPSERT pattern: `INSERT ... ON CONFLICT DO UPDATE` for idempotent writes
+Minimal anonymous proxy — no health data stored.
+
+**Remaining endpoints:**
+- `GET /health` — health check
+- `GET /firebase-config` — Firebase config for iOS
+- `GET /api/places/autocomplete` — Google Places proxy
+- `GET /api/places/details` — Google Places proxy
+- `WS /ws` — Aria chat WebSocket (messages + RAG memory)
+
+**Architecture:** Gorilla Mux + WebSocket, PostgreSQL (sessions/messages/memory only), Redis (job queue)
+**Auth:** Firebase Bearer token middleware (verify only, no user sync)
+**Local dev:** `go build -o /tmp/dth-server ./cmd/server/ && /tmp/dth-server`
