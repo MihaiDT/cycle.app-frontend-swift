@@ -86,8 +86,7 @@ public struct EditPeriodFeature: Sendable {
     }
 
     @Dependency(\.dismiss) var dismiss
-    @Dependency(\.menstrualClient) var menstrualClient
-    @Dependency(\.sessionClient) var sessionClient
+    @Dependency(\.menstrualLocal) var menstrualLocal
 
     public init() {}
 
@@ -99,10 +98,9 @@ public struct EditPeriodFeature: Sendable {
                 // Load saved period days from backend calendar
                 let start = Calendar.current.date(byAdding: .month, value: -24, to: Date())!
                 let end = Calendar.current.date(byAdding: .month, value: 3, to: Date())!
-                return .run { [menstrualClient, sessionClient] send in
-                    guard let token = try? await sessionClient.getAccessToken() else { return }
+                return .run { [menstrualLocal] send in
                     let result = await Result {
-                        try await menstrualClient.getCalendar(token, start, end)
+                        try await menstrualLocal.getCalendar(start, end)
                     }
                     await send(.calendarLoaded(result))
                 }
@@ -189,84 +187,47 @@ public struct EditPeriodFeature: Sendable {
                 let originalPeriodDays = state.originalPeriodDays
                 let periodGroups = Self.groupConsecutivePeriods(periodDays)
                 let removedDays = originalPeriodDays.subtracting(periodDays)
-                return .run { [menstrualClient, sessionClient] send in
-                    if let token = await sessionClient.getAccessToken() {
-                        // Phase 1: Save period data
-                        if !removedDays.isEmpty {
-                            let request = RemovePeriodDaysRequest(dates: removedDays)
-                            do {
-                                try await menstrualClient.removePeriodDays(token, request)
-                                print("[EditPeriod] removePeriodDays succeeded, removed \(removedDays.count) days")
-                            } catch {
-                                print("[EditPeriod] removePeriodDays FAILED: \(error)")
-                            }
-                        }
-                        for group in periodGroups {
-                            let request = ConfirmPeriodRequest(
-                                actualStartDate: group.startDate,
-                                bleedingDays: group.dayCount
-                            )
-                            do {
-                                try await menstrualClient.confirmPeriod(token, request)
-                                print(
-                                    "[EditPeriod] confirmPeriod succeeded: start=\(group.startDate), days=\(group.dayCount)"
-                                )
-                            } catch {
-                                print("[EditPeriod] confirmPeriod FAILED: \(error)")
-                            }
-                        }
-
-                        // Immediately notify parent — calendar + home update now
-                        await send(
-                            .delegate(.didSavePeriodData(
-                                periodDays: periodDays,
-                                originalPeriodDays: originalPeriodDays,
-                                periodFlowIntensity: flowIntensity,
-                                bleedingDays: periodGroups.first?.dayCount ?? 5,
-                                needsServerSync: false
-                            ))
-                        )
-
-                        // Phase 2: Show "Improving predictions" banner
-                        await send(
-                            .saveDone(
-                                periodDays: periodDays,
-                                periodFlowIntensity: flowIntensity
-                            ),
-                            animation: .easeInOut(duration: 0.3)
-                        )
-
-                        // Phase 3: Regenerate predictions + reload calendar
-                        do {
-                            try await menstrualClient.generatePrediction(token)
-                            print("[EditPeriod] generatePrediction succeeded")
-                        } catch {
-                            print("[EditPeriod] generatePrediction FAILED: \(error)")
-                        }
-                        let start = Calendar.current.date(byAdding: .month, value: -24, to: Date())!
-                        let end = Calendar.current.date(byAdding: .month, value: 12, to: Date())!
-                        if let response = try? await menstrualClient.getCalendar(token, start, end) {
-                            let periodEntries = response.entries.filter { $0.type == "period" }
-                            let predictedEntries = response.entries.filter { $0.type == "predicted_period" }
-                            print(
-                                "[EditPeriod] getCalendar: \(periodEntries.count) period, \(predictedEntries.count) predicted_period entries"
-                            )
-                            await send(.calendarLoaded(.success(response)), animation: .easeInOut(duration: 0.4))
-                        } else {
-                            print("[EditPeriod] getCalendar FAILED")
-                        }
-                        // Banner visible for 2.5s so user sees feedback
-                        try? await Task.sleep(nanoseconds: 2_500_000_000)
-                        await send(.predictionsUpdated)
-                    } else {
-                        await send(
-                            .saveDone(
-                                periodDays: periodDays,
-                                periodFlowIntensity: flowIntensity
-                            ),
-                            animation: .easeInOut(duration: 0.3)
+                return .run { [menstrualLocal] send in
+                    // Phase 1: Save period data locally
+                    if !removedDays.isEmpty {
+                        let datesToRemove = removedDays.compactMap { CalendarFeature.parseDate($0) }
+                        try? await menstrualLocal.removePeriodDays(datesToRemove)
+                    }
+                    for group in periodGroups {
+                        try? await menstrualLocal.confirmPeriod(
+                            group.startDate, group.dayCount, nil
                         )
                     }
+
+                    // Immediately notify parent
+                    await send(
+                        .delegate(.didSavePeriodData(
+                            periodDays: periodDays,
+                            originalPeriodDays: originalPeriodDays,
+                            periodFlowIntensity: flowIntensity,
+                            bleedingDays: periodGroups.first?.dayCount ?? 5,
+                            needsServerSync: false
+                        ))
+                    )
+
+                    // Phase 2: Show "Improving predictions" banner
+                    await send(
+                        .saveDone(
+                            periodDays: periodDays,
+                            periodFlowIntensity: flowIntensity
+                        ),
+                        animation: .easeInOut(duration: 0.3)
+                    )
+
+                    // Phase 3: Regenerate predictions + reload calendar
+                    try? await menstrualLocal.generatePrediction()
+                    let start = Calendar.current.date(byAdding: .month, value: -24, to: Date())!
+                    let end = Calendar.current.date(byAdding: .month, value: 12, to: Date())!
+                    if let response = try? await menstrualLocal.getCalendar(start, end) {
+                        await send(.calendarLoaded(.success(response)), animation: .easeInOut(duration: 0.4))
+                    }
+                    try? await Task.sleep(nanoseconds: 2_500_000_000)
+                    await send(.predictionsUpdated)
                 }
 
             case .saveDone(let days, let flow):

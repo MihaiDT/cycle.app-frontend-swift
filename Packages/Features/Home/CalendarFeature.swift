@@ -127,8 +127,7 @@ public struct CalendarFeature: Sendable {
         }
     }
 
-    @Dependency(\.menstrualClient) var menstrualClient
-    @Dependency(\.sessionClient) var sessionClient
+    @Dependency(\.menstrualLocal) var menstrualLocal
 
     public init() {}
 
@@ -146,10 +145,9 @@ public struct CalendarFeature: Sendable {
                 if day <= Calendar.current.startOfDay(for: Date()) {
                     state.isShowingSymptomSheet = true
                 }
-                return .run { [menstrualClient, sessionClient] send in
-                    guard let token = try? await sessionClient.getAccessToken() else { return }
+                return .run { [menstrualLocal] send in
                     let result = await Result {
-                        try await menstrualClient.getSymptoms(token, day)
+                        try await menstrualLocal.getSymptoms(day)
                     }
                     await send(.symptomsLoaded(result))
                 }
@@ -176,16 +174,9 @@ public struct CalendarFeature: Sendable {
                 let key = CalendarFeature.dateKey(state.selectedDate)
                 let symptoms = state.loggedDays[key]?.symptoms ?? []
                 let date = state.selectedDate
-                return .run { [menstrualClient, sessionClient] send in
-                    if let token = try? await sessionClient.getAccessToken() {
-                        for symptom in symptoms {
-                            let request = LogSymptomRequest(
-                                symptomDate: date,
-                                symptomType: symptom,
-                                severity: 3
-                            )
-                            try? await menstrualClient.logSymptom(token, request)
-                        }
+                return .run { [menstrualLocal] send in
+                    for symptom in symptoms {
+                        try? await menstrualLocal.logSymptom(date, symptom, 3, nil)
                     }
                     await send(.saveSymptomsDone, animation: .easeInOut(duration: 0.3))
                 }
@@ -232,10 +223,9 @@ public struct CalendarFeature: Sendable {
                 state.isLoadingCalendar = true
                 let start = Calendar.current.date(byAdding: .month, value: -24, to: Date())!
                 let end = Calendar.current.date(byAdding: .month, value: 12, to: Date())!
-                return .run { [menstrualClient, sessionClient] send in
-                    guard let token = try? await sessionClient.getAccessToken() else { return }
+                return .run { [menstrualLocal] send in
                     let result = await Result {
-                        try await menstrualClient.getCalendar(token, start, end)
+                        try await menstrualLocal.getCalendar(start, end)
                     }
                     await send(.calendarLoaded(result), animation: .easeInOut(duration: 0.35))
                 }
@@ -360,49 +350,37 @@ public struct CalendarFeature: Sendable {
                     CalendarFeature.recomputeCycle(from: &state)
                 }
 
-                return .run { [menstrualClient, sessionClient] send in
-                    if let token = await sessionClient.getAccessToken() {
-                        if !removedDays.isEmpty {
-                            let request = RemovePeriodDaysRequest(dates: removedDays)
-                            try? await menstrualClient.removePeriodDays(token, request)
-                        }
-                        for group in periodGroups {
-                            let request = ConfirmPeriodRequest(
-                                actualStartDate: group.startDate,
-                                bleedingDays: group.dayCount
-                            )
-                            try? await menstrualClient.confirmPeriod(token, request)
-                        }
-
-                        await send(
-                            .editPeriodSaveDone(
-                                periodDays: periodDays,
-                                periodFlowIntensity: flowIntensity
-                            ),
-                            animation: .easeInOut(duration: 0.3)
-                        )
-
-                        if !periodGroups.isEmpty {
-                            try? await menstrualClient.generatePrediction(token)
-                        }
-                        let start = Calendar.current.date(byAdding: .month, value: -24, to: Date())!
-                        let end = Calendar.current.date(byAdding: .month, value: 12, to: Date())!
-                        let calResult = await Result {
-                            try await menstrualClient.getCalendar(token, start, end)
-                        }
-                        await send(.editPeriodCalendarReloaded(calResult), animation: .easeInOut(duration: 0.4))
-
-                        try? await Task.sleep(nanoseconds: 2_500_000_000)
-                        await send(.editPeriodPredictionsUpdated)
-                    } else {
-                        await send(
-                            .editPeriodSaveDone(
-                                periodDays: periodDays,
-                                periodFlowIntensity: flowIntensity
-                            ),
-                            animation: .easeInOut(duration: 0.3)
+                return .run { [menstrualLocal] send in
+                    if !removedDays.isEmpty {
+                        let datesToRemove = removedDays.compactMap { CalendarFeature.parseDate($0) }
+                        try? await menstrualLocal.removePeriodDays(datesToRemove)
+                    }
+                    for group in periodGroups {
+                        try? await menstrualLocal.confirmPeriod(
+                            group.startDate, group.dayCount, nil
                         )
                     }
+
+                    await send(
+                        .editPeriodSaveDone(
+                            periodDays: periodDays,
+                            periodFlowIntensity: flowIntensity
+                        ),
+                        animation: .easeInOut(duration: 0.3)
+                    )
+
+                    if !periodGroups.isEmpty {
+                        try? await menstrualLocal.generatePrediction()
+                    }
+                    let start = Calendar.current.date(byAdding: .month, value: -24, to: Date())!
+                    let end = Calendar.current.date(byAdding: .month, value: 12, to: Date())!
+                    let calResult = await Result {
+                        try await menstrualLocal.getCalendar(start, end)
+                    }
+                    await send(.editPeriodCalendarReloaded(calResult), animation: .easeInOut(duration: 0.4))
+
+                    try? await Task.sleep(nanoseconds: 2_500_000_000)
+                    await send(.editPeriodPredictionsUpdated)
                 }
 
             case .editPeriodSaveDone(let days, let flow):
@@ -446,6 +424,11 @@ public struct CalendarFeature: Sendable {
 
     static func dateKey(_ date: Date) -> String {
         dateKeyFormatter.string(from: date)
+    }
+
+    /// Parse a "yyyy-MM-dd" key back to a Date.
+    static func parseDate(_ key: String) -> Date? {
+        dateKeyFormatter.date(from: key)
     }
 
     /// Converts a server date to local midnight for the same calendar day.

@@ -1,7 +1,7 @@
+@testable import CycleApp
 import ComposableArchitecture
 import Testing
 
-@testable import Features
 
 @MainActor
 struct AuthenticationFeatureTests {

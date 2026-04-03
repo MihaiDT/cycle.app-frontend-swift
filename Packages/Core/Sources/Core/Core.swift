@@ -1,5 +1,5 @@
-@_exported import DesignSystem
 // Core module - re-exports all submodules
+@_exported import DesignSystem
 @_exported import Models
 @_exported import Networking
 @_exported import Persistence

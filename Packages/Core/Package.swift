@@ -9,6 +9,7 @@ let package = Package(
         .library(name: "Models", targets: ["Models"]),
         .library(name: "Networking", targets: ["Networking"]),
         .library(name: "Persistence", targets: ["Persistence"]),
+        .library(name: "CycleEngine", targets: ["CycleEngine"]),
         .library(name: "Utilities", targets: ["Utilities"]),
         .library(name: "DesignSystem", targets: ["DesignSystem"]),
     ],
@@ -20,7 +21,7 @@ let package = Package(
     targets: [
         .target(
             name: "Core",
-            dependencies: ["Models", "Networking", "Persistence", "Utilities", "DesignSystem"]
+            dependencies: ["Models", "Networking", "Persistence", "CycleEngine", "Utilities", "DesignSystem"]
         ),
         .target(
             name: "Models",
@@ -43,10 +44,16 @@ let package = Package(
             dependencies: [
                 "Models",
                 "Utilities",
+                "CycleEngine",
                 .product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
                 .product(name: "FirebaseAuth", package: "firebase-ios-sdk"),
             ],
             path: "Persistence"
+        ),
+        .target(
+            name: "CycleEngine",
+            dependencies: ["Models"],
+            path: "CycleEngine"
         ),
         .target(
             name: "Utilities",

@@ -1,6 +1,6 @@
+@testable import CycleApp
+import Foundation
 import Testing
-
-@testable import Core
 
 struct UserModelTests {
     @Test

@@ -30,8 +30,7 @@ public struct DailyCheckInFeature: Sendable {
         }
     }
 
-    @Dependency(\.hbiClient) var hbiClient
-    @Dependency(\.sessionClient) var sessionClient
+    @Dependency(\.hbiLocal) var hbiLocal
     @Dependency(\.dismiss) var dismiss
 
     public init() {}
@@ -52,9 +51,8 @@ public struct DailyCheckInFeature: Sendable {
                     notes: state.notes.isEmpty ? nil : state.notes
                 )
                 return .run { send in
-                    guard let token = try? await sessionClient.getAccessToken() else { return }
                     let result = await Result {
-                        try await hbiClient.submitDailyReport(token, request)
+                        try await hbiLocal.submitDailyReport(request)
                     }
                     await send(.submitResponse(result))
                 }

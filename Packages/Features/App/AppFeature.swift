@@ -1,5 +1,6 @@
 import ComposableArchitecture
 import Inject
+import SwiftData
 import SwiftUI
 
 // MARK: - App Feature
@@ -129,11 +130,11 @@ public struct AppFeature: Sendable {
     }
 
     @Dependency(\.continuousClock) var clock
-    @Dependency(\.onboardingClient) var onboardingClient
     @Dependency(\.sessionClient) var sessionClient
-    @Dependency(\.apiClient) var apiClient
     @Dependency(\.placesClient) var placesClient
     @Dependency(\.firebaseAuthClient) var firebaseAuth
+    @Dependency(\.userProfileLocal) var userProfileLocal
+    @Dependency(\.menstrualLocal) var menstrualLocal
     @Dependency(\.userDefaultsClient) var userDefaults
 
     public init() {}
@@ -338,166 +339,60 @@ public struct AppFeature: Sendable {
                 let notificationsEnabled = state.notificationsEnabled
                 let notificationCheckinHour = state.notificationCheckinHour
                 let notificationCheckinMinute = state.notificationCheckinMinute
-                let apiClient = apiClient
-                let sessionClient = sessionClient
+                let userProfileLocal = userProfileLocal
+                let menstrualLocal = menstrualLocal
 
                 return .run { send in
                     do {
-                        // Get auth token from session
-                        guard let token = await sessionClient.getAccessToken() else {
-                            await send(.onboardingSubmitFailed("Not authenticated"))
-                            return
-                        }
-
-                        // Retry helper — backend upserts are idempotent so retries are safe
-                        @Sendable func withRetry<T: Decodable & Sendable>(
-                            maxAttempts: Int = 3,
-                            _ operation: @Sendable () async throws -> T
-                        ) async throws -> T {
-                            var lastError: Error?
-                            for attempt in 1...maxAttempts {
-                                do {
-                                    return try await operation()
-                                } catch {
-                                    lastError = error
-                                    if attempt < maxAttempts {
-                                        try await Task.sleep(for: .seconds(pow(2.0, Double(attempt - 1))))
-                                    }
-                                }
-                            }
-                            throw lastError!
-                        }
-
-                        // 1. Submit identity_basic (birth data)
-                        let identityRequest = IdentityBasicRequest(
+                        // 1. Save user profile locally
+                        let profile = UserProfileSnapshot(
+                            userName: "",
                             birthDate: birthDate,
                             birthTime: birthTime,
-                            birthPlaceName: selectedBirthPlace?.name ?? birthPlace,
-                            birthLat: selectedBirthPlace?.latitude ?? 0.0,
-                            birthLng: selectedBirthPlace?.longitude ?? 0.0,
-                            birthPlaceTimezone: selectedBirthPlace?.timezone
-                        )
-                        let _: OnboardingSuccessResponse = try await withRetry {
-                            try await apiClient.send(
-                                OnboardingEndpoints.submitIdentityBasic(identityRequest)
-                                    .authenticated(with: token)
-                            )
-                        }
-
-                        // 2. Submit context_personal
-                        let mappedRelationship = OnboardingDataMapper.mapRelationshipStatus(
-                            relationshipStatus?.rawValue ?? "Single"
-                        )
-                        let mappedProfessional = OnboardingDataMapper.mapProfessionalContext(
-                            professionalContext?.rawValue ?? "Student"
-                        )
-                        let mappedRhythm = OnboardingDataMapper.mapLifestyleToRhythm(
-                            lifestyleType?.title ?? "Calm & Stable"
-                        )
-                        let mappedGoal = OnboardingDataMapper.mapPrimaryGoal(
-                            from: personalGoals.map(\.rawValue)
-                        )
-
-                        let mappedLifestyle: LifestyleAPI = {
-                            guard let lifestyle = lifestyleType else { return .balanced }
-                            switch lifestyle {
-                            case .calm: return .sedentary
-                            case .active: return .active
-                            case .intuitive: return .balanced
-                            case .analytical: return .balanced
-                            }
-                        }()
-
-                        let contextRequest = ContextPersonalRequest(
-                            relationshipStatus: mappedRelationship,
-                            currentStatus: mappedProfessional,
-                            dailyRhythm: mappedRhythm,
-                            lifestyle: mappedLifestyle,
-                            primaryGoal: mappedGoal
-                        )
-                        let _: OnboardingSuccessResponse = try await withRetry {
-                            try await apiClient.send(
-                                OnboardingEndpoints.submitContextPersonal(contextRequest)
-                                    .authenticated(with: token)
-                            )
-                        }
-
-                        // 3. Submit wellbeing
-                        let wellbeingRequest = WellbeingRequest(
-                            energyLevel: 3,
-                            sleepQuality: 3,
-                            stressLevel: 3,
-                            mentalClarity: 3
-                        )
-                        let _: OnboardingSuccessResponse = try await withRetry {
-                            try await apiClient.send(
-                                OnboardingEndpoints.submitWellbeing(wellbeingRequest)
-                                    .authenticated(with: token)
-                            )
-                        }
-
-                        // 4. Submit spiritual_interests
-                        let mappedInterests = OnboardingDataMapper.mapGoalsToInterests(
-                            from: personalGoals.map(\.rawValue)
-                        )
-                        let spiritualRequest = SpiritualInterestsRequest(
-                            interests: mappedInterests
-                        )
-                        let _: OnboardingSuccessResponse = try await withRetry {
-                            try await apiClient.send(
-                                OnboardingEndpoints.submitSpiritualInterests(spiritualRequest)
-                                    .authenticated(with: token)
-                            )
-                        }
-
-                        // 5. Submit menstrual_setup
-                        let mappedRegularity = OnboardingDataMapper.mapCycleRegularity(
-                            cycleRegularity.rawValue
-                        )
-                        let symptomNames = selectedSymptoms.map(\.rawValue)
-                        let menstrualRequest = MenstrualSetupRequest(
-                            lastPeriodStartDate: lastPeriodDate,
-                            avgCycleLength: cycleDuration,
-                            avgBleedingDays: periodDuration,
-                            cycleRegularity: mappedRegularity,
-                            typicalFlowIntensity: flowIntensity,
-                            typicalSymptoms: symptomNames.isEmpty ? nil : symptomNames,
-                            usesContraception: usesContraception,
-                            contraceptionType: contraceptionType.map {
-                                ContraceptionTypeAPI(rawValue: $0.rawValue) ?? .other
-                            }
-                        )
-                        let _: OnboardingSuccessResponse = try await withRetry {
-                            try await apiClient.send(
-                                OnboardingEndpoints.submitMenstrualSetup(menstrualRequest)
-                                    .authenticated(with: token)
-                            )
-                        }
-
-                        // 6. Submit consent (triggers persona generation on backend)
-                        let consentRequest = ConsentRequest(
-                            privacyConsent: termsConsent,
-                            healthDataConsent: healthDataConsent
-                        )
-                        let _: OnboardingSuccessResponse = try await withRetry {
-                            try await apiClient.send(
-                                OnboardingEndpoints.submitConsent(consentRequest)
-                                    .authenticated(with: token)
-                            )
-                        }
-
-                        // 7. Submit notification preferences
-                        let notificationRequest = NotificationPermissionRequest(
+                            birthPlace: selectedBirthPlace?.name ?? birthPlace,
+                            birthPlaceLat: selectedBirthPlace?.latitude,
+                            birthPlaceLng: selectedBirthPlace?.longitude,
+                            birthPlaceTimezone: selectedBirthPlace?.timezone,
+                            relationshipStatus: relationshipStatus?.rawValue,
+                            professionalContext: professionalContext?.rawValue,
+                            lifestyleType: lifestyleType?.title,
+                            personalGoals: personalGoals.map(\.rawValue),
+                            healthDataConsent: healthDataConsent,
+                            termsConsent: termsConsent,
                             notificationsEnabled: notificationsEnabled,
                             dailyCheckinHour: notificationCheckinHour,
                             dailyCheckinMinute: notificationCheckinMinute
                         )
-                        let _: OnboardingSuccessResponse = try await withRetry {
-                            try await apiClient.send(
-                                OnboardingEndpoints.submitNotificationPermission(notificationRequest)
-                                    .authenticated(with: token)
-                            )
+                        try await userProfileLocal.saveProfile(profile)
+
+                        // 2. Save menstrual profile + initial cycle locally
+                        let symptomNames = selectedSymptoms.map(\.rawValue)
+                        let profileInfo = MenstrualProfileInfo(
+                            avgCycleLength: cycleDuration,
+                            cycleRegularity: cycleRegularity.rawValue,
+                            trackingSince: .now
+                        )
+                        let flowStr: String? = switch flowIntensity {
+                        case 1: "light"
+                        case 2: "medium"
+                        case 3: "heavy"
+                        default: nil
                         }
+                        try await menstrualLocal.saveProfile(
+                            profileInfo,
+                            symptomNames,
+                            flowStr,
+                            usesContraception,
+                            contraceptionType?.rawValue
+                        )
+
+                        // 3. Create initial cycle from last period date
+                        if let lpDate = lastPeriodDate {
+                            try await menstrualLocal.confirmPeriod(lpDate, periodDuration, nil)
+                        }
+
+                        // 4. Generate first prediction locally
+                        try await menstrualLocal.generatePrediction()
 
                         await send(.onboardingSubmitCompleted)
                     } catch {
@@ -643,6 +538,7 @@ public struct AppView: View {
             .task {
                 store.send(.onAppear)
             }
+            .modelContainer(CycleDataStore.shared)
             .enableInjection()
     }
 

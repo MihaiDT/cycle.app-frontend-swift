@@ -1,6 +1,6 @@
+@testable import CycleApp
 import Testing
 
-@testable import Core
 
 struct ValidationTests {
     @Test

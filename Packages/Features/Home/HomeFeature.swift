@@ -82,7 +82,7 @@ public struct HomeFeature: Sendable {
         }
     }
 
-    @Dependency(\.apiClient) var apiClient
+    @Dependency(\.userProfileLocal) var userProfileLocal
     @Dependency(\.sessionClient) var sessionClient
     @Dependency(\.firebaseAuthClient) var firebaseAuth
 
@@ -116,23 +116,22 @@ public struct HomeFeature: Sendable {
 
             case .loadUser:
                 state.isLoading = true
-                return .run { send in
-                    // Retry token fetch — Firebase may not have it ready immediately after registration
-                    var token: String?
-                    for _ in 0..<3 {
-                        token = await sessionClient.getAccessToken()
-                        if token != nil { break }
-                        try? await Task.sleep(nanoseconds: 500_000_000)
+                return .run { [userProfileLocal] send in
+                    let profile = try? await userProfileLocal.getProfile()
+                    if let profile {
+                        let user = User(
+                            id: .init("local"),
+                            email: "",
+                            firstName: profile.userName,
+                            lastName: nil,
+                            avatarURL: nil,
+                            createdAt: profile.createdAt,
+                            updatedAt: profile.createdAt
+                        )
+                        await send(.userLoaded(.success(user)))
+                    } else {
+                        await send(.userLoaded(.failure(NSError(domain: "local", code: 0))))
                     }
-                    guard let token else {
-                        await send(.delegate(.didLogout))
-                        return
-                    }
-                    let endpoint = UserEndpoints.me().authenticated(with: token)
-                    let result = await Result {
-                        try await apiClient.send(endpoint) as User
-                    }
-                    await send(.userLoaded(result))
                 }
 
             case .userLoaded(.success(let user)):

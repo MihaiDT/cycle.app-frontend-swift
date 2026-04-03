@@ -133,9 +133,8 @@ public struct TodayFeature: Sendable {
         }
     }
 
-    @Dependency(\.hbiClient) var hbiClient
-    @Dependency(\.menstrualClient) var menstrualClient
-    @Dependency(\.sessionClient) var sessionClient
+    @Dependency(\.hbiLocal) var hbiLocal
+    @Dependency(\.menstrualLocal) var menstrualLocal
     @Dependency(\.continuousClock) var clock
 
     public init() {}
@@ -150,12 +149,8 @@ public struct TodayFeature: Sendable {
                 state.dashboardError = nil
                 return .merge(
                     .run { send in
-                        guard let token = try? await sessionClient.getAccessToken() else {
-                            await send(.dashboardLoaded(.failure(MenstrualError.noToken)))
-                            return
-                        }
                         let result = await Result {
-                            try await hbiClient.getDashboard(token)
+                            try await hbiLocal.getDashboard()
                         }
                         await send(.dashboardLoaded(result))
                     },
@@ -166,21 +161,16 @@ public struct TodayFeature: Sendable {
                 state.isLoadingMenstrual = true
                 return .merge(
                     .run { send in
-                        guard let token = try? await sessionClient.getAccessToken() else {
-                            await send(.menstrualStatusLoaded(.failure(MenstrualError.noToken)))
-                            return
-                        }
                         let result = await Result {
-                            try await menstrualClient.getStatus(token)
+                            try await menstrualLocal.getStatus()
                         }
                         await send(.menstrualStatusLoaded(result))
                     },
-                    .run { [menstrualClient, sessionClient] send in
-                        guard let token = try? await sessionClient.getAccessToken() else { return }
+                    .run { [menstrualLocal] send in
                         let start = Calendar.current.date(byAdding: .month, value: -6, to: Date())!
                         let end = Calendar.current.date(byAdding: .month, value: 12, to: Date())!
                         let result = await Result {
-                            try await menstrualClient.getCalendar(token, start, end)
+                            try await menstrualLocal.getCalendar(start, end)
                         }
                         await send(.calendarEntriesLoaded(result), animation: .easeInOut(duration: 0.3))
                     }
@@ -402,13 +392,9 @@ public struct TodayFeature: Sendable {
                 state.syncStatus = .syncing
                 let logDate = date
                 let bleedingDays = state.cycle?.bleedingDays ?? 5
-                return .run { [menstrualClient, sessionClient] send in
-                    guard let token = await sessionClient.getAccessToken() else { return }
-                    try? await menstrualClient.confirmPeriod(
-                        token,
-                        ConfirmPeriodRequest(actualStartDate: logDate, bleedingDays: bleedingDays)
-                    )
-                    try? await menstrualClient.generatePrediction(token)
+                return .run { [menstrualLocal] send in
+                    try? await menstrualLocal.confirmPeriod(logDate, bleedingDays, nil)
+                    try? await menstrualLocal.generatePrediction()
                     await send(.logPeriodCompleted)
                 }
 
@@ -456,28 +442,22 @@ public struct TodayFeature: Sendable {
             case .backgroundSyncPeriod(let periodDays, let originalPeriodDays, let flowIntensity, let bleedingDays):
                 let periodGroups = EditPeriodFeature.groupConsecutivePeriods(periodDays)
                 let removedDays = originalPeriodDays.subtracting(periodDays)
-                return .run { [menstrualClient, sessionClient] send in
+                return .run { [menstrualLocal] send in
                     defer { Task { await send(.backgroundSyncCompleted) } }
-                    guard let token = await sessionClient.getAccessToken() else { return }
                     // Remove days first
                     if !removedDays.isEmpty {
-                        try? await menstrualClient.removePeriodDays(
-                            token, RemovePeriodDaysRequest(dates: removedDays)
-                        )
+                        let datesToRemove = removedDays.compactMap { CalendarFeature.parseDate($0) }
+                        try? await menstrualLocal.removePeriodDays(datesToRemove)
                     }
                     // Confirm remaining period groups
                     for group in periodGroups {
-                        try? await menstrualClient.confirmPeriod(
-                            token,
-                            ConfirmPeriodRequest(
-                                actualStartDate: group.startDate,
-                                bleedingDays: group.dayCount
-                            )
+                        try? await menstrualLocal.confirmPeriod(
+                            group.startDate, group.dayCount, nil
                         )
                     }
                     // Regenerate predictions only if we have period data
                     if !periodGroups.isEmpty {
-                        try? await menstrualClient.generatePrediction(token)
+                        try? await menstrualLocal.generatePrediction()
                     }
                 }
 

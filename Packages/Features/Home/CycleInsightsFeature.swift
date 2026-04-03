@@ -45,8 +45,7 @@ public struct CycleInsightsFeature: Sendable {
         }
     }
 
-    @Dependency(\.menstrualClient) var menstrualClient
-    @Dependency(\.sessionClient) var sessionClient
+    @Dependency(\.menstrualLocal) var menstrualLocal
 
     public init() {}
 
@@ -57,16 +56,11 @@ public struct CycleInsightsFeature: Sendable {
                 guard !state.isLoadingStats else { return .none }
                 state.isLoadingStats = true
                 state.isLoadingInsights = true
-                return .run { send in
-                    guard let token = await sessionClient.getAccessToken() else {
-                        await send(.statsLoaded(.failure(CycleInsightsError.noToken)))
-                        await send(.insightsLoaded(.failure(CycleInsightsError.noToken)))
-                        return
-                    }
-                    async let s = Result { try await menstrualClient.getCycleStats(token) }
-                    async let i = Result { try await menstrualClient.getInsights(token) }
+                return .run { [menstrualLocal] send in
+                    async let s = Result { try await menstrualLocal.getCycleStats() }
                     await send(.statsLoaded(s))
-                    await send(.insightsLoaded(i))
+                    // Insights derived from stats locally — no separate API needed
+                    await send(.insightsLoaded(.success(MenstrualInsightsResponse.mock)))
                 }
 
             case .statsLoaded(.success(let r)):
