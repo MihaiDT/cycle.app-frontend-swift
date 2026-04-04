@@ -27,8 +27,6 @@ public struct AppFeature: Sendable {
             case notificationPermission
             case personalGoals
             case recap
-            case authChoice
-            case authentication
             case home
         }
 
@@ -57,9 +55,6 @@ public struct AppFeature: Sendable {
         public var usesContraception: Bool = false
         public var contraceptionType: ContraceptionType? = nil
 
-        // Authentication (child feature)
-        public var authState: AuthenticationFeature.State = AuthenticationFeature.State()
-
         // Home (child feature)
         public var homeState: HomeFeature.State = HomeFeature.State()
 
@@ -78,7 +73,6 @@ public struct AppFeature: Sendable {
         case showOnboarding
         case showHome
         case onboardingBeginTapped
-        case onboardingLoginTapped
         case splineIntroContinueTapped
         case toggleHealthDataConsent
         case toggleTermsConsent
@@ -91,10 +85,6 @@ public struct AppFeature: Sendable {
         case lifestyleRhythmNextTapped
         case personalGoalsNextTapped
         case recapFinishTapped
-        case authChoiceEmailTapped
-        case authChoiceGoogleTapped
-        case authChoiceAppleTapped
-        case backToAuthChoice
         case cycleDataNextTapped
         case healthPermissionConnectTapped
         case healthPermissionSkipTapped
@@ -114,9 +104,6 @@ public struct AppFeature: Sendable {
         case backToRecap
         case ageRestrictionTriggered
 
-        // Authentication child actions
-        case auth(AuthenticationFeature.Action)
-
         // Home child actions
         case home(HomeFeature.Action)
 
@@ -125,27 +112,18 @@ public struct AppFeature: Sendable {
         case onboardingSubmitCompleted
         case onboardingSubmitFailed(String)
 
-        // Guest mode
-        case guestContinueTapped
     }
 
     @Dependency(\.continuousClock) var clock
-    @Dependency(\.sessionClient) var sessionClient
     @Dependency(\.placesClient) var placesClient
-    @Dependency(\.firebaseAuthClient) var firebaseAuth
     @Dependency(\.userProfileLocal) var userProfileLocal
     @Dependency(\.menstrualLocal) var menstrualLocal
     @Dependency(\.localNotifications) var localNotifications
-    @Dependency(\.userDefaultsClient) var userDefaults
 
     public init() {}
 
     public var body: some ReducerOf<Self> {
         BindingReducer()
-
-        Scope(state: \.authState, action: \.auth) {
-            AuthenticationFeature()
-        }
 
         Scope(state: \.homeState, action: \.home) {
             HomeFeature()
@@ -157,27 +135,11 @@ public struct AppFeature: Sendable {
                 return .none
 
             case .onAppear:
-                return .run { [sessionClient, firebaseAuth, userProfileLocal, clock] send in
-                    // Check for local profile first (local-first: data on device)
+                return .run { [userProfileLocal, clock] send in
+                    // Local-first: check if user has completed onboarding
                     if let _ = try? await userProfileLocal.getProfile() {
                         await send(.showHome)
                         return
-                    }
-                    // Fallback: check Firebase session (for Aria chat users)
-                    if let session = try? await sessionClient.getSession(),
-                       session.isValid {
-                        if let freshToken = try? await firebaseAuth.getIDToken() {
-                            let refreshedSession = Session(
-                                id: session.id,
-                                accessToken: freshToken,
-                                refreshToken: session.refreshToken,
-                                expiresAt: Date().addingTimeInterval(3600),
-                                user: session.user
-                            )
-                            try? await sessionClient.setSession(refreshedSession)
-                            await send(.showHome)
-                            return
-                        }
                     }
                     // No local data — show onboarding
                     try await clock.sleep(for: .milliseconds(1500))
@@ -194,11 +156,6 @@ public struct AppFeature: Sendable {
 
             case .onboardingBeginTapped:
                 state.destination = .privacy
-                return .none
-
-            case .onboardingLoginTapped:
-                state.authState.mode = .login
-                state.destination = .authentication
                 return .none
 
             case .splineIntroContinueTapped:
@@ -276,39 +233,6 @@ public struct AppFeature: Sendable {
                 // Local-first: no auth needed, save data and go straight to home
                 return .send(.submitOnboardingData)
 
-            case .authChoiceEmailTapped:
-                state.authState.mode = .register
-                state.destination = .authentication
-                return .none
-
-            case .authChoiceGoogleTapped:
-                return .send(.auth(.googleSignInTapped))
-                return .none
-
-            case .authChoiceAppleTapped:
-                // TODO: Implement Apple Sign In
-                return .none
-
-            case .backToAuthChoice:
-                state.destination = .authChoice
-                return .none
-
-            // MARK: - Authentication Delegate
-
-            case .auth(.delegate(.didAuthenticate)):
-                if state.authState.mode == .login {
-                    // Returning user — skip onboarding, go straight to home
-                    state.homeState = HomeFeature.State()
-                    state.destination = .home
-                    return .none
-                }
-                // New user (register) — submit all onboarding data to backend
-                return .send(.submitOnboardingData)
-
-            case .auth:
-                // All other auth actions handled by scoped AuthenticationFeature
-                return .none
-
             // MARK: - Home Delegate
 
             case .home(.delegate(.didLogout)):
@@ -352,6 +276,18 @@ public struct AppFeature: Sendable {
 
                 return .run { send in
                     do {
+                        // 0. Clear any existing data (fresh start)
+                        let container = CycleDataStore.shared
+                        let clearCtx = ModelContext(container)
+                        try? clearCtx.delete(model: UserProfileRecord.self)
+                        try? clearCtx.delete(model: MenstrualProfileRecord.self)
+                        try? clearCtx.delete(model: CycleRecord.self)
+                        try? clearCtx.delete(model: SymptomRecord.self)
+                        try? clearCtx.delete(model: PredictionRecord.self)
+                        try? clearCtx.delete(model: SelfReportRecord.self)
+                        try? clearCtx.delete(model: HBIScoreRecord.self)
+                        try? clearCtx.save()
+
                         // 1. Save user profile locally
                         let profile = UserProfileSnapshot(
                             userName: "",
@@ -478,10 +414,6 @@ public struct AppFeature: Sendable {
                 return .none
 
             // MARK: - Guest Mode
-
-            case .guestContinueTapped:
-                // Guest mode: same local storage as authenticated — no server needed
-                return .send(.submitOnboardingData)
             }
         }
     }
@@ -516,7 +448,7 @@ public struct AppView: View {
         case .onboarding:
             OnboardingView(
                 onBegin: { store.send(.onboardingBeginTapped) },
-                onLogin: { store.send(.onboardingLoginTapped) }
+                onLogin: { store.send(.onboardingBeginTapped) }
             )
 
         case .splineIntro:
@@ -656,27 +588,6 @@ public struct AppView: View {
                 personalGoals: store.personalGoals,
                 onFinish: { store.send(.recapFinishTapped) },
                 onBack: { store.send(.backToPersonalGoals) }
-            )
-
-        case .authChoice:
-            AuthChoiceView(
-                onEmailTapped: { store.send(.authChoiceEmailTapped) },
-                onGoogleTapped: { store.send(.authChoiceGoogleTapped) },
-                onAppleTapped: { store.send(.authChoiceAppleTapped) },
-                onGuestTapped: { store.send(.guestContinueTapped) },
-                onBack: { store.send(.backToRecap) }
-            )
-
-        case .authentication:
-            AuthenticationView(
-                store: store.scope(state: \.authState, action: \.auth),
-                onBack: {
-                    if store.authState.mode == .login {
-                        store.send(.showOnboarding)
-                    } else {
-                        store.send(.backToAuthChoice)
-                    }
-                }
             )
 
         case .home:

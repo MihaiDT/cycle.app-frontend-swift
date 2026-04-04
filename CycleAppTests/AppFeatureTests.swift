@@ -88,7 +88,7 @@ struct AppFeatureTests {
         }
 
         await store.send(.recapFinishTapped) {
-            $0.destination = .authChoice
+            $0.isSubmittingOnboarding = true
         }
     }
 }

@@ -1,6 +1,7 @@
 import ComposableArchitecture
 import Inject
 import RiveRuntime
+import SwiftData
 import SwiftUI
 
 
@@ -83,8 +84,6 @@ public struct HomeFeature: Sendable {
     }
 
     @Dependency(\.userProfileLocal) var userProfileLocal
-    @Dependency(\.sessionClient) var sessionClient
-    @Dependency(\.firebaseAuthClient) var firebaseAuth
 
     public init() {}
 
@@ -152,9 +151,18 @@ public struct HomeFeature: Sendable {
                 return .none
 
             case .logoutTapped:
-                return .run { [firebaseAuth, sessionClient] send in
-                    try? await firebaseAuth.signOut()
-                    try? await sessionClient.clearSession()
+                return .run { send in
+                    // Clear all local health data
+                    let container = CycleDataStore.shared
+                    let context = ModelContext(container)
+                    try? context.delete(model: UserProfileRecord.self)
+                    try? context.delete(model: MenstrualProfileRecord.self)
+                    try? context.delete(model: CycleRecord.self)
+                    try? context.delete(model: SymptomRecord.self)
+                    try? context.delete(model: PredictionRecord.self)
+                    try? context.delete(model: SelfReportRecord.self)
+                    try? context.delete(model: HBIScoreRecord.self)
+                    try? context.save()
                     await send(.logoutCompleted)
                 }
 
