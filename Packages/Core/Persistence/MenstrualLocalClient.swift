@@ -187,8 +187,21 @@ extension MenstrualLocalClient {
                     }
                 }
 
-                // Prediction entries (fertile + ovulation)
+                // Predicted period entries
+                let profileDesc = FetchDescriptor<MenstrualProfileRecord>()
+                let bleedingDays = (try? context.fetch(profileDesc).first?.avgBleedingDays) ?? 5
                 for pred in predictions where !pred.isConfirmed {
+                    for dayOffset in 0..<bleedingDays {
+                        let date = CycleMath.addDays(pred.predictedDate, dayOffset)
+                        if date >= start, date <= end {
+                            entries.append(MenstrualCalendarEntry(
+                                date: date, type: "predicted_period",
+                                label: "Predicted period"
+                            ))
+                        }
+                    }
+
+                    // Fertile window
                     if let fStart = pred.fertileWindowStart,
                        let fEnd = pred.fertileWindowEnd
                     {
@@ -579,50 +592,43 @@ extension MenstrualLocalClient {
             cycleRegularity: profile.cycleRegularity
         )
 
-        // Generate primary prediction
+        // Generate primary prediction using the adaptive engine
         let result = MenstrualPredictor.predict(
             cycles: cycleInputs,
             profile: profileInput,
-            hasSymptomData: false // Could check symptom records
+            hasSymptomData: false
         )
 
-        let prediction = PredictionRecord(
-            predictedDate: result.predictedStart,
-            rangeStart: result.rangeStart,
-            rangeEnd: result.rangeEnd,
-            confidenceLevel: result.confidence,
-            algorithmVersion: result.algorithmVersion.rawValue,
-            basedOnCycles: result.basedOnCycles,
-            fertileWindowStart: result.fertileWindow.start,
-            fertileWindowEnd: result.fertileWindow.end,
-            ovulationDate: result.fertileWindow.peak
-        )
-        context.insert(prediction)
+        let sd = CycleMath.stdDev(cycleInputs.compactMap(\.actualCycleLength))
+        let cycleLen = profile.avgCycleLength
 
-        // Generate second prediction (next cycle after primary)
-        let secondStart = CycleMath.addDays(result.predictedStart, profile.avgCycleLength)
-        let secondRange = CycleMath.predictionRangeDays(
-            confidence: result.confidence * 0.9,
-            stdDev: CycleMath.stdDev(
-                cycleInputs.compactMap(\.actualCycleLength)
+        // Project 12 cycles into the future (~1 year of predictions)
+        var currentStart = result.predictedStart
+        var currentConfidence = result.confidence
+
+        for i in 0..<12 {
+            let rangeDays = CycleMath.predictionRangeDays(confidence: currentConfidence, stdDev: sd)
+            let fertile = i == 0
+                ? result.fertileWindow
+                : CycleMath.simpleFertileWindow(cycleStart: currentStart, cycleLength: cycleLen)
+
+            let pred = PredictionRecord(
+                predictedDate: currentStart,
+                rangeStart: CycleMath.addDays(currentStart, -rangeDays),
+                rangeEnd: CycleMath.addDays(currentStart, rangeDays),
+                confidenceLevel: currentConfidence,
+                algorithmVersion: i == 0 ? result.algorithmVersion.rawValue : "v1_basic",
+                basedOnCycles: result.basedOnCycles,
+                fertileWindowStart: fertile.start,
+                fertileWindowEnd: fertile.end,
+                ovulationDate: fertile.peak
             )
-        )
-        let secondFertile = CycleMath.simpleFertileWindow(
-            cycleStart: secondStart, cycleLength: profile.avgCycleLength
-        )
+            context.insert(pred)
 
-        let secondPrediction = PredictionRecord(
-            predictedDate: secondStart,
-            rangeStart: CycleMath.addDays(secondStart, -secondRange),
-            rangeEnd: CycleMath.addDays(secondStart, secondRange),
-            confidenceLevel: result.confidence * 0.9,
-            algorithmVersion: result.algorithmVersion.rawValue,
-            basedOnCycles: result.basedOnCycles,
-            fertileWindowStart: secondFertile.start,
-            fertileWindowEnd: secondFertile.end,
-            ovulationDate: secondFertile.peak
-        )
-        context.insert(secondPrediction)
+            // Next cycle: advance by avg length, decay confidence slightly
+            currentStart = CycleMath.addDays(currentStart, cycleLen)
+            currentConfidence = max(0.3, currentConfidence * 0.95)
+        }
 
         try context.save()
     }
