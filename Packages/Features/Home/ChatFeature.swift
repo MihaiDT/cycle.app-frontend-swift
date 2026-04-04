@@ -67,39 +67,40 @@ public struct ChatFeature: Sendable {
                 let sessionID = state.sessionID
                 return .run { send in
                     await send(.webSocketConnected)
-                    // Connect to WebSocket
                     let url = URL(string: "ws://34.72.143.234:8081/ws?anonymous_id=\(anonID)")!
                     let session = URLSession(configuration: .default)
-                    let task = session.webSocketTask(with: url)
-                    task.resume()
 
-                    // Store task for sending
-                    WebSocketManager.shared.task = task
+                    func connect() -> URLSessionWebSocketTask {
+                        let task = session.webSocketTask(with: url)
+                        task.resume()
+                        WebSocketManager.shared.task = task
+                        return task
+                    }
+
+                    var wsTask = connect()
                     WebSocketManager.shared.sessionID = sessionID
+                    await send(.webSocketConnected)
 
-                    // Listen for messages
-                    await withTaskCancellationHandler {
-                        while !Task.isCancelled {
-                            do {
-                                let message = try await task.receive()
-                                switch message {
-                                case .string(let text):
-                                    await send(.messageReceived(text))
-                                case .data:
-                                    break
-                                @unknown default:
-                                    break
-                                }
-                            } catch {
-                                await send(.webSocketDisconnected)
-                                // Reconnect after 3 seconds
-                                try? await Task.sleep(for: .seconds(3))
-                                task.resume()
-                                await send(.webSocketConnected)
+                    while !Task.isCancelled {
+                        do {
+                            let message = try await wsTask.receive()
+                            switch message {
+                            case .string(let text):
+                                await send(.messageReceived(text))
+                            case .data:
+                                break
+                            @unknown default:
+                                break
                             }
+                        } catch {
+                            guard !Task.isCancelled else { break }
+                            await send(.webSocketDisconnected)
+                            try? await Task.sleep(for: .seconds(2))
+                            guard !Task.isCancelled else { break }
+                            // Create a fresh connection
+                            wsTask = connect()
+                            await send(.webSocketConnected)
                         }
-                    } onCancel: {
-                        task.cancel(with: .normalClosure, reason: nil)
                     }
                 }
 
