@@ -63,8 +63,12 @@ public struct CardStackFeature: Sendable {
                     state.cards = cachedCards
                     state.frontIndex = 0
                     state.dragOffset = 0
+                    state.isLoading = false
                     return .none
                 }
+
+                // Already fetching — don't duplicate
+                guard !state.isLoading else { return .none }
 
                 // No cache — show loading, fetch from AI
                 state.isLoading = true
@@ -74,6 +78,8 @@ public struct CardStackFeature: Sendable {
                     if let aiCards = await Self.fetchAICards(phase: phaseStr, day: day) {
                         Self.cacheCards(aiCards, date: today, phase: phaseStr, day: day)
                         await send(.cardsGenerated(aiCards))
+                    } else {
+                        await send(.cardsGenerated([]))
                     }
                 }
 
@@ -556,12 +562,10 @@ extension CardStackFeature {
         let container = CycleDataStore.shared
         let context = ModelContext(container)
 
-        // Clear old cards
-        let oldDescriptor = FetchDescriptor<DailyCardRecord>(
-            predicate: #Predicate { $0.date != date }
-        )
-        if let old = try? context.fetch(oldDescriptor) {
-            for record in old { context.delete(record) }
+        // Clear ALL existing cards (old + today's duplicates)
+        let allDescriptor = FetchDescriptor<DailyCardRecord>()
+        if let all = try? context.fetch(allDescriptor) {
+            for record in all { context.delete(record) }
         }
 
         for card in cards {

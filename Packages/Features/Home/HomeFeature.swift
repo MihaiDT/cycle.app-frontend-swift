@@ -169,6 +169,7 @@ public struct HomeFeature: Sendable {
                     try? context.delete(model: SelfReportRecord.self)
                     try? context.delete(model: HBIScoreRecord.self)
                     try? context.delete(model: ChatMessageRecord.self)
+                    try? context.delete(model: DailyCardRecord.self)
                     try? context.save()
                     // Clear chat session
                     UserDefaults.standard.removeObject(forKey: "cycle.chat.sessionID")
