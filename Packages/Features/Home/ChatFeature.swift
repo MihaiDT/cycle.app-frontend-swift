@@ -389,6 +389,7 @@ public struct ChatView: View {
             inputBar
         }
         .background(DesignColors.background)
+        .onTapGesture { isInputFocused = false }
         .task { store.send(.onAppear) }
         .enableInjection()
     }
