@@ -1,4 +1,5 @@
 import ComposableArchitecture
+import SwiftData
 import SwiftUI
 import UIKit
 
@@ -27,6 +28,7 @@ public struct CardStackFeature: Sendable {
 
     public enum Action: Sendable {
         case loadCards(CyclePhase, Int)
+        case cardsGenerated([DailyCard])
         case dragChanged(CGFloat)
         case dragEnded(CGFloat, CGFloat)
         case dismissFront
@@ -44,13 +46,41 @@ public struct CardStackFeature: Sendable {
 
     @Dependency(\.continuousClock) var clock
 
+    private static let cardsURL = "http://34.72.143.234:8081/api/daily-cards"
+
     public init() {}
 
     public var body: some ReducerOf<Self> {
         Reduce { state, action in
             switch action {
             case let .loadCards(phase, day):
+                // Check SwiftData cache first
+                let today = Self.todayString()
+                let cachedCards = Self.loadCachedCards(date: today, phase: phase, day: day)
+                if !cachedCards.isEmpty {
+                    state.cards = cachedCards
+                    state.frontIndex = 0
+                    state.dragOffset = 0
+                    return .none
+                }
+
+                // Fallback to static while AI generates
                 state.cards = DailyCard.mockCards(for: phase, day: day)
+                state.frontIndex = 0
+                state.dragOffset = 0
+
+                // Fetch AI cards in background
+                let phaseStr = phase.rawValue
+                return .run { send in
+                    if let aiCards = await Self.fetchAICards(phase: phaseStr, day: day) {
+                        Self.cacheCards(aiCards, date: today, phase: phaseStr, day: day)
+                        await send(.cardsGenerated(aiCards))
+                    }
+                }
+
+            case let .cardsGenerated(cards):
+                guard !cards.isEmpty else { return .none }
+                state.cards = cards
                 state.frontIndex = 0
                 state.dragOffset = 0
                 return .none
@@ -455,5 +485,157 @@ private struct DailyCardView: View {
         .frame(height: 320)
         .clipShape(RoundedRectangle(cornerRadius: AppLayout.cornerRadiusL, style: .continuous))
         .shadow(color: .black.opacity(0.15), radius: 24, x: 0, y: 10)
+    }
+}
+
+// MARK: - AI Card Generation
+
+extension CardStackFeature {
+
+    static func todayString() -> String {
+        let fmt = DateFormatter()
+        fmt.dateFormat = "yyyy-MM-dd"
+        return fmt.string(from: Date())
+    }
+
+    static func loadCachedCards(date: String, phase: CyclePhase, day: Int) -> [DailyCard] {
+        let container = CycleDataStore.shared
+        let context = ModelContext(container)
+        let descriptor = FetchDescriptor<DailyCardRecord>(
+            predicate: #Predicate { $0.date == date },
+            sortBy: [SortDescriptor(\.createdAt)]
+        )
+        guard let records = try? context.fetch(descriptor), !records.isEmpty else { return [] }
+
+        return records.map { record in
+            DailyCard(
+                id: .init("\(record.cardType)-\(record.date)"),
+                cardType: CardType(rawValue: record.cardType) ?? .feel,
+                title: record.title,
+                body: record.body,
+                cyclePhase: phase,
+                cycleDay: day,
+                action: record.cardType == "go_deeper"
+                    ? CardAction(actionType: .openLens, label: "Discover")
+                    : record.cardType == "do"
+                        ? CardAction(actionType: .breathing, label: "Try this")
+                        : nil
+            )
+        }
+    }
+
+    static func cacheCards(_ cards: [DailyCard], date: String, phase: String, day: Int) {
+        let container = CycleDataStore.shared
+        let context = ModelContext(container)
+
+        // Clear old cards
+        let oldDescriptor = FetchDescriptor<DailyCardRecord>(
+            predicate: #Predicate { $0.date != date }
+        )
+        if let old = try? context.fetch(oldDescriptor) {
+            for record in old { context.delete(record) }
+        }
+
+        for card in cards {
+            let record = DailyCardRecord(
+                date: date,
+                cardType: card.cardType.rawValue,
+                title: card.title,
+                body: card.body,
+                cyclePhase: phase,
+                cycleDay: day
+            )
+            context.insert(record)
+        }
+        try? context.save()
+    }
+
+    static func fetchAICards(phase: String, day: Int) async -> [DailyCard]? {
+        // Get current health context
+        let container = CycleDataStore.shared
+        let ctx = ModelContext(container)
+
+        var energy = 3, mood = 3, stress = 3, sleep = 3, hbiScore = 0
+        var symptoms: [String] = []
+
+        let reportDesc = FetchDescriptor<SelfReportRecord>(
+            sortBy: [SortDescriptor(\.reportDate, order: .reverse)]
+        )
+        if let report = try? ctx.fetch(reportDesc).first {
+            energy = report.energyLevel
+            mood = report.moodLevel
+            stress = report.stressLevel
+            sleep = report.sleepQuality
+        }
+
+        let scoreDesc = FetchDescriptor<HBIScoreRecord>(
+            sortBy: [SortDescriptor(\.scoreDate, order: .reverse)]
+        )
+        if let score = try? ctx.fetch(scoreDesc).first {
+            hbiScore = Int(score.hbiAdjusted.rounded())
+        }
+
+        let weekAgo = Calendar.current.date(byAdding: .day, value: -7, to: Date())!
+        let symptomDesc = FetchDescriptor<SymptomRecord>(
+            predicate: #Predicate { $0.symptomDate >= weekAgo }
+        )
+        symptoms = ((try? ctx.fetch(symptomDesc)) ?? []).map(\.symptomType)
+
+        // Build request
+        let payload: [String: Any] = [
+            "cycle_phase": phase,
+            "cycle_day": day,
+            "energy": energy,
+            "mood": mood,
+            "stress": stress,
+            "sleep": sleep,
+            "hbi_score": hbiScore,
+            "recent_symptoms": Array(Set(symptoms)),
+        ]
+
+        guard let url = URL(string: cardsURL),
+              let body = try? JSONSerialization.data(withJSONObject: payload)
+        else { return nil }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.httpBody = body
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.timeoutInterval = 30
+
+        guard let (data, response) = try? await URLSession.shared.data(for: request),
+              let httpResp = response as? HTTPURLResponse,
+              httpResp.statusCode == 200
+        else { return nil }
+
+        struct AIResponse: Decodable {
+            let cards: [AICard]
+            struct AICard: Decodable {
+                let card_type: String
+                let title: String
+                let body: String
+            }
+        }
+
+        guard let aiResp = try? JSONDecoder().decode(AIResponse.self, from: data) else { return nil }
+
+        let cyclePhase = CyclePhase(rawValue: phase) ?? .follicular
+
+        return aiResp.cards.map { card in
+            let cardType = CardType(rawValue: card.card_type) ?? .feel
+            return DailyCard(
+                id: .init("\(card.card_type)-ai-\(todayString())"),
+                cardType: cardType,
+                title: card.title,
+                body: card.body,
+                cyclePhase: cyclePhase,
+                cycleDay: day,
+                action: cardType == .goDeeper
+                    ? CardAction(actionType: .openLens, label: "Discover")
+                    : cardType == .do
+                        ? CardAction(actionType: .breathing, label: "Try this")
+                        : nil
+            )
+        }
     }
 }
