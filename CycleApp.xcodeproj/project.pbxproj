@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 63;
+	objectVersion = 77;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -108,6 +108,7 @@
 		B224E12C6ABB07914CE60F82 /* CalendarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E11CC02F06A23385C8E3602 /* CalendarView.swift */; };
 		B23822CF0AEC66D9A5A6F2D9 /* Raleway-LightItalic.ttf in Resources */ = {isa = PBXBuildFile; fileRef = FC20EA8D8D952D23A5847DDB /* Raleway-LightItalic.ttf */; };
 		B3C842534218672CCDC49B93 /* Endpoint.swift in Sources */ = {isa = PBXBuildFile; fileRef = 32C504F11889B24005F6A29C /* Endpoint.swift */; };
+		B50E9BE7BC63C1E30C1E0ED8 /* AnonymousIDClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0359E62B86A73F05ADE7FFF1 /* AnonymousIDClient.swift */; };
 		B51ED6F3C6525B10A6232474 /* GradientTagline.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0BC45BF7323F201338BFDA2E /* GradientTagline.swift */; };
 		B6F50DB4F0688FEBD7527589 /* CalendarMonthGrid.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2567F14009FEA37D5BBA815C /* CalendarMonthGrid.swift */; };
 		B716F459D680CEFDAE2F34C3 /* PrivacyConsentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0132B1F82A5F0287717FAF61 /* PrivacyConsentView.swift */; };
@@ -165,6 +166,7 @@
 /* Begin PBXFileReference section */
 		0132B1F82A5F0287717FAF61 /* PrivacyConsentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivacyConsentView.swift; sourceTree = "<group>"; };
 		01D3B37256BD926AA7EFCBC2 /* Logger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Logger.swift; sourceTree = "<group>"; };
+		0359E62B86A73F05ADE7FFF1 /* AnonymousIDClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnonymousIDClient.swift; sourceTree = "<group>"; };
 		047CCAFD0E4BADAC49BE42AB /* CycleRingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CycleRingView.swift; sourceTree = "<group>"; };
 		05C1863ED7A02D2799907F02 /* DailyCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyCard.swift; sourceTree = "<group>"; };
 		07E99F716BD6967D5C05C8A5 /* CycleApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CycleApp.swift; sourceTree = "<group>"; };
@@ -192,7 +194,7 @@
 		32C504F11889B24005F6A29C /* Endpoint.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Endpoint.swift; sourceTree = "<group>"; };
 		34A6F94AAF7182E46C4F885F /* Raleway-SemiBoldItalic.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Raleway-SemiBoldItalic.ttf"; sourceTree = "<group>"; };
 		3C380CB9877F9EFBE8833FE6 /* PlacesClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlacesClient.swift; sourceTree = "<group>"; };
-		3D613DF8875F1A90F07C4F34 /* CycleApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CycleApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		3D613DF8875F1A90F07C4F34 /* CycleApp.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = CycleApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		3FC0F0AFF2877CD41AB19497 /* SessionClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionClient.swift; sourceTree = "<group>"; };
 		42B1B55C9A99AA93CDC456BD /* HBICalculator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HBICalculator.swift; sourceTree = "<group>"; };
 		4322D31D6B828275DD65FC35 /* CycleCalendarViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CycleCalendarViews.swift; sourceTree = "<group>"; };
@@ -208,7 +210,7 @@
 		5886220E666CF879F28AA495 /* CalendarSymptomSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarSymptomSheet.swift; sourceTree = "<group>"; };
 		5A599EEAB5931BAEBC4207E9 /* Raleway-MediumItalic.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Raleway-MediumItalic.ttf"; sourceTree = "<group>"; };
 		5EC4B5B5DEB0E25A730E4507 /* HealthKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = HealthKit.framework; path = System/Library/Frameworks/HealthKit.framework; sourceTree = SDKROOT; };
-		5ED03F559F4A2F374AF86A5C /* glowing_orb.riv */ = {isa = PBXFileReference; lastKnownFileType = file; path = glowing_orb.riv; sourceTree = "<group>"; };
+		5ED03F559F4A2F374AF86A5C /* glowing_orb.riv */ = {isa = PBXFileReference; path = glowing_orb.riv; sourceTree = "<group>"; };
 		5F90D69A90239DFEC866C703 /* CycleApp.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = CycleApp.entitlements; sourceTree = "<group>"; };
 		60A69777B121E02CCD9ED6FD /* ModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelTests.swift; sourceTree = "<group>"; };
 		60DA695074FF83065EB0E7D5 /* AriaContextProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AriaContextProvider.swift; sourceTree = "<group>"; };
@@ -283,7 +285,7 @@
 		E234B15081BB567827B75E0E /* CalendarAriaInsight.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarAriaInsight.swift; sourceTree = "<group>"; };
 		E438E6CA574859596F3B8702 /* CycleContext.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CycleContext.swift; sourceTree = "<group>"; };
 		E6443B1A872FD8D9CA385C44 /* GlassTextField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassTextField.swift; sourceTree = "<group>"; };
-		E687F11BA153A2DF683BD9B0 /* logo_animation.splineswift */ = {isa = PBXFileReference; lastKnownFileType = file; path = logo_animation.splineswift; sourceTree = "<group>"; };
+		E687F11BA153A2DF683BD9B0 /* logo_animation.splineswift */ = {isa = PBXFileReference; path = logo_animation.splineswift; sourceTree = "<group>"; };
 		E911916B959EE91C14269049 /* WellnessPillarCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WellnessPillarCard.swift; sourceTree = "<group>"; };
 		EA867F396B072ED863219115 /* APIError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIError.swift; sourceTree = "<group>"; };
 		F00316DAE6809EF9B087B33C /* PersonalGoalsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersonalGoalsView.swift; sourceTree = "<group>"; };
@@ -485,6 +487,7 @@
 		94DFF484BE1E47CB844F263F /* Persistence */ = {
 			isa = PBXGroup;
 			children = (
+				0359E62B86A73F05ADE7FFF1 /* AnonymousIDClient.swift */,
 				60DA695074FF83065EB0E7D5 /* AriaContextProvider.swift */,
 				252B1935BE43B154DA84074D /* CycleDataStore.swift */,
 				D9BEB4E6B19D12267D302E1E /* HBILocalClient.swift */,
@@ -740,6 +743,7 @@
 				AEF383D9F05536120F2B291B /* XCRemoteSwiftPackageReference "spline-ios" */,
 				FDE4EA748176C63BCCDC26BB /* XCRemoteSwiftPackageReference "swift-tagged" */,
 			);
+			preferredProjectObjectVersion = 77;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
@@ -791,6 +795,7 @@
 				65962311B2B6C4CB93678BF3 /* APIClient.swift in Sources */,
 				5183F12DDE66A90DA3DBFBA7 /* APIError.swift in Sources */,
 				66F1FC1906AEA3CCDA774B2F /* APIResponse.swift in Sources */,
+				B50E9BE7BC63C1E30C1E0ED8 /* AnonymousIDClient.swift in Sources */,
 				B98CDCDE2F0F8E0ED67FAC40 /* AppFeature.swift in Sources */,
 				427C36FC105AA05465F182FC /* AriaContextProvider.swift in Sources */,
 				FE0B55CA6AD817CF227B166A /* Async+Extensions.swift in Sources */,
@@ -927,7 +932,6 @@
 				CODE_SIGN_ENTITLEMENTS = CycleApp/Resources/CycleApp.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = AT2NH7U6W7;
 				INFOPLIST_FILE = CycleApp/Resources/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -966,7 +970,6 @@
 				CODE_SIGN_ENTITLEMENTS = CycleApp/Resources/CycleApp.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = AT2NH7U6W7;
 				INFOPLIST_FILE = CycleApp/Resources/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",

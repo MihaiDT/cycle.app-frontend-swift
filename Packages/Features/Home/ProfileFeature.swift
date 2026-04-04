@@ -64,6 +64,10 @@ public struct ProfileFeature: Sendable {
 
     public enum Action: Sendable {
         case logoutTapped
+        case deleteChatDataTapped
+        case chatDataDeleted
+        case resetAnonymousIDTapped
+        case anonymousIDReset
         case delegate(Delegate)
 
         public enum Delegate: Equatable, Sendable {
@@ -71,13 +75,37 @@ public struct ProfileFeature: Sendable {
         }
     }
 
+    @Dependency(\.anonymousID) var anonymousID
+
     public init() {}
 
     public var body: some ReducerOf<Self> {
-        Reduce { _, action in
+        Reduce { state, action in
             switch action {
             case .logoutTapped:
                 return .send(.delegate(.didLogout))
+
+            case .deleteChatDataTapped:
+                let id = anonymousID.getID()
+                return .run { send in
+                    // Call server to delete all anonymous data
+                    let url = URL(string: "https://dth-backend-277319586889.us-central1.run.app/anonymous/\(id)/all")!
+                    var request = URLRequest(url: url)
+                    request.httpMethod = "DELETE"
+                    _ = try? await URLSession.shared.data(for: request)
+                    await send(.chatDataDeleted)
+                }
+
+            case .chatDataDeleted:
+                return .none
+
+            case .resetAnonymousIDTapped:
+                _ = anonymousID.rotateID()
+                return .send(.anonymousIDReset)
+
+            case .anonymousIDReset:
+                return .none
+
             case .delegate:
                 return .none
             }
@@ -106,7 +134,7 @@ public struct ProfileView: View {
                     wellnessCard
                     settingsSection
                     aboutSection
-                    signOutButton
+                    privacyActionsSection
                     VerticalSpace(AppLayout.spacingXL)
                 }
                 .padding(.horizontal, AppLayout.horizontalPadding)
@@ -400,26 +428,66 @@ public struct ProfileView: View {
         .background { glassCard(cornerRadius: AppLayout.cornerRadiusL) }
     }
 
-    // MARK: - Sign Out Button
+    // MARK: - Privacy Actions
 
-    private var signOutButton: some View {
-        Button(action: { store.send(.logoutTapped) }) {
-            HStack(spacing: 10) {
-                Image(systemName: "rectangle.portrait.and.arrow.right")
+    private var privacyActionsSection: some View {
+        VStack(spacing: 12) {
+            profileActionButton(
+                icon: "trash",
+                title: "Delete Chat History",
+                subtitle: "Remove all Aria conversations from server",
+                action: { store.send(.deleteChatDataTapped) }
+            )
+
+            profileActionButton(
+                icon: "arrow.triangle.2.circlepath",
+                title: "Reset Anonymous ID",
+                subtitle: "Old conversations become unlinkable",
+                action: { store.send(.resetAnonymousIDTapped) }
+            )
+
+            profileActionButton(
+                icon: "rectangle.portrait.and.arrow.right",
+                title: "Reset App",
+                subtitle: "Delete all local data and start fresh",
+                action: { store.send(.logoutTapped) },
+                isDestructive: true
+            )
+        }
+    }
+
+    private func profileActionButton(
+        icon: String,
+        title: String,
+        subtitle: String,
+        action: @escaping () -> Void,
+        isDestructive: Bool = false
+    ) -> some View {
+        Button(action: action) {
+            HStack(spacing: 12) {
+                Image(systemName: icon)
                     .font(.system(size: 15))
-                Text("Sign Out")
-                    .font(.custom("Raleway-SemiBold", size: 15))
+                    .frame(width: 20)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(title)
+                        .font(.custom("Raleway-SemiBold", size: 15))
+                    Text(subtitle)
+                        .font(.custom("Raleway-Regular", size: 12))
+                        .foregroundColor(DesignColors.textSecondary)
+                }
+                Spacer()
             }
-            .foregroundColor(DesignColors.accentWarm)
+            .foregroundColor(isDestructive ? .red.opacity(0.8) : DesignColors.accentWarm)
             .frame(maxWidth: .infinity)
-            .padding(.vertical, 16)
+            .padding(.vertical, 14)
+            .padding(.horizontal, 16)
             .background {
                 RoundedRectangle(cornerRadius: AppLayout.cornerRadiusM)
                     .fill(.ultraThinMaterial)
                     .overlay {
                         RoundedRectangle(cornerRadius: AppLayout.cornerRadiusM)
                             .strokeBorder(
-                                DesignColors.accentWarm.opacity(0.3),
+                                (isDestructive ? Color.red : DesignColors.accentWarm).opacity(0.3),
                                 lineWidth: 0.5
                             )
                     }
