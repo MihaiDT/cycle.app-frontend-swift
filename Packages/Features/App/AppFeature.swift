@@ -157,11 +157,15 @@ public struct AppFeature: Sendable {
                 return .none
 
             case .onAppear:
-                return .run { [sessionClient, firebaseAuth] send in
-                    // Check for existing authenticated session
+                return .run { [sessionClient, firebaseAuth, userProfileLocal, clock] send in
+                    // Check for local profile first (local-first: data on device)
+                    if let _ = try? await userProfileLocal.getProfile() {
+                        await send(.showHome)
+                        return
+                    }
+                    // Fallback: check Firebase session (for Aria chat users)
                     if let session = try? await sessionClient.getSession(),
                        session.isValid {
-                        // Refresh Firebase token to ensure it's still valid
                         if let freshToken = try? await firebaseAuth.getIDToken() {
                             let refreshedSession = Session(
                                 id: session.id,
@@ -175,7 +179,7 @@ public struct AppFeature: Sendable {
                             return
                         }
                     }
-                    // No valid session — show onboarding
+                    // No local data — show onboarding
                     try await clock.sleep(for: .milliseconds(1500))
                     await send(.showOnboarding)
                 }
@@ -269,8 +273,8 @@ public struct AppFeature: Sendable {
 
             case .recapFinishTapped:
                 guard !state.isSubmittingOnboarding else { return .none }
-                state.destination = .authChoice
-                return .none
+                // Local-first: no auth needed, save data and go straight to home
+                return .send(.submitOnboardingData)
 
             case .authChoiceEmailTapped:
                 state.authState.mode = .register
