@@ -7,8 +7,6 @@ import SwiftUI
 
 @Reducer
 public struct TodayFeature: Sendable {
-    private enum CancelID { case cardRefresh }
-
     @ObservableState
     public struct State: Equatable, Sendable {
         public var dashboard: HBIDashboardResponse?
@@ -204,34 +202,9 @@ public struct TodayFeature: Sendable {
                 let phase = CyclePhase(rawValue: phaseStr) ?? .follicular
                 let day = status.currentCycle.cycleDay
 
-                // Check if phase/day changed from what cards show
-                let cardsNeedRefresh: Bool = {
-                    guard let firstCard = state.cardStackState.cards.first else { return true }
-                    return firstCard.cyclePhase != phase || firstCard.cycleDay != day
-                }()
-
-                if cardsNeedRefresh, !state.cardStackState.isLoading {
-                    // Clear stale cache
-                    let today = CardStackFeature.todayString()
-                    let container = CycleDataStore.shared
-                    let ctx = ModelContext(container)
-                    let desc = FetchDescriptor<DailyCardRecord>(
-                        predicate: #Predicate { $0.date == today }
-                    )
-                    if let old = try? ctx.fetch(desc) {
-                        for r in old { ctx.delete(r) }
-                        try? ctx.save()
-                    }
-                    state.cardStackState.cards = []
-                    // Debounce: wait 3 seconds before fetching AI cards
-                    // If user keeps editing, this effect gets cancelled and restarted
-                    effects.append(
-                        .run { send in
-                            try? await Task.sleep(for: .seconds(3))
-                            await send(.cardStack(.loadCards(phase, day)))
-                        }
-                        .cancellable(id: CancelID.cardRefresh, cancelInFlight: true)
-                    )
+                // Load cards only once — first load of the day
+                if state.cardStackState.cards.isEmpty, !state.cardStackState.isLoading {
+                    effects.append(.send(.cardStack(.loadCards(phase, day))))
                 }
                 return effects.isEmpty ? .none : .merge(effects)
 
@@ -289,17 +262,9 @@ public struct TodayFeature: Sendable {
                 state.serverFertileDays = fertile
                 state.serverOvulationDays = ovulation
                 if state.isRefreshingCycleData {
-                    // Also hold a copy for animation sync
-                    state.pendingCalendarData = .init(
-                        periodDays: days,
-                        predictedDays: predicted,
-                        fertileDays: fertile,
-                        ovulationDays: ovulation
-                    )
+                    state.isRefreshingCycleData = false
+                    state.pendingCalendarData = nil
                     return .run { send in
-                        // Minimum 2.5s of refresh animation
-                        try? await Task.sleep(nanoseconds: 2_500_000_000)
-                        await send(.finishRefreshAnimation)
                         if wasSyncing {
                             try? await Task.sleep(nanoseconds: 1_000_000_000)
                             await send(.hideSyncStatus, animation: .easeOut(duration: 0.3))
@@ -359,25 +324,6 @@ public struct TodayFeature: Sendable {
                 return .none
 
             case .checkIn(.presented(.delegate(.didCompleteCheckIn(_)))):
-                // Regenerate AI cards with fresh check-in data
-                if let cycle = state.cycle {
-                    // Clear today's cache so new cards generate
-                    let today = CardStackFeature.todayString()
-                    let container = CycleDataStore.shared
-                    let ctx = ModelContext(container)
-                    let desc = FetchDescriptor<DailyCardRecord>(
-                        predicate: #Predicate { $0.date == today }
-                    )
-                    if let old = try? ctx.fetch(desc) {
-                        for r in old { ctx.delete(r) }
-                        try? ctx.save()
-                    }
-                    state.cardStackState.cards = []
-                    return .merge(
-                        .send(.loadDashboard),
-                        .send(.cardStack(.loadCards(cycle.currentPhase, cycle.cycleDay)))
-                    )
-                }
                 return .send(.loadDashboard)
 
             case .checkIn:

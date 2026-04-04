@@ -535,8 +535,9 @@ extension CardStackFeature {
     static func loadCachedCards(date: String, phase: CyclePhase, day: Int) -> [DailyCard] {
         let container = CycleDataStore.shared
         let context = ModelContext(container)
+        let phaseStr = phase.rawValue
         let descriptor = FetchDescriptor<DailyCardRecord>(
-            predicate: #Predicate { $0.date == date },
+            predicate: #Predicate { $0.date == date && $0.cyclePhase == phaseStr && $0.cycleDay == day },
             sortBy: [SortDescriptor(\.createdAt)]
         )
         guard let records = try? context.fetch(descriptor), !records.isEmpty else { return [] }

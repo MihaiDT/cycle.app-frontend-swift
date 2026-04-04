@@ -74,21 +74,34 @@ extension MenstrualLocalClient {
                 // Current cycle info
                 let cycleDay: Int
                 let phase: String
+                let isLate: Bool
+                let daysLate: Int
                 if let lc = latestCycle {
                     cycleDay = CycleMath.cycleDay(cycleStart: lc.startDate, date: today)
-                    phase = CycleMath.cyclePhase(
-                        cycleDay: cycleDay, cycleLength: avgCycleLength,
-                        bleedingDays: lc.bleedingDays ?? avgBleedingDays
-                    ).rawValue
+                    if cycleDay > avgCycleLength {
+                        // Period is late — past expected cycle length
+                        phase = "late"
+                        isLate = true
+                        daysLate = cycleDay - avgCycleLength
+                    } else {
+                        phase = CycleMath.cyclePhase(
+                            cycleDay: cycleDay, cycleLength: avgCycleLength,
+                            bleedingDays: lc.bleedingDays ?? avgBleedingDays
+                        ).rawValue
+                        isLate = false
+                        daysLate = 0
+                    }
                 } else {
                     cycleDay = 1
                     phase = "unknown"
+                    isLate = false
+                    daysLate = 0
                 }
 
                 let cycleInfo = CycleInfo(
                     startDate: latestCycle?.startDate ?? today,
                     cycleDay: cycleDay,
-                    phase: phase,
+                    phase: isLate ? "late" : phase,
                     bleedingDays: latestCycle?.bleedingDays ?? avgBleedingDays
                 )
 
@@ -104,15 +117,15 @@ extension MenstrualLocalClient {
 
                 if let pred = prediction {
                     let daysUntil = CycleMath.daysBetween(today, pred.predictedDate)
-                    let isLate = daysUntil < 0
+                    let predIsLate = daysUntil < 0
 
                     predictionInfo = PredictionInfo(
                         predictedDate: pred.predictedDate,
                         daysUntil: max(0, daysUntil),
                         confidenceScore: pred.confidenceLevel,
                         predictionRange: DateRangeInfo(start: pred.rangeStart, end: pred.rangeEnd),
-                        isLate: isLate,
-                        daysLate: isLate ? abs(daysUntil) : 0
+                        isLate: isLate || predIsLate,
+                        daysLate: isLate ? daysLate : (predIsLate ? abs(daysUntil) : 0)
                     )
 
                     if let fStart = pred.fertileWindowStart,
@@ -133,7 +146,13 @@ extension MenstrualLocalClient {
                     profile: profileInfo,
                     nextPrediction: predictionInfo,
                     fertileWindow: fertileWindowInfo,
-                    hasCycleData: latestCycle != nil
+                    hasCycleData: {
+                        guard let lc = latestCycle else { return false }
+                        // Active if latest cycle started within 2x avg cycle length
+                        let maxAge = avgCycleLength * 2
+                        let daysSinceCycle = CycleMath.daysBetween(lc.startDate, today)
+                        return daysSinceCycle >= 0 && daysSinceCycle <= maxAge
+                    }()
                 )
             },
 
