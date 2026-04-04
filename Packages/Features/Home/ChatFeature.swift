@@ -115,8 +115,9 @@ public struct ChatFeature: Sendable {
                         }
                         await send(.historyLoaded(messages))
                     },
-                    // Connect WebSocket
+                    // Connect WebSocket (slight delay to let UI render first)
                     .run { send in
+                        try? await Task.sleep(for: .milliseconds(300))
                         let url = URL(string: "\(ChatFeature.wsURL)?anonymous_id=\(anonID)")!
                         let session = URLSession(configuration: .default)
                         var backoffSeconds: UInt64 = 2
