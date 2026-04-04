@@ -158,7 +158,8 @@ public struct ChatFeature: Sendable {
                         }
                     }
 
-                case "stream_chunk":
+                case "stream_chunk", "stream":
+                    state.isTyping = false
                     if let content = json["content"] as? String, !content.isEmpty {
                         if let last = state.messages.last, last.role == .assistant {
                             state.messages[state.messages.count - 1].content += content
