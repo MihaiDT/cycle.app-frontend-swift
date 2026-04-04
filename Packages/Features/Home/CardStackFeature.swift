@@ -54,8 +54,9 @@ public struct CardStackFeature: Sendable {
         Reduce { state, action in
             switch action {
             case let .loadCards(phase, day):
-                // Check SwiftData cache first
                 let today = Self.todayString()
+
+                // 1. Check cache — if we have today's AI cards, show them instantly
                 let cachedCards = Self.loadCachedCards(date: today, phase: phase, day: day)
                 if !cachedCards.isEmpty {
                     state.cards = cachedCards
@@ -64,17 +65,17 @@ public struct CardStackFeature: Sendable {
                     return .none
                 }
 
-                // Fallback to static while AI generates
+                // 2. No cache — show static cards immediately
                 state.cards = DailyCard.mockCards(for: phase, day: day)
                 state.frontIndex = 0
                 state.dragOffset = 0
 
-                // Fetch AI cards in background
+                // 3. Generate AI cards in background and cache for next open
                 let phaseStr = phase.rawValue
-                return .run { send in
+                return .run { _ in
                     if let aiCards = await Self.fetchAICards(phase: phaseStr, day: day) {
                         Self.cacheCards(aiCards, date: today, phase: phaseStr, day: day)
-                        await send(.cardsGenerated(aiCards))
+                        // Don't swap — cards will be ready on next app open
                     }
                 }
 
