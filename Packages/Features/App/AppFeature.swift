@@ -16,8 +16,6 @@ public struct AppFeature: Sendable {
             case onboarding
             case splineIntro
             case privacy
-            case nameInput
-            case nameGreeting
             case birthData
             case relationshipStatus
             case professionalContext
@@ -77,8 +75,6 @@ public struct AppFeature: Sendable {
         case toggleHealthDataConsent
         case toggleTermsConsent
         case privacyNextTapped
-        case nameInputNextTapped
-        case nameGreetingContinue
         case birthDataNextTapped
         case relationshipStatusNextTapped
         case professionalContextNextTapped
@@ -94,7 +90,6 @@ public struct AppFeature: Sendable {
         case backToHealthPermission
         case backToNotificationPermission
         case backToPrivacy
-        case backToNameInput
         case backToBirthData
         case backToRelationshipStatus
         case backToProfessionalContext
@@ -171,14 +166,6 @@ public struct AppFeature: Sendable {
                 return .none
 
             case .privacyNextTapped:
-                state.destination = .nameInput
-                return .none
-
-            case .nameInputNextTapped:
-                state.destination = .nameGreeting
-                return .none
-
-            case .nameGreetingContinue:
                 state.destination = .birthData
                 return .none
 
@@ -378,9 +365,6 @@ public struct AppFeature: Sendable {
                 state.destination = .privacy
                 return .none
 
-            case .backToNameInput:
-                state.destination = .nameInput
-                return .none
 
             case .backToBirthData:
                 state.destination = .birthData
@@ -467,19 +451,6 @@ public struct AppView: View {
                 onBack: { store.send(.backTapped) }
             )
 
-        case .nameInput:
-            NameInputView(
-                name: $store.userName,
-                onNext: { store.send(.nameInputNextTapped) },
-                onBack: { store.send(.backToPrivacy) }
-            )
-
-        case .nameGreeting:
-            NameGreetingView(
-                name: store.userName,
-                onContinue: { store.send(.nameGreetingContinue) }
-            )
-
         case .birthData:
             BirthDataView(
                 birthDate: $store.birthDate,
@@ -487,7 +458,7 @@ public struct AppView: View {
                 birthPlace: $store.birthPlace,
                 selectedBirthPlace: $store.selectedBirthPlace,
                 onNext: { store.send(.birthDataNextTapped) },
-                onBack: { store.send(.backToNameInput) },
+                onBack: { store.send(.backToPrivacy) },
                 onAgeRestriction: { store.send(.ageRestrictionTriggered) },
                 onSearchPlace: { query in
                     let client = PlacesClient.liveValue
@@ -579,7 +550,7 @@ public struct AppView: View {
 
         case .recap:
             OnboardingRecapView(
-                userName: store.userName,
+                userName: "",
                 birthDate: store.birthDate,
                 relationshipStatus: store.relationshipStatus,
                 professionalContext: store.professionalContext,
