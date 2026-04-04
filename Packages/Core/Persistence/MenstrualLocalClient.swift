@@ -174,9 +174,15 @@ extension MenstrualLocalClient {
 
                 var entries: [MenstrualCalendarEntry] = []
 
-                // Period entries
+                // Period entries + retroactive fertile window for confirmed cycles
+                let profileDescCal = FetchDescriptor<MenstrualProfileRecord>()
+                let avgCycleLen = (try? context.fetch(profileDescCal).first?.avgCycleLength) ?? 28
+
                 for cycle in cycles {
                     let bd = cycle.bleedingDays ?? 5
+                    let cl = cycle.actualCycleLength ?? avgCycleLen
+
+                    // Period days
                     for dayOffset in 0..<bd {
                         let date = CycleMath.addDays(cycle.startDate, dayOffset)
                         if date >= start, date <= end {
@@ -184,6 +190,40 @@ extension MenstrualLocalClient {
                                 date: date, type: "period",
                                 label: cycle.isConfirmed ? "Period" : "Projected period"
                             ))
+                        }
+                    }
+
+                    // Retroactive fertile window + ovulation for confirmed cycles
+                    if cycle.isConfirmed {
+                        let fertile = CycleMath.simpleFertileWindow(
+                            cycleStart: cycle.startDate, cycleLength: cl
+                        )
+
+                        // Ovulation
+                        if fertile.peak >= start, fertile.peak <= end {
+                            entries.append(MenstrualCalendarEntry(
+                                date: fertile.peak, type: "ovulation",
+                                label: "Ovulation", fertilityLevel: "peak"
+                            ))
+                        }
+
+                        // Fertile days
+                        var current = fertile.start
+                        while current <= fertile.end {
+                            if current >= start, current <= end {
+                                let diff = abs(CycleMath.daysBetween(current, fertile.peak))
+                                let level: String = switch diff {
+                                case 0: "peak"
+                                case 1: "high"
+                                case 2: "medium"
+                                default: "low"
+                                }
+                                entries.append(MenstrualCalendarEntry(
+                                    date: current, type: "fertile",
+                                    label: "Fertile window", fertilityLevel: level
+                                ))
+                            }
+                            current = CycleMath.addDays(current, 1)
                         }
                     }
                 }
@@ -572,6 +612,9 @@ extension MenstrualLocalClient {
         for pred in try context.fetch(clearDescriptor) {
             context.delete(pred)
         }
+
+        // Save deletions before checking if we can regenerate
+        try context.save()
 
         // Gather inputs
         guard let profile = try fetchProfile(context: context) else { return }

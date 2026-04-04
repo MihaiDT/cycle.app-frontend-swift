@@ -76,7 +76,7 @@ public enum CycleMath {
 
         if cycleDay >= 1, cycleDay <= bd {
             return .menstrual
-        } else if cycleDay < ovDay - 1 {
+        } else if cycleDay <= ovDay - 3 {
             return .follicular
         } else if cycleDay <= ovDay + 2 {
             return .ovulatory

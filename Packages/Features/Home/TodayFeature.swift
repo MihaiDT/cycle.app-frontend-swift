@@ -7,6 +7,8 @@ import SwiftUI
 
 @Reducer
 public struct TodayFeature: Sendable {
+    private enum CancelID { case cardRefresh }
+
     @ObservableState
     public struct State: Equatable, Sendable {
         public var dashboard: HBIDashboardResponse?
@@ -197,9 +199,39 @@ public struct TodayFeature: Sendable {
                     state.calendarState.hasPreloaded = true
                     effects.append(.send(.calendar(.loadCalendar)))
                 }
-                // Load card stack once per session
-                if let cycle = state.cycle, state.cardStackState.cards.isEmpty, !state.cardStackState.isLoading {
-                    effects.append(.send(.cardStack(.loadCards(cycle.currentPhase, cycle.cycleDay))))
+                // Load or refresh cards when cycle data changes
+                let phaseStr = status.currentCycle.phase
+                let phase = CyclePhase(rawValue: phaseStr) ?? .follicular
+                let day = status.currentCycle.cycleDay
+
+                // Check if phase/day changed from what cards show
+                let cardsNeedRefresh: Bool = {
+                    guard let firstCard = state.cardStackState.cards.first else { return true }
+                    return firstCard.cyclePhase != phase || firstCard.cycleDay != day
+                }()
+
+                if cardsNeedRefresh, !state.cardStackState.isLoading {
+                    // Clear stale cache
+                    let today = CardStackFeature.todayString()
+                    let container = CycleDataStore.shared
+                    let ctx = ModelContext(container)
+                    let desc = FetchDescriptor<DailyCardRecord>(
+                        predicate: #Predicate { $0.date == today }
+                    )
+                    if let old = try? ctx.fetch(desc) {
+                        for r in old { ctx.delete(r) }
+                        try? ctx.save()
+                    }
+                    state.cardStackState.cards = []
+                    // Debounce: wait 3 seconds before fetching AI cards
+                    // If user keeps editing, this effect gets cancelled and restarted
+                    effects.append(
+                        .run { send in
+                            try? await Task.sleep(for: .seconds(3))
+                            await send(.cardStack(.loadCards(phase, day)))
+                        }
+                        .cancellable(id: CancelID.cardRefresh, cancelInFlight: true)
+                    )
                 }
                 return effects.isEmpty ? .none : .merge(effects)
 

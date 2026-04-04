@@ -654,12 +654,8 @@ extension CycleContext {
 
     /// Static phase calculation for use in factory (before instance exists)
     private static func mathPhaseStatic(forCycleDay day: Int, cycleLength: Int, bleedingDays: Int) -> CyclePhase {
-        for p in CyclePhase.allCases {
-            if p.dayRange(cycleLength: cycleLength, bleedingDays: bleedingDays).contains(day) {
-                return p
-            }
-        }
-        return .luteal
+        let result = CycleMath.cyclePhase(cycleDay: day, cycleLength: cycleLength, bleedingDays: bleedingDays)
+        return CyclePhase(rawValue: result.rawValue) ?? .luteal
     }
 
 }

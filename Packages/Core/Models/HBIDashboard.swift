@@ -161,25 +161,21 @@ public enum CyclePhase: String, Codable, Equatable, Sendable, CaseIterable {
     /// Boundaries are clamped so that ranges never crash for short cycles.
     /// The backend uses `ovDay = max(10, cycleLength - 14)` — we mirror that here
     /// but also ensure each phase gets at least 1 day and ranges tile without overlap.
+    /// Day range derived from CycleMath.cyclePhase() — single source of truth.
     public func dayRange(cycleLength: Int, bleedingDays: Int = 5) -> ClosedRange<Int> {
         let cl = max(1, cycleLength)
-        let bd = min(max(1, bleedingDays), cl)
-
-        // Mirror backend: ovulation at least day bd+3 so follicular gets ≥1 day
-        let idealOv = cl - 14
-        let ovDay = max(bd + 3, idealOv)
-
-        // Sequential, non-overlapping boundaries
-        let b1 = bd                              // menstrual end
-        let b2 = max(b1 + 1, ovDay - 2)          // follicular end
-        let b3 = max(b2 + 1, min(cl, ovDay + 1)) // ovulatory end
-
-        switch self {
-        case .menstrual: return 1...b1
-        case .follicular: return (b1 + 1)...b2
-        case .ovulatory: return (b2 + 1)...b3
-        case .luteal: return b3 < cl ? (b3 + 1)...cl : cl...cl
+        var start: Int?
+        var end: Int?
+        for day in 1...cl {
+            let phase = CycleMath.cyclePhase(cycleDay: day, cycleLength: cl, bleedingDays: bleedingDays)
+            let matches = CyclePhase(rawValue: phase.rawValue) == self
+            if matches {
+                if start == nil { start = day }
+                end = day
+            }
         }
+        guard let s = start, let e = end else { return cl...cl }
+        return s...e
     }
 }
 
