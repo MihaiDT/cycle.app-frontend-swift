@@ -84,7 +84,9 @@ public final class HBIScoreRecord {
 
     // Cycle context at time of calculation
 
+    @Attribute(.allowsCloudEncryption)
     public var cyclePhase: String?
+    @Attribute(.allowsCloudEncryption)
     public var cycleDay: Int?
     public var phaseMultiplier: Double?
 

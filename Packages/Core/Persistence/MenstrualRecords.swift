@@ -30,6 +30,7 @@ public final class MenstrualProfileRecord {
     public var contraceptionType: String?
 
     /// Luteal phase length for ovulation estimation (default 14).
+    @Attribute(.allowsCloudEncryption)
     public var phaseLutealLength: Int = 14
 
     public var onboardingCompletedAt: Date?
@@ -89,6 +90,7 @@ public final class CycleRecord {
     public var isConfirmed: Bool = true
 
     /// Actual cycle length in days (calculated when next cycle starts).
+    @Attribute(.allowsCloudEncryption)
     public var actualCycleLength: Int?
 
     /// If this was predicted, the expected start date for accuracy tracking.
@@ -96,6 +98,7 @@ public final class CycleRecord {
     public var predictedStartDate: Date?
 
     /// Days between predicted and actual start (positive = late, negative = early).
+    @Attribute(.allowsCloudEncryption)
     public var actualDeviationDays: Int?
 
     public var createdAt: Date = Date.now

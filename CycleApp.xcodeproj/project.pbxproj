@@ -20,7 +20,6 @@
 		1DAB0F6F4523F28DC097D1AF /* OnboardingHeader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88BF907DFB59809FEF766AE8 /* OnboardingHeader.swift */; };
 		1E3B4EC0E761F7ACF8F91F84 /* Raleway-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 9C912EA0509634526A9D7F08 /* Raleway-Bold.ttf */; };
 		1EBAF390664932B71CB5E403 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B38AB06E18B5A4632AE2761A /* Assets.xcassets */; };
-		1EEAB5B27E6A46DBC19783D4 /* OnboardingLocalData.swift in Sources */ = {isa = PBXBuildFile; fileRef = A22905F89D3DFB40C0429156 /* OnboardingLocalData.swift */; };
 		24543E48DBC791E3EAE935D6 /* UserProfileLocalClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07F1D2E8D0B49CA5E71909AF /* UserProfileLocalClient.swift */; };
 		2792D4F69FFD2F4D6ECA8EBE /* SeparatedIcon.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51194E26B3A815CB07BF5B59 /* SeparatedIcon.swift */; };
 		28CB5F282CFC523F42F68FA7 /* String+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF7B0C6DF47843E7CD58CEDB /* String+Extensions.swift */; };
@@ -62,7 +61,6 @@
 		649BEAA6D724578FB0AEE918 /* CycleCalendarViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4322D31D6B828275DD65FC35 /* CycleCalendarViews.swift */; };
 		65962311B2B6C4CB93678BF3 /* APIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 71EF173A08EFFAA9EAF10A56 /* APIClient.swift */; };
 		65C96E5B313A2E5D7212C475 /* Validation.swift in Sources */ = {isa = PBXBuildFile; fileRef = FFD79DF9CED358A6F2B17C43 /* Validation.swift */; };
-		66F1FC1906AEA3CCDA774B2F /* APIResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDEDFC948F9CDB715FAABF68 /* APIResponse.swift */; };
 		673B63847738190AA00F83B6 /* PersonalGoalsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F00316DAE6809EF9B087B33C /* PersonalGoalsView.swift */; };
 		68BA0D74CA67E6270AAA9EB5 /* GlassLogoCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1DAD850510FF8EEF911D87D /* GlassLogoCard.swift */; };
 		6A894FA2865F24E6EF268E10 /* HBIScoreRing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C5722C7E3AC41AE065FC9F2 /* HBIScoreRing.swift */; };
@@ -249,7 +247,6 @@
 		9A9F95C44B71EFC08D5BAAAD /* NameGreetingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NameGreetingView.swift; sourceTree = "<group>"; };
 		9C912EA0509634526A9D7F08 /* Raleway-Bold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Raleway-Bold.ttf"; sourceTree = "<group>"; };
 		A1FF005FF3F61A0F82E81BE7 /* Raleway-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Raleway-Regular.ttf"; sourceTree = "<group>"; };
-		A22905F89D3DFB40C0429156 /* OnboardingLocalData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingLocalData.swift; sourceTree = "<group>"; };
 		A4E7E9A068ECB15A84A721A7 /* GradientBackground.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GradientBackground.swift; sourceTree = "<group>"; };
 		A92A0FCA4E1CB208FC65AEBE /* MenstrualStatus.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenstrualStatus.swift; sourceTree = "<group>"; };
 		AA1D8BDCDF2263B793576D8E /* DailyCheckInFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyCheckInFeature.swift; sourceTree = "<group>"; };
@@ -275,7 +272,6 @@
 		C7ABDE1F869500792816AF72 /* OnboardingLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingLayout.swift; sourceTree = "<group>"; };
 		C8030F59AC5C6C3D0782DC89 /* CalendarYearView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarYearView.swift; sourceTree = "<group>"; };
 		CA84224FE7398C7FF08D5BB5 /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
-		CDEDFC948F9CDB715FAABF68 /* APIResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIResponse.swift; sourceTree = "<group>"; };
 		CF7B0C6DF47843E7CD58CEDB /* String+Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "String+Extensions.swift"; sourceTree = "<group>"; };
 		D5E9E5A48055F02165B8992B /* CycleMath.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CycleMath.swift; sourceTree = "<group>"; };
 		D6C462B9D1B01812BDB61714 /* GlassDateButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassDateButton.swift; sourceTree = "<group>"; };
@@ -403,7 +399,6 @@
 		6C479D02C36C6316EB877FC0 /* Models */ = {
 			isa = PBXGroup;
 			children = (
-				CDEDFC948F9CDB715FAABF68 /* APIResponse.swift */,
 				05C1863ED7A02D2799907F02 /* DailyCard.swift */,
 				DF7BD20309B8691A8D1FB06E /* DailyCardMockData.swift */,
 				0D235D9C76A26B122F55AFC7 /* DailySelfReport.swift */,
@@ -496,7 +491,6 @@
 				4C77124333395856EB581A13 /* LocalNotificationClient.swift */,
 				B0A5D544979E59D9EEF6F45A /* MenstrualLocalClient.swift */,
 				62B0DA77B1439E49BB0E406F /* MenstrualRecords.swift */,
-				A22905F89D3DFB40C0429156 /* OnboardingLocalData.swift */,
 				3FC0F0AFF2877CD41AB19497 /* SessionClient.swift */,
 				107471505AD1ADFF34997E8D /* UserDefaultsClient.swift */,
 				07F1D2E8D0B49CA5E71909AF /* UserProfileLocalClient.swift */,
@@ -794,7 +788,6 @@
 			files = (
 				65962311B2B6C4CB93678BF3 /* APIClient.swift in Sources */,
 				5183F12DDE66A90DA3DBFBA7 /* APIError.swift in Sources */,
-				66F1FC1906AEA3CCDA774B2F /* APIResponse.swift in Sources */,
 				B50E9BE7BC63C1E30C1E0ED8 /* AnonymousIDClient.swift in Sources */,
 				B98CDCDE2F0F8E0ED67FAC40 /* AppFeature.swift in Sources */,
 				427C36FC105AA05465F182FC /* AriaContextProvider.swift in Sources */,
@@ -872,7 +865,6 @@
 				DAD240C787A5A06F8F34924B /* OnboardingBackground.swift in Sources */,
 				1DAB0F6F4523F28DC097D1AF /* OnboardingHeader.swift in Sources */,
 				6B007C746D016D855B56C535 /* OnboardingLayout.swift in Sources */,
-				1EEAB5B27E6A46DBC19783D4 /* OnboardingLocalData.swift in Sources */,
 				C31DA902B29C34AA3067ED18 /* OnboardingProgressBar.swift in Sources */,
 				8E65A945BC5E33B5394380E5 /* OnboardingRecapView.swift in Sources */,
 				B8E2E6278B7F953E10E6EDE5 /* OnboardingView.swift in Sources */,

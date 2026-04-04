@@ -250,6 +250,7 @@ public struct AppFeature: Sendable {
                 state.onboardingError = nil
 
                 // Capture all state values for the @Sendable async effect
+                let userName = state.userName
                 let birthDate = state.birthDate
                 let birthTime = state.birthTime
                 let birthPlace = state.birthPlace
@@ -290,7 +291,7 @@ public struct AppFeature: Sendable {
 
                         // 1. Save user profile locally
                         let profile = UserProfileSnapshot(
-                            userName: "",
+                            userName: userName,
                             birthDate: birthDate,
                             birthTime: birthTime,
                             birthPlace: selectedBirthPlace?.name ?? birthPlace,

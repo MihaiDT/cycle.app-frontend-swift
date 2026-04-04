@@ -145,10 +145,11 @@ extension MenstrualLocalClient {
                 let start = Calendar.current.startOfDay(for: startDate)
                 let end = Calendar.current.startOfDay(for: endDate)
 
-                // Fetch cycles in range
+                // Fetch cycles in range (extend start by 50 days for bleeding overlap)
+                let cycleRangeStart = CycleMath.addDays(start, -50)
                 let cycleDescriptor = FetchDescriptor<CycleRecord>(
                     predicate: #Predicate<CycleRecord> { cycle in
-                        cycle.startDate <= end
+                        cycle.startDate >= cycleRangeStart && cycle.startDate <= end
                     },
                     sortBy: [SortDescriptor(\.startDate)]
                 )
@@ -550,7 +551,7 @@ extension MenstrualLocalClient {
 
     private static func fetchActivePrediction(context: ModelContext) throws -> PredictionRecord? {
         let today = Calendar.current.startOfDay(for: Date())
-        let cutoff = CycleMath.addDays(today, -14)
+        let cutoff = CycleMath.addDays(today, -60)
         let descriptor = FetchDescriptor<PredictionRecord>(
             predicate: #Predicate<PredictionRecord> { pred in
                 !pred.isConfirmed && pred.predictedDate >= cutoff
