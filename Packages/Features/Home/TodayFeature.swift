@@ -197,8 +197,8 @@ public struct TodayFeature: Sendable {
                     state.calendarState.hasPreloaded = true
                     effects.append(.send(.calendar(.loadCalendar)))
                 }
-                // Load card stack for current phase
-                if let cycle = state.cycle, state.cardStackState.cards.isEmpty {
+                // Load card stack for current phase (always reload to match correct phase/day)
+                if let cycle = state.cycle {
                     effects.append(.send(.cardStack(.loadCards(cycle.currentPhase, cycle.cycleDay))))
                 }
                 return effects.isEmpty ? .none : .merge(effects)

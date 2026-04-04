@@ -350,14 +350,7 @@ public struct AppFeature: Sendable {
                 state.onboardingError = nil
                 state.homeState = HomeFeature.State()
                 state.destination = .home
-                // Pre-generate first AI cards
-                let phase = CyclePhase(rawValue:
-                    CycleMath.cyclePhase(
-                        cycleDay: 1, cycleLength: state.cycleDuration,
-                        bleedingDays: state.periodDuration
-                    ).rawValue
-                ) ?? .follicular
-                return .send(.home(.today(.cardStack(.loadCards(phase, 1)))))
+                return .none
 
             case .onboardingSubmitFailed(let errorMessage):
                 state.isSubmittingOnboarding = false
