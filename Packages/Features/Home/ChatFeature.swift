@@ -268,42 +268,39 @@ public struct ChatFeature: Sendable {
 
                 case "response":
                     state.isStreaming = false
-                    if let content = json["content"] as? String, !content.isEmpty {
+                    // Response with content = full non-streamed response
+                    // Response with empty content = streaming finished, save what we have
+                    let responseContent = json["content"] as? String ?? ""
+
+                    if !responseContent.isEmpty {
+                        // Non-streamed: set content directly
                         if let lastIndex = state.messages.indices.last,
                            state.messages[lastIndex].role == .assistant
                         {
-                            state.messages[lastIndex].content = content
-                            // Persist final assistant message
-                            let finalMsg = state.messages[lastIndex]
-                            return .run { _ in
-                                let container = CycleDataStore.shared
-                                let ctx = ModelContext(container)
-                                let record = ChatMessageRecord(
-                                    messageId: finalMsg.id,
-                                    sessionId: sessionID,
-                                    role: "assistant",
-                                    content: finalMsg.content,
-                                    timestamp: finalMsg.timestamp
-                                )
-                                ctx.insert(record)
-                                try? ctx.save()
-                            }
+                            state.messages[lastIndex].content = responseContent
                         } else {
-                            let msg = ChatMessage(role: .assistant, content: content)
-                            state.messages.append(msg)
-                            return .run { _ in
-                                let container = CycleDataStore.shared
-                                let ctx = ModelContext(container)
-                                let record = ChatMessageRecord(
-                                    messageId: msg.id,
-                                    sessionId: sessionID,
-                                    role: "assistant",
-                                    content: msg.content,
-                                    timestamp: msg.timestamp
-                                )
-                                ctx.insert(record)
-                                try? ctx.save()
-                            }
+                            state.messages.append(ChatMessage(role: .assistant, content: responseContent))
+                        }
+                    }
+
+                    // Persist the final assistant message (streamed or not)
+                    if let lastIndex = state.messages.indices.last,
+                       state.messages[lastIndex].role == .assistant,
+                       !state.messages[lastIndex].content.isEmpty
+                    {
+                        let finalMsg = state.messages[lastIndex]
+                        return .run { _ in
+                            let container = CycleDataStore.shared
+                            let ctx = ModelContext(container)
+                            let record = ChatMessageRecord(
+                                messageId: finalMsg.id,
+                                sessionId: sessionID,
+                                role: "assistant",
+                                content: finalMsg.content,
+                                timestamp: finalMsg.timestamp
+                            )
+                            ctx.insert(record)
+                            try? ctx.save()
                         }
                     }
 
