@@ -1,5 +1,6 @@
 import ComposableArchitecture
 import Inject
+import SwiftData
 import SwiftUI
 
 // MARK: - Today Feature
@@ -326,6 +327,25 @@ public struct TodayFeature: Sendable {
                 return .none
 
             case .checkIn(.presented(.delegate(.didCompleteCheckIn(_)))):
+                // Regenerate AI cards with fresh check-in data
+                if let cycle = state.cycle {
+                    // Clear today's cache so new cards generate
+                    let today = CardStackFeature.todayString()
+                    let container = CycleDataStore.shared
+                    let ctx = ModelContext(container)
+                    let desc = FetchDescriptor<DailyCardRecord>(
+                        predicate: #Predicate { $0.date == today }
+                    )
+                    if let old = try? ctx.fetch(desc) {
+                        for r in old { ctx.delete(r) }
+                        try? ctx.save()
+                    }
+                    state.cardStackState.cards = []
+                    return .merge(
+                        .send(.loadDashboard),
+                        .send(.cardStack(.loadCards(cycle.currentPhase, cycle.cycleDay)))
+                    )
+                }
                 return .send(.loadDashboard)
 
             case .checkIn:

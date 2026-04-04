@@ -10,6 +10,7 @@ public struct CardStackFeature: Sendable {
     @ObservableState
     public struct State: Equatable, Sendable {
         public var cards: [DailyCard] = []
+        public var isLoading: Bool = false
         public var frontIndex: Int = 0
         public var dragOffset: CGFloat = 0
         public var isDragging: Bool = false
@@ -56,7 +57,7 @@ public struct CardStackFeature: Sendable {
             case let .loadCards(phase, day):
                 let today = Self.todayString()
 
-                // 1. Check cache — if we have today's AI cards, show them instantly
+                // Check cache first — instant if available
                 let cachedCards = Self.loadCachedCards(date: today, phase: phase, day: day)
                 if !cachedCards.isEmpty {
                     state.cards = cachedCards
@@ -65,21 +66,19 @@ public struct CardStackFeature: Sendable {
                     return .none
                 }
 
-                // 2. No cache — show static cards immediately
-                state.cards = DailyCard.mockCards(for: phase, day: day)
-                state.frontIndex = 0
-                state.dragOffset = 0
-
-                // 3. Generate AI cards in background and cache for next open
+                // No cache — show loading, fetch from AI
+                state.isLoading = true
+                state.cards = []
                 let phaseStr = phase.rawValue
-                return .run { _ in
+                return .run { send in
                     if let aiCards = await Self.fetchAICards(phase: phaseStr, day: day) {
                         Self.cacheCards(aiCards, date: today, phase: phaseStr, day: day)
-                        // Don't swap — cards will be ready on next app open
+                        await send(.cardsGenerated(aiCards))
                     }
                 }
 
             case let .cardsGenerated(cards):
+                state.isLoading = false
                 guard !cards.isEmpty else { return .none }
                 state.cards = cards
                 state.frontIndex = 0
@@ -142,6 +141,34 @@ struct CardStackView: View {
     let store: StoreOf<CardStackFeature>
 
     var body: some View {
+        if store.isLoading {
+            // Shimmer loading state
+            VStack(alignment: .leading, spacing: 16) {
+                Text("Your day")
+                    .font(.custom("Raleway-Bold", size: 28, relativeTo: .title))
+                    .foregroundStyle(DesignColors.text)
+                    .padding(.horizontal, AppLayout.horizontalPadding)
+
+                RoundedRectangle(cornerRadius: AppLayout.cornerRadiusL, style: .continuous)
+                    .fill(.ultraThinMaterial)
+                    .frame(height: 320)
+                    .padding(.horizontal, AppLayout.horizontalPadding)
+                    .overlay {
+                        VStack(spacing: 12) {
+                            ProgressView()
+                                .tint(DesignColors.accentWarm)
+                            Text("Preparing your insights...")
+                                .font(.custom("Raleway-Medium", size: 14))
+                                .foregroundColor(DesignColors.textSecondary)
+                        }
+                    }
+            }
+        } else {
+            cardContent
+        }
+    }
+
+    private var cardContent: some View {
         VStack(alignment: .leading, spacing: 16) {
             HStack(alignment: .lastTextBaseline) {
                 Text("Your day")

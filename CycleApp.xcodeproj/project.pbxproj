@@ -82,7 +82,6 @@
 		8B258C02527F961E9F92D674 /* DailySelfReport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D235D9C76A26B122F55AFC7 /* DailySelfReport.swift */; };
 		8C3CDFD3F89927B69C2370B5 /* ChatFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E943F4688D7290A2D03A26C /* ChatFeature.swift */; };
 		8E65A945BC5E33B5394380E5 /* OnboardingRecapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C5173191F10BFB448ECF0C0 /* OnboardingRecapView.swift */; };
-		92F66262C3AA9D994D79D113 /* DailyCardMockData.swift in Sources */ = {isa = PBXBuildFile; fileRef = DF7BD20309B8691A8D1FB06E /* DailyCardMockData.swift */; };
 		93171D057A5C6A89B853B4F3 /* MoodArcFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = F20A3CE89B891747B164731C /* MoodArcFeature.swift */; };
 		986DC0F5842157CD9402EE82 /* Raleway-Light.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 8706093A21A56ECBA0441334 /* Raleway-Light.ttf */; };
 		997031E520EBD700B61BCB14 /* Raleway-SemiBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = BA263FB218AF9228CF648E42 /* Raleway-SemiBold.ttf */; };
@@ -282,7 +281,6 @@
 		D5E9E5A48055F02165B8992B /* CycleMath.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CycleMath.swift; sourceTree = "<group>"; };
 		D6C462B9D1B01812BDB61714 /* GlassDateButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassDateButton.swift; sourceTree = "<group>"; };
 		D9BEB4E6B19D12267D302E1E /* HBILocalClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HBILocalClient.swift; sourceTree = "<group>"; };
-		DF7BD20309B8691A8D1FB06E /* DailyCardMockData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyCardMockData.swift; sourceTree = "<group>"; };
 		E1D75A3020910AA2ED96FB84 /* CycleDataComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CycleDataComponents.swift; sourceTree = "<group>"; };
 		E234B15081BB567827B75E0E /* CalendarAriaInsight.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarAriaInsight.swift; sourceTree = "<group>"; };
 		E438E6CA574859596F3B8702 /* CycleContext.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CycleContext.swift; sourceTree = "<group>"; };
@@ -406,7 +404,6 @@
 			isa = PBXGroup;
 			children = (
 				05C1863ED7A02D2799907F02 /* DailyCard.swift */,
-				DF7BD20309B8691A8D1FB06E /* DailyCardMockData.swift */,
 				0D235D9C76A26B122F55AFC7 /* DailySelfReport.swift */,
 				7F9895D88CABF51577D545ED /* HBIDashboard.swift */,
 				B2940CF932F7370E57C35B79 /* HBIScore.swift */,
@@ -830,7 +827,6 @@
 				C14A64317E611C4790213551 /* CycleRingView.swift in Sources */,
 				B88E58916279AE19E01D97C0 /* CycleSelectionSheets.swift in Sources */,
 				4AC9FED42E81A3B2D054901F /* DailyCard.swift in Sources */,
-				92F66262C3AA9D994D79D113 /* DailyCardMockData.swift in Sources */,
 				B2FD46D0C139524080026C3D /* DailyCardRecord.swift in Sources */,
 				51F71B48CBEB89F28CD13E3F /* DailyCheckInFeature.swift in Sources */,
 				8B258C02527F961E9F92D674 /* DailySelfReport.swift in Sources */,
