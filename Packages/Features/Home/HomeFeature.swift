@@ -17,6 +17,7 @@ public struct HomeFeature: Sendable {
 
         // Child features
         public var todayState: TodayFeature.State = TodayFeature.State()
+        public var chatState: ChatFeature.State = ChatFeature.State()
         public var profileState: ProfileFeature.State = ProfileFeature.State()
         public var cycleInsightsState: CycleInsightsFeature.State = CycleInsightsFeature.State()
         public var isCycleInsightsVisible: Bool = false
@@ -72,6 +73,7 @@ public struct HomeFeature: Sendable {
 
         // Child features
         case today(TodayFeature.Action)
+        case chat(ChatFeature.Action)
         case profile(ProfileFeature.Action)
         case cycleInsights(CycleInsightsFeature.Action)
 
@@ -92,6 +94,10 @@ public struct HomeFeature: Sendable {
 
         Scope(state: \.todayState, action: \.today) {
             TodayFeature()
+        }
+
+        Scope(state: \.chatState, action: \.chat) {
+            ChatFeature()
         }
 
         Scope(state: \.profileState, action: \.profile) {
@@ -200,7 +206,7 @@ public struct HomeFeature: Sendable {
             case .profile(.delegate(.didLogout)):
                 return .send(.logoutTapped)
 
-            case .today, .profile, .cycleInsights, .delegate:
+            case .today, .chat, .profile, .cycleInsights, .delegate:
                 return .none
             }
         }
@@ -240,7 +246,7 @@ public struct HomeView: View {
                 .tag(HomeFeature.State.Tab.today)
 
                 // Chat Tab (Aria)
-                chatTabView
+                ChatView(store: store.scope(state: \.chatState, action: \.chat))
                     .tabItem {
                         Label(
                             HomeFeature.State.Tab.chat.title,
@@ -305,41 +311,6 @@ public struct HomeView: View {
         } // GeometryReader
     }
 
-    // MARK: - Chat Tab (Placeholder)
-
-    private var chatTabView: some View {
-        VStack(spacing: 0) {
-            Spacer()
-
-            RiveViewModel(fileName: "glowing_orb", stateMachineName: "State Machine 1")
-                .view()
-                .frame(width: 200, height: 200)
-
-            VStack(spacing: 8) {
-                Text("Aria")
-                    .font(.custom("Raleway-Bold", size: 28))
-                    .foregroundStyle(
-                        LinearGradient(
-                            colors: [DesignColors.text, DesignColors.accentWarm],
-                            startPoint: .leading,
-                            endPoint: .trailing
-                        )
-                    )
-
-                Text("Your AI wellness companion")
-                    .font(.custom("Raleway-Regular", size: 15))
-                    .foregroundColor(DesignColors.textSecondary)
-
-                Text("Coming Soon")
-                    .font(.custom("Raleway-Medium", size: 13))
-                    .foregroundColor(DesignColors.textPlaceholder)
-                    .padding(.top, 4)
-            }
-            .padding(.top, AppLayout.spacingL)
-
-            Spacer()
-        }
-    }
 
 }
 
