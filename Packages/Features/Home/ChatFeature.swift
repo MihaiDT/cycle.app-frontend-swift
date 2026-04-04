@@ -1,50 +1,68 @@
 import ComposableArchitecture
+import Foundation
 import Inject
+import SwiftData
 import SwiftUI
 
 // MARK: - Chat Feature
 
 @Reducer
 public struct ChatFeature: Sendable {
+
+    // MARK: - State
+
     @ObservableState
     public struct State: Equatable, Sendable {
         public var messages: [ChatMessage] = []
         public var inputText: String = ""
         public var isConnected: Bool = false
-        public var isTyping: Bool = false
-        public var sessionID: String = UUID().uuidString.lowercased()
+        public var isStreaming: Bool = false
+        public var sessionID: String
+        public var hasLoadedHistory: Bool = false
 
-        public init() {}
+        public init() {
+            if let stored = UserDefaults.standard.string(forKey: "cycle.chat.sessionID"), !stored.isEmpty {
+                self.sessionID = stored
+            } else {
+                let newID = UUID().uuidString.lowercased()
+                UserDefaults.standard.set(newID, forKey: "cycle.chat.sessionID")
+                self.sessionID = newID
+            }
+        }
     }
 
-    public struct ChatMessage: Equatable, Identifiable, Sendable {
+    // MARK: - Chat Message
+
+    public struct ChatMessage: Equatable, Identifiable, Sendable, Codable {
         public let id: String
         public let role: Role
         public var content: String
-        public let createdAt: Date
+        public let timestamp: Date
 
-        public enum Role: String, Sendable {
-            case user
-            case assistant
+        public enum Role: String, Sendable, Codable {
+            case user, assistant, system
         }
 
-        public init(role: Role, content: String) {
-            self.id = UUID().uuidString
+        public init(id: String = UUID().uuidString, role: Role, content: String, timestamp: Date = .now) {
+            self.id = id
             self.role = role
             self.content = content
-            self.createdAt = .now
+            self.timestamp = timestamp
         }
     }
+
+    // MARK: - Actions
 
     public enum Action: BindableAction, Sendable {
         case binding(BindingAction<State>)
         case onAppear
-        case onDisappear
         case sendTapped
+        case sendMessage(String)
+        case newSession
         case webSocketConnected
         case webSocketDisconnected
         case messageReceived(String)
-        case streamChunkReceived(String, String) // sessionID, chunk
+        case historyLoaded([ChatMessage])
         case delegate(Delegate)
 
         public enum Delegate: Sendable, Equatable {
@@ -52,84 +70,169 @@ public struct ChatFeature: Sendable {
         }
     }
 
+    // MARK: - Dependencies
+
     @Dependency(\.anonymousID) var anonymousID
     @Dependency(\.continuousClock) var clock
 
     public init() {}
+
+    // MARK: - Reducer
 
     public var body: some ReducerOf<Self> {
         BindingReducer()
 
         Reduce { state, action in
             switch action {
+
+            // MARK: onAppear
+
             case .onAppear:
-                let anonID = anonymousID.getID()
+                guard !state.hasLoadedHistory else { return .none }
+                state.hasLoadedHistory = true
+
                 let sessionID = state.sessionID
-                return .run { send in
-                    await send(.webSocketConnected)
-                    let url = URL(string: "ws://34.72.143.234:8081/ws?anonymous_id=\(anonID)")!
-                    let session = URLSession(configuration: .default)
+                let anonID = anonymousID.getID()
 
-                    func connect() -> URLSessionWebSocketTask {
-                        let task = session.webSocketTask(with: url)
-                        task.resume()
-                        WebSocketManager.shared.task = task
-                        return task
-                    }
-
-                    var wsTask = connect()
-                    WebSocketManager.shared.sessionID = sessionID
-                    await send(.webSocketConnected)
-
-                    while !Task.isCancelled {
-                        do {
-                            let message = try await wsTask.receive()
-                            switch message {
-                            case .string(let text):
-                                await send(.messageReceived(text))
-                            case .data:
-                                break
-                            @unknown default:
-                                break
-                            }
-                        } catch {
-                            guard !Task.isCancelled else { break }
-                            await send(.webSocketDisconnected)
-                            try? await Task.sleep(for: .seconds(2))
-                            guard !Task.isCancelled else { break }
-                            // Create a fresh connection
-                            wsTask = connect()
-                            await send(.webSocketConnected)
+                return .merge(
+                    // Load history from SwiftData
+                    .run { send in
+                        let container = CycleDataStore.shared
+                        let context = ModelContext(container)
+                        var descriptor = FetchDescriptor<ChatMessageRecord>(
+                            predicate: #Predicate { $0.sessionId == sessionID },
+                            sortBy: [SortDescriptor(\.timestamp, order: .forward)]
+                        )
+                        descriptor.fetchLimit = 200
+                        let records = (try? context.fetch(descriptor)) ?? []
+                        let messages = records.map { record in
+                            ChatMessage(
+                                id: record.messageId,
+                                role: ChatMessage.Role(rawValue: record.role) ?? .assistant,
+                                content: record.content,
+                                timestamp: record.timestamp
+                            )
                         }
-                    }
-                }
+                        await send(.historyLoaded(messages))
+                    },
+                    // Connect WebSocket
+                    .run { send in
+                        let url = URL(string: "\(ChatFeature.wsURL)?anonymous_id=\(anonID)")!
+                        let session = URLSession(configuration: .default)
+                        var backoffSeconds: UInt64 = 2
 
-            case .onDisappear:
-                WebSocketManager.shared.task?.cancel(with: .normalClosure, reason: nil)
-                WebSocketManager.shared.task = nil
+                        func connect() -> URLSessionWebSocketTask {
+                            let task = session.webSocketTask(with: url)
+                            task.resume()
+                            WebSocketManager.shared.task = task
+                            return task
+                        }
+
+                        var wsTask = connect()
+                        WebSocketManager.shared.sessionID = sessionID
+                        await send(.webSocketConnected)
+
+                        while !Task.isCancelled {
+                            do {
+                                let message = try await wsTask.receive()
+                                backoffSeconds = 2  // Reset on success
+                                switch message {
+                                case .string(let text):
+                                    await send(.messageReceived(text))
+                                case .data:
+                                    break
+                                @unknown default:
+                                    break
+                                }
+                            } catch {
+                                guard !Task.isCancelled else { break }
+                                await send(.webSocketDisconnected)
+                                // Exponential backoff: 2s, 4s, 8s, 16s, max 30s
+                                try? await Task.sleep(for: .seconds(backoffSeconds))
+                                backoffSeconds = min(backoffSeconds * 2, 30)
+                                guard !Task.isCancelled else { break }
+                                wsTask = connect()
+                                await send(.webSocketConnected)
+                            }
+                        }
+                    }.cancellable(id: CancelID.webSocket, cancelInFlight: true)
+                )
+
+            // MARK: historyLoaded
+
+            case .historyLoaded(let messages):
+                state.messages = messages
                 return .none
+
+            // MARK: sendTapped
 
             case .sendTapped:
                 let text = state.inputText.trimmingCharacters(in: .whitespacesAndNewlines)
-                guard !text.isEmpty else { return .none }
-
+                guard !text.isEmpty, state.isConnected else { return .none }
                 state.inputText = ""
-                state.messages.append(ChatMessage(role: .user, content: text))
-                state.isTyping = true
+                return .send(.sendMessage(text))
+
+            // MARK: sendMessage (from input or starter chips)
+
+            case .sendMessage(let text):
+                let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+                guard !trimmed.isEmpty else { return .none }
+
+                let userMsg = ChatMessage(role: .user, content: trimmed)
+                state.messages.append(userMsg)
+                state.isStreaming = true
 
                 let sessionID = state.sessionID
+
                 return .run { _ in
+                    // Persist user message
+                    let container = CycleDataStore.shared
+                    let context = ModelContext(container)
+                    let record = ChatMessageRecord(
+                        messageId: userMsg.id,
+                        sessionId: sessionID,
+                        role: "user",
+                        content: trimmed,
+                        timestamp: userMsg.timestamp
+                    )
+                    context.insert(record)
+                    try? context.save()
+
+                    // Build ephemeral context
+                    let ariaContext = AriaContextProvider.currentContext(container: container)
                     let payload: [String: Any] = [
                         "type": "message",
-                        "content": text,
+                        "content": trimmed,
                         "session_id": sessionID,
+                        "ephemeral_context": [
+                            "cycle_phase": ariaContext.cyclePhase as Any,
+                            "cycle_day": ariaContext.cycleDay as Any,
+                            "hbi_score": ariaContext.hbiScore as Any,
+                            "mood": ariaContext.mood as Any,
+                            "energy": ariaContext.energy as Any,
+                            "recent_symptoms": ariaContext.recentSymptoms,
+                        ] as [String: Any],
                     ]
+
                     if let data = try? JSONSerialization.data(withJSONObject: payload),
                        let jsonString = String(data: data, encoding: .utf8)
                     {
                         try? await WebSocketManager.shared.task?.send(.string(jsonString))
                     }
                 }
+
+            // MARK: newSession
+
+            case .newSession:
+                let newID = UUID().uuidString.lowercased()
+                UserDefaults.standard.set(newID, forKey: "cycle.chat.sessionID")
+                state.sessionID = newID
+                state.messages = []
+                state.isStreaming = false
+                state.hasLoadedHistory = true
+                return .none
+
+            // MARK: WebSocket lifecycle
 
             case .webSocketConnected:
                 state.isConnected = true
@@ -139,53 +242,116 @@ public struct ChatFeature: Sendable {
                 state.isConnected = false
                 return .none
 
+            // MARK: messageReceived
+
             case .messageReceived(let text):
                 guard let data = text.data(using: .utf8),
                       let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
                       let type = json["type"] as? String
                 else { return .none }
 
+                let sessionID = state.sessionID
+
                 switch type {
-                case "response":
-                    state.isTyping = false
+                case "stream_chunk", "stream":
                     if let content = json["content"] as? String, !content.isEmpty {
-                        // If we were streaming, the last stream message already has the content
-                        // Only add if not already streaming
-                        if let last = state.messages.last, last.role == .assistant {
-                            // Already have a streaming message — update it
-                            state.messages[state.messages.count - 1].content = content
+                        if let lastIndex = state.messages.indices.last,
+                           state.messages[lastIndex].role == .assistant
+                        {
+                            state.messages[lastIndex].content += content
                         } else {
-                            state.messages.append(ChatMessage(role: .assistant, content: content))
+                            let msg = ChatMessage(role: .assistant, content: content)
+                            state.messages.append(msg)
+                        }
+                        state.isStreaming = true
+                    }
+
+                case "response":
+                    state.isStreaming = false
+                    if let content = json["content"] as? String, !content.isEmpty {
+                        if let lastIndex = state.messages.indices.last,
+                           state.messages[lastIndex].role == .assistant
+                        {
+                            state.messages[lastIndex].content = content
+                            // Persist final assistant message
+                            let finalMsg = state.messages[lastIndex]
+                            return .run { _ in
+                                let container = CycleDataStore.shared
+                                let ctx = ModelContext(container)
+                                let record = ChatMessageRecord(
+                                    messageId: finalMsg.id,
+                                    sessionId: sessionID,
+                                    role: "assistant",
+                                    content: finalMsg.content,
+                                    timestamp: finalMsg.timestamp
+                                )
+                                ctx.insert(record)
+                                try? ctx.save()
+                            }
+                        } else {
+                            let msg = ChatMessage(role: .assistant, content: content)
+                            state.messages.append(msg)
+                            return .run { _ in
+                                let container = CycleDataStore.shared
+                                let ctx = ModelContext(container)
+                                let record = ChatMessageRecord(
+                                    messageId: msg.id,
+                                    sessionId: sessionID,
+                                    role: "assistant",
+                                    content: msg.content,
+                                    timestamp: msg.timestamp
+                                )
+                                ctx.insert(record)
+                                try? ctx.save()
+                            }
                         }
                     }
 
-                case "stream_chunk", "stream":
-                    state.isTyping = false
-                    if let content = json["content"] as? String, !content.isEmpty {
-                        if let last = state.messages.last, last.role == .assistant {
-                            state.messages[state.messages.count - 1].content += content
-                        } else {
-                            state.messages.append(ChatMessage(role: .assistant, content: content))
+                case "stream_end":
+                    state.isStreaming = false
+                    // Persist the final streamed assistant message
+                    if let lastIndex = state.messages.indices.last,
+                       state.messages[lastIndex].role == .assistant
+                    {
+                        let finalMsg = state.messages[lastIndex]
+                        return .run { _ in
+                            let container = CycleDataStore.shared
+                            let ctx = ModelContext(container)
+                            let record = ChatMessageRecord(
+                                messageId: finalMsg.id,
+                                sessionId: sessionID,
+                                role: "assistant",
+                                content: finalMsg.content,
+                                timestamp: finalMsg.timestamp
+                            )
+                            ctx.insert(record)
+                            try? ctx.save()
                         }
                     }
 
                 case "error":
-                    state.isTyping = false
-                    let errorMsg = (json["error"] as? String) ?? "Something went wrong"
-                    state.messages.append(ChatMessage(role: .assistant, content: errorMsg))
+                    state.isStreaming = false
+                    let errorContent = (json["error"] as? String) ?? "Something went wrong"
+                    let errorMsg = ChatMessage(role: .assistant, content: errorContent)
+                    state.messages.append(errorMsg)
 
                 default:
                     break
                 }
                 return .none
 
-            case .streamChunkReceived:
-                return .none
-
             case .binding, .delegate:
                 return .none
             }
         }
+    }
+
+    // MARK: - Constants
+
+    private static let wsURL = "ws://34.72.143.234:8081/ws"
+
+    private enum CancelID {
+        case webSocket
     }
 }
 
@@ -204,6 +370,7 @@ public struct ChatView: View {
     @ObserveInjection var inject
     @Bindable var store: StoreOf<ChatFeature>
     @FocusState private var isInputFocused: Bool
+    @State private var scrollProxy: ScrollViewProxy?
 
     public init(store: StoreOf<ChatFeature>) {
         self.store = store
@@ -211,30 +378,14 @@ public struct ChatView: View {
 
     public var body: some View {
         VStack(spacing: 0) {
-            // Messages
-            ScrollViewReader { proxy in
-                ScrollView {
-                    LazyVStack(spacing: 12) {
-                        ForEach(store.messages) { message in
-                            messageBubble(message)
-                                .id(message.id)
-                        }
+            // Header
+            chatHeader
 
-                        if store.isTyping, store.messages.last?.role != .assistant {
-                            typingIndicator
-                                .id("typing")
-                        }
-                    }
-                    .padding(.horizontal, 16)
-                    .padding(.top, 16)
-                    .padding(.bottom, 8)
-                }
-                .scrollDismissesKeyboard(.interactively)
-                .onChange(of: store.messages.count) { _, _ in
-                    withAnimation(.easeOut(duration: 0.2)) {
-                        proxy.scrollTo(store.messages.last?.id ?? "typing", anchor: .bottom)
-                    }
-                }
+            // Content
+            if store.messages.isEmpty {
+                welcomeScreen
+            } else {
+                messageList
             }
 
             // Input bar
@@ -242,8 +393,153 @@ public struct ChatView: View {
         }
         .background(DesignColors.background)
         .task { store.send(.onAppear) }
-        .onDisappear { store.send(.onDisappear) }
         .enableInjection()
+    }
+
+    // MARK: - Header
+
+    private var chatHeader: some View {
+        HStack {
+            Spacer()
+            HStack(spacing: 6) {
+                Text("Aria")
+                    .font(.custom("Raleway-SemiBold", size: 17))
+                    .foregroundColor(DesignColors.text)
+                Circle()
+                    .fill(store.isConnected ? Color.green : Color.gray)
+                    .frame(width: 7, height: 7)
+            }
+            Spacer()
+        }
+        .padding(.vertical, 10)
+        .background(.ultraThinMaterial)
+    }
+
+    // MARK: - Welcome Screen (Empty State)
+
+    private var welcomeScreen: some View {
+        ScrollView {
+            VStack(spacing: 24) {
+                Spacer().frame(height: 40)
+
+                // Avatar / gradient orb
+                ZStack {
+                    Circle()
+                        .fill(
+                            RadialGradient(
+                                colors: [
+                                    DesignColors.accent.opacity(0.8),
+                                    DesignColors.accentWarm.opacity(0.6),
+                                    DesignColors.accentSecondary.opacity(0.3),
+                                    Color.clear,
+                                ],
+                                center: .center,
+                                startRadius: 10,
+                                endRadius: 60
+                            )
+                        )
+                        .frame(width: 120, height: 120)
+
+                    Circle()
+                        .fill(
+                            LinearGradient(
+                                colors: [DesignColors.accentWarm, DesignColors.accentSecondary],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                        .frame(width: 64, height: 64)
+
+                    Text("A")
+                        .font(.custom("Raleway-Bold", size: 28))
+                        .foregroundColor(.white)
+                }
+
+                // Title
+                VStack(spacing: 6) {
+                    Text("Hey, I'm Aria")
+                        .font(.custom("Raleway-Bold", size: 26))
+                        .foregroundColor(DesignColors.text)
+
+                    Text("What's on your mind?")
+                        .font(.custom("Raleway-Regular", size: 16))
+                        .foregroundColor(DesignColors.textSecondary)
+                }
+
+                // Starter chips
+                VStack(spacing: 10) {
+                    starterChip("How am I feeling today?")
+                    starterChip("Tell me about my cycle")
+                    starterChip("I need to talk")
+                    starterChip("Just vibing")
+                }
+                .padding(.top, 8)
+
+                Spacer()
+            }
+            .padding(.horizontal, 24)
+        }
+        .scrollDismissesKeyboard(.interactively)
+    }
+
+    private func starterChip(_ text: String) -> some View {
+        Button {
+            store.send(.sendMessage(text))
+        } label: {
+            Text(text)
+                .font(.custom("Raleway-Medium", size: 15))
+                .foregroundColor(DesignColors.text)
+                .padding(.horizontal, 20)
+                .padding(.vertical, 12)
+                .frame(maxWidth: .infinity)
+                .background {
+                    RoundedRectangle(cornerRadius: 16)
+                        .fill(.ultraThinMaterial)
+                        .overlay {
+                            RoundedRectangle(cornerRadius: 16)
+                                .strokeBorder(DesignColors.divider.opacity(0.5), lineWidth: 0.5)
+                        }
+                }
+        }
+        .buttonStyle(.plain)
+    }
+
+    // MARK: - Message List
+
+    private var messageList: some View {
+        ScrollViewReader { proxy in
+            ScrollView {
+                LazyVStack(spacing: 4) {
+                    ForEach(store.messages) { message in
+                        VStack(spacing: 2) {
+                            messageBubble(message)
+                            messageTimestamp(message)
+                        }
+                        .id(message.id)
+                    }
+
+                    if store.isStreaming, store.messages.last?.role != .assistant {
+                        TypingIndicatorView()
+                            .id("typing")
+                    }
+                }
+                .padding(.horizontal, 16)
+                .padding(.top, 12)
+                .padding(.bottom, 8)
+            }
+            .scrollDismissesKeyboard(.interactively)
+            .onChange(of: store.messages.count) { _, _ in
+                withAnimation(.easeOut(duration: 0.2)) {
+                    proxy.scrollTo(store.messages.last?.id ?? "typing", anchor: .bottom)
+                }
+            }
+            .onChange(of: store.messages.last?.content) { _, _ in
+                withAnimation(.easeOut(duration: 0.1)) {
+                    proxy.scrollTo(store.messages.last?.id ?? "typing", anchor: .bottom)
+                }
+            }
+            .onAppear { scrollProxy = proxy }
+        }
     }
 
     // MARK: - Message Bubble
@@ -285,36 +581,31 @@ public struct ChatView: View {
         }
     }
 
-    // MARK: - Typing Indicator
+    // MARK: - Message Timestamp
 
-    private var typingIndicator: some View {
+    @ViewBuilder
+    private func messageTimestamp(_ message: ChatFeature.ChatMessage) -> some View {
         HStack {
-            HStack(spacing: 4) {
-                ForEach(0..<3, id: \.self) { i in
-                    Circle()
-                        .fill(DesignColors.textSecondary.opacity(0.5))
-                        .frame(width: 6, height: 6)
-                        .offset(y: typingOffset(for: i))
-                        .animation(
-                            .easeInOut(duration: 0.5)
-                                .repeatForever(autoreverses: true)
-                                .delay(Double(i) * 0.15),
-                            value: store.isTyping
-                        )
-                }
-            }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 12)
-            .background {
-                RoundedRectangle(cornerRadius: 18)
-                    .fill(.ultraThinMaterial)
-            }
-            Spacer()
+            if message.role == .user { Spacer() }
+            Text(relativeTime(message.timestamp))
+                .font(.custom("Raleway-Regular", size: 11))
+                .foregroundColor(DesignColors.textPlaceholder)
+                .padding(.horizontal, 6)
+            if message.role == .assistant { Spacer() }
         }
+        .padding(.bottom, 4)
     }
 
-    private func typingOffset(for index: Int) -> CGFloat {
-        store.isTyping ? -3 : 0
+    private func relativeTime(_ date: Date) -> String {
+        let seconds = Int(Date.now.timeIntervalSince(date))
+        if seconds < 10 { return "just now" }
+        if seconds < 60 { return "\(seconds)s ago" }
+        let minutes = seconds / 60
+        if minutes < 60 { return "\(minutes)m ago" }
+        let hours = minutes / 60
+        if hours < 24 { return "\(hours)h ago" }
+        let days = hours / 24
+        return "\(days)d ago"
     }
 
     // MARK: - Input Bar
@@ -333,7 +624,7 @@ public struct ChatView: View {
                         .fill(.ultraThinMaterial)
                         .overlay {
                             RoundedRectangle(cornerRadius: 20)
-                                .strokeBorder(Color.white.opacity(0.2), lineWidth: 0.5)
+                                .strokeBorder(DesignColors.divider.opacity(0.4), lineWidth: 0.5)
                         }
                 }
                 .onSubmit { store.send(.sendTapped) }
@@ -341,13 +632,9 @@ public struct ChatView: View {
             Button(action: { store.send(.sendTapped) }) {
                 Image(systemName: "arrow.up.circle.fill")
                     .font(.system(size: 32))
-                    .foregroundStyle(
-                        store.inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-                            ? DesignColors.textPlaceholder
-                            : DesignColors.accentWarm
-                    )
+                    .foregroundStyle(sendButtonColor)
             }
-            .disabled(store.inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+            .disabled(!canSend)
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 10)
@@ -355,6 +642,53 @@ public struct ChatView: View {
             Rectangle()
                 .fill(.ultraThinMaterial)
                 .ignoresSafeArea(edges: .bottom)
+        }
+    }
+
+    private var canSend: Bool {
+        !store.inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && store.isConnected
+    }
+
+    private var sendButtonColor: Color {
+        canSend ? DesignColors.accentWarm : DesignColors.textPlaceholder
+    }
+}
+
+// MARK: - Typing Indicator (Proper Bouncing Animation)
+
+private struct TypingIndicatorView: View {
+    @State private var phase: Int = 0
+
+    var body: some View {
+        HStack {
+            HStack(spacing: 5) {
+                ForEach(0..<3, id: \.self) { index in
+                    Circle()
+                        .fill(DesignColors.textSecondary.opacity(0.5))
+                        .frame(width: 7, height: 7)
+                        .offset(y: phase == index ? -5 : 0)
+                }
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
+            .background {
+                RoundedRectangle(cornerRadius: 18)
+                    .fill(.ultraThinMaterial)
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 18)
+                            .strokeBorder(Color.white.opacity(0.2), lineWidth: 0.5)
+                    }
+            }
+            Spacer()
+        }
+        .onAppear { startBounce() }
+    }
+
+    private func startBounce() {
+        Timer.scheduledTimer(withTimeInterval: 0.15, repeats: true) { timer in
+            withAnimation(.easeInOut(duration: 0.3)) {
+                phase = (phase + 1) % 4  // 0,1,2 bounce, 3 = all down
+            }
         }
     }
 }

@@ -168,7 +168,10 @@ public struct HomeFeature: Sendable {
                     try? context.delete(model: PredictionRecord.self)
                     try? context.delete(model: SelfReportRecord.self)
                     try? context.delete(model: HBIScoreRecord.self)
+                    try? context.delete(model: ChatMessageRecord.self)
                     try? context.save()
+                    // Clear chat session
+                    UserDefaults.standard.removeObject(forKey: "cycle.chat.sessionID")
                     await send(.logoutCompleted)
                 }
 
