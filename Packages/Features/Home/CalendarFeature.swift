@@ -357,7 +357,7 @@ public struct CalendarFeature: Sendable {
                     }
                     for group in periodGroups {
                         try? await menstrualLocal.confirmPeriod(
-                            group.startDate, group.dayCount, nil
+                            group.startDate, group.dayCount, nil, true
                         )
                     }
 

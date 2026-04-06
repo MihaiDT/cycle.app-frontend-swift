@@ -391,6 +391,7 @@ public struct CycleRingView: View {
         case .follicular: return Color(red: 0.36, green: 0.72, blue: 0.65)
         case .ovulatory: return Color(red: 0.91, green: 0.66, blue: 0.22)
         case .luteal: return Color(red: 0.55, green: 0.49, blue: 0.78)
+        case .late: return Color(red: 0.65, green: 0.62, blue: 0.60)
         }
     }
 }
@@ -444,6 +445,7 @@ private struct PhaseArc: View {
         case .follicular: return Color(red: 0.36, green: 0.72, blue: 0.65)
         case .ovulatory: return Color(red: 0.91, green: 0.66, blue: 0.22)
         case .luteal: return Color(red: 0.55, green: 0.49, blue: 0.78)
+        case .late: return Color(red: 0.65, green: 0.62, blue: 0.60)
         }
     }
 }

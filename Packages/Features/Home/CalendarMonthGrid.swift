@@ -106,9 +106,10 @@ struct MonthGridView: View, Equatable {
             let cycleDay = info?.cycleDay
             let phase: CyclePhase? =
                 isServerPeriod ? .menstrual : (info.map { $0.phase == .menstrual ? .follicular : $0.phase })
-            let serverFertilityLevel = isInLateWindow ? nil : fertileDays[key]
+            // When late, ALL fertile/ovulation predictions are unreliable — suppress entirely
+            let serverFertilityLevel = (isLate || isInLateWindow) ? nil : fertileDays[key]
             let isFertile = serverFertilityLevel != nil
-            let isOvulation = !isInLateWindow && ovulationDays.contains(key)
+            let isOvulation = !(isLate || isInLateWindow) && ovulationDays.contains(key)
 
             return CalendarDayInfo(
                 date: date,

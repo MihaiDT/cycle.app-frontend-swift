@@ -131,14 +131,13 @@ public struct AppFeature: Sendable {
 
             case .onAppear:
                 return .run { [userProfileLocal, clock] send in
-                    // Local-first: check if user has completed onboarding
-                    if let _ = try? await userProfileLocal.getProfile() {
-                        await send(.showHome)
-                        return
-                    }
-                    // No local data — show onboarding
+                    let profile = try? await userProfileLocal.getProfile()
                     try await clock.sleep(for: .milliseconds(1500))
-                    await send(.showOnboarding)
+                    if profile != nil {
+                        await send(.showHome)
+                    } else {
+                        await send(.showOnboarding)
+                    }
                 }
 
             case .showOnboarding:
@@ -320,7 +319,7 @@ public struct AppFeature: Sendable {
 
                         // 3. Create initial cycle from last period date
                         if let lpDate = lastPeriodDate {
-                            try await menstrualLocal.confirmPeriod(lpDate, periodDuration, nil)
+                            try await menstrualLocal.confirmPeriod(lpDate, periodDuration, nil, false)
                         }
 
                         // 4. Generate first prediction locally

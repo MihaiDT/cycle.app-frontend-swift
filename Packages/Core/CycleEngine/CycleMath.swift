@@ -64,15 +64,18 @@ public enum CycleMath {
     // MARK: Cycle Phase Detection
 
     /// Current cycle phase based on day within cycle.
-    /// Matches backend: menstrual → follicular → ovulatory → luteal.
+    /// Matches backend: menstrual → follicular → ovulatory → luteal → late.
     public static func cyclePhase(
         cycleDay: Int,
         cycleLength: Int,
         bleedingDays: Int
     ) -> CyclePhaseResult {
         let cl = max(1, cycleLength)
+        // Past cycle boundary = late (not a biological phase, a tracking state)
+        if cycleDay > cl { return .late }
         let bd = max(1, min(bleedingDays, cl))
-        let ovDay = max(bd + 3, cl - 14)
+        // Ensure at least 1 follicular day after bleeding ends (bd+4 not bd+3)
+        let ovDay = max(bd + 4, cl - 14)
 
         if cycleDay >= 1, cycleDay <= bd {
             return .menstrual
@@ -228,6 +231,20 @@ public enum CycleMath {
 
         return FertileWindow(start: start, peak: peak, end: end)
     }
+
+    // MARK: Validation
+
+    /// Clamp cycle length to physiological range (18-50), fallback 28.
+    public static func validateCycleLength(_ value: Int) -> Int {
+        guard value >= 18, value <= 50 else { return max(18, min(50, value == 0 ? 28 : value)) }
+        return value
+    }
+
+    /// Clamp bleeding days to physiological range (1...min(10, cycleLength/2)).
+    public static func validateBleedingDays(_ value: Int, cycleLength: Int) -> Int {
+        let maxBd = min(10, max(1, cycleLength / 2))
+        return max(1, min(maxBd, value))
+    }
 }
 
 // MARK: - Value Types
@@ -238,6 +255,7 @@ public enum CyclePhaseResult: String, Sendable, Equatable {
     case follicular
     case ovulatory
     case luteal
+    case late
 }
 
 /// Fertile window dates.

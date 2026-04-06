@@ -195,7 +195,7 @@ public struct EditPeriodFeature: Sendable {
                     }
                     for group in periodGroups {
                         try? await menstrualLocal.confirmPeriod(
-                            group.startDate, group.dayCount, nil
+                            group.startDate, group.dayCount, nil, true
                         )
                     }
 
@@ -324,9 +324,8 @@ public struct EditPeriodFeature: Sendable {
 
         for i in 1..<dates.count {
             let diff = cal.dateComponents([.day], from: dates[i - 1], to: dates[i]).day ?? 0
-            if diff <= 2 {
-                // Allow 1-day gap within same period (spotting pattern)
-                streakCount += diff
+            if diff == 1 {
+                streakCount += 1
             } else {
                 groups.append(PeriodGroup(startDate: streakStart, dayCount: streakCount))
                 streakStart = dates[i]

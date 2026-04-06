@@ -16,11 +16,18 @@ public struct MenstrualLocalClient: Sendable {
     /// Detailed cycle statistics (averages, trend, history).
     public var getCycleStats: @Sendable () async throws -> CycleStatsDetailedResponse
 
+    /// TEMP: Delete all cycles, predictions, and symptoms. Used during re-onboarding.
+    public var resetAllCycleData: @Sendable () async throws -> Void
+
     /// Confirm a new period (create/update cycle record + regenerate prediction).
-    public var confirmPeriod: @Sendable (Date, Int, String?) async throws -> Void
+    /// Pass `skipPredictions: true` when confirming in a batch — call `generatePrediction` once at the end.
+    public var confirmPeriod: @Sendable (Date, Int, String?, Bool) async throws -> Void
 
     /// Remove period days (delete cycle records containing those dates).
     public var removePeriodDays: @Sendable ([Date]) async throws -> Void
+
+    /// Aggregated journey data (cycles, predictions, profile) for the journey engine.
+    public var getJourneyData: @Sendable () async throws -> JourneyData
 
     /// Log a symptom for a specific date.
     public var logSymptom: @Sendable (Date, String, Int, String?) async throws -> Void
@@ -62,6 +69,9 @@ extension MenstrualLocalClient {
             getStatus: {
                 let container = CycleDataStore.shared
                 let context = ModelContext(container)
+
+                // Deduplicate cycle records (cleanup stale duplicates from repeated edits)
+                try deduplicateCycles(context: context)
 
                 let profile = try fetchProfile(context: context)
                 let latestCycle = try fetchLatestCycle(context: context)
@@ -146,13 +156,7 @@ extension MenstrualLocalClient {
                     profile: profileInfo,
                     nextPrediction: predictionInfo,
                     fertileWindow: fertileWindowInfo,
-                    hasCycleData: {
-                        guard let lc = latestCycle else { return false }
-                        // Active if latest cycle started within 2x avg cycle length
-                        let maxAge = avgCycleLength * 2
-                        let daysSinceCycle = CycleMath.daysBetween(lc.startDate, today)
-                        return daysSinceCycle >= 0 && daysSinceCycle <= maxAge
-                    }()
+                    hasCycleData: latestCycle != nil
                 )
             },
 
@@ -378,11 +382,27 @@ extension MenstrualLocalClient {
                 )
             },
 
+            // MARK: resetAllCycleData (TEMP)
+            resetAllCycleData: {
+                let container = CycleDataStore.shared
+                let context = ModelContext(container)
+                for record in try context.fetch(FetchDescriptor<CycleRecord>()) { context.delete(record) }
+                for record in try context.fetch(FetchDescriptor<PredictionRecord>()) { context.delete(record) }
+                for record in try context.fetch(FetchDescriptor<SymptomRecord>()) { context.delete(record) }
+                for record in try context.fetch(FetchDescriptor<MenstrualProfileRecord>()) { context.delete(record) }
+                for record in try context.fetch(FetchDescriptor<DailyCardRecord>()) { context.delete(record) }
+                try context.save()
+            },
+
             // MARK: confirmPeriod
-            confirmPeriod: { startDate, bleedingDays, notes in
+            confirmPeriod: { startDate, bleedingDays, notes, skipPredictions in
                 let container = CycleDataStore.shared
                 let context = ModelContext(container)
                 let start = Calendar.current.startOfDay(for: startDate)
+                let tomorrow = Calendar.current.date(byAdding: .day, value: 1, to: Calendar.current.startOfDay(for: Date()))!
+                // Validation: reject future dates, clamp bleeding days
+                guard start <= tomorrow else { return }
+                let bleedingDays = CycleMath.validateBleedingDays(bleedingDays, cycleLength: 28)
 
                 // Match to prediction for accuracy tracking
                 let predDescriptor = FetchDescriptor<PredictionRecord>(
@@ -390,27 +410,38 @@ extension MenstrualLocalClient {
                     sortBy: [SortDescriptor(\.predictedDate)]
                 )
                 let predictions = try context.fetch(predDescriptor)
-                var matchedPrediction: PredictionRecord?
-                for pred in predictions {
-                    let diff = abs(CycleMath.daysBetween(pred.predictedDate, start))
-                    if diff <= 14 {
-                        matchedPrediction = pred
-                        break
+                // Rank by distance — pick the closest prediction within ±14 days
+                let matchedPrediction = predictions
+                    .map { ($0, abs(CycleMath.daysBetween($0.predictedDate, start))) }
+                    .filter { $0.1 <= 14 }
+                    .min(by: { $0.1 < $1.1 })
+                    .map(\.0)
+
+                // Check for existing cycle with same start date (upsert)
+                let existingDescriptor = FetchDescriptor<CycleRecord>(
+                    predicate: #Predicate<CycleRecord> { $0.startDate == start }
+                )
+                let existingCycles = try context.fetch(existingDescriptor)
+
+                // Update previous cycle's length (only if this is a NEW cycle)
+                if existingCycles.isEmpty {
+                    let latestCycle = try fetchLatestCycle(context: context)
+                    if let prev = latestCycle, prev.startDate != start {
+                        let gap = CycleMath.cycleLength(
+                            periodStart1: prev.startDate, periodStart2: start
+                        )
+                        if gap >= 18, gap <= 50 {
+                            prev.actualCycleLength = gap
+                        }
                     }
                 }
 
-                // Update previous cycle's length
-                let latestCycle = try fetchLatestCycle(context: context)
-                if let prev = latestCycle {
-                    let gap = CycleMath.cycleLength(
-                        periodStart1: prev.startDate, periodStart2: start
-                    )
-                    if gap >= 18, gap <= 50 {
-                        prev.actualCycleLength = gap
-                    }
+                // Delete all duplicates, keep none — we'll insert a fresh one
+                for existing in existingCycles {
+                    context.delete(existing)
                 }
 
-                // Create new cycle
+                // Create cycle record
                 let cycle = CycleRecord(
                     startDate: start,
                     endDate: CycleMath.addDays(start, bleedingDays - 1),
@@ -431,44 +462,23 @@ extension MenstrualLocalClient {
                     pred.accuracyDays = abs(CycleMath.daysBetween(pred.predictedDate, start))
                 }
 
-                // Update profile bleeding days (rolling average)
-                if let profile = try fetchProfile(context: context) {
-                    let allCycles = try fetchAllCycles(context: context)
-                    let bleedingValues = allCycles.compactMap(\.bleedingDays)
-                    if !bleedingValues.isEmpty {
-                        profile.avgBleedingDays = Int(round(CycleMath.mean(bleedingValues)))
-                    }
-
-                    // Recalculate regularity
-                    var cycleLengths: [Int] = []
-                    for (i, c) in allCycles.enumerated() {
-                        if let len = c.actualCycleLength { cycleLengths.append(len) }
-                        else if i + 1 < allCycles.count {
-                            let gap = CycleMath.cycleLength(
-                                periodStart1: allCycles[i + 1].startDate,
-                                periodStart2: c.startDate
-                            )
-                            if gap >= 18, gap <= 50 { cycleLengths.append(gap) }
-                        }
-                    }
-                    if !cycleLengths.isEmpty {
-                        profile.avgCycleLength = Int(round(CycleMath.mean(cycleLengths)))
-                        profile.cycleRegularity = CycleMath.classifyVariability(cycleLengths)
-                    }
-                    profile.updatedAt = .now
-                }
-
                 try context.save()
 
-                // Regenerate predictions
-                try await regeneratePredictions(container: container)
+                // Recalculate all cycle lengths and profile from scratch
+                try recalculateCycleStats(context: context)
+
+                // Regenerate predictions (skip in batch mode — caller does it once at the end)
+                if !skipPredictions {
+                    try await regeneratePredictions(container: container)
+                }
             },
 
             // MARK: removePeriodDays
             removePeriodDays: { dates in
                 let container = CycleDataStore.shared
                 let context = ModelContext(container)
-                let datesToRemove = Set(dates.map { Calendar.current.startOfDay(for: $0) })
+                let cal = Calendar.current
+                let datesToRemove = Set(dates.map { cal.startOfDay(for: $0) })
 
                 let descriptor = FetchDescriptor<CycleRecord>(
                     sortBy: [SortDescriptor(\.startDate)]
@@ -477,18 +487,35 @@ extension MenstrualLocalClient {
 
                 for cycle in cycles {
                     let bd = cycle.bleedingDays ?? 5
+                    var cycleDates: [Date] = []
                     for dayOffset in 0..<bd {
-                        let date = CycleMath.addDays(cycle.startDate, dayOffset)
-                        if datesToRemove.contains(date) {
-                            context.delete(cycle)
-                            break
-                        }
+                        cycleDates.append(CycleMath.addDays(cycle.startDate, dayOffset))
+                    }
+                    let removedFromCycle = cycleDates.filter { datesToRemove.contains($0) }
+                    guard !removedFromCycle.isEmpty else { continue }
+
+                    let remainingDates = cycleDates.filter { !datesToRemove.contains($0) }
+                    if remainingDates.isEmpty {
+                        // All days removed → delete entire cycle
+                        context.delete(cycle)
+                    } else {
+                        // Partial removal → adjust cycle to remaining days
+                        let newStart = remainingDates.min()!
+                        cycle.startDate = newStart
+                        cycle.bleedingDays = remainingDates.count
+                        cycle.endDate = CycleMath.addDays(newStart, remainingDates.count - 1)
                     }
                 }
                 try context.save()
 
+                // Recalculate all cycle lengths and profile from scratch
+                try recalculateCycleStats(context: context)
+
                 try await regeneratePredictions(container: container)
             },
+
+            // MARK: getJourneyData
+            getJourneyData: liveJourneyData(),
 
             // MARK: logSymptom
             logSymptom: { date, symptomType, severity, notes in
@@ -562,6 +589,7 @@ extension MenstrualLocalClient {
                 let existing = try fetchProfile(context: context)
                 if let record = existing {
                     record.avgCycleLength = profileInfo.avgCycleLength
+                    record.onboardingCycleLength = profileInfo.avgCycleLength
                     record.cycleRegularity = profileInfo.cycleRegularity
                     record.typicalSymptoms = symptoms
                     record.typicalFlowIntensity = flowIntensity
@@ -581,7 +609,8 @@ extension MenstrualLocalClient {
                     context.insert(record)
                 }
                 try context.save()
-            }
+            },
+
         )
     }
 
@@ -599,6 +628,79 @@ extension MenstrualLocalClient {
             sortBy: [SortDescriptor(\.startDate, order: .reverse)]
         )
         return try context.fetch(descriptor).first
+    }
+
+    /// Recalculate all actualCycleLength values and profile stats from scratch.
+    /// Ensures consistency regardless of edit order.
+    private static func recalculateCycleStats(context: ModelContext) throws {
+        let cycles = try fetchAllCycles(context: context) // sorted by startDate desc
+        let sorted = cycles.reversed() // oldest first
+
+        // Reset all actualCycleLength, then recompute from gaps
+        for cycle in sorted {
+            cycle.actualCycleLength = nil
+        }
+        let arr = Array(sorted)
+        for i in 0..<arr.count {
+            if i + 1 < arr.count {
+                let gap = CycleMath.cycleLength(
+                    periodStart1: arr[i].startDate, periodStart2: arr[i + 1].startDate
+                )
+                if gap >= 18, gap <= 50 {
+                    arr[i].actualCycleLength = gap
+                }
+            }
+        }
+
+        // Recalculate profile
+        if let profile = try fetchProfile(context: context) {
+            let bleedingValues = arr.compactMap(\.bleedingDays)
+            if !bleedingValues.isEmpty {
+                profile.avgBleedingDays = Int(round(CycleMath.mean(bleedingValues)))
+            }
+
+            var cycleLengths: [Int] = []
+            for cycle in arr {
+                if let len = cycle.actualCycleLength {
+                    cycleLengths.append(len)
+                }
+            }
+            if !cycleLengths.isEmpty {
+                profile.avgCycleLength = Int(round(CycleMath.mean(cycleLengths)))
+                profile.cycleRegularity = CycleMath.classifyVariability(cycleLengths)
+                // Promote observed average to baseline once we have enough data
+                if cycleLengths.count >= 3 {
+                    profile.onboardingCycleLength = profile.avgCycleLength
+                }
+            } else {
+                // No observed cycle gaps — revert to baseline
+                profile.avgCycleLength = profile.onboardingCycleLength
+            }
+            profile.updatedAt = .now
+        }
+
+        try context.save()
+    }
+
+    /// Remove duplicate CycleRecords sharing the same startDate, keeping the newest.
+    private static func deduplicateCycles(context: ModelContext) throws {
+        let all = try fetchAllCycles(context: context)
+        var seen: [Date: CycleRecord] = [:]
+        for cycle in all {
+            let key = Calendar.current.startOfDay(for: cycle.startDate)
+            if let existing = seen[key] {
+                // Keep whichever was created/updated more recently
+                if cycle.startDate > existing.startDate {
+                    context.delete(existing)
+                    seen[key] = cycle
+                } else {
+                    context.delete(cycle)
+                }
+            } else {
+                seen[key] = cycle
+            }
+        }
+        try context.save()
     }
 
     private static func fetchAllCycles(context: ModelContext) throws -> [CycleRecord] {
@@ -662,8 +764,14 @@ extension MenstrualLocalClient {
             hasSymptomData: false
         )
 
-        let sd = CycleMath.stdDev(cycleInputs.compactMap(\.actualCycleLength))
+        let extractedLengths = MenstrualPredictor.extractedCycleLengths(
+            cycles: cycleInputs, fallbackLength: profile.avgCycleLength
+        )
+        let sd = CycleMath.stdDev(extractedLengths)
         let cycleLen = profile.avgCycleLength
+        // Apply trend to future projections (not just flat avgCycleLength)
+        let trend = CycleMath.detectTrend(extractedLengths)
+        let trendAdjust = trend != 0 ? (trend > 0 ? 1 : -1) : 0
 
         // Project 12 cycles into the future (~1 year of predictions)
         var currentStart = result.predictedStart
@@ -671,9 +779,10 @@ extension MenstrualLocalClient {
 
         for i in 0..<12 {
             let rangeDays = CycleMath.predictionRangeDays(confidence: currentConfidence, stdDev: sd)
+            let projectedLen = max(18, min(50, cycleLen + trendAdjust * min(i, 3)))
             let fertile = i == 0
                 ? result.fertileWindow
-                : CycleMath.simpleFertileWindow(cycleStart: currentStart, cycleLength: cycleLen)
+                : CycleMath.simpleFertileWindow(cycleStart: currentStart, cycleLength: projectedLen)
 
             let pred = PredictionRecord(
                 predictedDate: currentStart,
@@ -688,8 +797,8 @@ extension MenstrualLocalClient {
             )
             context.insert(pred)
 
-            // Next cycle: advance by avg length, decay confidence slightly
-            currentStart = CycleMath.addDays(currentStart, cycleLen)
+            // Next cycle: advance by projected length (trend-aware), decay confidence
+            currentStart = CycleMath.addDays(currentStart, projectedLen)
             currentConfidence = max(0.3, currentConfidence * 0.95)
         }
 
@@ -705,8 +814,10 @@ extension MenstrualLocalClient {
             getStatus: { .mock },
             getCalendar: { _, _ in .mock },
             getCycleStats: { .mock },
-            confirmPeriod: { _, _, _ in },
+            resetAllCycleData: { },
+            confirmPeriod: { _, _, _, _ in },
             removePeriodDays: { _ in },
+            getJourneyData: { JourneyData(records: [], predictions: [], reports: [], profileAvgCycleLength: 28, profileAvgBleedingDays: 5, currentCycleStartDate: nil) },
             logSymptom: { _, _, _, _ in },
             getSymptoms: { _ in [] },
             generatePrediction: { },

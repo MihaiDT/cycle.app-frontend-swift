@@ -14,6 +14,9 @@ public struct CardStackFeature: Sendable {
         public var frontIndex: Int = 0
         public var dragOffset: CGFloat = 0
         public var isDragging: Bool = false
+        /// Track current combo to skip redundant loads
+        public var currentPhase: CyclePhase?
+        public var currentDay: Int?
 
         public init() {}
 
@@ -45,6 +48,8 @@ public struct CardStackFeature: Sendable {
         }
     }
 
+    private enum CancelID { case cardFetch }
+
     @Dependency(\.continuousClock) var clock
 
     private static let cardsURL = "http://34.72.143.234:8081/api/daily-cards"
@@ -55,33 +60,44 @@ public struct CardStackFeature: Sendable {
         Reduce { state, action in
             switch action {
             case let .loadCards(phase, day):
+                // Same phase — nothing to do (day is cosmetic, phase drives content)
+                guard state.currentPhase != phase else {
+                    state.currentDay = day
+                    return .none
+                }
+
+                state.currentPhase = phase
+                state.currentDay = day
                 let today = Self.todayString()
 
-                // Check cache first — instant if available
-                let cachedCards = Self.loadCachedCards(date: today, phase: phase, day: day)
-                if !cachedCards.isEmpty {
-                    state.cards = cachedCards
+                // Cache hit — keyed by (date, phase) only
+                let cached = Self.loadCachedCards(date: today, phase: phase, day: day)
+                if !cached.isEmpty {
+                    state.cards = cached
                     state.frontIndex = 0
                     state.dragOffset = 0
                     state.isLoading = false
                     return .none
                 }
 
-                // Already fetching — don't duplicate
-                guard !state.isLoading else { return .none }
-
-                // No cache — show loading, fetch from AI
+                // Cache miss — fetch from AI, debounced
                 state.isLoading = true
                 state.cards = []
                 let phaseStr = phase.rawValue
-                return .run { send in
+                return .run { [clock] send in
+                    do {
+                        try await clock.sleep(for: .milliseconds(300))
+                    } catch {
+                        return // cancelled by cancelInFlight — next loadCards will retry
+                    }
                     if let aiCards = await Self.fetchAICards(phase: phaseStr, day: day) {
-                        Self.cacheCards(aiCards, date: today, phase: phaseStr, day: day)
+                        Self.cacheCards(aiCards, date: today, phase: phaseStr)
                         await send(.cardsGenerated(aiCards))
                     } else {
                         await send(.cardsGenerated([]))
                     }
                 }
+                .cancellable(id: CancelID.cardFetch, cancelInFlight: true)
 
             case let .cardsGenerated(cards):
                 state.isLoading = false
@@ -148,29 +164,10 @@ struct CardStackView: View {
 
     var body: some View {
         if store.isLoading {
-            // Shimmer loading state
-            VStack(alignment: .leading, spacing: 16) {
-                Text("Your day")
-                    .font(.custom("Raleway-Bold", size: 28, relativeTo: .title))
-                    .foregroundStyle(DesignColors.text)
-                    .padding(.horizontal, AppLayout.horizontalPadding)
-
-                RoundedRectangle(cornerRadius: AppLayout.cornerRadiusL, style: .continuous)
-                    .fill(.ultraThinMaterial)
-                    .frame(height: 320)
-                    .padding(.horizontal, AppLayout.horizontalPadding)
-                    .overlay {
-                        VStack(spacing: 12) {
-                            ProgressView()
-                                .tint(DesignColors.accentWarm)
-                            Text("Preparing your insights...")
-                                .font(.custom("Raleway-Medium", size: 14))
-                                .foregroundColor(DesignColors.textSecondary)
-                        }
-                    }
-            }
+            CardSkeletonView()
         } else {
             cardContent
+                .transition(.opacity.animation(.easeIn(duration: 0.3)))
         }
     }
 
@@ -206,6 +203,7 @@ struct CardStackView: View {
 
                     DailyCardView(
                         card: item.card,
+                        displayDay: store.currentDay,
                         onAction: { store.send(.actionTapped(item.card)) },
                         onCheckIn: { store.send(.delegate(.openCheckIn)) }
                     )
@@ -299,10 +297,93 @@ struct CardStackView: View {
     }
 }
 
+// MARK: - Card Skeleton (Shimmer Loading)
+
+private struct CardSkeletonView: View {
+    @State private var shimmerOffset: CGFloat = -1
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("Your day")
+                .font(.custom("Raleway-Bold", size: 28, relativeTo: .title))
+                .foregroundStyle(DesignColors.text)
+                .padding(.horizontal, AppLayout.horizontalPadding)
+
+            ZStack {
+                // Back card skeleton
+                skeletonCard
+                    .scaleEffect(0.92)
+                    .offset(y: 28)
+                    .opacity(0.5)
+
+                // Middle card skeleton
+                skeletonCard
+                    .scaleEffect(0.96)
+                    .offset(y: 14)
+                    .rotationEffect(.degrees(-3), anchor: .bottom)
+                    .opacity(0.7)
+
+                // Front card skeleton
+                skeletonCard
+            }
+            .padding(.horizontal, AppLayout.horizontalPadding)
+        }
+        .onAppear {
+            withAnimation(.easeInOut(duration: 1.4).repeatForever(autoreverses: false)) {
+                shimmerOffset = 2
+            }
+        }
+    }
+
+    private var skeletonCard: some View {
+        RoundedRectangle(cornerRadius: AppLayout.cornerRadiusL, style: .continuous)
+            .fill(Color(red: 0.94, green: 0.93, blue: 0.91))
+            .frame(height: 320)
+            .overlay(
+                RoundedRectangle(cornerRadius: AppLayout.cornerRadiusL, style: .continuous)
+                    .fill(
+                        LinearGradient(
+                            colors: [.clear, .white.opacity(0.4), .clear],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
+                    )
+                    .offset(x: shimmerOffset * 300)
+            )
+            .clipShape(RoundedRectangle(cornerRadius: AppLayout.cornerRadiusL, style: .continuous))
+            .overlay {
+                VStack(alignment: .leading, spacing: 16) {
+                    // Icon placeholder
+                    Circle()
+                        .fill(Color.white.opacity(0.5))
+                        .frame(width: 36, height: 36)
+
+                    Spacer()
+
+                    // Title placeholder
+                    RoundedRectangle(cornerRadius: 6)
+                        .fill(Color.white.opacity(0.45))
+                        .frame(width: 180, height: 18)
+
+                    // Body placeholder lines
+                    RoundedRectangle(cornerRadius: 4)
+                        .fill(Color.white.opacity(0.3))
+                        .frame(height: 12)
+                    RoundedRectangle(cornerRadius: 4)
+                        .fill(Color.white.opacity(0.3))
+                        .frame(width: 220, height: 12)
+                }
+                .padding(24)
+            }
+    }
+}
+
 // MARK: - Daily Card View
 
 private struct DailyCardView: View {
     let card: DailyCard
+    /// Always use the latest broadcast day, not the baked-in card value
+    var displayDay: Int?
     var onAction: (() -> Void)?
     var onCheckIn: (() -> Void)?
 
@@ -318,6 +399,8 @@ private struct DailyCardView: View {
             [Color(red: 0.96, green: 0.91, blue: 0.80), Color(red: 0.98, green: 0.95, blue: 0.89)]
         case .luteal:
             [Color(red: 0.90, green: 0.87, blue: 0.95), Color(red: 0.95, green: 0.93, blue: 0.97)]
+        case .late:
+            [Color(red: 0.92, green: 0.91, blue: 0.89), Color(red: 0.96, green: 0.95, blue: 0.94)]
         }
         return LinearGradient(colors: colors, startPoint: .topLeading, endPoint: .bottomTrailing)
     }
@@ -346,15 +429,25 @@ private struct DailyCardView: View {
                 Spacer()
 
                 Text(card.title)
-                    .font(.custom("Raleway-Bold", size: 28, relativeTo: .title))
+                    .font(.custom("Raleway-Bold", size: 24, relativeTo: .title))
                     .foregroundStyle(DesignColors.text)
                     .lineSpacing(4)
 
-                Spacer().frame(height: 24)
+                if !card.body.isEmpty {
+                    Text(card.body)
+                        .font(.custom("Raleway-Regular", size: 14, relativeTo: .body))
+                        .foregroundStyle(DesignColors.textSecondary)
+                        .lineSpacing(3)
+                        .lineLimit(3)
+                }
+
+                Spacer().frame(height: 16)
 
                 HStack {
-                    if let day = card.cycleDay {
-                        Text("Day \(day) · \(card.cyclePhase.displayName)")
+                    if let day = displayDay ?? card.cycleDay {
+                        Text(card.cyclePhase == .late
+                             ? "\(day) days late"
+                             : "Day \(day) · \(card.cyclePhase.displayName)")
                             .font(.custom("Raleway-Medium", size: 14, relativeTo: .caption))
                             .foregroundStyle(phaseAccent.opacity(0.6))
                     }
@@ -424,11 +517,19 @@ private struct DailyCardView: View {
                 Spacer()
 
                 Text(card.title)
-                    .font(.custom("Raleway-Bold", size: 26, relativeTo: .title2))
+                    .font(.custom("Raleway-Bold", size: 24, relativeTo: .title2))
                     .foregroundStyle(DesignColors.text)
                     .lineSpacing(4)
 
-                Spacer().frame(height: 24)
+                if !card.body.isEmpty {
+                    Text(card.body)
+                        .font(.custom("Raleway-Regular", size: 14, relativeTo: .body))
+                        .foregroundStyle(DesignColors.textSecondary)
+                        .lineSpacing(3)
+                        .lineLimit(3)
+                }
+
+                Spacer().frame(height: 16)
 
                 // CTA
                 if let action = card.action {
@@ -485,11 +586,19 @@ private struct DailyCardView: View {
                 Spacer()
 
                 Text(card.title)
-                    .font(.custom("Raleway-Bold", size: 28, relativeTo: .title))
+                    .font(.custom("Raleway-Bold", size: 24, relativeTo: .title))
                     .foregroundStyle(.white)
                     .lineSpacing(4)
 
-                Spacer().frame(height: 24)
+                if !card.body.isEmpty {
+                    Text(card.body)
+                        .font(.custom("Raleway-Regular", size: 14, relativeTo: .body))
+                        .foregroundStyle(.white.opacity(0.7))
+                        .lineSpacing(3)
+                        .lineLimit(2)
+                }
+
+                Spacer().frame(height: 16)
 
                 Button {
                     UIImpactFeedbackGenerator(style: .light).impactOccurred()
@@ -532,15 +641,24 @@ extension CardStackFeature {
         return fmt.string(from: Date())
     }
 
+    private static let cacheTTL: TimeInterval = 7 * 24 * 3600 // 7 days
+
     static func loadCachedCards(date: String, phase: CyclePhase, day: Int) -> [DailyCard] {
         let container = CycleDataStore.shared
         let context = ModelContext(container)
         let phaseStr = phase.rawValue
         let descriptor = FetchDescriptor<DailyCardRecord>(
-            predicate: #Predicate { $0.date == date && $0.cyclePhase == phaseStr && $0.cycleDay == day },
+            predicate: #Predicate { $0.date == date && $0.cyclePhase == phaseStr },
             sortBy: [SortDescriptor(\.createdAt)]
         )
         guard let records = try? context.fetch(descriptor), !records.isEmpty else { return [] }
+
+        // TTL — stale cards get purged and regenerated
+        if let oldest = records.first, Date.now.timeIntervalSince(oldest.createdAt) > cacheTTL {
+            for record in records { context.delete(record) }
+            try? context.save()
+            return []
+        }
 
         return records.map { record in
             DailyCard(
@@ -559,14 +677,24 @@ extension CardStackFeature {
         }
     }
 
-    static func cacheCards(_ cards: [DailyCard], date: String, phase: String, day: Int) {
+    static func cacheCards(_ cards: [DailyCard], date: String, phase: String) {
         let container = CycleDataStore.shared
         let context = ModelContext(container)
 
-        // Clear ALL existing cards (old + today's duplicates)
-        let allDescriptor = FetchDescriptor<DailyCardRecord>()
-        if let all = try? context.fetch(allDescriptor) {
-            for record in all { context.delete(record) }
+        // Clear cards for this phase today
+        let descriptor = FetchDescriptor<DailyCardRecord>(
+            predicate: #Predicate { $0.date == date && $0.cyclePhase == phase }
+        )
+        if let existing = try? context.fetch(descriptor) {
+            for record in existing { context.delete(record) }
+        }
+
+        // Purge stale cards from previous days
+        let staleDescriptor = FetchDescriptor<DailyCardRecord>(
+            predicate: #Predicate { $0.date != date }
+        )
+        if let stale = try? context.fetch(staleDescriptor) {
+            for record in stale { context.delete(record) }
         }
 
         for card in cards {
@@ -576,7 +704,7 @@ extension CardStackFeature {
                 title: card.title,
                 body: card.body,
                 cyclePhase: phase,
-                cycleDay: day
+                cycleDay: card.cycleDay ?? 0
             )
             context.insert(record)
         }

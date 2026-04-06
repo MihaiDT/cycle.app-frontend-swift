@@ -73,10 +73,12 @@ public enum MenstrualPredictor {
         var predictedStart: Date
         if let lp = lastPeriod {
             predictedStart = CycleMath.addDays(lp, cycleLength)
-            // Project forward if in the past (allow 60 days back for late detection)
+            // Project forward if in the past (cap at 24 iterations to prevent runaway)
             let cutoff = CycleMath.addDays(today, -60)
-            while predictedStart < cutoff {
+            var iterations = 0
+            while predictedStart < cutoff, iterations < 24 {
                 predictedStart = CycleMath.addDays(predictedStart, cycleLength)
+                iterations += 1
             }
         } else {
             predictedStart = CycleMath.addDays(today, cycleLength / 2)
@@ -301,6 +303,11 @@ public enum MenstrualPredictor {
 
     /// Extract physiologically valid cycle lengths (18-50 days) from history.
     /// Falls back to profile average if no valid lengths found.
+    /// Public wrapper for use by regeneratePredictions.
+    public static func extractedCycleLengths(cycles: [CycleInput], fallbackLength: Int) -> [Int] {
+        extractCycleLengths(cycles, fallbackLength: fallbackLength)
+    }
+
     private static func extractCycleLengths(
         _ cycles: [CycleInput],
         fallbackLength: Int
@@ -309,7 +316,7 @@ public enum MenstrualPredictor {
         var lengths: [Int] = []
 
         for i in 0..<(cycles.count - 1) {
-            if let stored = cycles[i].actualCycleLength {
+            if let stored = cycles[i].actualCycleLength, stored >= 18, stored <= 50 {
                 lengths.append(stored)
             } else {
                 let gap = CycleMath.cycleLength(
@@ -359,7 +366,7 @@ public enum MenstrualPredictor {
             monthLengths[month, default: []].append(cycleLengths[i])
         }
 
-        guard let currentMonthLengths = monthLengths[currentMonth], !currentMonthLengths.isEmpty else {
+        guard let currentMonthLengths = monthLengths[currentMonth], currentMonthLengths.count >= 2 else {
             return 0
         }
 

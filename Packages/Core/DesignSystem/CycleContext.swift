@@ -358,10 +358,16 @@ public struct CycleContext: Equatable, Sendable {
 
     // MARK: - Phase Resolution (server-only menstrual, math for other phases)
 
+    /// Raw days since cycle start — not wrapped, not scaled.
+    private func rawDaysSinceCycleStart(for date: Date) -> Int {
+        cal.dateComponents([.day], from: cal.startOfDay(for: cycleStartDate), to: cal.startOfDay(for: date)).day ?? 0
+    }
+
     /// Phase for a specific date — menstrual ONLY from server periodDays, never from math.
     public func phase(for date: Date) -> CyclePhase? {
         if isPeriodDay(date) { return .menstrual }
-        // Check calendar fertile days directly
+        // Late check BEFORE fertileDays — predicted fertile days are stale when period is late
+        if isLate && rawDaysSinceCycleStart(for: date) >= cycleLength { return .late }
         if fertileDays[dateKey(for: date)] != nil { return .ovulatory }
         guard let info = cycleDayInfo(for: date) else { return nil }
         let p = mathPhase(forCycleDay: info.day, for: date)
@@ -370,6 +376,7 @@ public struct CycleContext: Equatable, Sendable {
 
     /// Phase for a cycle day number — menstrual ONLY from server periodDays, never from math.
     public func phase(forCycleDay day: Int) -> CyclePhase {
+        if isLate && day > cycleLength { return .late }
         let date = cal.date(byAdding: .day, value: day - 1, to: cal.startOfDay(for: cycleStartDate))
         if let date, isPeriodDay(date) {
             return .menstrual
@@ -385,6 +392,7 @@ public struct CycleContext: Equatable, Sendable {
     /// When period is late, shows "late" color instead of menstrual for predicted days.
     public func dotPhase(for date: Date) -> CyclePhase? {
         if isPeriodDay(date) { return .menstrual }
+        if isLate && rawDaysSinceCycleStart(for: date) >= cycleLength { return .late }
         if fertileDays[dateKey(for: date)] != nil { return .ovulatory }
         guard let cd = cycleDayNumber(for: date) else { return nil }
         let p = mathPhase(forCycleDay: cd, for: date)
@@ -615,7 +623,9 @@ extension CycleContext {
         // Reconcile cycleDay with prediction when they're inconsistent.
         // The server wraps cycleDay via modular arithmetic which can give Day 1
         // while the prediction says period is only a few days away.
-        if let daysUntil = status.nextPrediction?.daysUntil,
+        // Skip when period is genuinely late — don't override real Day 42 with wrapped Day 14.
+        if cycleDay <= cycleLength,
+            let daysUntil = status.nextPrediction?.daysUntil,
             daysUntil > 0, daysUntil < cycleLength
         {
             let expectedCycleDay = cycleLength - daysUntil + 1
@@ -627,9 +637,21 @@ extension CycleContext {
             }
         }
 
-        let phase =
+        // Late detection: from prediction OR from cycle day exceeding average length
+        let isLateFromPrediction = status.nextPrediction?.isLate ?? false
+        let isLateFromCycleDay = cycleDay > cycleLength
+        let isLate = isLateFromPrediction || isLateFromCycleDay
+        let daysLate = max(
+            status.nextPrediction?.daysLate ?? 0,
+            isLateFromCycleDay ? cycleDay - cycleLength : 0
+        )
+
+        let phase: CyclePhase = if isLate {
+            .late
+        } else {
             CyclePhase(rawValue: status.currentCycle.phase)
-            ?? CycleContext.mathPhaseStatic(forCycleDay: cycleDay, cycleLength: cycleLength, bleedingDays: bleedingDays)
+                ?? CycleContext.mathPhaseStatic(forCycleDay: cycleDay, cycleLength: cycleLength, bleedingDays: bleedingDays)
+        }
 
         return CycleContext(
             cycleDay: cycleDay,
@@ -647,8 +669,8 @@ extension CycleContext {
             fertileWindowEnd: status.fertileWindow?.end,
             fertileWindowPeak: status.fertileWindow?.peak,
             daysUntilOvulation: status.fertileWindow?.daysUntilPeak,
-            isLate: status.nextPrediction?.isLate ?? false,
-            daysLate: status.nextPrediction?.daysLate ?? 0
+            isLate: isLate,
+            daysLate: daysLate
         )
     }
 

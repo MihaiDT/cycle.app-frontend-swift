@@ -29,6 +29,8 @@ public enum HBICalculator {
             PhaseMultipliers(energy: 1.20, anxiety: 0.85, sleep: 1.00, mood: 1.15)
         case .luteal:
             PhaseMultipliers(energy: 0.85, anxiety: 1.20, sleep: 0.90, mood: 0.85)
+        case .late:
+            PhaseMultipliers(energy: 0.85, anxiety: 1.15, sleep: 0.90, mood: 0.85)
         }
     }
 

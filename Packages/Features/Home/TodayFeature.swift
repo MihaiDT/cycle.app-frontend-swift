@@ -126,11 +126,13 @@ public struct TodayFeature: Sendable {
             periodFlowIntensity: [String: FlowIntensity],
             bleedingDays: Int
         )
+        case phaseResolved(CyclePhase, Int)
         case backgroundSyncCompleted
         case delegate(Delegate)
         public enum Delegate: Sendable, Equatable {
             case openAriaChat(context: String)
             case openCycleInsights
+            case openCycleJourney
         }
     }
 
@@ -139,6 +141,23 @@ public struct TodayFeature: Sendable {
     @Dependency(\.continuousClock) var clock
 
     public init() {}
+
+    /// Single source of truth: compute phase from CycleContext and broadcast to all components.
+    /// Called from both menstrualStatusLoaded and calendarEntriesLoaded — whoever has complete data first.
+    private static func syncPhaseEffect(state: State) -> Effect<Action> {
+        guard let cycle = state.cycle,
+              let status = state.menstrualStatus else {
+            return .none
+        }
+        let today = Calendar.current.startOfDay(for: Date())
+        // Use same calculation as CycleHeroView.displayCycleDay for consistency
+        let cycleDay = cycle.cycleDayNumber(for: today) ?? cycle.cycleDay
+        let phase = cycle.phase(for: today)
+            ?? cycle.phase(forCycleDay: cycleDay)
+        // When late, show days-late (consistent with header) instead of raw cycle day
+        let displayDay = phase == .late ? cycle.effectiveDaysLate : cycleDay
+        return .send(.phaseResolved(phase, displayDay))
+    }
 
     public var body: some ReducerOf<Self> {
         BindingReducer()
@@ -197,14 +216,11 @@ public struct TodayFeature: Sendable {
                     state.calendarState.hasPreloaded = true
                     effects.append(.send(.calendar(.loadCalendar)))
                 }
-                // Load or refresh cards when cycle data changes
-                let phaseStr = status.currentCycle.phase
-                let phase = CyclePhase(rawValue: phaseStr) ?? .follicular
-                let day = status.currentCycle.cycleDay
-
-                // Load cards only once — first load of the day
-                if state.cardStackState.cards.isEmpty, !state.cardStackState.isLoading {
-                    effects.append(.send(.cardStack(.loadCards(phase, day))))
+                if !hasCycleData {
+                    state.cardStackState.cards = []
+                    state.cardStackState.currentPhase = nil
+                } else {
+                    effects.append(Self.syncPhaseEffect(state: state))
                 }
                 return effects.isEmpty ? .none : .merge(effects)
 
@@ -261,22 +277,29 @@ public struct TodayFeature: Sendable {
                 state.serverPredictedDays = predicted
                 state.serverFertileDays = fertile
                 state.serverOvulationDays = ovulation
+
+                let cardEffect = Self.syncPhaseEffect(state: state)
+
                 if state.isRefreshingCycleData {
                     state.isRefreshingCycleData = false
                     state.pendingCalendarData = nil
-                    return .run { send in
-                        if wasSyncing {
+                    let syncEffect: Effect<Action> = wasSyncing
+                        ? .run { send in
                             try? await Task.sleep(nanoseconds: 1_000_000_000)
                             await send(.hideSyncStatus, animation: .easeOut(duration: 0.3))
                         }
-                    }
+                        : .none
+                    return .merge(syncEffect, cardEffect)
                 } else if wasSyncing {
-                    return .run { send in
-                        try? await Task.sleep(nanoseconds: 1_000_000_000)
-                        await send(.hideSyncStatus, animation: .easeOut(duration: 0.3))
-                    }
+                    return .merge(
+                        .run { send in
+                            try? await Task.sleep(nanoseconds: 1_000_000_000)
+                            await send(.hideSyncStatus, animation: .easeOut(duration: 0.3))
+                        },
+                        cardEffect
+                    )
                 }
-                return .none
+                return cardEffect
 
             case .calendarEntriesLoaded(.failure):
                 state.hasCompletedCalendarLoad = true
@@ -391,8 +414,7 @@ public struct TodayFeature: Sendable {
                 let logDate = date
                 let bleedingDays = state.cycle?.bleedingDays ?? 5
                 return .run { [menstrualLocal] send in
-                    try? await menstrualLocal.confirmPeriod(logDate, bleedingDays, nil)
-                    try? await menstrualLocal.generatePrediction()
+                    try? await menstrualLocal.confirmPeriod(logDate, bleedingDays, nil, false)
                     await send(.logPeriodCompleted)
                 }
 
@@ -437,6 +459,12 @@ public struct TodayFeature: Sendable {
                 }
                 return .none
 
+            // MARK: — Phase broadcast hub
+            // All components that react to phase changes subscribe here.
+            // To add a new component: add one .send line below.
+            case let .phaseResolved(phase, day):
+                return .send(.cardStack(.loadCards(phase, day)))
+
             case .backgroundSyncPeriod(let periodDays, let originalPeriodDays, let flowIntensity, let bleedingDays):
                 let periodGroups = EditPeriodFeature.groupConsecutivePeriods(periodDays)
                 let removedDays = originalPeriodDays.subtracting(periodDays)
@@ -447,10 +475,10 @@ public struct TodayFeature: Sendable {
                         let datesToRemove = removedDays.compactMap { CalendarFeature.parseDate($0) }
                         try? await menstrualLocal.removePeriodDays(datesToRemove)
                     }
-                    // Confirm remaining period groups
+                    // Confirm remaining period groups (skip predictions — done once below)
                     for group in periodGroups {
                         try? await menstrualLocal.confirmPeriod(
-                            group.startDate, group.dayCount, nil
+                            group.startDate, group.dayCount, nil, true
                         )
                     }
                     // Regenerate predictions only if we have period data
@@ -599,7 +627,7 @@ public struct TodayView: View {
 
                     // MARK: Content
                     VStack(spacing: 0) {
-                        if !store.cardStackState.cards.isEmpty {
+                        if !store.cardStackState.cards.isEmpty || store.cardStackState.isLoading {
                             CardStackView(
                                 store: store.scope(
                                     state: \.cardStackState,
@@ -611,18 +639,14 @@ public struct TodayView: View {
 
                         VerticalSpace.xl
 
-                        // Dummy content for scroll testing
-                        ForEach(0..<6, id: \.self) { i in
-                            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                                .fill(DesignColors.structure.opacity(0.08))
-                                .frame(height: 80)
-                                .overlay {
-                                    Text("Section \(i + 1)")
-                                        .font(.custom("Raleway-Medium", size: 14))
-                                        .foregroundStyle(DesignColors.textPlaceholder)
-                                }
-                                .padding(.horizontal, AppLayout.horizontalPadding)
-                                .padding(.bottom, 12)
+                        // Journey preview
+                        if let cycle = store.cycle {
+                            JourneyPreviewSection(
+                                cycleCount: cycle.cycleDay > 0 ? max(1, cycle.cycleDay / cycle.cycleLength) : 1,
+                                currentCycleNumber: cycle.cycleDay > 0 ? max(1, cycle.cycleDay / cycle.cycleLength) : 1,
+                                onTap: { store.send(.delegate(.openCycleJourney)) }
+                            )
+                            .padding(.horizontal, AppLayout.horizontalPadding)
                         }
 
                         VerticalSpace.xxl

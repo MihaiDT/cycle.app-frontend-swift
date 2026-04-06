@@ -74,6 +74,7 @@ public struct CycleHeroView: View {
         case .ovulatory: return 0.75    // Lively
         case .follicular: return 0.45   // Gentle ripple
         case .luteal: return 0.2        // Nearly flat — calm, winding down
+        case .late: return 0.15         // Very subtle — waiting state
         }
     }
 
@@ -102,7 +103,9 @@ public struct CycleHeroView: View {
     }
 
     private var displayCycleDay: Int {
-        cycle.cycleDayNumber(for: effectiveDate) ?? cycle.cycleDay
+        // When late, show real cycle day (43), not wrapped (15)
+        if cycle.isLate && cal.isDateInToday(effectiveDate) { return cycle.cycleDay }
+        return cycle.cycleDayNumber(for: effectiveDate) ?? cycle.cycleDay
     }
 
     private var periodDayNumber: Int? {
@@ -136,9 +139,11 @@ public struct CycleHeroView: View {
         return cal.isDateInToday(effectiveDate)
     }
 
-    /// True when the cycle is in late mode (regardless of which day is selected)
+    /// True when the cycle is in late mode (regardless of which day is selected).
+    /// Uses isLate directly — the confirmed period at the START of the cycle
+    /// doesn't mean the NEXT period arrived.
     private var isLateMode: Bool {
-        cycle.isPeriodLateOrMissing && !cycle.hasConfirmedPeriodInCurrentCycle
+        cycle.isLate
     }
 
     // MARK: - Display Text
@@ -189,22 +194,24 @@ public struct CycleHeroView: View {
         if isPeriod && isPredictedPeriod && (selectedDate == nil || cal.isDateInToday(effectiveDate)) { return "May start today" }
         if isPeriod { return "of your period" }
 
-        // Fertile window: check both status API flag AND calendar data
-        if cycle.fertileWindowActive || isFertileDay { return "You may be fertile" }
+        // Fertile window: suppress when late — predictions are unreliable
+        if !cycle.isLate {
+            if cycle.fertileWindowActive || isFertileDay { return "You may be fertile" }
+        }
 
         let days = daysUntilPeriod
         if days <= 0 { return "Period expected today" }
         if days == 1 { return "1 day until period" }
         if days <= 14 { return "\(days) days until period" }
 
-        if let fwStart = cycle.fertileWindowStart {
+        if !cycle.isLate, let fwStart = cycle.fertileWindowStart {
             let fwDays = cal.dateComponents([.day], from: cal.startOfDay(for: effectiveDate), to: cal.startOfDay(for: fwStart)).day ?? 0
             if fwDays > 0 && fwDays <= 10 {
                 return fwDays == 1 ? "Fertile window in 1 day" : "Fertile window in \(fwDays) days"
             }
         }
 
-        return "\(displayPhase.displayName) phase"
+        return phaseMood.text
     }
 
     /// Compact subtitle for collapsed state
@@ -258,6 +265,13 @@ public struct CycleHeroView: View {
             ("Settling in", "house"),
             ("Quiet mode", "leaf"),
         ],
+        .late: [
+            ("Listening to your body", "ear"),
+            ("Be patient", "clock"),
+            ("Check in with yourself", "heart.text.square"),
+            ("Take it easy", "leaf"),
+            ("Stay aware", "eye"),
+        ],
     ]
 
     private var dateHeaderString: String {
@@ -282,6 +296,7 @@ public struct CycleHeroView: View {
         case .follicular: return Color(red: 0.82, green: 0.91, blue: 0.87) // Sage cream
         case .ovulatory: return Color(red: 0.94, green: 0.89, blue: 0.78) // Golden cream
         case .luteal: return Color(red: 0.88, green: 0.85, blue: 0.93) // Lavender cream
+        case .late: return Color(red: 0.88, green: 0.87, blue: 0.85) // Warm gray cream
         }
     }
 
@@ -295,6 +310,7 @@ public struct CycleHeroView: View {
         case .follicular: return Color(red: 0.36, green: 0.65, blue: 0.55)
         case .ovulatory: return Color(red: 0.82, green: 0.62, blue: 0.30)
         case .luteal: return Color(red: 0.55, green: 0.45, blue: 0.72)
+        case .late: return Color(red: 0.55, green: 0.50, blue: 0.48)
         }
     }
 
@@ -307,6 +323,7 @@ public struct CycleHeroView: View {
         case .follicular: return Color(red: 0.15, green: 0.30, blue: 0.25)
         case .ovulatory: return Color(red: 0.38, green: 0.28, blue: 0.12)
         case .luteal: return Color(red: 0.25, green: 0.20, blue: 0.38)
+        case .late: return Color(red: 0.28, green: 0.26, blue: 0.25)
         }
     }
 
@@ -606,12 +623,14 @@ public struct CycleHeroView: View {
         if isLateForDate { return "Period expected \(cycle.effectiveDaysLate) days ago" }
         if isPeriod && isPredictedPeriod { return "May start today" }
         if isPeriod { return "of your period" }
-        if cycle.fertileWindowActive || isFertileDay { return "You may be fertile" }
+        if !cycle.isLate {
+            if cycle.fertileWindowActive || isFertileDay { return "You may be fertile" }
+        }
         let days = daysUntilPeriod
         if days > 0 && days <= 14 {
             return days == 1 ? "1 day until period" : "\(days) days until period"
         }
-        if let fwStart = cycle.fertileWindowStart {
+        if !cycle.isLate, let fwStart = cycle.fertileWindowStart {
             let fwDays = cal.dateComponents([.day], from: cal.startOfDay(for: effectiveDate), to: cal.startOfDay(for: fwStart)).day ?? 0
             if fwDays > 0 && fwDays <= 10 {
                 return fwDays == 1 ? "Fertile window in 1 day" : "Fertile window in \(fwDays) days"

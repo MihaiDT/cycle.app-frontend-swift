@@ -1262,6 +1262,7 @@ extension CyclePhase {
         case .follicular: Color(red: 0.36, green: 0.72, blue: 0.65)
         case .ovulatory: Color(red: 0.91, green: 0.66, blue: 0.22)
         case .luteal: Color(red: 0.55, green: 0.49, blue: 0.78)
+        case .late: Color(red: 0.65, green: 0.62, blue: 0.60)
         }
     }
 
@@ -1271,6 +1272,7 @@ extension CyclePhase {
         case .follicular: Color(red: 0.24, green: 0.60, blue: 0.53)
         case .ovulatory: Color(red: 0.80, green: 0.55, blue: 0.13)
         case .luteal: Color(red: 0.43, green: 0.38, blue: 0.69)
+        case .late: Color(red: 0.55, green: 0.52, blue: 0.50)
         }
     }
 
@@ -1284,6 +1286,7 @@ extension CyclePhase {
         case .follicular: UIColor(red: 0.36, green: 0.72, blue: 0.65, alpha: 1)
         case .ovulatory: UIColor(red: 0.91, green: 0.66, blue: 0.22, alpha: 1)
         case .luteal: UIColor(red: 0.55, green: 0.49, blue: 0.78, alpha: 1)
+        case .late: UIColor(red: 0.65, green: 0.62, blue: 0.60, alpha: 1)
         }
     }
 
@@ -1293,6 +1296,7 @@ extension CyclePhase {
         case .follicular: UIColor(red: 0.24, green: 0.60, blue: 0.53, alpha: 1)
         case .ovulatory: UIColor(red: 0.80, green: 0.55, blue: 0.13, alpha: 1)
         case .luteal: UIColor(red: 0.43, green: 0.38, blue: 0.69, alpha: 1)
+        case .late: UIColor(red: 0.55, green: 0.52, blue: 0.50, alpha: 1)
         }
     }
 }

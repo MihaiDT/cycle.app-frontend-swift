@@ -97,6 +97,10 @@ public enum CyclePhase: String, Codable, Equatable, Sendable, CaseIterable {
     case follicular
     case ovulatory
     case luteal
+    case late
+
+    /// The four biological phases (excludes `.late` which is a tracking state, not a phase).
+    public static let biologicalPhases: [CyclePhase] = [.menstrual, .follicular, .ovulatory, .luteal]
 
     public var displayName: String {
         switch self {
@@ -104,6 +108,7 @@ public enum CyclePhase: String, Codable, Equatable, Sendable, CaseIterable {
         case .follicular: "Follicular"
         case .ovulatory: "Ovulatory"
         case .luteal: "Luteal"
+        case .late: "Late"
         }
     }
 
@@ -113,6 +118,7 @@ public enum CyclePhase: String, Codable, Equatable, Sendable, CaseIterable {
         case .follicular: "Something new is waking up inside you. Follow it."
         case .ovulatory: "You're radiating. This is your moment to shine."
         case .luteal: "Your inner critic is actually your inner editor. Use it wisely."
+        case .late: "Your body is on its own timeline. Trust the process."
         }
     }
 
@@ -122,6 +128,7 @@ public enum CyclePhase: String, Codable, Equatable, Sendable, CaseIterable {
         case .follicular: "leaf.fill"
         case .ovulatory: "sun.max.fill"
         case .luteal: "wind"
+        case .late: "clock.fill"
         }
     }
 
@@ -131,6 +138,7 @@ public enum CyclePhase: String, Codable, Equatable, Sendable, CaseIterable {
         case .follicular: "🌱"
         case .ovulatory: "☀️"
         case .luteal: "🍂"
+        case .late: "⏳"
         }
     }
 
@@ -140,6 +148,7 @@ public enum CyclePhase: String, Codable, Equatable, Sendable, CaseIterable {
         case .follicular: "Renewal, rising energy"
         case .ovulatory: "Peak radiance, magnetism"
         case .luteal: "Reflection, slowing down"
+        case .late: "Waiting, listening to your body"
         }
     }
 
@@ -154,6 +163,8 @@ public enum CyclePhase: String, Codable, Equatable, Sendable, CaseIterable {
             return "Everything peaks here — confidence, communication, presence. People are drawn to you. Use these days for what matters most."
         case .luteal:
             return "You're turning inward. Your tolerance for nonsense drops, your attention to detail rises. This isn't negativity — it's clarity. Finish what you started."
+        case .late:
+            return "Your period is later than expected. Cycles vary naturally — stress, sleep, travel, and nutrition all influence timing. If you're concerned, check in with your body and your doctor."
         }
     }
 
@@ -189,6 +200,7 @@ extension CyclePhase {
         case .follicular: 3
         case .ovulatory: 5
         case .luteal: 2
+        case .late: 2
         }
     }
 
@@ -198,6 +210,7 @@ extension CyclePhase {
         case .follicular: 4
         case .ovulatory: 5
         case .luteal: 3
+        case .late: 2
         }
     }
 
@@ -207,6 +220,7 @@ extension CyclePhase {
         case .follicular: 4
         case .ovulatory: 4
         case .luteal: 5
+        case .late: 3
         }
     }
 
@@ -216,6 +230,7 @@ extension CyclePhase {
         case .follicular: ["Starting projects", "Brainstorming", "Learning new skills", "Social plans"]
         case .ovulatory: ["Presentations", "Difficult conversations", "Dates", "Negotiating"]
         case .luteal: ["Editing work", "Organizing", "Honest self-assessment", "Finishing projects"]
+        case .late: ["Gentle movement", "Stress reduction", "Tracking symptoms", "Self-care routines"]
         }
     }
 
@@ -225,6 +240,7 @@ extension CyclePhase {
         case .follicular: ["Routine tasks", "Playing it safe", "Ignoring new ideas"]
         case .ovulatory: ["Isolation", "Underestimating your impact", "People-pleasing"]
         case .luteal: ["Starting new things", "Ignoring your boundaries", "Suppressing emotions"]
+        case .late: ["Overthinking", "Ignoring signals", "High-stress commitments"]
         }
     }
 
@@ -257,6 +273,13 @@ extension CyclePhase {
             "This is your finishing phase. What you started two weeks ago? Complete it now.",
             "Your tolerance for nonsense drops here. That's not a flaw — it's a boundary forming.",
             "The discomfort you feel is transformation. You're turning raw experience into wisdom."
+        ]
+        case .late: [
+            "Your body doesn't run on a clock — it runs on rhythm. Sometimes the rhythm shifts.",
+            "A late period isn't a failure. It's information. Listen to what your body is telling you.",
+            "Stress, travel, sleep — everything affects your cycle. Be patient with yourself.",
+            "Your body is recalibrating. Give it the space it needs.",
+            "This is a moment to pause and check in. How are you really feeling?"
         ]
         }
     }

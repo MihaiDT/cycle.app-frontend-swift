@@ -138,6 +138,10 @@ enum AriaInsightText: Sendable {
                 return p
                     ? "Turn inward. Nourish and protect your energy."
                     : "Slow down with intention. This phase rewards rest and reflection."
+            case .late:
+                return p
+                    ? "Your period is later than expected. Your body may be adjusting — listen to what it needs."
+                    : "A late cycle is your body asking for attention. Check in with yourself today."
             case nil:
                 return
                     "Log your cycle start date to receive personalized AI-powered insights for every day of your cycle."

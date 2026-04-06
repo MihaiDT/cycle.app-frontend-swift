@@ -162,7 +162,7 @@ public struct MiniCycleCalendar: View {
         let isPeriod = cycle.isPeriodDay(date)
         let isPredicted = cycle.isPredictedOnly(date)
         let isLatePred = cycle.isLatePrediction(date)
-        let isFertile = cycle.fertileDays[cycle.dateKey(for: date)] != nil
+        let isFertile = !cycle.isLate && cycle.fertileDays[cycle.dateKey(for: date)] != nil
         let isFutureDay = date > cal.startOfDay(for: Date())
 
         VStack(spacing: 2) {
@@ -277,6 +277,7 @@ public struct MiniCycleCalendar: View {
         case .follicular: return Color(red: 0.36, green: 0.72, blue: 0.65)
         case .ovulatory: return Color(red: 0.91, green: 0.66, blue: 0.22)
         case .luteal: return Color(red: 0.55, green: 0.49, blue: 0.78)
+        case .late: return Color(red: 0.65, green: 0.62, blue: 0.60)
         }
     }
 }

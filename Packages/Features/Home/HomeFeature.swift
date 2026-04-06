@@ -14,6 +14,7 @@ public struct HomeFeature: Sendable {
         public var user: User?
         public var isLoading: Bool
         public var selectedTab: Tab
+        public var hasAppeared: Bool = false
 
         // Child features
         public var todayState: TodayFeature.State = TodayFeature.State()
@@ -21,6 +22,9 @@ public struct HomeFeature: Sendable {
         public var profileState: ProfileFeature.State = ProfileFeature.State()
         public var cycleInsightsState: CycleInsightsFeature.State = CycleInsightsFeature.State()
         public var isCycleInsightsVisible: Bool = false
+        public var cycleJourneyState: CycleJourneyFeature.State = CycleJourneyFeature.State()
+        public var isCycleJourneyVisible: Bool = false
+        public var shouldReopenJourney: Bool = false
 
         public enum Tab: Int, Equatable, Sendable, CaseIterable {
             case today = 0
@@ -76,6 +80,7 @@ public struct HomeFeature: Sendable {
         case chat(ChatFeature.Action)
         case profile(ProfileFeature.Action)
         case cycleInsights(CycleInsightsFeature.Action)
+        case cycleJourney(CycleJourneyFeature.Action)
 
 
         case delegate(Delegate)
@@ -108,12 +113,18 @@ public struct HomeFeature: Sendable {
             CycleInsightsFeature()
         }
 
+        Scope(state: \.cycleJourneyState, action: \.cycleJourney) {
+            CycleJourneyFeature()
+        }
+
         Reduce { state, action in
             switch action {
             case .binding:
                 return .none
 
             case .onAppear:
+                guard !state.hasAppeared else { return .none }
+                state.hasAppeared = true
                 return .merge(
                     .send(.loadUser),
                     .send(.today(.loadDashboard))
@@ -197,6 +208,34 @@ public struct HomeFeature: Sendable {
                 state.isCycleInsightsVisible = false
                 return .none
 
+            case .today(.delegate(.openCycleJourney)):
+                state.cycleJourneyState = CycleJourneyFeature.State()
+                state.cycleJourneyState.cycleContext = state.todayState.cycle
+                state.cycleJourneyState.menstrualStatus = state.todayState.menstrualStatus
+                state.isCycleJourneyVisible = true
+                return .none
+
+            case .cycleJourney(.delegate(.dismiss)):
+                state.isCycleJourneyVisible = false
+                return .none
+
+            case .cycleJourney(.delegate(.logMissedMonth(let month))):
+                // Close journey → open calendar on target month → reopen journey when calendar closes
+                state.isCycleJourneyVisible = false
+                state.shouldReopenJourney = true
+                state.todayState.calendarState.displayedMonth = month
+                state.todayState.isCalendarVisible = true
+                return .none
+
+            // When calendar closes after logging from journey, reopen journey
+            case .today(.calendar(.delegate(.didDismiss))),
+                 .today(.calendarDismissed):
+                if state.shouldReopenJourney {
+                    state.shouldReopenJourney = false
+                    return .send(.today(.delegate(.openCycleJourney)))
+                }
+                return .none
+
             case .today(.menstrualStatusLoaded(.success(let status))):
                 state.profileState.menstrualStatus = status
                 state.cycleInsightsState.menstrualStatus = status
@@ -210,7 +249,7 @@ public struct HomeFeature: Sendable {
             case .profile(.delegate(.didLogout)):
                 return .send(.logoutTapped)
 
-            case .today, .chat, .profile, .cycleInsights, .delegate:
+            case .today, .chat, .profile, .cycleInsights, .cycleJourney, .delegate:
                 return .none
             }
         }
@@ -303,6 +342,18 @@ public struct HomeView: View {
                 store: store.scope(
                     state: \.cycleInsightsState,
                     action: \.cycleInsights
+                )
+            )
+            .background(DesignColors.background.ignoresSafeArea())
+        }
+        .fullScreenCover(isPresented: Binding(
+            get: { store.isCycleJourneyVisible },
+            set: { if !$0 { store.send(.cycleJourney(.delegate(.dismiss))) } }
+        )) {
+            CycleJourneyView(
+                store: store.scope(
+                    state: \.cycleJourneyState,
+                    action: \.cycleJourney
                 )
             )
             .background(DesignColors.background.ignoresSafeArea())

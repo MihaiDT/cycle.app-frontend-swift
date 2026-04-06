@@ -213,9 +213,9 @@ public struct GlassWeekCalendar: View {
         let confirmedPeriod = cycle.isConfirmedPeriod(date)
         let menstrualColor = CyclePhase.menstrual.orbitColor
         let dateKey = cycle.dateKey(for: date)
-        let fertilityLevel = cycle.fertileDays[dateKey]
+        let fertilityLevel = cycle.isLate ? nil : cycle.fertileDays[dateKey]
         let isFertile = fertilityLevel != nil
-        let isOvulation = cycle.ovulationDays.contains(dateKey)
+        let isOvulation = cycle.isLate ? false : cycle.ovulationDays.contains(dateKey)
         let oColor = CyclePhase.ovulatory.orbitColor
         let circleSize: CGFloat = isCompact ? 26 : 34
 

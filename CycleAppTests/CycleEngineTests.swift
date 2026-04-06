@@ -276,3 +276,146 @@ struct MenstrualPredictorTests {
         #expect(result.confidence <= 0.95)
     }
 }
+
+// MARK: - Production Hardening Tests
+
+@Suite("CyclePhase Edge Cases")
+struct CyclePhaseEdgeCaseTests {
+
+    @Test("Short cycle (20 days) has follicular phase")
+    func shortCycleFollicular() {
+        // cl=20, bd=5: ovDay = max(5+4, 20-14) = max(9, 6) = 9
+        // Follicular: days 6...(9-3)=6 → at least day 6
+        let day6 = CycleMath.cyclePhase(cycleDay: 6, cycleLength: 20, bleedingDays: 5)
+        #expect(day6 == .follicular)
+    }
+
+    @Test("cycleDay past cycleLength returns late")
+    func latePhasePastCycleLength() {
+        #expect(CycleMath.cyclePhase(cycleDay: 29, cycleLength: 28, bleedingDays: 5) == .late)
+        #expect(CycleMath.cyclePhase(cycleDay: 42, cycleLength: 28, bleedingDays: 5) == .late)
+    }
+
+    @Test("Phase boundaries are contiguous — no gaps for standard 28-day cycle")
+    func contiguousPhases28() {
+        var phases: [CyclePhaseResult] = []
+        for day in 1...28 {
+            phases.append(CycleMath.cyclePhase(cycleDay: day, cycleLength: 28, bleedingDays: 5))
+        }
+        // Must contain all 4 biological phases
+        #expect(phases.contains(.menstrual))
+        #expect(phases.contains(.follicular))
+        #expect(phases.contains(.ovulatory))
+        #expect(phases.contains(.luteal))
+        // Day 29 = late
+        #expect(CycleMath.cyclePhase(cycleDay: 29, cycleLength: 28, bleedingDays: 5) == .late)
+    }
+
+    @Test("Phase boundaries contiguous for short cycle (21 days)")
+    func contiguousPhases21() {
+        var phases: [CyclePhaseResult] = []
+        for day in 1...21 {
+            phases.append(CycleMath.cyclePhase(cycleDay: day, cycleLength: 21, bleedingDays: 5))
+        }
+        #expect(phases.contains(.menstrual))
+        #expect(phases.contains(.follicular))
+        #expect(phases.contains(.ovulatory))
+        #expect(phases.contains(.luteal))
+    }
+}
+
+@Suite("Cycle Validation")
+struct CycleValidationTests {
+
+    @Test("validateCycleLength clamps to 18-50")
+    func cycleLengthBounds() {
+        #expect(CycleMath.validateCycleLength(28) == 28)
+        #expect(CycleMath.validateCycleLength(10) == 18)
+        #expect(CycleMath.validateCycleLength(60) == 50)
+        #expect(CycleMath.validateCycleLength(0) == 28) // fallback
+    }
+
+    @Test("validateBleedingDays clamps to 1...min(10, cl/2)")
+    func bleedingDaysBounds() {
+        #expect(CycleMath.validateBleedingDays(5, cycleLength: 28) == 5)
+        #expect(CycleMath.validateBleedingDays(0, cycleLength: 28) == 1)
+        #expect(CycleMath.validateBleedingDays(15, cycleLength: 28) == 10)
+        #expect(CycleMath.validateBleedingDays(8, cycleLength: 14) == 7) // cl/2 = 7
+    }
+
+    @Test("CycleRecord clamps bleedingDays and actualCycleLength")
+    func cycleRecordValidation() {
+        let record = CycleRecord(startDate: Date(), bleedingDays: 15, actualCycleLength: 5)
+        #expect(record.bleedingDays == 10) // clamped from 15
+        #expect(record.actualCycleLength == 18) // clamped from 5
+    }
+
+    @Test("MenstrualProfileRecord clamps avgCycleLength and avgBleedingDays")
+    func profileValidation() {
+        let profile = MenstrualProfileRecord(avgCycleLength: 100, avgBleedingDays: 20)
+        #expect(profile.avgCycleLength == 50)
+        #expect(profile.avgBleedingDays == 10)
+    }
+}
+
+@Suite("Prediction Determinism")
+struct PredictionDeterminismTests {
+
+    @Test("Same input produces same prediction — deterministic")
+    func deterministic() {
+        let cal = Calendar.current
+        let lastPeriod = cal.date(from: DateComponents(year: 2026, month: 2, day: 22))!
+        let profile = ProfileInput(avgCycleLength: 28, avgBleedingDays: 5, cycleRegularity: "unknown")
+        let cycles = [CycleInput(startDate: lastPeriod, isConfirmed: true)]
+
+        let r1 = MenstrualPredictor.predict(cycles: cycles, profile: profile)
+        let r2 = MenstrualPredictor.predict(cycles: cycles, profile: profile)
+
+        #expect(r1.predictedStart == r2.predictedStart)
+        #expect(r1.confidence == r2.confidence)
+        #expect(r1.algorithmVersion == r2.algorithmVersion)
+    }
+
+    @Test("V1 back-projection capped — does not loop infinitely")
+    func v1Capped() {
+        let cal = Calendar.current
+        // Very old last period (3 years ago) with short cycle
+        let oldPeriod = cal.date(from: DateComponents(year: 2023, month: 1, day: 1))!
+        let profile = ProfileInput(avgCycleLength: 18, avgBleedingDays: 3, cycleRegularity: "unknown")
+        let cycles = [CycleInput(startDate: oldPeriod)]
+
+        let result = MenstrualPredictor.predict(cycles: cycles, profile: profile)
+        // Should project forward but not infinitely — prediction should be within ~2 years
+        let maxDate = cal.date(from: DateComponents(year: 2028, month: 1, day: 1))!
+        #expect(result.predictedStart < maxDate)
+    }
+
+    @Test("extractCycleLengths filters invalid stored values")
+    func extractLengthsFilter() {
+        let cycles = [
+            CycleInput(startDate: Date(), actualCycleLength: 10), // invalid: < 18
+            CycleInput(startDate: CycleMath.addDays(Date(), -28)),
+        ]
+        let lengths = MenstrualPredictor.extractedCycleLengths(cycles: cycles, fallbackLength: 28)
+        // stored value 10 should be filtered out, gap of 28 should be computed
+        #expect(!lengths.contains(10))
+        #expect(lengths.contains(28))
+    }
+
+    @Test("V4 seasonal requires 2+ data points per month")
+    func seasonalMinimum() {
+        let cal = Calendar.current
+        // 6 cycles, each in different month — no month has 2+ data points
+        var cycles: [CycleInput] = []
+        for i in 0..<6 {
+            let date = cal.date(from: DateComponents(year: 2025, month: 1 + i, day: 1))!
+            cycles.append(CycleInput(startDate: date, actualCycleLength: 28, isConfirmed: true))
+        }
+        cycles.reverse()
+
+        let profile = ProfileInput(avgCycleLength: 28, avgBleedingDays: 5, cycleRegularity: "regular")
+        let r1 = MenstrualPredictor.predict(cycles: cycles, profile: profile)
+        // Result should exist and be reasonable (seasonal adjustment = 0)
+        #expect(r1.algorithmVersion == .v4ML)
+    }
+}

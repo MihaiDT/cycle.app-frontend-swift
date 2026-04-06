@@ -29,6 +29,11 @@ public final class MenstrualProfileRecord {
     @Attribute(.allowsCloudEncryption)
     public var contraceptionType: String?
 
+    /// User's manually-set cycle length (from onboarding or profile edit).
+    /// Used as fallback when no observed cycle data is available.
+    @Attribute(.allowsCloudEncryption)
+    public var onboardingCycleLength: Int = 28
+
     /// Luteal phase length for ovulation estimation (default 14).
     @Attribute(.allowsCloudEncryption)
     public var phaseLutealLength: Int = 14
@@ -50,8 +55,9 @@ public final class MenstrualProfileRecord {
         createdAt: Date = .now,
         updatedAt: Date = Date.now
     ) {
-        self.avgCycleLength = avgCycleLength
-        self.avgBleedingDays = avgBleedingDays
+        self.avgCycleLength = max(18, min(50, avgCycleLength))
+        self.onboardingCycleLength = max(18, min(50, avgCycleLength))
+        self.avgBleedingDays = max(1, min(10, avgBleedingDays))
         self.cycleRegularity = cycleRegularity
         self.typicalSymptoms = typicalSymptoms
         self.typicalFlowIntensity = typicalFlowIntensity
@@ -87,7 +93,7 @@ public final class CycleRecord {
     public var notes: String?
 
     /// Whether this cycle was confirmed by the user (vs auto-projected).
-    public var isConfirmed: Bool = true
+    public var isConfirmed: Bool = false
 
     /// Actual cycle length in days (calculated when next cycle starts).
     @Attribute(.allowsCloudEncryption)
@@ -117,11 +123,11 @@ public final class CycleRecord {
     ) {
         self.startDate = startDate
         self.endDate = endDate
-        self.bleedingDays = bleedingDays
+        self.bleedingDays = bleedingDays.map { max(1, min(10, $0)) }
         self.flowIntensity = flowIntensity
         self.notes = notes
         self.isConfirmed = isConfirmed
-        self.actualCycleLength = actualCycleLength
+        self.actualCycleLength = actualCycleLength.map { max(18, min(50, $0)) }
         self.predictedStartDate = predictedStartDate
         self.actualDeviationDays = actualDeviationDays
         self.createdAt = createdAt

@@ -44,14 +44,6 @@ struct AppFeatureTests {
         }
 
         await store.send(.privacyNextTapped) {
-            $0.destination = .nameInput
-        }
-
-        await store.send(.nameInputNextTapped) {
-            $0.destination = .nameGreeting
-        }
-
-        await store.send(.nameGreetingContinue) {
             $0.destination = .birthData
         }
 

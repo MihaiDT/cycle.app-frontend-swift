@@ -441,7 +441,7 @@ public struct CycleInsightsView: View {
     }
 
     private func nextPhasePreview(_ ctx: CycleContext) -> NextPhaseInfo? {
-        let phases = CyclePhase.allCases
+        let phases = CyclePhase.biologicalPhases
         guard let currentIdx = phases.firstIndex(of: ctx.currentPhase) else { return nil }
         let nextIdx = (currentIdx + 1) % phases.count
         let nextPhase = phases[nextIdx]
@@ -554,7 +554,7 @@ public struct CycleInsightsView: View {
             section: .phases
         ) {
             HStack(spacing: 10) {
-                ForEach(CyclePhase.allCases, id: \.self) { p in
+                ForEach(CyclePhase.biologicalPhases, id: \.self) { p in
                     VStack(spacing: 4) {
                         Circle()
                             .fill(p.orbitColor.opacity(p == currentPhase ? 1 : 0.25))
@@ -862,7 +862,7 @@ public struct CycleInsightsView: View {
             GeometryReader { geo in
                 let w = geo.size.width
                 HStack(spacing: 3) {
-                    ForEach(CyclePhase.allCases, id: \.self) { p in
+                    ForEach(CyclePhase.biologicalPhases, id: \.self) { p in
                         let range = p.dayRange(cycleLength: cycleLength, bleedingDays: bleedingDays)
                         let days = range.upperBound - range.lowerBound + 1
                         let fraction = CGFloat(days) / CGFloat(cycleLength)
@@ -876,7 +876,7 @@ public struct CycleInsightsView: View {
             .frame(height: 20)
 
             HStack(spacing: 0) {
-                ForEach(CyclePhase.allCases, id: \.self) { p in
+                ForEach(CyclePhase.biologicalPhases, id: \.self) { p in
                     let range = p.dayRange(cycleLength: cycleLength, bleedingDays: bleedingDays)
                     let days = range.upperBound - range.lowerBound + 1
 
@@ -1207,7 +1207,7 @@ public struct CycleInsightsView: View {
         let currentPhase = phase ?? .follicular
 
         VStack(alignment: .leading, spacing: 16) {
-            ForEach(CyclePhase.allCases, id: \.self) { p in
+            ForEach(CyclePhase.biologicalPhases, id: \.self) { p in
                 VStack(alignment: .leading, spacing: 10) {
                     HStack(spacing: 12) {
                         ZStack {
@@ -1262,7 +1262,7 @@ public struct CycleInsightsView: View {
                     }
                 }
 
-                if p != CyclePhase.allCases.last {
+                if p != CyclePhase.biologicalPhases.last {
                     Rectangle()
                         .fill(DesignColors.structure.opacity(0.06))
                         .frame(height: 1)
@@ -1616,7 +1616,7 @@ public struct CycleInsightsView: View {
                 Text("The four phases")
                     .font(.custom("Raleway-Bold", size: 17, relativeTo: .headline))
                     .foregroundStyle(DesignColors.text)
-                ForEach(CyclePhase.allCases, id: \.self) { p in
+                ForEach(CyclePhase.biologicalPhases, id: \.self) { p in
                     HStack(spacing: 12) {
                         Circle()
                             .fill(p.orbitColor.opacity(0.2))
