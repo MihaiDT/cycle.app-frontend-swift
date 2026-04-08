@@ -90,8 +90,9 @@ public struct TodayFeature: Sendable {
         // Card stack
         public var cardStackState: CardStackFeature.State = CardStackFeature.State()
 
-        // Recap banner — driven by SwiftData query
+        // Recap notification — driven by SwiftData query
         public var recapBannerMonth: String?
+        public var isRecapSheetVisible: Bool = false
 
         public init() {}
     }
@@ -133,6 +134,7 @@ public struct TodayFeature: Sendable {
         case backgroundSyncCompleted
         case refreshRecapBanner
         case recapBannerLoaded(String?)
+        case recapSheetDismissed
         case generateMissingRecaps
         case delegate(Delegate)
         public enum Delegate: Sendable, Equatable {
@@ -374,6 +376,8 @@ public struct TodayFeature: Sendable {
                 return .send(.loadDashboard)
 
             case .calendar(.delegate(.periodDataChanged)):
+                // Skip if already refreshing (periodDataNeedsSync handles the full cycle)
+                guard !state.isRefreshingCycleData else { return .none }
                 state.isRefreshingCycleData = true
                 if state.syncStatus == .idle {
                     state.syncStatus = .syncing
@@ -511,6 +515,14 @@ public struct TodayFeature: Sendable {
 
             case .recapBannerLoaded(let month):
                 state.recapBannerMonth = month
+                // Show sheet only after cards have loaded
+                if month != nil && !state.cardStackState.isLoading {
+                    state.isRecapSheetVisible = true
+                }
+                return .none
+
+            case .recapSheetDismissed:
+                state.isRecapSheetVisible = false
                 return .none
 
             case .generateMissingRecaps:
@@ -535,6 +547,13 @@ public struct TodayFeature: Sendable {
                     await send(.refreshRecapBanner)
                 }
                 .cancellable(id: CancelID.recapGeneration, cancelInFlight: true)
+
+            case .cardStack(.cardsGenerated):
+                // Cards just loaded — show recap sheet if recap is ready
+                if state.recapBannerMonth != nil && !state.isRecapSheetVisible {
+                    state.isRecapSheetVisible = true
+                }
+                return .none
 
             case .cardStack(.delegate(.openLens)):
                 return .send(.delegate(.openCycleInsights))
@@ -674,16 +693,6 @@ public struct TodayView: View {
 
                     // MARK: Content
                     VStack(spacing: 0) {
-                        // Recap ready banner — appears with content, then animates on its own value changes
-                        RecapReadyBanner(
-                            monthName: store.recapBannerMonth,
-                            onTap: { store.send(.delegate(.openCycleJourney)) }
-                        )
-                        .padding(.horizontal, AppLayout.horizontalPadding)
-                        .padding(.top, AppLayout.spacingM)
-                        .opacity(showContent ? 1 : 0)
-                        .animation(.easeOut(duration: 0.4), value: store.recapBannerMonth)
-
                         if !store.cardStackState.cards.isEmpty || store.cardStackState.isLoading {
                             CardStackView(
                                 store: store.scope(
@@ -728,6 +737,21 @@ public struct TodayView: View {
             }
         }
         .ignoresSafeArea(edges: .top)
+        .sheet(isPresented: Binding(
+            get: { store.isRecapSheetVisible },
+            set: { if !$0 { store.send(.recapSheetDismissed) } }
+        )) {
+            if let month = store.recapBannerMonth {
+                AriaRecapSheet(monthName: month) {
+                    store.send(.recapSheetDismissed)
+                    store.send(.delegate(.openCycleJourney))
+                }
+                .presentationDetents([.height(300)])
+                .presentationDragIndicator(.visible)
+                .presentationCornerRadius(AppLayout.cornerRadiusL)
+                .presentationBackground(DesignColors.background)
+            }
+        }
         .sheet(item: $store.scope(state: \.checkIn, action: \.checkIn)) { checkInStore in
             DailyCheckInView(store: checkInStore)
                 .presentationDetents([.large])

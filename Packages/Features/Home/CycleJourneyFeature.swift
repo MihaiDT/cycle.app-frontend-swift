@@ -19,6 +19,7 @@ public struct CycleJourneyFeature: Sendable {
         public var missedMonths: [MissedMonth] = []
         public var isShowingInsights: Bool = false
         public var recap: RecapState?
+        public var highlightRecapCycle: Bool = false
 
         public init() {}
     }
@@ -322,12 +323,16 @@ public struct CycleJourneyView: View {
                     ForEach(Array(store.summaries.enumerated()), id: \.element.id) { index, summary in
                         let currentPhase = currentPhaseFor(summary: summary)
                         let isFutureSegment = index >= currentIndex
+                        let isRecapTarget = store.highlightRecapCycle
+                            && !summary.isCurrentCycle
+                            && summary.id == store.summaries.last(where: { !$0.isCurrentCycle })?.id
 
                         journeyCardRow(
                             summary: summary,
                             phase: currentPhase,
                             isFuture: false,
-                            index: index
+                            index: index,
+                            highlightRecap: isRecapTarget
                         )
                         .id(summary.id)
 
@@ -397,7 +402,8 @@ public struct CycleJourneyView: View {
         summary: JourneyCycleSummary,
         phase: CyclePhase?,
         isFuture: Bool,
-        index: Int
+        index: Int,
+        highlightRecap: Bool = false
     ) -> some View {
         let isLeftAligned = index % 2 == 0
         let currentDay: Int? = summary.isCurrentCycle
@@ -418,6 +424,7 @@ public struct CycleJourneyView: View {
                     currentDay: currentDay
                 )
                 .frame(width: cardWidth, height: cardHeight)
+                .modifier(PulseHighlight(isActive: highlightRecap))
                 .accessibilityLabel(cardAccessibilityLabel(summary: summary, isFuture: isFuture))
                 .accessibilityHint("Double tap to view cycle details")
                 .onTapGesture {
@@ -435,6 +442,32 @@ public struct CycleJourneyView: View {
     }
 
     // MARK: - Helpers
+
+    /// Zoom-pulse that draws attention to the recap card.
+    private struct PulseHighlight: ViewModifier {
+        let isActive: Bool
+        @State private var scale: CGFloat = 1.0
+
+        func body(content: Content) -> some View {
+            content
+                .scaleEffect(scale)
+                .onAppear {
+                    guard isActive else { return }
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                        // Zoom in
+                        withAnimation(.easeOut(duration: 0.3)) {
+                            scale = 1.08
+                        }
+                        // Zoom back
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+                            withAnimation(.spring(response: 0.4, dampingFraction: 0.6)) {
+                                scale = 1.0
+                            }
+                        }
+                    }
+                }
+        }
+    }
 
     private var currentCycleProgress: CGFloat? {
         guard let cycle = store.cycleContext,

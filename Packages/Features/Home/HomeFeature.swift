@@ -212,8 +212,10 @@ public struct HomeFeature: Sendable {
                 state.cycleJourneyState = CycleJourneyFeature.State()
                 state.cycleJourneyState.cycleContext = state.todayState.cycle
                 state.cycleJourneyState.menstrualStatus = state.todayState.menstrualStatus
+                // Highlight the recap card if coming from recap notification
+                state.cycleJourneyState.highlightRecapCycle = state.todayState.recapBannerMonth != nil
                 state.isCycleJourneyVisible = true
-                state.todayState.recapBannerMonth = nil  // Clear banner immediately
+                state.todayState.recapBannerMonth = nil
                 return .none
 
             case .cycleJourney(.delegate(.dismiss)):
