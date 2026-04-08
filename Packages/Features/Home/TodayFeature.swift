@@ -675,13 +675,14 @@ public struct TodayView: View {
 
                     // MARK: Content
                     VStack(spacing: 0) {
-                        // Recap ready banner — animates independently when recap becomes available
+                        // Recap ready banner — appears with content, then animates on its own value changes
                         RecapReadyBanner(
                             monthName: store.recapBannerMonth,
                             onTap: { store.send(.delegate(.openCycleJourney)) }
                         )
                         .padding(.horizontal, AppLayout.horizontalPadding)
                         .padding(.top, AppLayout.spacingM)
+                        .opacity(showContent ? 1 : 0)
                         .animation(.easeOut(duration: 0.4), value: store.recapBannerMonth)
 
                         if !store.cardStackState.cards.isEmpty || store.cardStackState.isLoading {
@@ -787,9 +788,11 @@ public struct TodayView: View {
         withAnimation(.spring(response: 0.7, dampingFraction: 0.75)) {
             showHero = true
         }
-        // Content appears after hero wave settles
-        withAnimation(.easeOut(duration: 0.5).delay(0.4)) {
-            showContent = true
+        // Content appears after hero wave settles — real delay, not animation delay
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+            withAnimation(.easeOut(duration: 0.5)) {
+                showContent = true
+            }
         }
     }
 
