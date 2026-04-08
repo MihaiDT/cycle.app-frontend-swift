@@ -291,16 +291,15 @@ public struct TodayFeature: Sendable {
                 let cardEffect = Self.syncPhaseEffect(state: state)
 
                 if state.isRefreshingCycleData {
-                    // Don't clear isRefreshingCycleData here — wait for hideSyncStatus
-                    // so content animations sync with the wave settling
+                    // Keep wave active for 2.5s minimum — premium processing feel
                     state.pendingCalendarData = nil
-                    let syncEffect: Effect<Action> = wasSyncing
-                        ? .run { send in
-                            try? await Task.sleep(nanoseconds: 1_000_000_000)
+                    return .merge(
+                        .run { send in
+                            try? await Task.sleep(nanoseconds: 2_500_000_000)
                             await send(.hideSyncStatus, animation: .easeOut(duration: 0.3))
-                        }
-                        : .none
-                    return .merge(syncEffect, cardEffect)
+                        },
+                        cardEffect
+                    )
                 } else if wasSyncing {
                     return .merge(
                         .run { send in
@@ -765,15 +764,14 @@ public struct TodayView: View {
             triggerStaggeredAnimations()
         }
         .onChange(of: store.isRefreshingCycleData) { _, isRefreshing in
-            if isRefreshing {
-                // Wave starting — hide content
-                withAnimation(.easeIn(duration: 0.2)) {
-                    showContent = false
-                }
-            } else {
-                // Wave settled — slide content in
-                withAnimation(.easeOut(duration: 0.5).delay(0.3)) {
-                    showContent = true
+            // Content stays visible during refresh — hero wave is the only indicator.
+            // Only ensure showContent is true when refresh ends (covers edge case
+            // where refresh starts before initial staggered animation completes).
+            if !isRefreshing && !showContent {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                    withAnimation(.easeOut(duration: 0.5)) {
+                        showContent = true
+                    }
                 }
             }
         }

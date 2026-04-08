@@ -52,7 +52,7 @@ public struct CardStackFeature: Sendable {
 
     @Dependency(\.continuousClock) var clock
 
-    private static let cardsURL = "http://34.72.143.234:8081/api/daily-cards"
+    private static let cardsURL = "https://dth-backend-277319586889.us-central1.run.app/api/daily-cards"
 
     public init() {}
 
@@ -165,9 +165,13 @@ struct CardStackView: View {
     var body: some View {
         if store.isLoading {
             CardSkeletonView()
+                .transition(.opacity.animation(.easeIn(duration: 0.25)))
         } else {
             cardContent
                 .transition(.opacity.animation(.easeIn(duration: 0.3)))
+                .onAppear {
+                    UIImpactFeedbackGenerator(style: .soft).impactOccurred()
+                }
         }
     }
 

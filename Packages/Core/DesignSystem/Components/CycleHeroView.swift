@@ -80,7 +80,7 @@ public struct CycleHeroView: View {
 
     /// 0 = gentle wave, 1 = chaotic blob (active during sync)
     private var waveBlobMorph: CGFloat {
-        isRefreshing ? 0.35 : 0.0
+        isRefreshing ? 0.7 : 0.0
     }
 
     /// Curve depth scales with collapse progress AND phase intensity.
@@ -510,6 +510,7 @@ public struct CycleHeroView: View {
             // Action buttons — compact row
             HStack(spacing: 10) {
                 if let onLogPeriod, !isConfirmedPeriodDay,
+                   effectiveDate <= cal.startOfDay(for: Date()),
                    isPredictedPeriod || isLatePrediction || isLateForDate || displayPhase == .menstrual {
                     Button {
                         onLogPeriod()
