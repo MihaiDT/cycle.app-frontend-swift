@@ -516,6 +516,7 @@ public struct TodayFeature: Sendable {
 
             case .generateMissingRecaps:
                 return .run { [menstrualLocal] send in
+                    CycleJourneyFeature.cleanupLegacyRecapDefaults()
                     let data = try await menstrualLocal.getJourneyData()
                     let summaries = CycleJourneyEngine.buildSummaries(
                         inputs: data.records,

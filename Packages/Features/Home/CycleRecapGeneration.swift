@@ -70,6 +70,14 @@ extension CycleJourneyFeature {
         try? context.save()
     }
 
+    /// One-time cleanup: remove legacy UserDefaults keys from old recap banner system.
+    static func cleanupLegacyRecapDefaults() {
+        let keys = ["NewRecapCycleKey", "NewRecapMonthName", "LastDismissedRecapKey"]
+        for key in keys {
+            UserDefaults.standard.removeObject(forKey: key)
+        }
+    }
+
     // MARK: AI Fetch
 
     static func fetchRecapAI(
