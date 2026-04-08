@@ -213,11 +213,12 @@ public struct HomeFeature: Sendable {
                 state.cycleJourneyState.cycleContext = state.todayState.cycle
                 state.cycleJourneyState.menstrualStatus = state.todayState.menstrualStatus
                 state.isCycleJourneyVisible = true
+                state.todayState.recapBannerMonth = nil  // Clear banner immediately
                 return .none
 
             case .cycleJourney(.delegate(.dismiss)):
                 state.isCycleJourneyVisible = false
-                return .none
+                return .send(.today(.refreshRecapBanner))
 
             case .cycleJourney(.delegate(.logMissedMonth(let month))):
                 // Close journey → open calendar on target month → reopen journey when calendar closes
