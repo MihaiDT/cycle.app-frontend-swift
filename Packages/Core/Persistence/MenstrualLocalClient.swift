@@ -399,6 +399,7 @@ extension MenstrualLocalClient {
                 for record in try context.fetch(FetchDescriptor<DailyCardRecord>()) { context.delete(record) }
                 for record in try context.fetch(FetchDescriptor<CycleRecapRecord>()) { context.delete(record) }
                 try context.save()
+                UserDefaults.standard.removeObject(forKey: "ViewedRecapCycleKeys")
             },
 
             // MARK: confirmPeriod
@@ -629,15 +630,23 @@ extension MenstrualLocalClient {
             unviewedRecapMonth: {
                 let container = CycleDataStore.shared
                 let context = ModelContext(container)
-                let descriptor = FetchDescriptor<CycleRecapRecord>(
-                    predicate: #Predicate { $0.isViewed == false },
-                    sortBy: [SortDescriptor(\.createdAt, order: .reverse)]
-                )
-                guard let record = try? context.fetch(descriptor).first else { return nil }
+                // Only show banner for recaps of PAST cycles (not the current one)
+                let cycles = try context.fetch(FetchDescriptor<CycleRecord>(
+                    sortBy: [SortDescriptor(\.startDate, order: .reverse)]
+                ))
+                guard let currentCycleStart = cycles.first?.startDate else { return nil }
                 let keyFormatter = DateFormatter()
                 keyFormatter.dateFormat = "yyyy-MM-dd"
                 keyFormatter.timeZone = TimeZone(identifier: "UTC")
                 keyFormatter.locale = Locale(identifier: "en_US_POSIX")
+                let currentKey = keyFormatter.string(from: Calendar.current.startOfDay(for: currentCycleStart))
+
+                let allRecaps = (try? context.fetch(FetchDescriptor<CycleRecapRecord>())) ?? []
+                let viewedKeys = Set(UserDefaults.standard.stringArray(forKey: "ViewedRecapCycleKeys") ?? [])
+                let unviewed = allRecaps
+                    .filter { $0.cycleKey != currentKey && !viewedKeys.contains($0.cycleKey) }
+                    .sorted { $0.createdAt > $1.createdAt }
+                guard let record = unviewed.first else { return nil }
                 guard let date = keyFormatter.date(from: record.cycleKey) else { return nil }
                 let monthFormatter = DateFormatter()
                 monthFormatter.dateFormat = "MMMM"
@@ -648,14 +657,11 @@ extension MenstrualLocalClient {
             markAllRecapsViewed: {
                 let container = CycleDataStore.shared
                 let context = ModelContext(container)
-                let descriptor = FetchDescriptor<CycleRecapRecord>(
-                    predicate: #Predicate { $0.isViewed == false }
-                )
-                let unviewed = (try? context.fetch(descriptor)) ?? []
-                for record in unviewed {
-                    record.isViewed = true
-                }
-                try? context.save()
+                let allRecaps = (try? context.fetch(FetchDescriptor<CycleRecapRecord>())) ?? []
+                let keys = allRecaps.map(\.cycleKey)
+                var viewed = Set(UserDefaults.standard.stringArray(forKey: "ViewedRecapCycleKeys") ?? [])
+                for key in keys { viewed.insert(key) }
+                UserDefaults.standard.set(Array(viewed), forKey: "ViewedRecapCycleKeys")
             }
 
         )

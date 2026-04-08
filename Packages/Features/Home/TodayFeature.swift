@@ -310,7 +310,7 @@ public struct TodayFeature: Sendable {
                         cardEffect
                     )
                 }
-                return .merge(cardEffect, .send(.refreshRecapBanner))
+                return .merge(cardEffect, .send(.generateMissingRecaps))
 
             case .calendarEntriesLoaded(.failure):
                 state.hasCompletedCalendarLoad = true

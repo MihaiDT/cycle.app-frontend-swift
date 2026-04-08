@@ -223,6 +223,9 @@ public struct AppFeature: Sendable {
 
             case .home(.delegate(.didLogout)):
                 state.destination = .onboarding
+                UserDefaults.standard.removeObject(forKey: "NewRecapCycleKey")
+                UserDefaults.standard.removeObject(forKey: "NewRecapMonthName")
+                UserDefaults.standard.removeObject(forKey: "LastDismissedRecapKey")
                 return .none
 
             case .home:
@@ -317,7 +320,10 @@ public struct AppFeature: Sendable {
                             contraceptionType?.rawValue
                         )
 
-                        // 3. Create initial cycle from last period date
+                        // 3. Clear stale recap banner state for new account
+                        UserDefaults.standard.removeObject(forKey: "ViewedRecapCycleKeys")
+
+                        // 4. Create initial cycle from last period date
                         if let lpDate = lastPeriodDate {
                             try await menstrualLocal.confirmPeriod(lpDate, periodDuration, nil, false)
                         }
@@ -336,6 +342,10 @@ public struct AppFeature: Sendable {
                 state.onboardingError = nil
                 state.homeState = HomeFeature.State()
                 state.destination = .home
+                // Clear any stale recap banner from previous account
+                UserDefaults.standard.removeObject(forKey: "NewRecapCycleKey")
+                UserDefaults.standard.removeObject(forKey: "NewRecapMonthName")
+                UserDefaults.standard.removeObject(forKey: "LastDismissedRecapKey")
                 return .none
 
             case .onboardingSubmitFailed(let errorMessage):
