@@ -400,6 +400,7 @@ extension MenstrualLocalClient {
                 for record in try context.fetch(FetchDescriptor<CycleRecapRecord>()) { context.delete(record) }
                 try context.save()
                 UserDefaults.standard.removeObject(forKey: "ViewedRecapCycleKeys")
+                UserDefaults.standard.set(Date(), forKey: "CycleDataResetDate")
             },
 
             // MARK: confirmPeriod

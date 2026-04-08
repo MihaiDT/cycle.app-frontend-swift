@@ -536,8 +536,11 @@ public struct TodayFeature: Sendable {
                         profileAvgBleedingDays: data.profileAvgBleedingDays,
                         currentCycleStartDate: data.currentCycleStartDate
                     )
+                    // Invalidate recaps cached before last reset (CloudKit may sync stale records)
+                    let resetDate = UserDefaults.standard.object(forKey: "CycleDataResetDate") as? Date
+                    let maxAge: TimeInterval? = resetDate.map { Date.now.timeIntervalSince($0) }
                     for summary in summaries where !summary.isCurrentCycle {
-                        let hasCached = CycleJourneyFeature.loadCachedRecap(cycleStart: summary.startDate) != nil
+                        let hasCached = CycleJourneyFeature.loadCachedRecap(cycleStart: summary.startDate, maxAge: maxAge) != nil
                         if !hasCached {
                             if let recap = await CycleJourneyFeature.fetchRecapAI(summary: summary, allSummaries: summaries) {
                                 CycleJourneyFeature.cacheRecap(recap, cycleStart: summary.startDate)

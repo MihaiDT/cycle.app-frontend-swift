@@ -320,8 +320,9 @@ public struct AppFeature: Sendable {
                             contraceptionType?.rawValue
                         )
 
-                        // 3. Clear stale recap banner state for new account
+                        // 3. Clear stale recap state for new account
                         UserDefaults.standard.removeObject(forKey: "ViewedRecapCycleKeys")
+                        UserDefaults.standard.set(Date(), forKey: "CycleDataResetDate")
 
                         // 4. Create initial cycle from last period date
                         if let lpDate = lastPeriodDate {
