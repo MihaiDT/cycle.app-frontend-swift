@@ -43,6 +43,12 @@ public struct MenstrualLocalClient: Sendable {
 
     /// Save/update the menstrual profile.
     public var saveProfile: @Sendable (MenstrualProfileInfo, [String], String?, Bool, String?) async throws -> Void
+
+    /// Returns the month name of the most recent unviewed recap, or nil.
+    public var unviewedRecapMonth: @Sendable () async throws -> String?
+
+    /// Marks all unviewed recaps as viewed.
+    public var markAllRecapsViewed: @Sendable () async throws -> Void
 }
 
 // MARK: - Dependency
@@ -455,6 +461,12 @@ extension MenstrualLocalClient {
                 )
                 context.insert(cycle)
 
+                // Set journeyStartDate on first period confirmation
+                if let profile = try fetchProfile(context: context),
+                   profile.journeyStartDate == nil {
+                    profile.journeyStartDate = start
+                }
+
                 // Mark matched prediction as confirmed
                 if let pred = matchedPrediction {
                     pred.isConfirmed = true
@@ -471,6 +483,7 @@ extension MenstrualLocalClient {
                 if !skipPredictions {
                     try await regeneratePredictions(container: container)
                 }
+
             },
 
             // MARK: removePeriodDays
@@ -610,6 +623,39 @@ extension MenstrualLocalClient {
                 }
                 try context.save()
             },
+
+            // MARK: unviewedRecapMonth
+            unviewedRecapMonth: {
+                let container = CycleDataStore.shared
+                let context = ModelContext(container)
+                let descriptor = FetchDescriptor<CycleRecapRecord>(
+                    predicate: #Predicate { $0.isViewed == false },
+                    sortBy: [SortDescriptor(\.createdAt, order: .reverse)]
+                )
+                guard let record = try? context.fetch(descriptor).first else { return nil }
+                let keyFormatter = DateFormatter()
+                keyFormatter.dateFormat = "yyyy-MM-dd"
+                keyFormatter.timeZone = TimeZone(identifier: "UTC")
+                keyFormatter.locale = Locale(identifier: "en_US_POSIX")
+                guard let date = keyFormatter.date(from: record.cycleKey) else { return nil }
+                let monthFormatter = DateFormatter()
+                monthFormatter.dateFormat = "MMMM"
+                return monthFormatter.string(from: date)
+            },
+
+            // MARK: markAllRecapsViewed
+            markAllRecapsViewed: {
+                let container = CycleDataStore.shared
+                let context = ModelContext(container)
+                let descriptor = FetchDescriptor<CycleRecapRecord>(
+                    predicate: #Predicate { $0.isViewed == false }
+                )
+                let unviewed = (try? context.fetch(descriptor)) ?? []
+                for record in unviewed {
+                    record.isViewed = true
+                }
+                try? context.save()
+            }
 
         )
     }
@@ -822,7 +868,9 @@ extension MenstrualLocalClient {
             getSymptoms: { _ in [] },
             generatePrediction: { },
             getProfile: { nil },
-            saveProfile: { _, _, _, _, _ in }
+            saveProfile: { _, _, _, _, _ in },
+            unviewedRecapMonth: { nil },
+            markAllRecapsViewed: { }
         )
     }
 }
