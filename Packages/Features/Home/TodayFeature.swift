@@ -90,6 +90,9 @@ public struct TodayFeature: Sendable {
         // Card stack
         public var cardStackState: CardStackFeature.State = CardStackFeature.State()
 
+        // Recap banner — driven by SwiftData query
+        public var recapBannerMonth: String?
+
         public init() {}
     }
 
@@ -128,6 +131,9 @@ public struct TodayFeature: Sendable {
         )
         case phaseResolved(CyclePhase, Int)
         case backgroundSyncCompleted
+        case refreshRecapBanner
+        case recapBannerLoaded(String?)
+        case generateMissingRecaps
         case delegate(Delegate)
         public enum Delegate: Sendable, Equatable {
             case openAriaChat(context: String)
@@ -139,6 +145,8 @@ public struct TodayFeature: Sendable {
     @Dependency(\.hbiLocal) var hbiLocal
     @Dependency(\.menstrualLocal) var menstrualLocal
     @Dependency(\.continuousClock) var clock
+
+    private enum CancelID { case recapGeneration }
 
     public init() {}
 
@@ -219,7 +227,9 @@ public struct TodayFeature: Sendable {
                 if !hasCycleData {
                     state.cardStackState.cards = []
                     state.cardStackState.currentPhase = nil
-                } else {
+                } else if state.hasCompletedCalendarLoad {
+                    // Only sync phase if calendar is loaded (periodDays available)
+                    // Otherwise, calendarEntriesLoaded will sync when ready
                     effects.append(Self.syncPhaseEffect(state: state))
                 }
                 return effects.isEmpty ? .none : .merge(effects)
@@ -281,7 +291,8 @@ public struct TodayFeature: Sendable {
                 let cardEffect = Self.syncPhaseEffect(state: state)
 
                 if state.isRefreshingCycleData {
-                    state.isRefreshingCycleData = false
+                    // Don't clear isRefreshingCycleData here — wait for hideSyncStatus
+                    // so content animations sync with the wave settling
                     state.pendingCalendarData = nil
                     let syncEffect: Effect<Action> = wasSyncing
                         ? .run { send in
@@ -299,7 +310,7 @@ public struct TodayFeature: Sendable {
                         cardEffect
                     )
                 }
-                return cardEffect
+                return .merge(cardEffect, .send(.refreshRecapBanner))
 
             case .calendarEntriesLoaded(.failure):
                 state.hasCompletedCalendarLoad = true
@@ -445,7 +456,8 @@ public struct TodayFeature: Sendable {
 
             case .hideSyncStatus:
                 state.syncStatus = .idle
-                return .none
+                state.isRefreshingCycleData = false
+                return .send(.generateMissingRecaps)
 
             case .finishRefreshAnimation:
                 state.isRefreshingCycleData = false
@@ -466,6 +478,8 @@ public struct TodayFeature: Sendable {
                 return .send(.cardStack(.loadCards(phase, day)))
 
             case .backgroundSyncPeriod(let periodDays, let originalPeriodDays, let flowIntensity, let bleedingDays):
+                // Clear recap banner — cycle data is changing
+                state.recapBannerMonth = nil
                 let periodGroups = EditPeriodFeature.groupConsecutivePeriods(periodDays)
                 let removedDays = originalPeriodDays.subtracting(periodDays)
                 return .run { [menstrualLocal] send in
@@ -489,6 +503,38 @@ public struct TodayFeature: Sendable {
 
             case .backgroundSyncCompleted:
                 return .send(.loadMenstrualStatus)
+
+            case .refreshRecapBanner:
+                return .run { [menstrualLocal] send in
+                    let month = try? await menstrualLocal.unviewedRecapMonth()
+                    await send(.recapBannerLoaded(month))
+                }
+
+            case .recapBannerLoaded(let month):
+                state.recapBannerMonth = month
+                return .none
+
+            case .generateMissingRecaps:
+                return .run { [menstrualLocal] send in
+                    let data = try await menstrualLocal.getJourneyData()
+                    let summaries = CycleJourneyEngine.buildSummaries(
+                        inputs: data.records,
+                        reports: data.reports,
+                        profileAvgCycleLength: data.profileAvgCycleLength,
+                        profileAvgBleedingDays: data.profileAvgBleedingDays,
+                        currentCycleStartDate: data.currentCycleStartDate
+                    )
+                    for summary in summaries where !summary.isCurrentCycle {
+                        let hasCached = CycleJourneyFeature.loadCachedRecap(cycleStart: summary.startDate) != nil
+                        if !hasCached {
+                            if let recap = await CycleJourneyFeature.fetchRecapAI(summary: summary, allSummaries: summaries) {
+                                CycleJourneyFeature.cacheRecap(recap, cycleStart: summary.startDate)
+                            }
+                        }
+                    }
+                    await send(.refreshRecapBanner)
+                }
+                .cancellable(id: CancelID.recapGeneration, cancelInFlight: true)
 
             case .cardStack(.delegate(.openLens)):
                 return .send(.delegate(.openCycleInsights))
@@ -535,6 +581,7 @@ public struct TodayView: View {
     @Bindable var store: StoreOf<TodayFeature>
 
     @State private var showHero = false
+    @State private var showContent = false
     @State private var selectedDate: Date?
     @State private var scrollOffset: CGFloat = 0
     @State private var initialScrollY: CGFloat?
@@ -627,6 +674,15 @@ public struct TodayView: View {
 
                     // MARK: Content
                     VStack(spacing: 0) {
+                        // Recap ready banner — animates independently when recap becomes available
+                        RecapReadyBanner(
+                            monthName: store.recapBannerMonth,
+                            onTap: { store.send(.delegate(.openCycleJourney)) }
+                        )
+                        .padding(.horizontal, AppLayout.horizontalPadding)
+                        .padding(.top, AppLayout.spacingM)
+                        .animation(.easeOut(duration: 0.4), value: store.recapBannerMonth)
+
                         if !store.cardStackState.cards.isEmpty || store.cardStackState.isLoading {
                             CardStackView(
                                 store: store.scope(
@@ -635,6 +691,8 @@ public struct TodayView: View {
                                 )
                             )
                             .padding(.top, AppLayout.spacingL)
+                            .opacity(showContent ? 1 : 0)
+                            .offset(y: showContent ? 0 : 20)
                         }
 
                         VerticalSpace.xl
@@ -647,6 +705,8 @@ public struct TodayView: View {
                                 onTap: { store.send(.delegate(.openCycleJourney)) }
                             )
                             .padding(.horizontal, AppLayout.horizontalPadding)
+                            .opacity(showContent ? 1 : 0)
+                            .offset(y: showContent ? 0 : 24)
                         }
 
                         VerticalSpace.xxl
@@ -702,6 +762,19 @@ public struct TodayView: View {
             guard appeared else { return }
             triggerStaggeredAnimations()
         }
+        .onChange(of: store.isRefreshingCycleData) { _, isRefreshing in
+            if isRefreshing {
+                // Wave starting — hide content
+                withAnimation(.easeIn(duration: 0.2)) {
+                    showContent = false
+                }
+            } else {
+                // Wave settled — slide content in
+                withAnimation(.easeOut(duration: 0.5).delay(0.3)) {
+                    showContent = true
+                }
+            }
+        }
         .onAppear { safeAreaTop = rootGeo.safeAreaInsets.top }
         .enableInjection()
         } // GeometryReader
@@ -712,6 +785,10 @@ public struct TodayView: View {
     private func triggerStaggeredAnimations() {
         withAnimation(.spring(response: 0.7, dampingFraction: 0.75)) {
             showHero = true
+        }
+        // Content appears after hero wave settles
+        withAnimation(.easeOut(duration: 0.5).delay(0.4)) {
+            showContent = true
         }
     }
 
