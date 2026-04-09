@@ -489,6 +489,7 @@ public struct CalendarFeature: Sendable {
                 }
             }
         }
+        print("[Calendar] parseEntries: \(entries.count) entries → periodDays=\(serverPeriodDays.count), predicted=\(serverPredictedDays.count), fertile=\(serverFertileDays.count)")
         state.periodDays = serverPeriodDays
         state.predictedPeriodDays = serverPredictedDays
         state.fertileDays = serverFertileDays

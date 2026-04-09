@@ -278,7 +278,7 @@ public enum MenstrualPredictor {
     // MARK: - Internal Algorithms
 
     /// Exponential Weighted Moving Average. Alpha=0.7 means recent values dominate.
-    private static func exponentialWMA(_ lengths: [Int], alpha: Double) -> Double {
+    public static func exponentialWMA(_ lengths: [Int], alpha: Double) -> Double {
         guard !lengths.isEmpty else { return 28 }
         var weightedSum = 0.0
         var totalWeight = 0.0

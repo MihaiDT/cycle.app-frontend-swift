@@ -30,7 +30,7 @@ public struct CalendarView: View {
         var comps = cal.dateComponents([.year, .month], from: Date())
         comps.day = 1
         let current = cal.date(from: comps) ?? Date()
-        return (-12...12).compactMap { cal.date(byAdding: .month, value: $0, to: current) }
+        return (-24...12).compactMap { cal.date(byAdding: .month, value: $0, to: current) }
     }()
 
     static let monthIdFormatter: DateFormatter = {

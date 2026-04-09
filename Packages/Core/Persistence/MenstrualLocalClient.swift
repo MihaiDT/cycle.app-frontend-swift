@@ -822,12 +822,17 @@ extension MenstrualLocalClient {
             profile: profileInput,
             hasSymptomData: false
         )
+        print("[Predict] cycles=\(cycleInputs.count), predictedStart=\(result.predictedStart), algo=\(result.algorithmVersion)")
 
         let extractedLengths = MenstrualPredictor.extractedCycleLengths(
             cycles: cycleInputs, fallbackLength: profile.avgCycleLength
         )
         let sd = CycleMath.stdDev(extractedLengths)
-        let cycleLen = profile.avgCycleLength
+        // Use WMA-predicted length for future projections, not raw profile average
+        let wmaLength = extractedLengths.isEmpty
+            ? profile.avgCycleLength
+            : Int(round(MenstrualPredictor.exponentialWMA(extractedLengths, alpha: 0.7)))
+        let cycleLen = wmaLength
         // Apply trend to future projections (not just flat avgCycleLength)
         let trend = CycleMath.detectTrend(extractedLengths)
         let trendAdjust = trend != 0 ? (trend > 0 ? 1 : -1) : 0
