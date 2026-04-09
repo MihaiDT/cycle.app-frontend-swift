@@ -453,7 +453,7 @@ public struct CycleJourneyView: View {
                 .scaleEffect(scale)
                 .onAppear {
                     guard isActive else { return }
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
                         // Zoom in
                         withAnimation(.easeOut(duration: 0.3)) {
                             scale = 1.08
@@ -486,8 +486,7 @@ public struct CycleJourneyView: View {
 
     private func currentPhaseFor(summary: JourneyCycleSummary) -> CyclePhase? {
         guard summary.isCurrentCycle, let cycle = store.cycleContext else { return nil }
-        return cycle.phase(for: Calendar.current.startOfDay(for: Date()))
-            ?? cycle.phase(forCycleDay: cycle.cycleDay)
+        return cycle.resolvedPhase(for: Calendar.current.startOfDay(for: Date()))
     }
 
     private func scrollToCurrentCycle(proxy: ScrollViewProxy) {

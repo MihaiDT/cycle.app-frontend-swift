@@ -631,21 +631,28 @@ extension MenstrualLocalClient {
             unviewedRecapMonth: {
                 let container = CycleDataStore.shared
                 let context = ModelContext(container)
-                // Only show banner for recaps of PAST cycles (not the current one)
                 let cycles = try context.fetch(FetchDescriptor<CycleRecord>(
                     sortBy: [SortDescriptor(\.startDate, order: .reverse)]
                 ))
-                guard let currentCycleStart = cycles.first?.startDate else { return nil }
+                // Need at least 2 cycles (current + past) for a recap to exist
+                guard cycles.count >= 2 else { return nil }
                 let keyFormatter = DateFormatter()
                 keyFormatter.dateFormat = "yyyy-MM-dd"
                 keyFormatter.timeZone = TimeZone(identifier: "UTC")
                 keyFormatter.locale = Locale(identifier: "en_US_POSIX")
-                let currentKey = keyFormatter.string(from: Calendar.current.startOfDay(for: currentCycleStart))
+                // Build set of valid past cycle keys — only cycles that started after tracking began
+                let accountDate = UserDefaults.standard.object(forKey: "CycleDataResetDate") as? Date ?? .distantPast
+                let trackingStart = Calendar.current.startOfDay(for: accountDate)
+                let pastCycleKeys = Set(cycles.dropFirst()
+                    .filter { $0.startDate >= trackingStart }
+                    .map { keyFormatter.string(from: Calendar.current.startOfDay(for: $0.startDate)) }
+                )
 
                 let allRecaps = (try? context.fetch(FetchDescriptor<CycleRecapRecord>())) ?? []
                 let viewedKeys = Set(UserDefaults.standard.stringArray(forKey: "ViewedRecapCycleKeys") ?? [])
+                // Only match recaps to actual past cycles — ignore orphaned CloudKit records
                 let unviewed = allRecaps
-                    .filter { $0.cycleKey != currentKey && !viewedKeys.contains($0.cycleKey) }
+                    .filter { pastCycleKeys.contains($0.cycleKey) && !viewedKeys.contains($0.cycleKey) }
                     .sorted { $0.createdAt > $1.createdAt }
                 guard let record = unviewed.first else { return nil }
                 guard let date = keyFormatter.date(from: record.cycleKey) else { return nil }

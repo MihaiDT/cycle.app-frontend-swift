@@ -89,7 +89,7 @@ public struct GlassWeekCalendar: View {
         }
         let today = cal.startOfDay(for: Date())
         let d = cal.startOfDay(for: date)
-        let phase = cycle.phase(for: date) ?? cycle.phase(forCycleDay: day)
+        let phase = cycle.resolvedPhase(for: date)
         if d < today {
             return "Past \(phase.displayName)"
         }
@@ -298,6 +298,10 @@ public struct GlassWeekCalendar: View {
         .contentShape(Rectangle())
         .onTapGesture {
             let tappedDate = cal.startOfDay(for: date)
+            let tomorrow = cal.date(byAdding: .day, value: 1, to: cal.startOfDay(for: Date())) ?? Date()
+
+            // Block future dates
+            guard tappedDate < tomorrow else { return }
 
             if highlightSlot == slotIndex && isToday && selectedDate == nil {
                 return

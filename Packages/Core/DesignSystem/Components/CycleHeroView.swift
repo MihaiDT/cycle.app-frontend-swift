@@ -15,6 +15,8 @@ public struct CycleHeroView: View {
     public var onEditPeriod: (() -> Void)?
     public var onLogPeriod: (() -> Void)?
     public var onCalendarTapped: (() -> Void)?
+    public var hasNotification: Bool
+    public var onNotificationTapped: (() -> Void)?
     /// 0 = fully expanded, 1 = fully collapsed
     public var collapseProgress: CGFloat
     /// Safe area inset from top (to extend behind status bar)
@@ -39,6 +41,8 @@ public struct CycleHeroView: View {
         onEditPeriod: (() -> Void)? = nil,
         onLogPeriod: (() -> Void)? = nil,
         onCalendarTapped: (() -> Void)? = nil,
+        hasNotification: Bool = false,
+        onNotificationTapped: (() -> Void)? = nil,
         collapseProgress: CGFloat = 0,
         safeAreaTop: CGFloat = 0
     ) {
@@ -49,6 +53,8 @@ public struct CycleHeroView: View {
         self.onEditPeriod = onEditPeriod
         self.onLogPeriod = onLogPeriod
         self.onCalendarTapped = onCalendarTapped
+        self.hasNotification = hasNotification
+        self.onNotificationTapped = onNotificationTapped
         self.collapseProgress = collapseProgress
         self.safeAreaTop = safeAreaTop
     }
@@ -80,7 +86,7 @@ public struct CycleHeroView: View {
 
     /// 0 = gentle wave, 1 = chaotic blob (active during sync)
     private var waveBlobMorph: CGFloat {
-        isRefreshing ? 0.7 : 0.0
+        isRefreshing ? 0.5 : 0.0
     }
 
     /// Curve depth scales with collapse progress AND phase intensity.
@@ -98,8 +104,7 @@ public struct CycleHeroView: View {
     }
 
     private var displayPhase: CyclePhase {
-        cycle.phase(for: effectiveDate)
-            ?? cycle.phase(forCycleDay: displayCycleDay)
+        cycle.resolvedPhase(for: effectiveDate)
     }
 
     private var displayCycleDay: Int {
@@ -419,14 +424,30 @@ public struct CycleHeroView: View {
         VStack(spacing: 0) {
             // Top bar: profile + day/phase info + calendar button
             HStack(spacing: 0) {
-                Circle()
-                    .fill(.ultraThinMaterial)
-                    .frame(width: 36, height: 36)
-                    .overlay {
-                        Image(systemName: "person.fill")
-                            .font(.system(size: 16, weight: .medium))
-                            .foregroundColor(textOnHeroColor.opacity(0.6))
+                Button {
+                    if hasNotification {
+                        onNotificationTapped?()
                     }
+                } label: {
+                    ZStack(alignment: .topTrailing) {
+                        Circle()
+                            .fill(.ultraThinMaterial)
+                            .frame(width: 36, height: 36)
+                            .overlay {
+                                Image(systemName: hasNotification ? "bell.fill" : "person.fill")
+                                    .font(.system(size: 16, weight: .medium))
+                                    .foregroundColor(textOnHeroColor.opacity(hasNotification ? 0.9 : 0.6))
+                            }
+                        if hasNotification {
+                            Circle()
+                                .fill(DesignColors.accentWarm)
+                                .frame(width: 10, height: 10)
+                                .offset(x: 2, y: -2)
+                        }
+                    }
+                }
+                .buttonStyle(.plain)
+                .allowsHitTesting(hasNotification)
 
                 Spacer()
 

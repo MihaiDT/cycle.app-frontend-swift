@@ -388,6 +388,24 @@ public struct CycleContext: Equatable, Sendable {
         return p == .menstrual ? .follicular : p
     }
 
+    /// Single source of truth for phase at a given date.
+    /// Use this instead of `phase(for:) ?? phase(forCycleDay:)` chains.
+    /// Handles late detection correctly even when cycleDayNumber wraps.
+    public func resolvedPhase(for date: Date) -> CyclePhase {
+        // Late takes highest priority — prevents wrapped cycle days from returning wrong phase
+        if isLate && rawDaysSinceCycleStart(for: date) >= cycleLength {
+            return .late
+        }
+        // Menstrual from server data only
+        if isPeriodDay(date) { return .menstrual }
+        // Ovulatory from server fertile window
+        if fertileDays[dateKey(for: date)] != nil { return .ovulatory }
+        // Math fallback — guaranteed to return a phase
+        let day = cycleDayNumber(for: date) ?? cycleDay
+        let p = mathPhase(forCycleDay: day, for: date)
+        return p == .menstrual ? .follicular : p
+    }
+
     /// Phase for the dot indicator — same rule: menstrual only from server.
     /// When period is late, shows "late" color instead of menstrual for predicted days.
     public func dotPhase(for date: Date) -> CyclePhase? {

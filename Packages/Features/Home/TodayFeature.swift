@@ -160,11 +160,8 @@ public struct TodayFeature: Sendable {
             return .none
         }
         let today = Calendar.current.startOfDay(for: Date())
-        // Use same calculation as CycleHeroView.displayCycleDay for consistency
         let cycleDay = cycle.cycleDayNumber(for: today) ?? cycle.cycleDay
-        let phase = cycle.phase(for: today)
-            ?? cycle.phase(forCycleDay: cycleDay)
-        // When late, show days-late (consistent with header) instead of raw cycle day
+        let phase = cycle.resolvedPhase(for: today)
         let displayDay = phase == .late ? cycle.effectiveDaysLate : cycleDay
         return .send(.phaseResolved(phase, displayDay))
     }
@@ -536,10 +533,13 @@ public struct TodayFeature: Sendable {
                         profileAvgBleedingDays: data.profileAvgBleedingDays,
                         currentCycleStartDate: data.currentCycleStartDate
                     )
-                    // Invalidate recaps cached before last reset (CloudKit may sync stale records)
-                    let resetDate = UserDefaults.standard.object(forKey: "CycleDataResetDate") as? Date
-                    let maxAge: TimeInterval? = resetDate.map { Date.now.timeIntervalSince($0) }
+                    // Only recap cycles that started AFTER the user began tracking.
+                    // Cycles logged retroactively during onboarding shouldn't get recaps.
+                    let accountDate = UserDefaults.standard.object(forKey: "CycleDataResetDate") as? Date ?? .distantPast
+                    let trackingStart = Calendar.current.startOfDay(for: accountDate)
+                    let maxAge: TimeInterval? = accountDate == .distantPast ? nil : Date.now.timeIntervalSince(accountDate)
                     for summary in summaries where !summary.isCurrentCycle {
+                        guard summary.startDate >= trackingStart else { continue }
                         let hasCached = CycleJourneyFeature.loadCachedRecap(cycleStart: summary.startDate, maxAge: maxAge) != nil
                         if !hasCached {
                             if let recap = await CycleJourneyFeature.fetchRecapAI(summary: summary, allSummaries: summaries) {
@@ -661,11 +661,18 @@ public struct TodayView: View {
                         store.send(.logPeriodTapped(date))
                     },
                     onCalendarTapped: { store.send(.calendarTapped) },
+                    hasNotification: store.recapBannerMonth != nil,
+                    onNotificationTapped: {
+                        if !store.isRecapSheetVisible {
+                            store.send(.recapBannerLoaded(store.recapBannerMonth))
+                        }
+                    },
                     collapseProgress: collapseProgress,
                     safeAreaTop: safeAreaTop
                 )
                 .opacity(showHero ? 1 : 0)
                 .allowsHitTesting(true)
+                .zIndex(1)
             } else if store.menstrualStatus != nil, store.menstrualStatus?.hasCycleData == false {
                 // No cycle data — prompt to log first period
                 noCycleDataHero
