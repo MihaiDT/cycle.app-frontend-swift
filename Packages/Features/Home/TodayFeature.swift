@@ -90,9 +90,10 @@ public struct TodayFeature: Sendable {
         // Card stack
         public var cardStackState: CardStackFeature.State = CardStackFeature.State()
 
-        // Recap notification — driven by SwiftData query
+        // Notifications
         public var recapBannerMonth: String?
         public var isRecapSheetVisible: Bool = false
+        public var isNotificationsPanelVisible: Bool = false
 
         public init() {}
     }
@@ -135,6 +136,8 @@ public struct TodayFeature: Sendable {
         case refreshRecapBanner
         case recapBannerLoaded(String?)
         case recapSheetDismissed
+        case notificationsTapped
+        case notificationsPanelDismissed
         case generateMissingRecaps
         case delegate(Delegate)
         public enum Delegate: Sendable, Equatable {
@@ -511,15 +514,25 @@ public struct TodayFeature: Sendable {
                 }
 
             case .recapBannerLoaded(let month):
+                print("[Notif] recapBannerLoaded: month=\(String(describing: month)), cardsLoading=\(state.cardStackState.isLoading), sheetVisible=\(state.isRecapSheetVisible)")
                 state.recapBannerMonth = month
                 // Show sheet only after cards have loaded
                 if month != nil && !state.cardStackState.isLoading {
                     state.isRecapSheetVisible = true
+                    print("[Notif] → showing recap sheet")
                 }
                 return .none
 
             case .recapSheetDismissed:
                 state.isRecapSheetVisible = false
+                return .none
+
+            case .notificationsTapped:
+                state.isNotificationsPanelVisible = true
+                return .none
+
+            case .notificationsPanelDismissed:
+                state.isNotificationsPanelVisible = false
                 return .none
 
             case .generateMissingRecaps:
@@ -538,9 +551,14 @@ public struct TodayFeature: Sendable {
                     let maxAge: TimeInterval? = accountDate == .distantPast ? nil : Date.now.timeIntervalSince(accountDate)
                     for summary in summaries where !summary.isCurrentCycle {
                         let hasCached = CycleJourneyFeature.loadCachedRecap(cycleStart: summary.startDate, maxAge: maxAge) != nil
+                        print("[Notif] past cycle: start=\(summary.startDate), cached=\(hasCached)")
                         if !hasCached {
+                            print("[Notif] generating AI recap for \(summary.startDate)...")
                             if let recap = await CycleJourneyFeature.fetchRecapAI(summary: summary, allSummaries: summaries) {
                                 CycleJourneyFeature.cacheRecap(recap, cycleStart: summary.startDate)
+                                print("[Notif] recap cached for \(summary.startDate)")
+                            } else {
+                                print("[Notif] AI recap FAILED for \(summary.startDate)")
                             }
                         }
                     }
@@ -660,9 +678,7 @@ public struct TodayView: View {
                     onCalendarTapped: { store.send(.calendarTapped) },
                     hasNotification: store.recapBannerMonth != nil,
                     onNotificationTapped: {
-                        if !store.isRecapSheetVisible {
-                            store.send(.recapBannerLoaded(store.recapBannerMonth))
-                        }
+                        store.send(.notificationsTapped)
                     },
                     collapseProgress: collapseProgress,
                     safeAreaTop: safeAreaTop
@@ -744,6 +760,24 @@ public struct TodayView: View {
             }
         }
         .ignoresSafeArea(edges: .top)
+        .sheet(isPresented: Binding(
+            get: { store.isNotificationsPanelVisible },
+            set: { if !$0 { store.send(.notificationsPanelDismissed) } }
+        )) {
+            NotificationsPanel(
+                recapMonth: store.recapBannerMonth,
+                onRecapTapped: {
+                    store.send(.notificationsPanelDismissed)
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                        store.send(.delegate(.openCycleJourney))
+                    }
+                }
+            )
+            .presentationDetents([.medium, .large])
+            .presentationDragIndicator(.visible)
+            .presentationCornerRadius(AppLayout.cornerRadiusL)
+            .presentationBackground(DesignColors.background)
+        }
         .sheet(isPresented: Binding(
             get: { store.isRecapSheetVisible },
             set: { if !$0 { store.send(.recapSheetDismissed) } }

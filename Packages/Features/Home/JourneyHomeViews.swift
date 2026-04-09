@@ -1,5 +1,100 @@
 import SwiftUI
 
+// MARK: - Notifications Panel
+
+public struct NotificationsPanel: View {
+    let recapMonth: String?
+    let onRecapTapped: () -> Void
+
+    public var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            // Header
+            Text("Notifications")
+                .font(.custom("Raleway-Bold", size: 24))
+                .foregroundStyle(DesignColors.text)
+                .padding(.horizontal, 24)
+                .padding(.top, 24)
+                .padding(.bottom, 16)
+
+            Divider()
+                .overlay(DesignColors.text.opacity(0.08))
+
+            if recapMonth != nil || true {
+                ScrollView {
+                    VStack(spacing: 0) {
+                        // Recap notification
+                        if let month = recapMonth {
+                            Button(action: onRecapTapped) {
+                                HStack(spacing: 14) {
+                                    // Aria avatar
+                                    ZStack {
+                                        Circle()
+                                            .fill(
+                                                LinearGradient(
+                                                    colors: [DesignColors.accentWarm, DesignColors.accentSecondary],
+                                                    startPoint: .topLeading,
+                                                    endPoint: .bottomTrailing
+                                                )
+                                            )
+                                            .frame(width: 40, height: 40)
+                                        Text("A")
+                                            .font(.custom("Raleway-Bold", size: 17))
+                                            .foregroundStyle(.white)
+                                    }
+
+                                    VStack(alignment: .leading, spacing: 4) {
+                                        HStack {
+                                            Text("Aria")
+                                                .font(.custom("Raleway-Bold", size: 15))
+                                                .foregroundStyle(DesignColors.accentWarm)
+                                            Spacer()
+                                            Text("New")
+                                                .font(.custom("Raleway-SemiBold", size: 11))
+                                                .foregroundStyle(.white)
+                                                .padding(.horizontal, 8)
+                                                .padding(.vertical, 3)
+                                                .background(DesignColors.accentWarm, in: Capsule())
+                                        }
+                                        Text("Your \(month) recap is ready")
+                                            .font(.custom("Raleway-Medium", size: 15))
+                                            .foregroundStyle(DesignColors.text)
+                                        Text("Tap to see what I found about your cycle")
+                                            .font(.custom("Raleway-Regular", size: 13))
+                                            .foregroundStyle(DesignColors.text.opacity(0.5))
+                                    }
+
+                                    Image(systemName: "chevron.right")
+                                        .font(.system(size: 12, weight: .medium))
+                                        .foregroundStyle(DesignColors.text.opacity(0.3))
+                                }
+                                .padding(16)
+                                .background(DesignColors.text.opacity(0.04), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                            }
+                            .buttonStyle(.plain)
+                            .padding(.horizontal, 16)
+                            .padding(.top, 16)
+                        }
+
+                        // Empty state when no notifications
+                        if recapMonth == nil {
+                            VStack(spacing: 12) {
+                                Image(systemName: "bell.slash")
+                                    .font(.system(size: 32, weight: .light))
+                                    .foregroundStyle(DesignColors.text.opacity(0.2))
+                                Text("No new notifications")
+                                    .font(.custom("Raleway-Medium", size: 16))
+                                    .foregroundStyle(DesignColors.text.opacity(0.4))
+                            }
+                            .frame(maxWidth: .infinity)
+                            .padding(.top, 60)
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
 // MARK: - Recap Ready Banner (Home Screen)
 
 public struct RecapReadyBanner: View {

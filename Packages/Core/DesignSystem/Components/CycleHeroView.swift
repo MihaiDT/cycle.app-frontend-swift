@@ -425,29 +425,25 @@ public struct CycleHeroView: View {
             // Top bar: profile + day/phase info + calendar button
             HStack(spacing: 0) {
                 Button {
-                    if hasNotification {
-                        onNotificationTapped?()
-                    }
+                    onNotificationTapped?()
                 } label: {
                     ZStack(alignment: .topTrailing) {
                         Circle()
                             .fill(.ultraThinMaterial)
                             .frame(width: 36, height: 36)
                             .overlay {
-                                Image(systemName: hasNotification ? "bell.fill" : "person.fill")
+                                Image(systemName: hasNotification ? "bell.badge.fill" : "bell.fill")
                                     .font(.system(size: 16, weight: .medium))
                                     .foregroundColor(textOnHeroColor.opacity(hasNotification ? 0.9 : 0.6))
+                                    .symbolRenderingMode(hasNotification ? .palette : .monochrome)
+                                    .foregroundStyle(
+                                        hasNotification ? DesignColors.accentWarm : textOnHeroColor.opacity(0.6),
+                                        hasNotification ? DesignColors.accentWarm : .clear
+                                    )
                             }
-                        if hasNotification {
-                            Circle()
-                                .fill(DesignColors.accentWarm)
-                                .frame(width: 10, height: 10)
-                                .offset(x: 2, y: -2)
-                        }
                     }
                 }
                 .buttonStyle(.plain)
-                .allowsHitTesting(hasNotification)
 
                 Spacer()
 
