@@ -533,16 +533,10 @@ public struct TodayFeature: Sendable {
                         profileAvgBleedingDays: data.profileAvgBleedingDays,
                         currentCycleStartDate: data.currentCycleStartDate
                     )
-                    // Only recap cycles that ENDED after the user began tracking.
-                    // Feb cycle (ends March) logged in April onboarding → skip (ended before tracking)
-                    // March cycle (ends April) logged actively → include (ended during tracking)
-                    let cal = Calendar.current
+                    // Invalidate stale CloudKit-synced recaps from before reset/new account
                     let accountDate = UserDefaults.standard.object(forKey: "CycleDataResetDate") as? Date ?? .distantPast
-                    let trackingStart = cal.startOfDay(for: accountDate)
                     let maxAge: TimeInterval? = accountDate == .distantPast ? nil : Date.now.timeIntervalSince(accountDate)
                     for summary in summaries where !summary.isCurrentCycle {
-                        let cycleEnd = cal.date(byAdding: .day, value: summary.cycleLength, to: summary.startDate) ?? summary.startDate
-                        guard cycleEnd >= trackingStart else { continue }
                         let hasCached = CycleJourneyFeature.loadCachedRecap(cycleStart: summary.startDate, maxAge: maxAge) != nil
                         if !hasCached {
                             if let recap = await CycleJourneyFeature.fetchRecapAI(summary: summary, allSummaries: summaries) {

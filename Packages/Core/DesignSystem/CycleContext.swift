@@ -194,14 +194,10 @@ public struct CycleContext: Equatable, Sendable {
     public func isPredictedDay(_ date: Date) -> Bool {
         let key = dateKey(for: date)
         guard predictedDays.contains(key) else { return false }
-        // When period is late, don't show predicted days in the current late window
-        if isLate {
-            if let lateness = lateness(for: date), lateness >= -1, lateness < cycleLength {
-                return false
-            }
-            // Future cycle predictions are still valid
-        }
-        // Past predicted days that weren't confirmed → hidden
+        // When period is late, show ALL predicted days (past and future)
+        // so the user can see when the period was expected
+        if isLate { return true }
+        // Normal cycle: hide past predicted days that weren't confirmed
         let today = cal.startOfDay(for: Date())
         let d = cal.startOfDay(for: date)
         if d < today { return false }

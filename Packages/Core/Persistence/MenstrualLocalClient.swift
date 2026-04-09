@@ -640,15 +640,9 @@ extension MenstrualLocalClient {
                 keyFormatter.dateFormat = "yyyy-MM-dd"
                 keyFormatter.timeZone = TimeZone(identifier: "UTC")
                 keyFormatter.locale = Locale(identifier: "en_US_POSIX")
-                // Only include cycles that ENDED after tracking began
+                // All past cycles (except the most recent = current) can have recaps
                 let localCal = Calendar.current
-                let accountDate = UserDefaults.standard.object(forKey: "CycleDataResetDate") as? Date ?? .distantPast
-                let trackingStart = localCal.startOfDay(for: accountDate)
-                let pastCycleKeys = Set(cycles.dropFirst().filter { cycle in
-                    let length = cycle.actualCycleLength ?? 28
-                    let cycleEnd = localCal.date(byAdding: .day, value: length, to: cycle.startDate) ?? cycle.startDate
-                    return cycleEnd >= trackingStart
-                }.map {
+                let pastCycleKeys = Set(cycles.dropFirst().map {
                     keyFormatter.string(from: localCal.startOfDay(for: $0.startDate))
                 })
 
