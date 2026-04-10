@@ -74,15 +74,8 @@ struct MonthGridView: View, Equatable {
         let today = cal.startOfDay(for: Date())
 
         let gridStart = mondayStartOfGrid(for: month)
-        var dates = (0..<42).compactMap { cal.date(byAdding: .day, value: $0, to: gridStart) }
-
-        // Trim last row if all outside current month
-        if dates.count == 42 {
-            let lastRow = Array(dates[35...])
-            if lastRow.allSatisfy({ cal.component(.month, from: $0) != cal.component(.month, from: month) }) {
-                dates = Array(dates[..<35])
-            }
-        }
+        // Always 42 cells (6 rows) for consistent height — prevents LazyVStack jump glitches
+        let dates = (0..<42).compactMap { cal.date(byAdding: .day, value: $0, to: gridStart) }
 
         return dates.map { date in
             let d = cal.startOfDay(for: date)
@@ -227,21 +220,15 @@ struct CalendarDayCell: View {
 
             if info.isCurrentMonth && !info.isFuture {
                 Image(systemName: info.isEditPeriodDay ? "checkmark.circle.fill" : "circle")
-                    .font(.system(size: 14, weight: info.isEditPeriodDay ? .bold : .regular))
+                    .font(.system(size: 10, weight: info.isEditPeriodDay ? .bold : .regular))
                     .foregroundStyle(
                         info.isEditPeriodDay
                             ? CyclePhase.menstrual.orbitColor
                             : DesignColors.structure.opacity(0.5)
                     )
-                    .padding(.top, 4)
-                    .frame(height: 18)
-            } else if info.isToday && info.isCurrentMonth {
-                Text("Today")
-                    .font(.custom("Raleway-Bold", size: 8))
-                    .foregroundStyle(DesignColors.accentWarm)
                     .frame(height: 10)
             } else {
-                Color.clear.frame(height: 3)
+                Color.clear.frame(height: 10)
             }
         }
         .frame(maxWidth: .infinity)
@@ -327,7 +314,7 @@ struct CalendarDayCell: View {
             }
             .frame(width: 46, height: 46)
 
-            // Today / Fertile label
+            // Today / Fertile label / Symptom dot — always 10px height for consistent layout
             if info.isToday && info.isCurrentMonth {
                 Text("Today")
                     .font(.custom("Raleway-Bold", size: 8))
@@ -343,6 +330,8 @@ struct CalendarDayCell: View {
                     .fill(DesignColors.accentWarm)
                     .frame(width: 4, height: 4)
                     .frame(height: 10)
+            } else {
+                Color.clear.frame(height: 10)
             }
         }
         .frame(maxWidth: .infinity)

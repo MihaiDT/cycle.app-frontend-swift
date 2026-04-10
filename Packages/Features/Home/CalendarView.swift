@@ -58,7 +58,7 @@ public struct CalendarView: View {
                                 .padding(.vertical, 6)
 
                             ScrollView(.vertical, showsIndicators: false) {
-                                VStack(spacing: 0) {
+                                LazyVStack(spacing: 0) {
                                     ForEach(Self.months, id: \.self) { month in
                                         VStack(spacing: 0) {
                                             MonthSectionHeader(date: month)
