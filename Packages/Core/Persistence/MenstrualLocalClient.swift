@@ -828,19 +828,19 @@ extension MenstrualLocalClient {
             cycles: cycleInputs, fallbackLength: profile.avgCycleLength
         )
         let sd = CycleMath.stdDev(extractedLengths)
-        // Use WMA-predicted length for future projections, not raw profile average
-        let wmaLength = extractedLengths.isEmpty
-            ? profile.avgCycleLength
-            : Int(round(MenstrualPredictor.exponentialWMA(extractedLengths, alpha: 0.7)))
-        let cycleLen = wmaLength
+        // Use profile average for maximum prediction stability
+        let cycleLen = profile.avgCycleLength
 
         // Project predictions into the future (~1 year)
-        var currentStart = result.predictedStart
+        // Use most recent cycle + WMA for consistent spacing (V4 adjustments can over-correct)
+        let mostRecentStart = cycles.first?.startDate ?? result.predictedStart
+        var currentStart = CycleMath.addDays(mostRecentStart, cycleLen)
         var currentConfidence = result.confidence
         let today = CycleMath.startOfDay(Date())
 
         // Always store the primary prediction (even if past — needed for late period detection)
         let primaryRangeDays = CycleMath.predictionRangeDays(confidence: currentConfidence, stdDev: sd)
+        let primaryFertile = CycleMath.simpleFertileWindow(cycleStart: currentStart, cycleLength: cycleLen)
         let primaryPred = PredictionRecord(
             predictedDate: currentStart,
             rangeStart: CycleMath.addDays(currentStart, -primaryRangeDays),
@@ -848,9 +848,9 @@ extension MenstrualLocalClient {
             confidenceLevel: currentConfidence,
             algorithmVersion: result.algorithmVersion.rawValue,
             basedOnCycles: result.basedOnCycles,
-            fertileWindowStart: result.fertileWindow.start,
-            fertileWindowEnd: result.fertileWindow.end,
-            ovulationDate: result.fertileWindow.peak
+            fertileWindowStart: primaryFertile.start,
+            fertileWindowEnd: primaryFertile.end,
+            ovulationDate: primaryFertile.peak
         )
         context.insert(primaryPred)
 
@@ -884,8 +884,12 @@ extension MenstrualLocalClient {
             advanceIterations += 1
         }
 
-        // Generate 12 future predictions from currentStart (now at or after today)
-        for i in 0..<12 {
+        // Generate predictions until end of January next year
+        let nextYear = Calendar.current.component(.year, from: Date()) + 1
+        let endComps = DateComponents(year: nextYear, month: 2, day: 1)
+        let predictionEnd = Calendar.current.date(from: endComps) ?? CycleMath.addDays(today, 365)
+        var i = 0
+        while currentStart < predictionEnd {
             let rangeDays = CycleMath.predictionRangeDays(confidence: currentConfidence, stdDev: sd)
             let projectedLen = cycleLen
             let fertile = CycleMath.simpleFertileWindow(cycleStart: currentStart, cycleLength: projectedLen)
@@ -905,6 +909,7 @@ extension MenstrualLocalClient {
 
             currentStart = CycleMath.addDays(currentStart, projectedLen)
             currentConfidence = max(0.3, currentConfidence * 0.95)
+            i += 1
         }
 
         try context.save()

@@ -21,6 +21,7 @@
 		1E3B4EC0E761F7ACF8F91F84 /* Raleway-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 9C912EA0509634526A9D7F08 /* Raleway-Bold.ttf */; };
 		1EBAF390664932B71CB5E403 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B38AB06E18B5A4632AE2761A /* Assets.xcassets */; };
 		24543E48DBC791E3EAE935D6 /* UserProfileLocalClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07F1D2E8D0B49CA5E71909AF /* UserProfileLocalClient.swift */; };
+		252BCB6AA080C70A04AB8767 /* CalendarTableView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 212BE822AA0E09D8482006E2 /* CalendarTableView.swift */; };
 		2792D4F69FFD2F4D6ECA8EBE /* SeparatedIcon.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51194E26B3A815CB07BF5B59 /* SeparatedIcon.swift */; };
 		28CB5F282CFC523F42F68FA7 /* String+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF7B0C6DF47843E7CD58CEDB /* String+Extensions.swift */; };
 		29BFDA19B6329572F624B629 /* HealthKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5EC4B5B5DEB0E25A730E4507 /* HealthKit.framework */; };
@@ -195,6 +196,7 @@
 		14C000015325FD70E13B1A80 /* FirebaseAuthClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirebaseAuthClient.swift; sourceTree = "<group>"; };
 		15E5BBC3280206FB17B4DB65 /* AppFeatureTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppFeatureTests.swift; sourceTree = "<group>"; };
 		1E11CC02F06A23385C8E3602 /* CalendarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarView.swift; sourceTree = "<group>"; };
+		212BE822AA0E09D8482006E2 /* CalendarTableView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarTableView.swift; sourceTree = "<group>"; };
 		21F7C0B5678F3BB91C0D896A /* LiquidGlassModifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiquidGlassModifier.swift; sourceTree = "<group>"; };
 		226DF4A873C9600CC4F0B40D /* KeychainClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainClient.swift; sourceTree = "<group>"; };
 		252B1935BE43B154DA84074D /* CycleDataStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CycleDataStore.swift; sourceTree = "<group>"; };
@@ -621,6 +623,7 @@
 				2F6B49711D3438DDFA91BAC5 /* CalendarFeature.swift */,
 				2567F14009FEA37D5BBA815C /* CalendarMonthGrid.swift */,
 				5886220E666CF879F28AA495 /* CalendarSymptomSheet.swift */,
+				212BE822AA0E09D8482006E2 /* CalendarTableView.swift */,
 				1E11CC02F06A23385C8E3602 /* CalendarView.swift */,
 				C8030F59AC5C6C3D0782DC89 /* CalendarYearView.swift */,
 				AA3DA29117E0B7B54191D57F /* CardStackFeature.swift */,
@@ -836,6 +839,7 @@
 				8B066E6992294CE37D004E7F /* CalendarFeature.swift in Sources */,
 				B6F50DB4F0688FEBD7527589 /* CalendarMonthGrid.swift in Sources */,
 				42BCE80B18AF903A1B03EC79 /* CalendarSymptomSheet.swift in Sources */,
+				252BCB6AA080C70A04AB8767 /* CalendarTableView.swift in Sources */,
 				B224E12C6ABB07914CE60F82 /* CalendarView.swift in Sources */,
 				7215422C36DCB684CF032594 /* CalendarYearView.swift in Sources */,
 				999CF4AFDCC8015DFDBB5439 /* CardStackFeature.swift in Sources */,

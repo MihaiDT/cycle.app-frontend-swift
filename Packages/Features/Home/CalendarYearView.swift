@@ -66,7 +66,7 @@ struct YearOverviewView: View {
                             Text(String(yearData.year))
                                 .font(.custom("Raleway-Bold", size: 22))
                                 .foregroundStyle(DesignColors.text)
-                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .frame(maxWidth: .infinity, alignment: .center)
                                 .id("year-\(yearData.year)")
 
                             LazyVGrid(columns: gridColumns, spacing: 6) {
@@ -92,7 +92,7 @@ struct YearOverviewView: View {
                     }
                 }
                 .padding(.top, 12)
-                .padding(.bottom, 120)
+                .padding(.bottom, 20)
             }
             .onAppear {
                 let currentYear = cal.component(.year, from: Date())

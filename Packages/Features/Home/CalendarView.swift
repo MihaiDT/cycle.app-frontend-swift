@@ -17,6 +17,8 @@ public struct CalendarView: View {
     @State private var viewMode: CalendarViewMode = .month
     @State private var yearViewCreated: Bool = false
     @State private var scrollTarget: String?
+    @State private var isCurrentMonthVisible: Bool = true
+    @State private var scrollTrigger: Int = 0
 
     enum CalendarViewMode: String, CaseIterable {
         case month = "Month"
@@ -48,50 +50,55 @@ public struct CalendarView: View {
             DesignColors.background.ignoresSafeArea()
 
             VStack(spacing: 0) {
-                FeedTopBar(store: store, viewMode: $viewMode)
+                FeedTopBar(store: store, viewMode: $viewMode, isCurrentMonthVisible: isCurrentMonthVisible, onTodayTapped: {
+                    var c = Calendar.current.dateComponents([.year, .month], from: Date())
+                    c.day = 1
+                    let today = Calendar.current.date(from: c) ?? Date()
+                    store.send(.binding(.set(\.displayedMonth, today)))
+                    scrollTrigger += 1
+                    if viewMode == .year {
+                        withAnimation(.spring(response: 0.5, dampingFraction: 0.88)) {
+                            viewMode = .month
+                        }
+                    }
+                })
 
                     ZStack {
-                        // Month view
+                        // Month view — UIKit native scroll
                         VStack(spacing: 0) {
                             WeekdayLabelsRow()
                                 .padding(.horizontal, 16)
                                 .padding(.vertical, 6)
 
-                            ScrollView(.vertical, showsIndicators: false) {
-                                LazyVStack(spacing: 0) {
-                                    ForEach(Self.months, id: \.self) { month in
-                                        VStack(spacing: 0) {
-                                            MonthSectionHeader(date: month)
-                                            MonthGridView(
-                                                month: month,
-                                                cycleStartDate: store.cycleStartDate,
-                                                cycleLength: store.cycleLength,
-                                                bleedingDays: store.bleedingDays,
-                                                loggedDays: store.loggedDays,
-                                                periodDays: store.periodDays,
-                                                predictedPeriodDays: store.predictedPeriodDays,
-                                                periodFlowIntensity: store.periodFlowIntensity,
-                                                fertileDays: store.fertileDays,
-                                                ovulationDays: store.ovulationDays,
-                                                selectedDate: store.selectedDate,
-                                                isLate: store.menstrualStatus?.nextPrediction?.isLate == true,
-                                                predictedDate: store.menstrualStatus?.nextPrediction?.predictedDate,
-                                                isEditingPeriod: store.isEditingPeriod,
-                                                editPeriodDays: store.editPeriodDays,
-                                                onDaySelected: { date in
-                                                    store.send(.daySelected(date), animation: .spring(response: 0.3, dampingFraction: 0.8))
-                                                },
-                                                onEditDayTapped: { date in
-                                                    store.send(.editPeriodDayTapped(date), animation: .spring(response: 0.3, dampingFraction: 0.7))
-                                                }
-                                            )
-                                            .padding(.horizontal, 16)
-                                            .padding(.bottom, 20)
-                                        }
+                            CalendarTableView(
+                                months: Self.months,
+                                periodDays: store.periodDays,
+                                predictedPeriodDays: store.predictedPeriodDays,
+                                fertileDays: store.fertileDays,
+                                ovulationDays: store.ovulationDays,
+                                selectedDate: store.selectedDate,
+                                isLate: store.menstrualStatus?.nextPrediction?.isLate == true,
+                                predictedDate: store.menstrualStatus?.nextPrediction?.predictedDate,
+                                cycleLength: store.cycleLength,
+                                loggedDays: store.loggedDays,
+                                isEditingPeriod: store.isEditingPeriod,
+                                editPeriodDays: store.editPeriodDays,
+                                onDaySelected: { date in
+                                    store.send(.daySelected(date), animation: .spring(response: 0.3, dampingFraction: 0.8))
+                                },
+                                onEditDayTapped: { date in
+                                    store.send(.editPeriodDayTapped(date), animation: .spring(response: 0.3, dampingFraction: 0.7))
+                                },
+                                initialMonth: store.displayedMonth,
+                                scrollTrigger: scrollTrigger,
+                                scrollTargetMonth: store.displayedMonth,
+                                onCurrentMonthVisibilityChanged: { visible in
+                                    if visible != isCurrentMonthVisible {
+                                        isCurrentMonthVisible = visible
                                     }
                                 }
-                                .padding(.bottom, 120)
-                            }
+                            )
+                            .ignoresSafeArea(edges: .bottom)
                         }
                         .background(DesignColors.background)
                         .opacity(viewMode == .month ? 1 : 0)
@@ -107,8 +114,8 @@ public struct CalendarView: View {
                                 cycleLength: store.cycleLength,
                                 menstrualStatus: store.menstrualStatus,
                                 onMonthTapped: { [self] month in
-                                    scrollTarget = monthId(month)
                                     store.send(.binding(.set(\.displayedMonth, month)))
+                                    scrollTrigger += 1
                                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.08) {
                                         withAnimation(.spring(response: 0.5, dampingFraction: 0.88)) {
                                             viewMode = .month
@@ -435,10 +442,13 @@ struct EditPeriodPredictionBanner: View {
 struct FeedTopBar: View {
     @Bindable var store: StoreOf<CalendarFeature>
     @Binding var viewMode: CalendarView.CalendarViewMode
+    var isCurrentMonthVisible: Bool
+    var onTodayTapped: () -> Void
     @Namespace private var pillAnimation
 
     var body: some View {
         HStack(spacing: 0) {
+            // Left: X / Back
             Button {
                 UIImpactFeedbackGenerator(style: .light).impactOccurred()
                 if store.isEditingPeriod {
@@ -461,6 +471,7 @@ struct FeedTopBar: View {
 
             Spacer()
 
+            // Center: Month/Year toggle or edit hint
             if store.isEditingPeriod {
                 Text("Tap days to mark your period")
                     .font(.custom("Raleway-Medium", size: 14))
@@ -499,6 +510,22 @@ struct FeedTopBar: View {
                 }
                 .transition(.scale.combined(with: .opacity))
             }
+
+            Spacer()
+
+            // Right: Today button — fixed width container so Month/Year stays centered
+            Button {
+                UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                onTodayTapped()
+            } label: {
+                Text("Today")
+                    .font(.custom("Raleway-SemiBold", size: 13))
+                    .foregroundStyle(DesignColors.accentWarm)
+            }
+            .buttonStyle(.plain)
+            .opacity(store.isEditingPeriod || (viewMode == .month && isCurrentMonthVisible) ? 0 : 1)
+            .animation(.easeInOut(duration: 0.2), value: isCurrentMonthVisible)
+            .allowsHitTesting(!store.isEditingPeriod && !(viewMode == .month && isCurrentMonthVisible))
         }
         .padding(.horizontal, 20)
         .padding(.top, 20)

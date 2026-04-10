@@ -486,7 +486,6 @@ public struct TodayFeature: Sendable {
                 let periodGroups = EditPeriodFeature.groupConsecutivePeriods(periodDays)
                 let removedDays = originalPeriodDays.subtracting(periodDays)
                 return .run { [menstrualLocal] send in
-                    defer { Task { await send(.backgroundSyncCompleted) } }
                     // Remove days first
                     if !removedDays.isEmpty {
                         let datesToRemove = removedDays.compactMap { CalendarFeature.parseDate($0) }
@@ -502,6 +501,7 @@ public struct TodayFeature: Sendable {
                     if !periodGroups.isEmpty {
                         try? await menstrualLocal.generatePrediction()
                     }
+                    await send(.backgroundSyncCompleted)
                 }
 
             case .backgroundSyncCompleted:
