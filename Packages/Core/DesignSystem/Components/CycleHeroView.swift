@@ -352,8 +352,8 @@ public struct CycleHeroView: View {
     }
 
     public var body: some View {
-        TimelineView(.animation(minimumInterval: 1.0 / 20.0)) { timeline in
-            let phase = wavePhase(from: timeline.date)
+        TimelineView(.animation(minimumInterval: isRefreshing ? 1.0 / 20.0 : 1_000_000)) { timeline in
+            let phase = isRefreshing ? wavePhase(from: timeline.date) : 0
 
             ZStack(alignment: .top) {
                 // Base fill — visible while wave drops from above
