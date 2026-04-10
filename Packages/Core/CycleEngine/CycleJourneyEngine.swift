@@ -83,7 +83,17 @@ public enum CycleJourneyEngine {
         let currentStart = currentCycleStartDate.map { CycleMath.startOfDay($0) }
 
         return sortedOldestFirst.enumerated().map { index, input in
-            let cycleLength = input.actualCycleLength ?? profileAvgCycleLength
+            // For past cycles, derive length from gap to next cycle start if actualCycleLength is missing
+            let cycleLength: Int
+            if let actual = input.actualCycleLength {
+                cycleLength = actual
+            } else if index + 1 < sortedOldestFirst.count {
+                let nextStart = sortedOldestFirst[index + 1].startDate
+                let gap = cal.dateComponents([.day], from: cal.startOfDay(for: input.startDate), to: cal.startOfDay(for: nextStart)).day ?? profileAvgCycleLength
+                cycleLength = (gap >= 18 && gap <= 50) ? gap : profileAvgCycleLength
+            } else {
+                cycleLength = profileAvgCycleLength
+            }
             let bleeding = input.bleedingDays > 0 ? input.bleedingDays : profileAvgBleedingDays
             let breakdown = phaseBreakdown(cycleLength: cycleLength, bleedingDays: bleeding)
             let isCurrent = currentStart.map { CycleMath.startOfDay(input.startDate) == $0 } ?? false
@@ -229,5 +239,118 @@ public enum CycleJourneyEngine {
         case 2...3: return "\u{00B1}\(d) days"
         default: return "\(d) days off"
         }
+    }
+
+    /// Data-driven cycle name. Non-judgmental, poetic, personal.
+    /// Uses mood+energy when available, falls back to cycle characteristics fingerprint.
+    public static func cycleName(for summary: JourneyCycleSummary) -> String {
+        if let mood = summary.avgMood, let energy = summary.avgEnergy {
+            return moodEnergyName(mood: mood, energy: energy, seed: cycleSeed(summary))
+        }
+        return characteristicName(for: summary)
+    }
+
+    /// Short human reason explaining why the cycle got its name.
+    /// Returns nil when no mood/energy data — don't fake a reason.
+    public static func cycleNameReason(for summary: JourneyCycleSummary) -> String? {
+        guard let mood = summary.avgMood, let energy = summary.avgEnergy else { return nil }
+        let moodWord = mood >= 4 ? "great" : mood >= 3 ? "good" : mood >= 2 ? "low" : "tough"
+        let energyWord = energy >= 4 ? "high" : energy >= 3 ? "moderate" : "low"
+        return "\(energyWord) energy, \(moodWord) mood"
+    }
+
+    // MARK: - Mood+Energy Names (primary)
+
+    private static func moodEnergyName(mood: Double, energy: Double, seed: Int) -> String {
+        let highMood = mood >= 3.5
+        let highEnergy = energy >= 3.5
+        let names: [String] = switch (highMood, highEnergy) {
+        case (true, true):
+            ["Radiant", "Luminous", "Golden", "Vivid", "Bright"]
+        case (true, false):
+            ["Serene", "Gentle", "Soft Glow", "Still Waters", "Calm"]
+        case (false, true):
+            ["Bold", "Fierce", "Untamed", "Electric", "Wild"]
+        case (false, false):
+            ["Cocoon", "Stillness", "Ember", "Inward", "Rest"]
+        }
+        return names[seed % names.count]
+    }
+
+    // MARK: - Characteristic Names (fallback)
+
+    private static func characteristicName(for summary: JourneyCycleSummary) -> String {
+        let seed = cycleSeed(summary)
+        let bd = summary.phaseBreakdown
+        let total = bd.menstrualDays + bd.follicularDays + bd.ovulatoryDays + bd.lutealDays
+        guard total > 0 else { return "Cycle" }
+
+        // Find the dominant phase (largest proportion)
+        let phases: [(days: Int, trait: CycleTrait)] = [
+            (bd.menstrualDays, .depth),
+            (bd.follicularDays, .rise),
+            (bd.ovulatoryDays, .peak),
+            (bd.lutealDays, .settle),
+        ]
+        let dominant = phases.max(by: { $0.days < $1.days })?.trait ?? .rise
+
+        // Cycle length character
+        let lengthChar: CyclePace
+        if summary.cycleLength < 26 { lengthChar = .swift }
+        else if summary.cycleLength > 30 { lengthChar = .long }
+        else { lengthChar = .steady }
+
+        // Bleeding intensity
+        let bleedChar: BleedWeight = summary.bleedingDays >= 6 ? .heavy : summary.bleedingDays <= 3 ? .light : .normal
+
+        return traitName(dominant: dominant, pace: lengthChar, bleed: bleedChar, seed: seed)
+    }
+
+    private enum CycleTrait { case depth, rise, peak, settle }
+    private enum CyclePace { case swift, steady, long }
+    private enum BleedWeight { case light, normal, heavy }
+
+    private static func traitName(dominant: CycleTrait, pace: CyclePace, bleed: BleedWeight, seed: Int) -> String {
+        // Each combination maps to a pool of 3+ names for variety
+        let pool: [String] = switch dominant {
+        case .depth:
+            switch pace {
+            case .swift:  ["Quicksilver", "Flash", "Spark"]
+            case .steady: ["Tide", "Anchor", "Root"]
+            case .long:   ["Deep Well", "Slow Burn", "Night Sky"]
+            }
+        case .rise:
+            switch pace {
+            case .swift:  ["Dart", "Breeze", "Swift Wing"]
+            case .steady: ["Bloom", "New Leaf", "Meadow"]
+            case .long:   ["Long Dawn", "Unfolding", "Slow Bloom"]
+            }
+        case .peak:
+            switch pace {
+            case .swift:  ["Flare", "Bright Flash", "Spark"]
+            case .steady: ["Sunlit", "Crest", "High Noon"]
+            case .long:   ["Long Glow", "Golden Hour", "Horizon"]
+            }
+        case .settle:
+            switch pace {
+            case .swift:  ["Dusk", "Hush", "Whisper"]
+            case .steady: ["Amber", "Hearth", "Lantern"]
+            case .long:   ["Wander", "Drift", "Moonpath"]
+            }
+        }
+
+        // Use bleed weight to shift the index for extra variety
+        let bleedOffset = switch bleed {
+        case .light: 0
+        case .normal: 1
+        case .heavy: 2
+        }
+        return pool[(seed + bleedOffset) % pool.count]
+    }
+
+    /// Deterministic seed from cycle data — stable across refreshes
+    private static func cycleSeed(_ summary: JourneyCycleSummary) -> Int {
+        let datePart = Int(summary.startDate.timeIntervalSince1970 / 86400)
+        return abs(datePart &+ summary.cycleLength &* 7 &+ summary.bleedingDays &* 13)
     }
 }

@@ -38,6 +38,9 @@ public enum DesignColors {
     public static let glassPeach = Color(hex: 0xEBCFC3)  // Soft Blush
     public static let glassInnerGlow = Color(hex: 0xFDFCF7)  // Ivory Whisper
 
+    // MARK: - Journey / Recap
+    public static let warmBrown = Color(red: 0.40, green: 0.33, blue: 0.28)
+
     // MARK: - Legacy/Compatibility (mapped to palette)
     public static let link = Color(hex: 0x7A5F50)  // Deep Cocoa
     public static let accentLight = Color(hex: 0xD6A59A)  // Dusty Rose

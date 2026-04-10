@@ -35,10 +35,15 @@ public final class MenstrualProfileRecord {
     public var onboardingCycleLength: Int = 28
 
     /// Luteal phase length for ovulation estimation (default 14).
-    @Attribute(.allowsCloudEncryption)
+    /// Note: CloudKit schema has this as non-encrypted (NUMBER_INT64).
+    /// Do NOT add .allowsCloudEncryption without resetting CloudKit Development environment.
     public var phaseLutealLength: Int = 14
 
     public var onboardingCompletedAt: Date?
+
+    /// Date of the first period confirmed in-app. Journey shows cycles from this date forward.
+    public var journeyStartDate: Date?
+
     public var createdAt: Date = Date.now
     public var updatedAt: Date = Date.now
 
@@ -96,7 +101,7 @@ public final class CycleRecord {
     public var isConfirmed: Bool = false
 
     /// Actual cycle length in days (calculated when next cycle starts).
-    @Attribute(.allowsCloudEncryption)
+    /// CloudKit schema: INT(64) non-encrypted
     public var actualCycleLength: Int?
 
     /// If this was predicted, the expected start date for accuracy tracking.

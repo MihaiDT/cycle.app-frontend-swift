@@ -50,7 +50,6 @@ public struct CalendarView: View {
             VStack(spacing: 0) {
                 FeedTopBar(store: store, viewMode: $viewMode)
 
-                GeometryReader { _ in
                     ZStack {
                         // Month view
                         VStack(spacing: 0) {
@@ -58,61 +57,40 @@ public struct CalendarView: View {
                                 .padding(.horizontal, 16)
                                 .padding(.vertical, 6)
 
-                            Rectangle()
-                                .fill(Color.white.opacity(0.05))
-                                .frame(height: 0.5)
-                                .padding(.horizontal, 20)
-
-                            ScrollViewReader { proxy in
-                                ScrollView(.vertical, showsIndicators: false) {
-                                    LazyVStack(spacing: 0, pinnedViews: [.sectionHeaders]) {
-                                        ForEach(Self.months, id: \.self) { month in
-                                            Section {
-                                                MonthGridView(
-                                                    month: month,
-                                                    cycleStartDate: store.cycleStartDate,
-                                                    cycleLength: store.cycleLength,
-                                                    bleedingDays: store.bleedingDays,
-                                                    loggedDays: store.loggedDays,
-                                                    periodDays: store.periodDays,
-                                                    predictedPeriodDays: store.predictedPeriodDays,
-                                                    periodFlowIntensity: store.periodFlowIntensity,
-                                                    fertileDays: store.fertileDays,
-                                                    ovulationDays: store.ovulationDays,
-                                                    selectedDate: store.selectedDate,
-                                                    isLate: store.menstrualStatus?.nextPrediction?.isLate == true,
-                                                    predictedDate: store.menstrualStatus?.nextPrediction?.predictedDate,
-                                                    isEditingPeriod: store.isEditingPeriod,
-                                                    editPeriodDays: store.editPeriodDays,
-                                                    onDaySelected: { date in
-                                                        store.send(.daySelected(date), animation: .spring(response: 0.3, dampingFraction: 0.8))
-                                                    },
-                                                    onEditDayTapped: { date in
-                                                        store.send(.editPeriodDayTapped(date), animation: .spring(response: 0.3, dampingFraction: 0.7))
-                                                    }
-                                                )
-                                                .equatable()
-                                                .padding(.horizontal, 16)
-                                                .padding(.bottom, 20)
-                                                .id(monthId(month))
-                                            } header: {
-                                                MonthSectionHeader(date: month)
-                                            }
+                            ScrollView(.vertical, showsIndicators: false) {
+                                VStack(spacing: 0) {
+                                    ForEach(Self.months, id: \.self) { month in
+                                        VStack(spacing: 0) {
+                                            MonthSectionHeader(date: month)
+                                            MonthGridView(
+                                                month: month,
+                                                cycleStartDate: store.cycleStartDate,
+                                                cycleLength: store.cycleLength,
+                                                bleedingDays: store.bleedingDays,
+                                                loggedDays: store.loggedDays,
+                                                periodDays: store.periodDays,
+                                                predictedPeriodDays: store.predictedPeriodDays,
+                                                periodFlowIntensity: store.periodFlowIntensity,
+                                                fertileDays: store.fertileDays,
+                                                ovulationDays: store.ovulationDays,
+                                                selectedDate: store.selectedDate,
+                                                isLate: store.menstrualStatus?.nextPrediction?.isLate == true,
+                                                predictedDate: store.menstrualStatus?.nextPrediction?.predictedDate,
+                                                isEditingPeriod: store.isEditingPeriod,
+                                                editPeriodDays: store.editPeriodDays,
+                                                onDaySelected: { date in
+                                                    store.send(.daySelected(date), animation: .spring(response: 0.3, dampingFraction: 0.8))
+                                                },
+                                                onEditDayTapped: { date in
+                                                    store.send(.editPeriodDayTapped(date), animation: .spring(response: 0.3, dampingFraction: 0.7))
+                                                }
+                                            )
+                                            .padding(.horizontal, 16)
+                                            .padding(.bottom, 20)
                                         }
                                     }
-                                    .padding(.bottom, 120)
                                 }
-                                .onAppear {
-                                    let target = monthId(store.displayedMonth)
-                                    DispatchQueue.main.async {
-                                        proxy.scrollTo(target, anchor: .top)
-                                    }
-                                }
-                                .onChange(of: scrollTarget) { _, target in
-                                    guard let target else { return }
-                                    proxy.scrollTo(target, anchor: .center)
-                                    scrollTarget = nil
-                                }
+                                .padding(.bottom, 120)
                             }
                         }
                         .background(DesignColors.background)
@@ -144,7 +122,6 @@ public struct CalendarView: View {
                             .onAppear { yearViewCreated = true }
                         }
                     }
-                }
             }
 
             // Prediction banner
@@ -535,26 +512,35 @@ struct FeedTopBar: View {
 struct MonthSectionHeader: View {
     let date: Date
 
-    private static let formatter: DateFormatter = {
+    private static let monthOnly: DateFormatter = {
+        let fmt = DateFormatter()
+        fmt.dateFormat = "MMMM"
+        return fmt
+    }()
+
+    private static let monthYear: DateFormatter = {
         let fmt = DateFormatter()
         fmt.dateFormat = "MMMM yyyy"
         return fmt
     }()
 
-    private var monthYearString: String {
-        Self.formatter.string(from: date)
+    private var isCurrentYear: Bool {
+        Calendar.current.component(.year, from: date) == Calendar.current.component(.year, from: Date())
     }
 
     var body: some View {
-        HStack {
-            Text(monthYearString)
+        VStack(spacing: 0) {
+            Rectangle()
+                .fill(DesignColors.divider)
+                .frame(height: 0.5)
+                .padding(.horizontal, 16)
+
+            Text(isCurrentYear ? Self.monthOnly.string(from: date) : Self.monthYear.string(from: date))
                 .font(.custom("Raleway-Bold", size: 16))
                 .foregroundStyle(DesignColors.text)
-            Spacer()
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 12)
         }
-        .padding(.horizontal, 20)
-        .padding(.vertical, 10)
-        .background(DesignColors.background)
     }
 }
 

@@ -154,7 +154,6 @@ struct MonthGridView: View, Equatable {
                 .buttonStyle(.plain)
             }
         }
-        .drawingGroup()
     }
 
     private func mondayStartOfGrid(for month: Date) -> Date {
@@ -223,7 +222,6 @@ struct CalendarDayCell: View {
                         size: 16
                     ))
                     .foregroundStyle(textColor)
-                    .contentTransition(.numericText())
             }
             .frame(width: 46, height: 46)
 
@@ -247,7 +245,7 @@ struct CalendarDayCell: View {
             }
         }
         .frame(maxWidth: .infinity)
-        .opacity(info.isCurrentMonth ? 1 : 0.18)
+        .opacity(info.isCurrentMonth ? 1 : 0)
     }
 
 
@@ -326,7 +324,6 @@ struct CalendarDayCell: View {
                 Text("\(info.dayNumber)")
                     .font(.custom(info.isSelected || info.isToday ? "Raleway-Bold" : "Raleway-SemiBold", size: 16))
                     .foregroundStyle(textColor)
-                    .contentTransition(.numericText())
             }
             .frame(width: 46, height: 46)
 
@@ -349,7 +346,7 @@ struct CalendarDayCell: View {
             }
         }
         .frame(maxWidth: .infinity)
-        .opacity(info.isCurrentMonth ? 1 : 0.18)
+        .opacity(info.isCurrentMonth ? 1 : 0)
     }
 
     private var fillColor: Color {

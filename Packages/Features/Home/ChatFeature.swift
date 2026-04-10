@@ -657,6 +657,7 @@ public struct ChatView: View {
 
 private struct TypingIndicatorView: View {
     @State private var phase: Int = 0
+    @State private var bounceTimer: Timer?
 
     var body: some View {
         HStack {
@@ -680,14 +681,16 @@ private struct TypingIndicatorView: View {
             }
             Spacer()
         }
-        .onAppear { startBounce() }
-    }
-
-    private func startBounce() {
-        Timer.scheduledTimer(withTimeInterval: 0.15, repeats: true) { timer in
-            withAnimation(.easeInOut(duration: 0.3)) {
-                phase = (phase + 1) % 4  // 0,1,2 bounce, 3 = all down
+        .onAppear {
+            bounceTimer = Timer.scheduledTimer(withTimeInterval: 0.15, repeats: true) { _ in
+                withAnimation(.easeInOut(duration: 0.3)) {
+                    phase = (phase + 1) % 4
+                }
             }
+        }
+        .onDisappear {
+            bounceTimer?.invalidate()
+            bounceTimer = nil
         }
     }
 }

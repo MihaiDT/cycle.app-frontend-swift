@@ -40,11 +40,25 @@ extension MenstrualLocalClient {
             let container = CycleDataStore.shared
             let context = ModelContext(container)
 
-            // Fetch all cycles
+            // Get journey start date from menstrual profile
+            let menstrualProfileDescriptor = FetchDescriptor<MenstrualProfileRecord>()
+            let menstrualProfile = try context.fetch(menstrualProfileDescriptor).first
+            let journeyStart = menstrualProfile?.journeyStartDate
+
+            // Fetch cycles from journeyStartDate forward
             let cycleDescriptor = FetchDescriptor<CycleRecord>(
                 sortBy: [SortDescriptor(\.startDate, order: .reverse)]
             )
-            let cycles = try context.fetch(cycleDescriptor)
+            let allCycles = try context.fetch(cycleDescriptor)
+
+            let cycles: [CycleRecord]
+            if let journeyStart {
+                let startOfJourney = Calendar.current.startOfDay(for: journeyStart)
+                cycles = allCycles.filter { $0.startDate >= startOfJourney }
+            } else {
+                // No journeyStartDate yet — show nothing (user hasn't confirmed first period)
+                cycles = []
+            }
 
             // Fetch unconfirmed predictions for future cycles
             let predDescriptor = FetchDescriptor<PredictionRecord>(
@@ -59,7 +73,7 @@ extension MenstrualLocalClient {
             )
             let reports = try context.fetch(reportDescriptor)
 
-            // Fetch profile
+            // Fetch menstrual profile
             let profileDescriptor = FetchDescriptor<MenstrualProfileRecord>()
             let profile = try context.fetch(profileDescriptor).first
 
