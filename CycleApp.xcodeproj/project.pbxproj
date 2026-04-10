@@ -24,6 +24,7 @@
 		2792D4F69FFD2F4D6ECA8EBE /* SeparatedIcon.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51194E26B3A815CB07BF5B59 /* SeparatedIcon.swift */; };
 		28CB5F282CFC523F42F68FA7 /* String+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF7B0C6DF47843E7CD58CEDB /* String+Extensions.swift */; };
 		29BFDA19B6329572F624B629 /* HealthKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5EC4B5B5DEB0E25A730E4507 /* HealthKit.framework */; };
+		2AC8CDE5872CFC912A3F7B00 /* CycleRecapRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BCA28BDD1FB0A4D497A5CAA /* CycleRecapRecord.swift */; };
 		2EBDD7F0BE4053F0A291E917 /* Raleway-Thin.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 79A0533D66600EF003BDFC79 /* Raleway-Thin.ttf */; };
 		2F5D4959EB6E812DC69B2801 /* HealthRecords.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC414B9F62AE355B653A88EB /* HealthRecords.swift */; };
 		2F9139B5B4BC95E76905B0AB /* AuthenticationFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = B28B51D5CCB675E5D110CAA7 /* AuthenticationFeature.swift */; };
@@ -76,6 +77,8 @@
 		7DEEFEE25F2E4577DD65220C /* GlassSelectionCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8E62ACB6092862D952F78FB /* GlassSelectionCard.swift */; };
 		814DE68D6BDA1378A8D0E58C /* GlassDateButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6C462B9D1B01812BDB61714 /* GlassDateButton.swift */; };
 		826BEB12143C0751CD9B015F /* ShieldCheckIcon.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA6B79551465ACB3BDCA4C84 /* ShieldCheckIcon.swift */; };
+		85F006AB2A855EE48ABFF504 /* JourneyCycleCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 856108BA4F305DD08416A0B8 /* JourneyCycleCard.swift */; };
+		8786333510EA0A03E8AB0801 /* JourneyHomeViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 638B1046E9803CBA8CF06B74 /* JourneyHomeViews.swift */; };
 		87ED257C99FAA875969FEBE5 /* KeychainClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 226DF4A873C9600CC4F0B40D /* KeychainClient.swift */; };
 		884846A0471306F8D8063293 /* CalendarDayDetail.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67C8B598D2EF4F1218DF3C1C /* CalendarDayDetail.swift */; };
 		8886C73FA1452FEEA91322D0 /* PlacesClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C380CB9877F9EFBE8833FE6 /* PlacesClient.swift */; };
@@ -86,9 +89,11 @@
 		93171D057A5C6A89B853B4F3 /* MoodArcFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = F20A3CE89B891747B164731C /* MoodArcFeature.swift */; };
 		986DC0F5842157CD9402EE82 /* Raleway-Light.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 8706093A21A56ECBA0441334 /* Raleway-Light.ttf */; };
 		98B01DAE93DEFD8A8771464C /* CycleJourneyFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84F05DBD3274CDC65812AA44 /* CycleJourneyFeature.swift */; };
+		98C48FC656F4CA682EAE0D1D /* AriaRecapStories.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8401A3E28A02E96486B3F394 /* AriaRecapStories.swift */; };
 		997031E520EBD700B61BCB14 /* Raleway-SemiBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = BA263FB218AF9228CF648E42 /* Raleway-SemiBold.ttf */; };
 		999CF4AFDCC8015DFDBB5439 /* CardStackFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA3DA29117E0B7B54191D57F /* CardStackFeature.swift */; };
 		9ADDE8EC93ED1B7A5DAFE612 /* NotificationPermissionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4D7237BEF2EC278AF39D03A /* NotificationPermissionView.swift */; };
+		9F8EF9F3B2288A086FAAEAA0 /* CycleRecapGeneration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50B6BC3D74C411A1FECF5405 /* CycleRecapGeneration.swift */; };
 		9FD0403E0B238EFA24698733 /* SplineRuntime in Frameworks */ = {isa = PBXBuildFile; productRef = F2FDA67AF0C0C40263975CB9 /* SplineRuntime */; };
 		A149833A49EC9A7B165FE036 /* LiquidGlassModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 21F7C0B5678F3BB91C0D896A /* LiquidGlassModifier.swift */; };
 		A22AE1F3C3632E9BF6143065 /* Date+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 823B14CA893AB18E490B49AD /* Date+Extensions.swift */; };
@@ -120,6 +125,7 @@
 		BD55D53EC9B634FB69DB8CDC /* Raleway-MediumItalic.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 5A599EEAB5931BAEBC4207E9 /* Raleway-MediumItalic.ttf */; };
 		BE5E6946B760793F39895910 /* UserProfileRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = B95AF5455648FC76034154C6 /* UserProfileRecord.swift */; };
 		BF2C740D0AB78C44011546CE /* ConsentCheckbox.swift in Sources */ = {isa = PBXBuildFile; fileRef = F7090C01E475E70BB3540924 /* ConsentCheckbox.swift */; };
+		BF602821C3DD5329C2021A75 /* JourneyComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10C561340E6F4415F02AF26F /* JourneyComponents.swift */; };
 		C0FAC6A47DB3BC8E9DCC2656 /* GoogleSignIn in Frameworks */ = {isa = PBXBuildFile; productRef = 77A11505535D2C5D6A7CA105 /* GoogleSignIn */; };
 		C108129BF646802352F8B8E6 /* Logger.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01D3B37256BD926AA7EFCBC2 /* Logger.swift */; };
 		C14A64317E611C4790213551 /* CycleRingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 047CCAFD0E4BADAC49BE42AB /* CycleRingView.swift */; };
@@ -137,6 +143,7 @@
 		D429B0E602D541E0E38E2104 /* MenstrualStatus.swift in Sources */ = {isa = PBXBuildFile; fileRef = A92A0FCA4E1CB208FC65AEBE /* MenstrualStatus.swift */; };
 		D655B06B75EB302BFD5EA737 /* Raleway-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = A1FF005FF3F61A0F82E81BE7 /* Raleway-Regular.ttf */; };
 		D71D75DEBACB062CF613B78F /* LocalNotificationClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C77124333395856EB581A13 /* LocalNotificationClient.swift */; };
+		D9B565B6DFEE5ED8FFDBCBE4 /* PatternInsightsSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3DDC9D70B5525DF08A314BD7 /* PatternInsightsSheet.swift */; };
 		DAD240C787A5A06F8F34924B /* OnboardingBackground.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A382D97B1E46FCB1896FA78 /* OnboardingBackground.swift */; };
 		DBA7ED5F00F27DDC82A5770B /* AuthChoiceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0EB841E9BFF1D5FBABBEB2D7 /* AuthChoiceView.swift */; };
 		E2A1A612947B17DB7100B618 /* LifestyleRhythmView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC21FE2951F51FFA372CB45A /* LifestyleRhythmView.swift */; };
@@ -184,6 +191,7 @@
 		0EB841E9BFF1D5FBABBEB2D7 /* AuthChoiceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthChoiceView.swift; sourceTree = "<group>"; };
 		0F9FDEC082E3A2268BC94D7E /* CycleAppTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = CycleAppTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		107471505AD1ADFF34997E8D /* UserDefaultsClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserDefaultsClient.swift; sourceTree = "<group>"; };
+		10C561340E6F4415F02AF26F /* JourneyComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JourneyComponents.swift; sourceTree = "<group>"; };
 		14C000015325FD70E13B1A80 /* FirebaseAuthClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirebaseAuthClient.swift; sourceTree = "<group>"; };
 		15E5BBC3280206FB17B4DB65 /* AppFeatureTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppFeatureTests.swift; sourceTree = "<group>"; };
 		1E11CC02F06A23385C8E3602 /* CalendarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarView.swift; sourceTree = "<group>"; };
@@ -199,16 +207,19 @@
 		34A6F94AAF7182E46C4F885F /* Raleway-SemiBoldItalic.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Raleway-SemiBoldItalic.ttf"; sourceTree = "<group>"; };
 		3C380CB9877F9EFBE8833FE6 /* PlacesClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlacesClient.swift; sourceTree = "<group>"; };
 		3D613DF8875F1A90F07C4F34 /* CycleApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CycleApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		3DDC9D70B5525DF08A314BD7 /* PatternInsightsSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PatternInsightsSheet.swift; sourceTree = "<group>"; };
 		3FC0F0AFF2877CD41AB19497 /* SessionClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionClient.swift; sourceTree = "<group>"; };
 		42B1B55C9A99AA93CDC456BD /* HBICalculator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HBICalculator.swift; sourceTree = "<group>"; };
 		4322D31D6B828275DD65FC35 /* CycleCalendarViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CycleCalendarViews.swift; sourceTree = "<group>"; };
 		4674CEEA6B50FCAB809318E6 /* SplineIntroView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplineIntroView.swift; sourceTree = "<group>"; };
 		4826ABD18C16E30DACC2F4B6 /* BirthDataView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BirthDataView.swift; sourceTree = "<group>"; };
 		486C7ABFDDA5A44ACFAC587B /* Session.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Session.swift; sourceTree = "<group>"; };
+		4BCA28BDD1FB0A4D497A5CAA /* CycleRecapRecord.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CycleRecapRecord.swift; sourceTree = "<group>"; };
 		4BCD05B0769F861D03E644E9 /* Layout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Layout.swift; sourceTree = "<group>"; };
 		4C77124333395856EB581A13 /* LocalNotificationClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalNotificationClient.swift; sourceTree = "<group>"; };
 		4DAC1FA0A5CD5600CE6E4376 /* Raleway-Black.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Raleway-Black.ttf"; sourceTree = "<group>"; };
 		4F9C55BFC287E7193D934779 /* HomeFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeFeature.swift; sourceTree = "<group>"; };
+		50B6BC3D74C411A1FECF5405 /* CycleRecapGeneration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CycleRecapGeneration.swift; sourceTree = "<group>"; };
 		51194E26B3A815CB07BF5B59 /* SeparatedIcon.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SeparatedIcon.swift; sourceTree = "<group>"; };
 		5758D419558EBCD03AB48E87 /* NameInputView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NameInputView.swift; sourceTree = "<group>"; };
 		5886220E666CF879F28AA495 /* CalendarSymptomSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarSymptomSheet.swift; sourceTree = "<group>"; };
@@ -220,6 +231,7 @@
 		60DA695074FF83065EB0E7D5 /* AriaContextProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AriaContextProvider.swift; sourceTree = "<group>"; };
 		6245417E8CDA74DC974841F8 /* Raleway-ExtraLight.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Raleway-ExtraLight.ttf"; sourceTree = "<group>"; };
 		62B0DA77B1439E49BB0E406F /* MenstrualRecords.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenstrualRecords.swift; sourceTree = "<group>"; };
+		638B1046E9803CBA8CF06B74 /* JourneyHomeViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JourneyHomeViews.swift; sourceTree = "<group>"; };
 		6425D254C1E1D5DCE2F328D6 /* CycleSelectionSheets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CycleSelectionSheets.swift; sourceTree = "<group>"; };
 		6512D0891C474022446C2D98 /* ValidationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ValidationTests.swift; sourceTree = "<group>"; };
 		67C8B598D2EF4F1218DF3C1C /* CalendarDayDetail.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarDayDetail.swift; sourceTree = "<group>"; };
@@ -235,8 +247,10 @@
 		81871A937E68353940DAD1C1 /* CycleHeroView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CycleHeroView.swift; sourceTree = "<group>"; };
 		8192A637D07F3E16EAD1DB59 /* MiniCycleCalendar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MiniCycleCalendar.swift; sourceTree = "<group>"; };
 		823B14CA893AB18E490B49AD /* Date+Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Date+Extensions.swift"; sourceTree = "<group>"; };
+		8401A3E28A02E96486B3F394 /* AriaRecapStories.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AriaRecapStories.swift; sourceTree = "<group>"; };
 		847BC930202DF1E22429093B /* MenstrualPredictor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenstrualPredictor.swift; sourceTree = "<group>"; };
 		84F05DBD3274CDC65812AA44 /* CycleJourneyFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CycleJourneyFeature.swift; sourceTree = "<group>"; };
+		856108BA4F305DD08416A0B8 /* JourneyCycleCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JourneyCycleCard.swift; sourceTree = "<group>"; };
 		8706093A21A56ECBA0441334 /* Raleway-Light.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Raleway-Light.ttf"; sourceTree = "<group>"; };
 		88BF907DFB59809FEF766AE8 /* OnboardingHeader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingHeader.swift; sourceTree = "<group>"; };
 		897DB2589F5482F282AC30FD /* Raleway-ExtraBold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Raleway-ExtraBold.ttf"; sourceTree = "<group>"; };
@@ -496,6 +510,7 @@
 				60DA695074FF83065EB0E7D5 /* AriaContextProvider.swift */,
 				C2DF004A482E18829FD5B58F /* ChatMessageRecord.swift */,
 				252B1935BE43B154DA84074D /* CycleDataStore.swift */,
+				4BCA28BDD1FB0A4D497A5CAA /* CycleRecapRecord.swift */,
 				D34DB3E24C0D055A3148660F /* DailyCardRecord.swift */,
 				D9BEB4E6B19D12267D302E1E /* HBILocalClient.swift */,
 				FC414B9F62AE355B653A88EB /* HealthRecords.swift */,
@@ -600,6 +615,7 @@
 		D12F12B53142B04A149A7790 /* Home */ = {
 			isa = PBXGroup;
 			children = (
+				8401A3E28A02E96486B3F394 /* AriaRecapStories.swift */,
 				E234B15081BB567827B75E0E /* CalendarAriaInsight.swift */,
 				67C8B598D2EF4F1218DF3C1C /* CalendarDayDetail.swift */,
 				2F6B49711D3438DDFA91BAC5 /* CalendarFeature.swift */,
@@ -611,10 +627,15 @@
 				0E943F4688D7290A2D03A26C /* ChatFeature.swift */,
 				FA3B9C4C5B8CCFEC092F2EEE /* CycleInsightsFeature.swift */,
 				84F05DBD3274CDC65812AA44 /* CycleJourneyFeature.swift */,
+				50B6BC3D74C411A1FECF5405 /* CycleRecapGeneration.swift */,
 				AA1D8BDCDF2263B793576D8E /* DailyCheckInFeature.swift */,
 				811FF511C8D318DF36018D2F /* EditPeriodFeature.swift */,
 				4F9C55BFC287E7193D934779 /* HomeFeature.swift */,
+				10C561340E6F4415F02AF26F /* JourneyComponents.swift */,
+				856108BA4F305DD08416A0B8 /* JourneyCycleCard.swift */,
+				638B1046E9803CBA8CF06B74 /* JourneyHomeViews.swift */,
 				F20A3CE89B891747B164731C /* MoodArcFeature.swift */,
+				3DDC9D70B5525DF08A314BD7 /* PatternInsightsSheet.swift */,
 				F8AAA5EAA0B0713C6D0F9CAC /* ProfileFeature.swift */,
 				2C384BB38218230424E77203 /* TodayFeature.swift */,
 			);
@@ -805,6 +826,7 @@
 				B50E9BE7BC63C1E30C1E0ED8 /* AnonymousIDClient.swift in Sources */,
 				B98CDCDE2F0F8E0ED67FAC40 /* AppFeature.swift in Sources */,
 				427C36FC105AA05465F182FC /* AriaContextProvider.swift in Sources */,
+				98C48FC656F4CA682EAE0D1D /* AriaRecapStories.swift in Sources */,
 				FE0B55CA6AD817CF227B166A /* Async+Extensions.swift in Sources */,
 				DBA7ED5F00F27DDC82A5770B /* AuthChoiceView.swift in Sources */,
 				2F9139B5B4BC95E76905B0AB /* AuthenticationFeature.swift in Sources */,
@@ -835,6 +857,8 @@
 				1851604735C0ED67DC1B51F8 /* CycleMath.swift in Sources */,
 				EC48873774AE0069D16F2105 /* CycleModels.swift in Sources */,
 				E6BF09B7234590FB170F524C /* CyclePhaseBanner.swift in Sources */,
+				9F8EF9F3B2288A086FAAEAA0 /* CycleRecapGeneration.swift in Sources */,
+				2AC8CDE5872CFC912A3F7B00 /* CycleRecapRecord.swift in Sources */,
 				C14A64317E611C4790213551 /* CycleRingView.swift in Sources */,
 				B88E58916279AE19E01D97C0 /* CycleSelectionSheets.swift in Sources */,
 				4AC9FED42E81A3B2D054901F /* DailyCard.swift in Sources */,
@@ -865,6 +889,9 @@
 				2F5D4959EB6E812DC69B2801 /* HealthRecords.swift in Sources */,
 				103674BDFBF3E3412696BF5A /* HomeFeature.swift in Sources */,
 				CE9E648A7DA44A10262A06B3 /* InsightCard.swift in Sources */,
+				BF602821C3DD5329C2021A75 /* JourneyComponents.swift in Sources */,
+				85F006AB2A855EE48ABFF504 /* JourneyCycleCard.swift in Sources */,
+				8786333510EA0A03E8AB0801 /* JourneyHomeViews.swift in Sources */,
 				87ED257C99FAA875969FEBE5 /* KeychainClient.swift in Sources */,
 				3DD5F64D427F4ED1639CE319 /* Layout.swift in Sources */,
 				E2A1A612947B17DB7100B618 /* LifestyleRhythmView.swift in Sources */,
@@ -887,6 +914,7 @@
 				C31DA902B29C34AA3067ED18 /* OnboardingProgressBar.swift in Sources */,
 				8E65A945BC5E33B5394380E5 /* OnboardingRecapView.swift in Sources */,
 				B8E2E6278B7F953E10E6EDE5 /* OnboardingView.swift in Sources */,
+				D9B565B6DFEE5ED8FFDBCBE4 /* PatternInsightsSheet.swift in Sources */,
 				673B63847738190AA00F83B6 /* PersonalGoalsView.swift in Sources */,
 				B0EE90F774BC99BB010198D3 /* PlacesAutocompleteTextField.swift in Sources */,
 				8886C73FA1452FEEA91322D0 /* PlacesClient.swift in Sources */,

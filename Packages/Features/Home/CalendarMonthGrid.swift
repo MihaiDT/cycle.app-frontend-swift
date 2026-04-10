@@ -106,10 +106,10 @@ struct MonthGridView: View, Equatable {
             let cycleDay = info?.cycleDay
             let phase: CyclePhase? =
                 isServerPeriod ? .menstrual : (info.map { $0.phase == .menstrual ? .follicular : $0.phase })
-            // When late, ALL fertile/ovulation predictions are unreliable — suppress entirely
-            let serverFertilityLevel = (isLate || isInLateWindow) ? nil : fertileDays[key]
+            // Suppress fertile/ovulation only within the late window, not globally
+            let serverFertilityLevel = isInLateWindow ? nil : fertileDays[key]
             let isFertile = serverFertilityLevel != nil
-            let isOvulation = !(isLate || isInLateWindow) && ovulationDays.contains(key)
+            let isOvulation = !isInLateWindow && ovulationDays.contains(key)
 
             return CalendarDayInfo(
                 date: date,
@@ -260,22 +260,22 @@ struct CalendarDayCell: View {
                 Circle()
                     .fill(fillColor)
 
-                // Ovulation day: solid golden ring
+                // Ovulation day: solid amber ring
                 if info.isOvulationDay && !info.isPeriodDay && info.isCurrentMonth && !info.isSelected {
                     Circle()
                         .strokeBorder(
-                            CyclePhase.ovulatory.orbitColor.opacity(0.6),
+                            CyclePhase.ovulatory.orbitColor.opacity(0.7),
                             lineWidth: 1.5
                         )
                 }
 
-                // Other fertile days: dashed golden ring
+                // Other fertile days: dashed amber ring
                 if info.isFertile && !info.isOvulationDay && !info.isPeriodDay && info.isCurrentMonth && !info.isSelected {
                     Circle()
                         .strokeBorder(
-                            style: StrokeStyle(lineWidth: 0.75, dash: [3, 3])
+                            style: StrokeStyle(lineWidth: 1, dash: [3, 3])
                         )
-                        .foregroundStyle(CyclePhase.ovulatory.orbitColor.opacity(0.4))
+                        .foregroundStyle(CyclePhase.ovulatory.orbitColor.opacity(0.5))
                 }
 
                 // Future confirmed period: dashed border (not yet passed)
@@ -341,6 +341,11 @@ struct CalendarDayCell: View {
                     .font(.custom("Raleway-Bold", size: 8))
                     .foregroundStyle(CyclePhase.ovulatory.orbitColor)
                     .frame(height: 10)
+            } else if info.hasLog && info.isCurrentMonth {
+                Circle()
+                    .fill(DesignColors.accentWarm)
+                    .frame(width: 4, height: 4)
+                    .frame(height: 10)
             }
         }
         .frame(maxWidth: .infinity)
@@ -363,10 +368,10 @@ struct CalendarDayCell: View {
             return CyclePhase.menstrual.orbitColor.opacity(info.isSelected ? 0.35 : 0.18)
         }
         if info.isOvulationDay && !info.isPeriodDay {
-            return CyclePhase.ovulatory.orbitColor.opacity(info.isSelected ? 0.45 : 0.3)
+            return CyclePhase.ovulatory.orbitColor.opacity(info.isSelected ? 0.6 : 0.45)
         }
         if info.isFertile && !info.isPeriodDay {
-            return CyclePhase.ovulatory.orbitColor.opacity(info.isSelected ? 0.35 : 0.18)
+            return CyclePhase.ovulatory.orbitColor.opacity(info.isSelected ? 0.5 : 0.35)
         }
         return .clear
     }

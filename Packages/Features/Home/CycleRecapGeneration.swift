@@ -290,7 +290,6 @@ enum CycleRecapGenerator {
     static func generateMissing() async {
         do {
             let data = try await MenstrualLocalClient.liveJourneyData()()
-            print("[RecapGen] loaded \(data.records.count) records, current=\(String(describing: data.currentCycleStartDate))")
             let summaries = CycleJourneyEngine.buildSummaries(
                 inputs: data.records,
                 reports: data.reports,
@@ -298,28 +297,18 @@ enum CycleRecapGenerator {
                 profileAvgBleedingDays: data.profileAvgBleedingDays,
                 currentCycleStartDate: data.currentCycleStartDate
             )
-            print("[RecapGen] summaries=\(summaries.count), past=\(summaries.filter { !$0.isCurrentCycle }.count)")
             await preGenerateAll(summaries: summaries)
-        } catch {
-            print("[RecapGen] error: \(error)")
-        }
+        } catch { }
     }
 
     static func preGenerateAll(summaries: [JourneyCycleSummary]) async {
         for summary in summaries {
-            guard !summary.isCurrentCycle else {
-                print("[RecapGen] skip current \(summary.startDate)")
-                continue
-            }
+            guard !summary.isCurrentCycle else { continue }
             if CycleJourneyFeature.loadCachedRecap(cycleStart: summary.startDate) != nil {
                 continue
             }
-            print("[RecapGen] fetching AI for \(summary.startDate)...")
             if let recap = await CycleJourneyFeature.fetchRecapAI(summary: summary, allSummaries: summaries) {
                 CycleJourneyFeature.cacheRecap(recap, cycleStart: summary.startDate)
-                print("[RecapGen] saved \(summary.startDate)")
-            } else {
-                print("[RecapGen] AI failed for \(summary.startDate)")
             }
         }
     }

@@ -166,12 +166,14 @@ public struct CalendarView: View {
             VStack {
                 Spacer()
 
-                if store.isEditingPeriod && !store.isUpdatingPredictions && !store.predictionsDone {
-                    editPeriodBottomBar
-                        .transition(.move(edge: .bottom).combined(with: .opacity))
-                } else if !store.isEditingPeriod {
-                    normalBottomBar
-                        .transition(.move(edge: .bottom).combined(with: .opacity))
+                if viewMode == .month {
+                    if store.isEditingPeriod && !store.isUpdatingPredictions && !store.predictionsDone {
+                        editPeriodBottomBar
+                            .transition(.move(edge: .bottom).combined(with: .opacity))
+                    } else if !store.isEditingPeriod {
+                        normalBottomBar
+                            .transition(.move(edge: .bottom).combined(with: .opacity))
+                    }
                 }
             }
             .animation(.spring(response: 0.35, dampingFraction: 0.85), value: store.isEditingPeriod)
@@ -199,18 +201,20 @@ public struct CalendarView: View {
                 .presentationBackground(DesignColors.background)
                 .presentationBackgroundInteraction(.disabled)
         }
-        .overlay {
-            if store.showAriaPrompt {
-                AriaPromptOverlay(
-                    message: store.ariaPromptMessage,
-                    onTalk: { store.send(.ariaPromptTalkTapped) },
-                    onDismiss: {
-                        store.send(.ariaPromptDismissed, animation: .spring(response: 0.35, dampingFraction: 0.85))
-                    }
-                )
-                .transition(.opacity.combined(with: .scale(scale: 0.9)))
-                .animation(.spring(response: 0.4, dampingFraction: 0.85), value: store.showAriaPrompt)
-            }
+        .sheet(isPresented: Binding(
+            get: { store.showAriaPrompt },
+            set: { if !$0 { store.send(.ariaPromptDismissed) } }
+        )) {
+            AriaRecapSheet(
+                monthName: "",
+                message: store.ariaPromptMessage,
+                buttonTitle: "Talk to Aria",
+                onAction: { store.send(.ariaPromptTalkTapped) }
+            )
+            .presentationDetents([.height(300)])
+            .presentationDragIndicator(.visible)
+            .presentationCornerRadius(AppLayout.cornerRadiusL)
+            .presentationBackground(DesignColors.background)
         }
         .enableInjection()
     }

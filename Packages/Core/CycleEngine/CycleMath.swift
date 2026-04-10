@@ -216,14 +216,20 @@ public enum CycleMath {
             return simpleFertileWindow(cycleStart: cycleStart, cycleLength: 28)
         }
 
-        let fertileStartDay = max(1, shortest - 18)
+        let avgLength = mean(cycleLengths)
+        let ovulationDay = max(10, Int(round(avgLength)) - 14)
+
+        var fertileStartDay = max(1, shortest - 18)
         var fertileEndDay = longest - 11
         if fertileEndDay < fertileStartDay {
             fertileEndDay = fertileStartDay + 6
         }
-
-        let avgLength = mean(cycleLengths)
-        let ovulationDay = max(10, Int(round(avgLength)) - 14)
+        // Cap window to 8 days centered on ovulation to avoid visual clutter
+        let windowSize = fertileEndDay - fertileStartDay + 1
+        if windowSize > 8 {
+            fertileStartDay = max(1, ovulationDay - 5)
+            fertileEndDay = ovulationDay + 2
+        }
 
         let start = addDays(cycleStart, fertileStartDay - 1)
         let peak = addDays(cycleStart, ovulationDay - 1)

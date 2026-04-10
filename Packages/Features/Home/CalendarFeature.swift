@@ -204,7 +204,11 @@ public struct CalendarFeature: Sendable {
                 state.symptomsSaved = false
                 state.symptomSearchText = ""
                 if wasSaved && !state.ariaPromptMessage.isEmpty {
-                    state.showAriaPrompt = true
+                    // Delay to let symptom sheet fully dismiss before presenting Aria sheet
+                    return .run { send in
+                        try? await Task.sleep(nanoseconds: 500_000_000)
+                        await send(.binding(.set(\.showAriaPrompt, true)), animation: .spring(response: 0.4, dampingFraction: 0.85))
+                    }
                 }
                 return .none
 
@@ -289,20 +293,24 @@ public struct CalendarFeature: Sendable {
                 let cal = Calendar.current
                 let key = CalendarFeature.dateKey(date)
                 if state.editPeriodDays.contains(key) {
-                    let today = cal.startOfDay(for: Date())
+                    // Remove the entire consecutive block (backward + forward)
                     state.editPeriodDays.remove(key)
                     state.editFlowIntensity.removeValue(forKey: key)
+                    // Remove consecutive days forward
                     for i in 1...30 {
-                        guard let d = cal.date(byAdding: .day, value: i, to: date),
-                              cal.startOfDay(for: d) >= today
-                        else { continue }
+                        guard let d = cal.date(byAdding: .day, value: i, to: date) else { break }
                         let k = CalendarFeature.dateKey(d)
-                        if state.editPeriodDays.contains(k) {
-                            state.editPeriodDays.remove(k)
-                            state.editFlowIntensity.removeValue(forKey: k)
-                        } else {
-                            break
-                        }
+                        guard state.editPeriodDays.contains(k) else { break }
+                        state.editPeriodDays.remove(k)
+                        state.editFlowIntensity.removeValue(forKey: k)
+                    }
+                    // Remove consecutive days backward
+                    for i in 1...30 {
+                        guard let d = cal.date(byAdding: .day, value: -i, to: date) else { break }
+                        let k = CalendarFeature.dateKey(d)
+                        guard state.editPeriodDays.contains(k) else { break }
+                        state.editPeriodDays.remove(k)
+                        state.editFlowIntensity.removeValue(forKey: k)
                     }
                 } else {
                     let isAdjacent = (-1...1).contains(where: { offset in
@@ -489,7 +497,7 @@ public struct CalendarFeature: Sendable {
                 }
             }
         }
-        print("[Calendar] parseEntries: \(entries.count) entries → periodDays=\(serverPeriodDays.count), predicted=\(serverPredictedDays.count), fertile=\(serverFertileDays.count)")
+
         state.periodDays = serverPeriodDays
         state.predictedPeriodDays = serverPredictedDays
         state.fertileDays = serverFertileDays

@@ -197,7 +197,7 @@ public struct TodayFeature: Sendable {
                         await send(.menstrualStatusLoaded(result))
                     },
                     .run { [menstrualLocal] send in
-                        let start = Calendar.current.date(byAdding: .month, value: -6, to: Date())!
+                        let start = Calendar.current.date(byAdding: .month, value: -24, to: Date())!
                         let end = Calendar.current.date(byAdding: .month, value: 12, to: Date())!
                         let result = await Result {
                             try await menstrualLocal.getCalendar(start, end)
@@ -514,12 +514,10 @@ public struct TodayFeature: Sendable {
                 }
 
             case .recapBannerLoaded(let month):
-                print("[Notif] recapBannerLoaded: month=\(String(describing: month)), cardsLoading=\(state.cardStackState.isLoading), sheetVisible=\(state.isRecapSheetVisible)")
                 state.recapBannerMonth = month
                 // Show sheet only after cards have loaded
                 if month != nil && !state.cardStackState.isLoading {
                     state.isRecapSheetVisible = true
-                    print("[Notif] → showing recap sheet")
                 }
                 return .none
 
@@ -551,14 +549,9 @@ public struct TodayFeature: Sendable {
                     let maxAge: TimeInterval? = accountDate == .distantPast ? nil : Date.now.timeIntervalSince(accountDate)
                     for summary in summaries where !summary.isCurrentCycle {
                         let hasCached = CycleJourneyFeature.loadCachedRecap(cycleStart: summary.startDate, maxAge: maxAge) != nil
-                        print("[Notif] past cycle: start=\(summary.startDate), cached=\(hasCached)")
                         if !hasCached {
-                            print("[Notif] generating AI recap for \(summary.startDate)...")
                             if let recap = await CycleJourneyFeature.fetchRecapAI(summary: summary, allSummaries: summaries) {
                                 CycleJourneyFeature.cacheRecap(recap, cycleStart: summary.startDate)
-                                print("[Notif] recap cached for \(summary.startDate)")
-                            } else {
-                                print("[Notif] AI recap FAILED for \(summary.startDate)")
                             }
                         }
                     }
@@ -1065,9 +1058,9 @@ private struct ShimmerModifier: ViewModifier {
                 .allowsHitTesting(false)
             }
             .onAppear {
-                withAnimation(.linear(duration: 1.8).repeatForever(autoreverses: false)) {
-                    phase = 1.15
-                }
+                // withAnimation(.linear(duration: 1.8).repeatForever(autoreverses: false)) {
+                    // phase = 1.15
+                // }
             }
     }
 }

@@ -222,30 +222,29 @@ struct MiniMonthCell: View {
                     let isOvulation = ovulationDays.contains(key) && !isInLateWindow
                     let isToday = isCurrentMonth && d == today
                     let isPredictedPeriod = isPredicted && isPeriod && !isConfirmed
-                    let isDashed = isPredictedPeriod || (isFertile && !isOvulation)
 
-                    // Pre-compute fill
+                    let fertileColor = CyclePhase.ovulatory.orbitColor
+
                     let fill: Color
                     if isConfirmed { fill = CyclePhase.menstrual.orbitColor }
-                    else if isPredictedPeriod { fill = CyclePhase.menstrual.orbitColor.opacity(0.3) }
-                    else if isOvulation { fill = CyclePhase.ovulatory.orbitColor.opacity(0.4) }
-                    else if isFertile { fill = CyclePhase.ovulatory.orbitColor.opacity(0.25) }
+                    else if isPredictedPeriod { fill = CyclePhase.menstrual.orbitColor.opacity(0.4) }
+                    else if isOvulation { fill = fertileColor.opacity(0.6) }
+                    else if isFertile { fill = fertileColor.opacity(0.4) }
                     else { fill = .clear }
 
-                    // Pre-compute text color
                     let textColor: Color
                     if isConfirmed { textColor = .white }
                     else if isOvulation { textColor = .white.opacity(0.9) }
                     else if isPredictedPeriod { textColor = CyclePhase.menstrual.orbitColor }
-                    else if isFertile { textColor = CyclePhase.ovulatory.orbitColor.opacity(0.8) }
+                    else if isFertile { textColor = fertileColor.opacity(0.9) }
                     else if isToday { textColor = DesignColors.accentWarm }
                     else { textColor = DesignColors.text.opacity(0.55) }
 
-                    // Pre-compute dash
+                    let isDashed = isPredictedPeriod || (isFertile && !isOvulation)
                     let dashColor: Color? = isDashed
                         ? (isPredictedPeriod
                             ? CyclePhase.menstrual.orbitColor.opacity(0.6)
-                            : CyclePhase.ovulatory.orbitColor.opacity(0.5))
+                            : fertileColor.opacity(0.6))
                         : nil
 
                     week.append(DaySlot(

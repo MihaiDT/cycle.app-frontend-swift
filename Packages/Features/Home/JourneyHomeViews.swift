@@ -165,14 +165,32 @@ public struct RecapReadyBanner: View {
 /// Bottom sheet with Aria typing effect for cycle recap notification.
 public struct AriaRecapSheet: View {
     let monthName: String
-    let onViewRecap: () -> Void
+    var message: String?
+    var buttonTitle: String = "View Recap"
+    var onAction: (() -> Void)?
+    let onViewRecap: (() -> Void)?
 
     @State private var showTypingDots = true
     @State private var typedText = ""
     @State private var showButton = false
 
     private var fullMessage: String {
-        "Your \(monthName) recap is ready. I found some interesting patterns about your cycle."
+        message ?? "Your \(monthName) recap is ready. I found some interesting patterns about your cycle."
+    }
+
+    /// Recap convenience init
+    public init(monthName: String, onViewRecap: @escaping () -> Void) {
+        self.monthName = monthName
+        self.onViewRecap = onViewRecap
+    }
+
+    /// Generic Aria sheet init
+    public init(monthName: String, message: String, buttonTitle: String, onAction: @escaping () -> Void) {
+        self.monthName = monthName
+        self.message = message
+        self.buttonTitle = buttonTitle
+        self.onAction = onAction
+        self.onViewRecap = nil
     }
 
     public var body: some View {
@@ -215,11 +233,11 @@ public struct AriaRecapSheet: View {
                     .accessibilityLabel(fullMessage)
             }
 
-            // View Recap button
+            // Action button
             if showButton {
-                Button(action: onViewRecap) {
+                Button(action: { (onAction ?? onViewRecap)?() }) {
                     HStack(spacing: 8) {
-                        Text("View Recap")
+                        Text(buttonTitle)
                             .font(.custom("Raleway-SemiBold", size: 17))
                         Image(systemName: "chevron.right")
                             .font(.system(size: 12, weight: .semibold))

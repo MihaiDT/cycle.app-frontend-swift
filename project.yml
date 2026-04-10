@@ -96,6 +96,9 @@ targets:
           - CloudKit
         com.apple.developer.icloud-container-identifiers:
           - iCloud.app.cycle.ios
+    capabilities:
+      HealthKit:
+        capabilities: [health-records]
     settings:
       base:
         CODE_SIGN_ALLOW_ENTITLEMENTS_MODIFICATION: true
