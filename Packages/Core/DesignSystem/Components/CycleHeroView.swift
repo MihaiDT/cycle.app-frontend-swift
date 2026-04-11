@@ -506,6 +506,8 @@ public struct CycleHeroView: View {
                         .font(.custom("Raleway-MediumItalic", size: 15))
                         .foregroundColor(textOnHeroColor.opacity(0.75))
                         .multilineTextAlignment(.center)
+                        .lineLimit(2)
+                        .minimumScaleFactor(0.85)
                         .transition(.opacity)
                 }
             }
