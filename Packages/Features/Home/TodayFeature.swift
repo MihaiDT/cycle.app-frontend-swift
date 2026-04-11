@@ -669,9 +669,9 @@ public struct TodayView: View {
 
     // MARK: - Layout Constants
 
-    private let expandedHeroHeight: CGFloat = 250
+    private let expandedHeroHeight: CGFloat = 290
     private let collapsedHeroHeight: CGFloat = 64
-    private let collapseThreshold: CGFloat = 220
+    private let collapseThreshold: CGFloat = 260
 
     /// Collapse progress: 0 = expanded, 1 = collapsed. Driven by scroll offset.
     /// Steep S-curve so it snaps visually — stays near 0/1, jumps through middle.

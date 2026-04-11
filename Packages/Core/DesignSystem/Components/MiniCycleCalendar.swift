@@ -225,11 +225,54 @@ public struct MiniCycleCalendar: View {
                         .fill(phaseColor(phase).opacity(0.15))
                         .frame(width: 36, height: 36)
                 }
-                // Today
+                // Today — glass liquid highlight
                 else if isToday {
-                    Circle()
-                        .fill(DesignColors.accent.opacity(0.3))
-                        .frame(width: 36, height: 36)
+                    ZStack {
+                        // Outer glow
+                        Circle()
+                            .fill(DesignColors.accentWarm.opacity(0.12))
+                            .frame(width: 40, height: 40)
+                            .blur(radius: 4)
+
+                        // Glass body
+                        Circle()
+                            .fill(
+                                LinearGradient(
+                                    colors: [
+                                        Color.white.opacity(0.85),
+                                        Color.white.opacity(0.5),
+                                    ],
+                                    startPoint: .top,
+                                    endPoint: .bottom
+                                )
+                            )
+                            .frame(width: 36, height: 36)
+
+                        // Inner highlight — top shine
+                        Circle()
+                            .fill(
+                                LinearGradient(
+                                    colors: [Color.white.opacity(0.9), Color.clear],
+                                    startPoint: .top,
+                                    endPoint: .center
+                                )
+                            )
+                            .frame(width: 32, height: 32)
+                            .offset(y: -2)
+
+                        // Border
+                        Circle()
+                            .strokeBorder(
+                                LinearGradient(
+                                    colors: [Color.white.opacity(0.8), DesignColors.accentWarm.opacity(0.3)],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                ),
+                                lineWidth: 1
+                            )
+                            .frame(width: 36, height: 36)
+                    }
+                    .shadow(color: DesignColors.accentWarm.opacity(0.2), radius: 8, x: 0, y: 3)
                 }
 
                 Text("\(dayNumber)")

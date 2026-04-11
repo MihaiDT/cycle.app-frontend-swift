@@ -27,7 +27,7 @@ public struct CycleHeroView: View {
     private let cal = Calendar.current
 
     // Layout constants
-    private let expandedHeight: CGFloat = 250
+    private let expandedHeight: CGFloat = 290
     private let collapsedHeight: CGFloat = 64
     /// How much the asymmetric curve extends below the rect
     private let curveDepth: CGFloat = 32
@@ -410,6 +410,7 @@ public struct CycleHeroView: View {
             }
         }
         .frame(height: currentHeight)
+        .clipped()
         .modifier(GlassCardModifier())
     }
 
@@ -454,7 +455,7 @@ public struct CycleHeroView: View {
 
                 // Month name centered in top bar
                 Text(monthLabel)
-                    .font(.custom("Raleway-SemiBold", size: 16))
+                    .font(.custom("Raleway-SemiBold", size: 18))
                     .foregroundColor(textOnHeroColor)
 
                 Spacer()
@@ -482,7 +483,7 @@ public struct CycleHeroView: View {
                 }
             }
             .padding(.horizontal, 16)
-            .padding(.top, 8)
+            .padding(.top, 10)
             .opacity(staggeredOpacity(fadeEnd: 0.60))
 
             // Week calendar
@@ -491,6 +492,7 @@ public struct CycleHeroView: View {
                 selectedDate: $selectedDate,
                 embedded: true
             )
+            .padding(.top, 4)
             .opacity(staggeredOpacity(fadeEnd: 0.55))
 
             // Warm wellness message under calendar
@@ -503,7 +505,7 @@ public struct CycleHeroView: View {
                         .modifier(ShimmerEffect())
                 } else {
                     Text(aiWellnessMessage ?? wellnessMessage)
-                        .font(.custom("Raleway-MediumItalic", size: 15))
+                        .font(.custom("Raleway-MediumItalic", size: 17))
                         .foregroundColor(textOnHeroColor.opacity(0.75))
                         .multilineTextAlignment(.center)
                         .lineLimit(2)
@@ -514,20 +516,18 @@ public struct CycleHeroView: View {
             }
             .frame(maxWidth: .infinity)
             .padding(.horizontal, 20)
-            .padding(.top, 6)
+            .padding(.top, 10)
             .animation(.easeInOut(duration: 0.3), value: aiWellnessMessage)
             .opacity(staggeredOpacity(fadeEnd: 0.50))
 
-            // Period countdown
-            if !cycle.isLate && daysUntilPeriod > 0 {
-                Text(periodCountdownText)
-                    .font(.custom("Raleway-SemiBold", size: 13))
-                    .foregroundColor(textOnHeroColor.opacity(0.5))
-                    .padding(.top, 4)
-                    .opacity(staggeredOpacity(fadeEnd: 0.45))
-            }
+            // Period countdown — always rendered to prevent layout oscillation
+            Text(!cycle.isLate && daysUntilPeriod > 0 ? periodCountdownText : " ")
+                .font(.custom("Raleway-SemiBold", size: 15))
+                .foregroundColor(textOnHeroColor.opacity(0.5))
+                .padding(.top, 6)
+                .opacity(!cycle.isLate && daysUntilPeriod > 0 ? staggeredOpacity(fadeEnd: 0.45) : 0)
 
-            Spacer(minLength: 4)
+            Spacer(minLength: 12)
 
             // Action buttons — compact row
             HStack(spacing: 10) {
@@ -555,26 +555,54 @@ public struct CycleHeroView: View {
 
                 if let onEditPeriod {
                     Button {
+                        UIImpactFeedbackGenerator(style: .light).impactOccurred()
                         onEditPeriod()
                     } label: {
-                        Text("Edit dates")
-                            .font(.custom("Raleway-SemiBold", size: 13))
+                        Text("My cycle")
+                            .font(.custom("Raleway-SemiBold", size: 15))
                             .foregroundColor(textOnHeroColor)
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 8)
+                            .padding(.horizontal, 22)
+                            .padding(.vertical, 10)
                             .background {
-                                Capsule()
-                                    .fill(.white.opacity(0.7))
-                                    .overlay {
-                                        Capsule().strokeBorder(phaseAccent.opacity(0.3), lineWidth: 0.5)
-                                    }
+                                ZStack {
+                                    Capsule()
+                                        .fill(
+                                            LinearGradient(
+                                                colors: [Color.white.opacity(0.95), Color.white.opacity(0.7)],
+                                                startPoint: .top,
+                                                endPoint: .bottom
+                                            )
+                                        )
+                                    // Top shine
+                                    Capsule()
+                                        .fill(
+                                            LinearGradient(
+                                                colors: [Color.white.opacity(0.9), Color.clear],
+                                                startPoint: .top,
+                                                endPoint: .center
+                                            )
+                                        )
+                                        .padding(2)
+                                    // Border
+                                    Capsule()
+                                        .strokeBorder(
+                                            LinearGradient(
+                                                colors: [Color.white.opacity(0.8), DesignColors.accentWarm.opacity(0.3)],
+                                                startPoint: .topLeading,
+                                                endPoint: .bottomTrailing
+                                            ),
+                                            lineWidth: 1
+                                        )
+                                }
                             }
+                            .shadow(color: .black.opacity(0.08), radius: 4, x: 0, y: 2)
+                            .shadow(color: DesignColors.accentWarm.opacity(0.12), radius: 8, x: 0, y: 3)
                     }
                     .buttonStyle(.plain)
                 }
             }
             .padding(.bottom, 14)
-            .opacity(staggeredOpacity(fadeEnd: 0.30))
+            .opacity(staggeredOpacity(fadeEnd: 0.40))
         }
     }
 
@@ -583,17 +611,11 @@ public struct CycleHeroView: View {
     @ViewBuilder
     private var collapsedContent: some View {
         HStack(spacing: 0) {
-            // Left: sentence summary
+            // Status summary
             VStack(alignment: .leading, spacing: 3) {
                 Text(collapsedHeadline)
-                    .font(.custom("Raleway-Bold", size: 16))
+                    .font(.custom("Raleway-Bold", size: 17))
                     .foregroundColor(textOnHeroColor)
-                    .lineLimit(1)
-                    .contentTransition(.numericText())
-
-                Text(collapsedDetail)
-                    .font(.custom("Raleway-Medium", size: 12))
-                    .foregroundColor(textOnHeroColor.opacity(0.5))
                     .lineLimit(1)
             }
 
@@ -638,28 +660,33 @@ public struct CycleHeroView: View {
     // MARK: - Collapsed Text
 
     private var collapsedHeadline: String {
-        "\(dayText)  ·  \(phaseLabel)"
+        if isRefreshing { return "Updating..." }
+        if cycle.isLate { return "Period expected" }
+
+        if isPeriod && !isPredictedPeriod {
+            let bleed = cycle.bleedingDays
+            let periodDay = max(1, displayCycleDay)
+            return "Period · Day \(periodDay) of \(bleed)"
+        }
+
+        if cycle.fertileWindowActive || isFertileDay {
+            return "Fertile window"
+        }
+
+        if displayPhase == .ovulatory {
+            return "Peak day"
+        }
+
+        let days = daysUntilPeriod
+        if days == 1 { return "Period in 1 day" }
+        if days > 0 && days <= 3 { return "Period in \(days) days" }
+        if days > 3 && days <= 14 { return "\(days) days until period" }
+
+        return phaseLabel
     }
 
     private var collapsedDetail: String {
-        if isRefreshing { return "Updating..." }
-        if isLateForDate { return "Period expected \(cycle.effectiveDaysLate) days ago" }
-        if isPeriod && isPredictedPeriod { return "May start today" }
-        if isPeriod { return "of your period" }
-        if !cycle.isLate {
-            if cycle.fertileWindowActive || isFertileDay { return "You may be fertile" }
-        }
-        let days = daysUntilPeriod
-        if days > 0 && days <= 14 {
-            return days == 1 ? "1 day until period" : "\(days) days until period"
-        }
-        if !cycle.isLate, let fwStart = cycle.fertileWindowStart {
-            let fwDays = cal.dateComponents([.day], from: cal.startOfDay(for: effectiveDate), to: cal.startOfDay(for: fwStart)).day ?? 0
-            if fwDays > 0 && fwDays <= 10 {
-                return fwDays == 1 ? "Fertile window in 1 day" : "Fertile window in \(fwDays) days"
-            }
-        }
-        return phaseMood.text
+        ""
     }
 
 }
