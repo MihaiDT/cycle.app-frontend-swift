@@ -508,6 +508,7 @@ public struct CycleHeroView: View {
                         .multilineTextAlignment(.center)
                         .lineLimit(2)
                         .minimumScaleFactor(0.85)
+                        .fixedSize(horizontal: false, vertical: true)
                         .transition(.opacity)
                 }
             }
