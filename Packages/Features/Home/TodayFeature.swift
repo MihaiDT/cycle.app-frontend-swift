@@ -72,6 +72,10 @@ public struct TodayFeature: Sendable {
         public var isShowingLateConfirmSheet: Bool = false
 
         public var hasAppeared: Bool = false
+
+        // AI Wellness message
+        public var wellnessMessage: String?
+        public var isLoadingWellnessMessage: Bool = false
         public var hasTriggeredScoreAnimation: Bool = false
         public var scoreAnimationProgress: Double = 0
 
@@ -133,6 +137,8 @@ public struct TodayFeature: Sendable {
         )
         case phaseResolved(CyclePhase, Int)
         case backgroundSyncCompleted
+        case loadWellnessMessage
+        case wellnessMessageLoaded(String?)
         case refreshRecapBanner
         case recapBannerLoaded(String?)
         case recapSheetDismissed
@@ -157,6 +163,29 @@ public struct TodayFeature: Sendable {
 
     /// Single source of truth: compute phase from CycleContext and broadcast to all components.
     /// Called from both menstrualStatusLoaded and calendarEntriesLoaded — whoever has complete data first.
+    private static func handleLoadWellness(_ state: inout State) -> Effect<Action> {
+        state.isLoadingWellnessMessage = true
+        if let cached = WellnessClient.loadCached(container: CycleDataStore.shared) {
+            state.wellnessMessage = WellnessClient.messageForNow(from: cached)
+            state.isLoadingWellnessMessage = false
+            return .none
+        }
+        let phase = state.cycle?.phase(for: Date())?.rawValue ?? "unknown"
+        let day = state.cycle?.cycleDay ?? 1
+        let daysUntil = state.cycle?.daysUntilPeriod(from: Date()) ?? 14
+        let isLate = state.cycle?.isLate ?? false
+        let tracked = 10 // Approximation — exact count not in profile
+        return .run { send in
+            let record = await WellnessClient.fetchAndCache(
+                cyclePhase: phase, cycleDay: day, daysUntilPeriod: daysUntil,
+                isLate: isLate, recentSymptoms: [], moodLevel: 3, energyLevel: 3,
+                cyclesTracked: tracked, container: CycleDataStore.shared
+            )
+            let message = record.map { WellnessClient.messageForNow(from: $0) }
+            await send(.wellnessMessageLoaded(message))
+        }
+    }
+
     private static func syncPhaseEffect(state: State) -> Effect<Action> {
         guard let cycle = state.cycle,
               let status = state.menstrualStatus else {
@@ -233,6 +262,10 @@ public struct TodayFeature: Sendable {
                     // Only sync phase if calendar is loaded (periodDays available)
                     // Otherwise, calendarEntriesLoaded will sync when ready
                     effects.append(Self.syncPhaseEffect(state: state))
+                }
+                // Load AI wellness message
+                if hasCycleData && state.wellnessMessage == nil {
+                    effects.append(.send(.loadWellnessMessage))
                 }
                 return effects.isEmpty ? .none : .merge(effects)
 
@@ -504,6 +537,14 @@ public struct TodayFeature: Sendable {
                     await send(.backgroundSyncCompleted)
                 }
 
+            case .loadWellnessMessage:
+                return Self.handleLoadWellness(&state)
+
+            case .wellnessMessageLoaded(let message):
+                state.isLoadingWellnessMessage = false
+                state.wellnessMessage = message
+                return .none
+
             case .backgroundSyncCompleted:
                 return .send(.loadMenstrualStatus)
 
@@ -674,7 +715,9 @@ public struct TodayView: View {
                         store.send(.notificationsTapped)
                     },
                     collapseProgress: collapseProgress,
-                    safeAreaTop: safeAreaTop
+                    safeAreaTop: safeAreaTop,
+                    aiWellnessMessage: store.wellnessMessage,
+                    isLoadingWellnessMessage: store.isLoadingWellnessMessage
                 )
                 .opacity(showHero ? 1 : 0)
                 .allowsHitTesting(true)

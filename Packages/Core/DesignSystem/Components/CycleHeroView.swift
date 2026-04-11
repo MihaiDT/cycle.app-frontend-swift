@@ -21,6 +21,8 @@ public struct CycleHeroView: View {
     public var collapseProgress: CGFloat
     /// Safe area inset from top (to extend behind status bar)
     public var safeAreaTop: CGFloat
+    public var aiWellnessMessage: String?
+    public var isLoadingWellnessMessage: Bool
 
     private let cal = Calendar.current
 
@@ -44,7 +46,9 @@ public struct CycleHeroView: View {
         hasNotification: Bool = false,
         onNotificationTapped: (() -> Void)? = nil,
         collapseProgress: CGFloat = 0,
-        safeAreaTop: CGFloat = 0
+        safeAreaTop: CGFloat = 0,
+        aiWellnessMessage: String? = nil,
+        isLoadingWellnessMessage: Bool = false
     ) {
         self.cycle = cycle
         self._selectedDate = selectedDate
@@ -57,6 +61,8 @@ public struct CycleHeroView: View {
         self.onNotificationTapped = onNotificationTapped
         self.collapseProgress = collapseProgress
         self.safeAreaTop = safeAreaTop
+        self.aiWellnessMessage = aiWellnessMessage
+        self.isLoadingWellnessMessage = isLoadingWellnessMessage
     }
 
     // MARK: - Interpolation Helpers
@@ -481,12 +487,25 @@ public struct CycleHeroView: View {
             .opacity(staggeredOpacity(fadeEnd: 0.55))
 
             // Warm wellness message under calendar
-            Text(wellnessMessage)
-                .font(.custom("Raleway-Medium", size: 14))
-                .foregroundColor(textOnHeroColor.opacity(0.7))
-                .frame(maxWidth: .infinity)
-                .padding(.horizontal, 20)
-                .padding(.top, 6)
+            Group {
+                if isLoadingWellnessMessage {
+                    // Shimmer placeholder
+                    RoundedRectangle(cornerRadius: 4)
+                        .fill(DesignColors.structure.opacity(0.3))
+                        .frame(width: 200, height: 16)
+                        .modifier(ShimmerEffect())
+                } else {
+                    Text(aiWellnessMessage ?? wellnessMessage)
+                        .font(.custom("Raleway-MediumItalic", size: 15))
+                        .foregroundColor(textOnHeroColor.opacity(0.75))
+                        .multilineTextAlignment(.center)
+                        .transition(.opacity)
+                }
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.horizontal, 20)
+            .padding(.top, 6)
+            .animation(.easeInOut(duration: 0.3), value: aiWellnessMessage)
                 .opacity(staggeredOpacity(fadeEnd: 0.50))
 
             Spacer(minLength: 4)
@@ -633,6 +652,35 @@ public struct CycleHeroView: View {
 /// the wave amplitude. When `blobMorph` > 0, extra noise frequencies kick
 /// in and the amplitude boosts — the gentle wave transforms into an organic
 /// chaotic blob, then morphs back when the sync completes.
+// MARK: - Shimmer Effect
+
+private struct ShimmerEffect: ViewModifier {
+    @State private var phase: CGFloat = -1
+
+    func body(content: Content) -> some View {
+        content
+            .overlay {
+                LinearGradient(
+                    stops: [
+                        .init(color: .clear, location: max(0, phase - 0.15)),
+                        .init(color: .white.opacity(0.4), location: max(0, phase)),
+                        .init(color: .clear, location: min(1, phase + 0.15)),
+                    ],
+                    startPoint: .leading,
+                    endPoint: .trailing
+                )
+                .mask(content)
+            }
+            .onAppear {
+                withAnimation(.linear(duration: 1.5).repeatForever(autoreverses: false)) {
+                    phase = 2
+                }
+            }
+    }
+}
+
+// MARK: - Wave Shape
+
 private struct WaveSlashShape: Shape {
     var slashHeight: CGFloat
     var wavePhase: CGFloat
