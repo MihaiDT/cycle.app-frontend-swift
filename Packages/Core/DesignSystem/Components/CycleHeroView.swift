@@ -113,6 +113,13 @@ public struct CycleHeroView: View {
         Self.monthFormatter.string(from: effectiveDate)
     }
 
+    private var periodCountdownText: String {
+        let days = daysUntilPeriod
+        if days == 1 { return "Period expected tomorrow" }
+        if days <= 3 { return "Period in \(days) days" }
+        return "\(days) days until period"
+    }
+
     private var wellnessMessage: String {
         if isRefreshing { return "Updating..." }
         if cycle.isLate { return "Your period may start any day" }
@@ -506,7 +513,16 @@ public struct CycleHeroView: View {
             .padding(.horizontal, 20)
             .padding(.top, 6)
             .animation(.easeInOut(duration: 0.3), value: aiWellnessMessage)
-                .opacity(staggeredOpacity(fadeEnd: 0.50))
+            .opacity(staggeredOpacity(fadeEnd: 0.50))
+
+            // Period countdown
+            if !cycle.isLate && daysUntilPeriod > 0 {
+                Text(periodCountdownText)
+                    .font(.custom("Raleway-SemiBold", size: 13))
+                    .foregroundColor(textOnHeroColor.opacity(0.5))
+                    .padding(.top, 4)
+                    .opacity(staggeredOpacity(fadeEnd: 0.45))
+            }
 
             Spacer(minLength: 4)
 
