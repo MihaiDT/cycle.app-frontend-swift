@@ -39,11 +39,13 @@ public struct MiniCycleCalendar: View {
 
     // MARK: - Body
 
+    /// Current month label for external use (e.g. top bar)
+    public var currentMonthLabel: String {
+        monthLabel(for: weekDates(for: currentWeekOffset))
+    }
+
     public var body: some View {
         VStack(spacing: 0) {
-            // Month header — always visible
-            monthHeader
-
             // Paging week strip
             TabView(selection: $currentWeekOffset) {
                 ForEach(weekRange, id: \.self) { offset in
@@ -55,7 +57,7 @@ public struct MiniCycleCalendar: View {
             .frame(height: 82)
         }
         .padding(.horizontal, 8)
-        .padding(.vertical, 10)
+        .padding(.vertical, 4)
         .background(
             Rectangle()
                 .fill(.ultraThinMaterial)
@@ -170,7 +172,7 @@ public struct MiniCycleCalendar: View {
             if isToday {
                 Text("TODAY")
                     .font(.custom("Raleway-Bold", size: 9))
-                    .foregroundColor(phaseColor(phase))
+                    .foregroundColor(DesignColors.accentWarm)
                     .frame(height: 14)
             } else {
                 Text(weekdaySymbol)
@@ -242,22 +244,7 @@ public struct MiniCycleCalendar: View {
             }
             .frame(width: 40, height: 40)
 
-            // Phase indicator dot
-            if isFertile && !isPeriod && !isLatePred {
-                Circle()
-                    .fill(phaseColor(.ovulatory))
-                    .frame(width: 6, height: 6)
-            } else if !isPeriod && !isPredicted && !isLatePred {
-                if let phase {
-                    Circle()
-                        .fill(phaseColor(phase).opacity(0.3))
-                        .frame(width: 5, height: 5)
-                } else {
-                    Color.clear.frame(width: 5, height: 5)
-                }
-            } else {
-                Color.clear.frame(width: 5, height: 5)
-            }
+            Color.clear.frame(height: 2)
         }
         .frame(maxWidth: .infinity)
     }

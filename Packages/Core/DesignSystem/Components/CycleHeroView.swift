@@ -86,7 +86,7 @@ public struct CycleHeroView: View {
 
     /// 0 = gentle wave, 1 = chaotic blob (active during sync)
     private var waveBlobMorph: CGFloat {
-        isRefreshing ? 0.5 : 0.0
+        isRefreshing ? 0.5 : 0.15
     }
 
     /// Curve depth scales with collapse progress AND phase intensity.
@@ -98,6 +98,33 @@ public struct CycleHeroView: View {
     }
 
     // MARK: - Computed Display Properties
+
+    private static let monthFormatter: DateFormatter = {
+        let f = DateFormatter(); f.dateFormat = "MMMM yyyy"; return f
+    }()
+
+    private var monthLabel: String {
+        Self.monthFormatter.string(from: effectiveDate)
+    }
+
+    private var wellnessMessage: String {
+        if isRefreshing { return "Updating..." }
+        if cycle.isLate { return "Your period may start any day" }
+
+        let days = daysUntilPeriod
+        if days == 0 { return "Your period is expected today" }
+        if days == 1 { return "Your period is coming tomorrow" }
+        if days > 0 && days <= 3 { return "Your period is coming soon" }
+        if days > 3 && days <= 14 { return "\(days) days until your period" }
+
+        switch displayPhase {
+        case .menstrual: return "Take it easy today"
+        case .follicular: return "Your energy is rising"
+        case .ovulatory: return "You're at your peak"
+        case .luteal: return "Your body is winding down"
+        case .late: return "Your period may start any day"
+        }
+    }
 
     private var effectiveDate: Date {
         selectedDate ?? cal.startOfDay(for: Date())
@@ -352,60 +379,25 @@ public struct CycleHeroView: View {
     }
 
     public var body: some View {
-        TimelineView(.animation(minimumInterval: isRefreshing ? 1.0 / 20.0 : 1_000_000)) { timeline in
-            let phase = isRefreshing ? wavePhase(from: timeline.date) : 0
+        ZStack(alignment: .top) {
+            // Content
+            VStack(spacing: 0) {
+                Color.clear.frame(height: safeAreaTop)
 
-            ZStack(alignment: .top) {
-                // Base fill — visible while wave drops from above
-                Color.white
+                ZStack(alignment: .top) {
+                    expandedContent
+                        .opacity(expandedOpacity)
+                        .allowsHitTesting(progress < 0.5)
 
-                // Warm cream gradient — slides down from above during refresh
-                WaveSlashShape(slashHeight: currentCurveDepth, wavePhase: phase, blobMorph: waveBlobMorph)
-                    .fill(
-                        LinearGradient(
-                            colors: [heroGradientStart, heroGradientEnd],
-                            startPoint: .top,
-                            endPoint: .bottom
-                        )
-                    )
-                    .offset(y: -waveDropOffset * (currentHeight + safeAreaTop))
-
-                // Content with safe area top inset
-                VStack(spacing: 0) {
-                    Color.clear.frame(height: safeAreaTop)
-
-                    ZStack(alignment: .top) {
-                        expandedContent
-                            .opacity(expandedOpacity)
-                            .allowsHitTesting(progress < 0.5)
-
-                        collapsedContent
-                            .frame(maxHeight: .infinity, alignment: .center)
-                            .opacity(collapsedOpacity)
-                            .allowsHitTesting(progress >= 0.5)
-                    }
-                }
-            }
-            .frame(height: currentHeight)
-            .clipShape(Rectangle())
-        }
-        .animation(.interactiveSpring(response: 0.35, dampingFraction: 0.86), value: displayPhase)
-        .animation(.interactiveSpring(response: 0.25, dampingFraction: 0.9), value: displayCycleDay)
-        .animation(.spring(response: 0.8, dampingFraction: 0.65), value: isRefreshing)
-        .onChange(of: isRefreshing) { _, newValue in
-            if newValue {
-                // Quick lift — water pulling back
-                withAnimation(.easeIn(duration: 0.3)) {
-                    waveDropOffset = 1.0
-                }
-                // Fast cascade down — fluid, natural
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
-                    withAnimation(.easeOut(duration: 1.8)) {
-                        waveDropOffset = 0
-                    }
+                    collapsedContent
+                        .frame(maxHeight: .infinity, alignment: .center)
+                        .opacity(collapsedOpacity)
+                        .allowsHitTesting(progress >= 0.5)
                 }
             }
         }
+        .frame(height: currentHeight)
+        .modifier(GlassCardModifier())
     }
 
     // MARK: - Expanded Content (full hero)
@@ -447,44 +439,10 @@ public struct CycleHeroView: View {
 
                 Spacer()
 
-                // Day + phase — centered
-                VStack(spacing: 2) {
-                    HStack(spacing: 6) {
-                        Text(dayText)
-                            .font(.custom("Raleway-Bold", size: 18))
-                            .foregroundColor(textOnHeroColor)
-                            .contentTransition(.numericText())
-
-                        Text("·")
-                            .foregroundColor(textOnHeroColor.opacity(0.3))
-
-                        Text(phaseLabel)
-                            .font(.custom("Raleway-Medium", size: 14))
-                            .foregroundColor(textOnHeroColor.opacity(0.65))
-                    }
-
-                    if isRefreshing {
-                        Text("Updating...")
-                            .font(.custom("Raleway-Medium", size: 11))
-                            .foregroundColor(phaseAccent.opacity(0.8))
-                            .transition(.move(edge: .bottom).combined(with: .opacity))
-                    } else if isSynced {
-                        HStack(spacing: 3) {
-                            Image(systemName: "checkmark")
-                                .font(.system(size: 9, weight: .bold))
-                            Text("Updated")
-                                .font(.custom("Raleway-SemiBold", size: 11))
-                        }
-                        .foregroundColor(phaseAccent)
-                        .transition(.scale(scale: 0.5).combined(with: .opacity))
-                    } else if !subtitle.isEmpty {
-                        Text(subtitle)
-                            .font(.custom("Raleway-Regular", size: 12))
-                            .foregroundColor(textOnHeroColor.opacity(0.5))
-                    }
-                }
-                .animation(.spring(response: 0.4, dampingFraction: 0.8), value: isRefreshing)
-                .animation(.spring(response: 0.4, dampingFraction: 0.8), value: isSynced)
+                // Month name centered in top bar
+                Text(monthLabel)
+                    .font(.custom("Raleway-SemiBold", size: 16))
+                    .foregroundColor(textOnHeroColor)
 
                 Spacer()
 
@@ -511,7 +469,7 @@ public struct CycleHeroView: View {
                 }
             }
             .padding(.horizontal, 16)
-            .padding(.top, 12)
+            .padding(.top, 8)
             .opacity(staggeredOpacity(fadeEnd: 0.60))
 
             // Week calendar
@@ -521,6 +479,15 @@ public struct CycleHeroView: View {
                 embedded: true
             )
             .opacity(staggeredOpacity(fadeEnd: 0.55))
+
+            // Warm wellness message under calendar
+            Text(wellnessMessage)
+                .font(.custom("Raleway-Medium", size: 14))
+                .foregroundColor(textOnHeroColor.opacity(0.7))
+                .frame(maxWidth: .infinity)
+                .padding(.horizontal, 20)
+                .padding(.top, 6)
+                .opacity(staggeredOpacity(fadeEnd: 0.50))
 
             Spacer(minLength: 4)
 
