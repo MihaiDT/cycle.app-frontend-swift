@@ -445,7 +445,8 @@ public struct CycleHeroView: View {
 
                 // Month name centered in top bar
                 Text(monthLabel)
-                    .font(.custom("Raleway-SemiBold", size: 18))
+                    .font(.custom("Raleway-Black", size: 17, relativeTo: .body))
+                    .tracking(-0.3)
                     .foregroundColor(textOnHeroColor)
 
                 Spacer()
@@ -488,7 +489,7 @@ public struct CycleHeroView: View {
                     .opacity(isLoadingWellnessMessage ? 1 : 0)
 
                 Text(aiWellnessMessage ?? wellnessMessage)
-                    .font(.custom("Raleway-MediumItalic", size: 17))
+                    .font(.custom("Raleway-MediumItalic", size: 17, relativeTo: .body))
                     .foregroundColor(textOnHeroColor.opacity(0.75))
                     .multilineTextAlignment(.center)
                     .lineLimit(2)
@@ -504,7 +505,7 @@ public struct CycleHeroView: View {
 
             // Cycle status — matches collapsed header
             Text(collapsedHeadline)
-                .font(.custom("Raleway-SemiBold", size: 15))
+                .font(.custom("Raleway-Medium", size: 15, relativeTo: .callout))
                 .foregroundColor(textOnHeroColor.opacity(0.5))
                 .padding(.top, 6)
                 .opacity(staggeredOpacity(fadeEnd: 0.45))
@@ -521,9 +522,10 @@ public struct CycleHeroView: View {
                     } label: {
                         HStack(spacing: 6) {
                             Image(systemName: "drop.fill")
-                                .font(.system(size: 12, weight: .medium))
+                                .font(.system(size: 12, weight: .bold))
                             Text("Log period")
-                                .font(.custom("Raleway-SemiBold", size: 15))
+                                .font(.custom("Raleway-Black", size: 15, relativeTo: .callout))
+                                .tracking(-0.2)
                         }
                         .foregroundColor(.white)
                         .padding(.horizontal, 22)
@@ -561,7 +563,8 @@ public struct CycleHeroView: View {
                         onEditPeriod()
                     } label: {
                         Text("My cycle")
-                            .font(.custom("Raleway-SemiBold", size: 15))
+                            .font(.custom("Raleway-Black", size: 15, relativeTo: .callout))
+                            .tracking(-0.2)
                             .foregroundColor(textOnHeroColor)
                             .padding(.horizontal, 22)
                             .padding(.vertical, 10)
@@ -616,7 +619,8 @@ public struct CycleHeroView: View {
             // Status summary
             VStack(alignment: .leading, spacing: 3) {
                 Text(collapsedHeadline)
-                    .font(.custom("Raleway-Bold", size: 17))
+                    .font(.custom("Raleway-Black", size: 17, relativeTo: .body))
+                    .tracking(-0.3)
                     .foregroundColor(textOnHeroColor)
                     .lineLimit(1)
             }
