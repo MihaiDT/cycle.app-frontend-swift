@@ -19,7 +19,7 @@ struct DailyChallengeCardView: View {
     // MARK: - Available
 
     private var availableState: some View {
-        VStack(alignment: .leading) {
+        VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 6) {
                 Image(systemName: "flag.fill")
                     .font(.system(size: 12, weight: .medium))
@@ -31,26 +31,30 @@ struct DailyChallengeCardView: View {
             .padding(.vertical, 6)
             .background { Capsule().fill(DesignColors.accentWarm.opacity(0.1)) }
 
-            Spacer()
+            Spacer(minLength: 12)
 
             Text(challenge.challengeTitle)
                 .font(.custom("Raleway-Bold", size: 24))
                 .foregroundStyle(DesignColors.text)
-                .lineSpacing(4)
+                .lineSpacing(2)
+                .lineLimit(2)
+                .fixedSize(horizontal: false, vertical: true)
 
             Text(challenge.challengeDescription)
                 .font(.custom("Raleway-Regular", size: 14))
                 .foregroundStyle(DesignColors.textSecondary)
                 .lineSpacing(3)
-                .lineLimit(2)
+                .lineLimit(3)
+                .fixedSize(horizontal: false, vertical: true)
 
             HStack(spacing: 6) {
                 tagPill(challenge.cyclePhase.capitalized)
-                tagPill("Day \(challenge.cycleDay)")
+                tagPill(challenge.durationDisplay)
+                tagPill(challenge.effortDisplay)
             }
-            .padding(.top, 4)
+            .padding(.top, 2)
 
-            Spacer().frame(height: 16)
+            Spacer().frame(height: 14)
 
             HStack(spacing: 12) {
                 Button {
@@ -77,8 +81,8 @@ struct DailyChallengeCardView: View {
                 .buttonStyle(.plain)
             }
         }
-        .padding(32)
-        .frame(height: 320)
+        .padding(28)
+        .frame(height: 380)
         .glowCardBackground()
     }
 
@@ -121,8 +125,8 @@ struct DailyChallengeCardView: View {
                 .font(.custom("Raleway-Regular", size: 14))
                 .foregroundStyle(DesignColors.textSecondary)
         }
-        .padding(32)
-        .frame(height: 320)
+        .padding(28)
+        .frame(height: 380)
         .glowCardBackground()
     }
 
@@ -149,8 +153,8 @@ struct DailyChallengeCardView: View {
 
             Spacer()
         }
-        .padding(32)
-        .frame(height: 320)
+        .padding(28)
+        .frame(height: 380)
         .glowCardBackground()
     }
 

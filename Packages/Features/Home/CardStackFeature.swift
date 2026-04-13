@@ -284,7 +284,7 @@ struct CardStackView: View {
                     }
                 }
             }
-            .frame(height: 370)
+            .frame(height: 430)
         }
     }
 
@@ -370,7 +370,7 @@ private struct CardSkeletonView: View {
     private var skeletonCard: some View {
         RoundedRectangle(cornerRadius: AppLayout.cornerRadiusL, style: .continuous)
             .fill(Color(red: 0.94, green: 0.93, blue: 0.91))
-            .frame(height: 320)
+            .frame(height: 380)
             .overlay(
                 RoundedRectangle(cornerRadius: AppLayout.cornerRadiusL, style: .continuous)
                     .fill(
@@ -462,7 +462,7 @@ private struct DailyCardView: View {
             }
             .padding(32)
         }
-        .frame(height: 320)
+        .frame(height: 380)
         .background(
             RoundedRectangle(cornerRadius: AppLayout.cornerRadiusL, style: .continuous)
                 .fill(
@@ -556,7 +556,7 @@ private struct DailyCardView: View {
             }
             .padding(32)
         }
-        .frame(height: 320)
+        .frame(height: 380)
         .background(
             RoundedRectangle(cornerRadius: AppLayout.cornerRadiusL, style: .continuous)
                 .fill(
@@ -632,7 +632,7 @@ private struct DailyCardView: View {
             }
             .padding(32)
         }
-        .frame(height: 320)
+        .frame(height: 380)
         .background(
             RoundedRectangle(cornerRadius: AppLayout.cornerRadiusL, style: .continuous)
                 .fill(
