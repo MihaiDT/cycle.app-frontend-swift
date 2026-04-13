@@ -17,6 +17,8 @@ public struct CardStackFeature: Sendable {
         /// Track current combo to skip redundant loads
         public var currentPhase: CyclePhase?
         public var currentDay: Int?
+        /// Active challenge for the Do card — passed from TodayFeature
+        public var challengeSnapshot: ChallengeSnapshot?
 
         public init() {}
 
@@ -45,6 +47,9 @@ public struct CardStackFeature: Sendable {
             case startBreathing
             case openJournal(prompt: String)
             case openCheckIn
+            case challengeDoItTapped
+            case challengeSkipTapped
+            case challengeMaybeLaterTapped
         }
     }
 
@@ -177,6 +182,45 @@ struct CardStackView: View {
 
     private var cardContent: some View {
         VStack(alignment: .leading, spacing: 16) {
+            // How do you feel — separate button
+            Button {
+                UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                store.send(.delegate(.openCheckIn))
+            } label: {
+                HStack(spacing: 8) {
+                    Text("How do you feel?")
+                        .font(.custom("Raleway-SemiBold", size: 15))
+                    Image(systemName: "arrow.right")
+                        .font(.system(size: 12, weight: .semibold))
+                }
+                .foregroundStyle(.white)
+                .padding(.horizontal, 22)
+                .padding(.vertical, 12)
+                .background {
+                    Capsule()
+                        .fill(
+                            LinearGradient(
+                                colors: [DesignColors.accentWarm, DesignColors.accentSecondary],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                        )
+                        .overlay {
+                            Capsule()
+                                .fill(
+                                    LinearGradient(
+                                        colors: [Color.white.opacity(0.2), Color.clear],
+                                        startPoint: .top,
+                                        endPoint: .center
+                                    )
+                                )
+                        }
+                        .shadow(color: DesignColors.accentWarm.opacity(0.3), radius: 8, x: 0, y: 4)
+                }
+            }
+            .buttonStyle(.plain)
+            .padding(.horizontal, AppLayout.horizontalPadding)
+
             HStack(alignment: .lastTextBaseline) {
                 Text("Your day")
                     .font(.custom("Raleway-Bold", size: 28, relativeTo: .title))
@@ -205,13 +249,26 @@ struct CardStackView: View {
                 ForEach(store.visibleCards, id: \.card.id) { item in
                     let isFront = item.depth == 0
 
-                    DailyCardView(
-                        card: item.card,
-                        displayDay: store.currentDay,
-                        onAction: { store.send(.actionTapped(item.card)) },
-                        onCheckIn: { store.send(.delegate(.openCheckIn)) }
-                    )
-                    .padding(.horizontal, AppLayout.horizontalPadding)
+                    Group {
+                        if item.card.cardType == .do, let challenge = store.challengeSnapshot {
+                            DailyChallengeCardView(
+                                challenge: challenge,
+                                onDoIt: { store.send(.delegate(.challengeDoItTapped)) },
+                                onSkip: { store.send(.delegate(.challengeSkipTapped)) },
+                                onMaybeLater: { store.send(.delegate(.challengeMaybeLaterTapped)) }
+                            )
+                            .padding(.horizontal, AppLayout.horizontalPadding)
+                        } else {
+                            DailyCardView(
+                                card: item.card,
+                                displayDay: store.currentDay,
+                                onAction: { store.send(.actionTapped(item.card)) },
+                                onCheckIn: { store.send(.delegate(.openCheckIn)) }
+                            )
+                            .padding(.horizontal, AppLayout.horizontalPadding)
+                        }
+                    }
+                    .shadow(color: .black.opacity(isFront ? 0.08 : 0.04), radius: isFront ? 12 : 4, x: 0, y: isFront ? 4 : 2)
                     .scaleEffect(scale(for: item.depth))
                     .offset(
                         x: isFront ? store.dragOffset : fanOffsetX(for: item.depth),
@@ -223,7 +280,7 @@ struct CardStackView: View {
                             : fanRotation(for: item.depth),
                         anchor: .bottom
                     )
-                    .opacity(opacity(for: item.depth))
+                    .opacity(1)
                     .zIndex(Double(3 - item.depth))
                     .allowsHitTesting(isFront)
                     .animation(
@@ -391,23 +448,7 @@ private struct DailyCardView: View {
     var onAction: (() -> Void)?
     var onCheckIn: (() -> Void)?
 
-    private var phaseAccent: Color { card.cyclePhase.orbitColor }
-
-    private var cardGradient: LinearGradient {
-        let colors: [Color] = switch card.cyclePhase {
-        case .menstrual:
-            [Color(red: 0.94, green: 0.84, blue: 0.82), Color(red: 0.97, green: 0.92, blue: 0.90)]
-        case .follicular:
-            [Color(red: 0.85, green: 0.93, blue: 0.89), Color(red: 0.93, green: 0.96, blue: 0.94)]
-        case .ovulatory:
-            [Color(red: 0.96, green: 0.91, blue: 0.80), Color(red: 0.98, green: 0.95, blue: 0.89)]
-        case .luteal:
-            [Color(red: 0.90, green: 0.87, blue: 0.95), Color(red: 0.95, green: 0.93, blue: 0.97)]
-        case .late:
-            [Color(red: 0.92, green: 0.91, blue: 0.89), Color(red: 0.96, green: 0.95, blue: 0.94)]
-        }
-        return LinearGradient(colors: colors, startPoint: .topLeading, endPoint: .bottomTrailing)
-    }
+    private var phaseAccent: Color { DesignColors.accentWarm }
 
     var body: some View {
         switch card.cardType {
@@ -421,13 +462,6 @@ private struct DailyCardView: View {
 
     private var feelLayout: some View {
         ZStack(alignment: .bottomLeading) {
-            cardGradient
-
-            // Watermark icon
-            Image(systemName: card.cyclePhase.icon)
-                .font(.system(size: 140, weight: .ultraLight))
-                .foregroundStyle(phaseAccent.opacity(0.08))
-                .offset(x: 90, y: -30)
 
             VStack(alignment: .leading) {
                 Spacer()
@@ -447,50 +481,45 @@ private struct DailyCardView: View {
 
                 Spacer().frame(height: 16)
 
-                HStack {
-                    if let day = displayDay ?? card.cycleDay {
-                        Text(card.cyclePhase == .late
-                             ? "\(day) days late"
-                             : "Day \(day) · \(card.cyclePhase.displayName)")
-                            .font(.custom("Raleway-Medium", size: 14, relativeTo: .caption))
-                            .foregroundStyle(phaseAccent.opacity(0.6))
-                    }
-
-                    Spacer()
-
-                    Button {
-                        UIImpactFeedbackGenerator(style: .light).impactOccurred()
-                        onCheckIn?()
-                    } label: {
-                        HStack(spacing: 6) {
-                            Text("How do you feel?")
-                                .font(.custom("Raleway-SemiBold", size: 14, relativeTo: .body))
-                            Image(systemName: "arrow.right")
-                                .font(.system(size: 11, weight: .semibold))
-                        }
-                        .foregroundStyle(phaseAccent)
-                    }
-                    .buttonStyle(.plain)
+                if let day = displayDay ?? card.cycleDay {
+                    Text(card.cyclePhase == .late
+                         ? "\(day) days late"
+                         : "Day \(day) · \(card.cyclePhase.displayName)")
+                        .font(.custom("Raleway-Medium", size: 14, relativeTo: .caption))
+                        .foregroundStyle(phaseAccent.opacity(0.6))
                 }
             }
             .padding(32)
         }
         .frame(height: 320)
+        .background(
+            RoundedRectangle(cornerRadius: AppLayout.cornerRadiusL, style: .continuous)
+                .fill(
+                    LinearGradient(
+                        colors: [DesignColors.background, Color(hex: 0xF5E8E2)],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+                .overlay {
+                    RoundedRectangle(cornerRadius: AppLayout.cornerRadiusL, style: .continuous)
+                        .strokeBorder(
+                            LinearGradient(
+                                colors: [DesignColors.structure.opacity(0.4), DesignColors.accentWarm.opacity(0.15)],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            ),
+                            lineWidth: 0.5
+                        )
+                }
+        )
         .clipShape(RoundedRectangle(cornerRadius: AppLayout.cornerRadiusL, style: .continuous))
-        .shadow(color: .black.opacity(0.1), radius: 20, x: 0, y: 8)
     }
 
     // MARK: - DO
 
     private var doLayout: some View {
         ZStack {
-            Color(hex: 0xFDFCF7)
-
-            Circle()
-                .fill(DesignColors.accentWarm.opacity(0.1))
-                .frame(width: 280, height: 280)
-                .blur(radius: 80)
-                .offset(x: 80, y: -60)
 
             VStack(alignment: .leading) {
                 // Action type pill
@@ -557,47 +586,46 @@ private struct DailyCardView: View {
             .padding(32)
         }
         .frame(height: 320)
+        .background(
+            RoundedRectangle(cornerRadius: AppLayout.cornerRadiusL, style: .continuous)
+                .fill(
+                    LinearGradient(
+                        colors: [DesignColors.background, Color(hex: 0xF5E8E2)],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+                .overlay {
+                    RoundedRectangle(cornerRadius: AppLayout.cornerRadiusL, style: .continuous)
+                        .strokeBorder(
+                            LinearGradient(
+                                colors: [DesignColors.structure.opacity(0.4), DesignColors.accentWarm.opacity(0.15)],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            ),
+                            lineWidth: 0.5
+                        )
+                }
+        )
         .clipShape(RoundedRectangle(cornerRadius: AppLayout.cornerRadiusL, style: .continuous))
-        .shadow(color: .black.opacity(0.1), radius: 20, x: 0, y: 8)
     }
 
     // MARK: - GO DEEPER
 
     private var goDeeperLayout: some View {
         ZStack {
-            LinearGradient(
-                colors: [
-                    Color(red: 0.22, green: 0.20, blue: 0.28),
-                    Color(red: 0.32, green: 0.26, blue: 0.36),
-                ],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-
-            Circle()
-                .fill(phaseAccent.opacity(0.15))
-                .frame(width: 220, height: 220)
-                .blur(radius: 60)
-                .offset(x: -60, y: -80)
-
-            Circle()
-                .fill(DesignColors.accentSecondary.opacity(0.12))
-                .frame(width: 180, height: 180)
-                .blur(radius: 50)
-                .offset(x: 100, y: 60)
-
             VStack(alignment: .leading) {
                 Spacer()
 
                 Text(card.title)
                     .font(.custom("Raleway-Bold", size: 24, relativeTo: .title))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(DesignColors.text)
                     .lineSpacing(4)
 
                 if !card.body.isEmpty {
                     Text(card.body)
                         .font(.custom("Raleway-Regular", size: 14, relativeTo: .body))
-                        .foregroundStyle(.white.opacity(0.7))
+                        .foregroundStyle(DesignColors.textSecondary)
                         .lineSpacing(3)
                         .lineLimit(2)
                 }
@@ -619,10 +647,14 @@ private struct DailyCardView: View {
                     .padding(.vertical, 14)
                     .background {
                         Capsule()
-                            .fill(.white.opacity(0.15))
-                            .overlay {
-                                Capsule().strokeBorder(.white.opacity(0.2), lineWidth: 0.75)
-                            }
+                            .fill(
+                                LinearGradient(
+                                    colors: [DesignColors.accentWarm, DesignColors.accentSecondary],
+                                    startPoint: .leading,
+                                    endPoint: .trailing
+                                )
+                            )
+                            .shadow(color: DesignColors.accentWarm.opacity(0.3), radius: 8, x: 0, y: 4)
                     }
                 }
                 .buttonStyle(.plain)
@@ -630,8 +662,28 @@ private struct DailyCardView: View {
             .padding(32)
         }
         .frame(height: 320)
+        .background(
+            RoundedRectangle(cornerRadius: AppLayout.cornerRadiusL, style: .continuous)
+                .fill(
+                    LinearGradient(
+                        colors: [DesignColors.background, Color(hex: 0xF5E8E2)],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+                .overlay {
+                    RoundedRectangle(cornerRadius: AppLayout.cornerRadiusL, style: .continuous)
+                        .strokeBorder(
+                            LinearGradient(
+                                colors: [DesignColors.structure.opacity(0.4), DesignColors.accentWarm.opacity(0.15)],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            ),
+                            lineWidth: 0.5
+                        )
+                }
+        )
         .clipShape(RoundedRectangle(cornerRadius: AppLayout.cornerRadiusL, style: .continuous))
-        .shadow(color: .black.opacity(0.15), radius: 24, x: 0, y: 10)
     }
 }
 

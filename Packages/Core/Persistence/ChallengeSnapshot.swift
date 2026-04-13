@@ -2,7 +2,7 @@ import Foundation
 
 // MARK: - Challenge Snapshot
 
-struct ChallengeSnapshot: Equatable, Sendable {
+public struct ChallengeSnapshot: Equatable, Sendable {
     let id: UUID
     let date: Date
     let templateId: String
