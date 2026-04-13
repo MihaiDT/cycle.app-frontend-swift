@@ -6,6 +6,7 @@ public enum DesignColors {
     // MARK: - Backgrounds
     public static let background = Color(hex: 0xFDFCF7)  // Ivory Whisper - fundal
     public static let backgroundElegant = Color(hex: 0xFDFCF7)  // Champagne Silk - eleganta, confort
+    public static let cardWarm = Color(hex: 0xF7F2E8)  // Warm card surface — stat boxes & how-to card
 
     // MARK: - Text Colors
     public static let text = Color(hex: 0x5C4A3B)  // Cocoa Dark - text important
