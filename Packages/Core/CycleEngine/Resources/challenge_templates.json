@@ -16,6 +16,54 @@
     "validationPrompt": "User should show evidence of reaching out to a friend — a chat screenshot, selfie, or call log."
   },
   {
+    "id": "social_ovulatory_02",
+    "category": "social",
+    "phases": ["ovulatory"],
+    "energyMin": 6,
+    "energyMax": 10,
+    "title": "Host a Mini Gathering",
+    "description": "Invite one or two friends over for coffee, a meal, or even just a walk together. Your social magnetism is at its peak.",
+    "tips": [
+      "Keep it low-key — the point is connection, not perfection",
+      "A walk outside counts as a gathering",
+      "Prepare one small treat or ritual to share"
+    ],
+    "goldHint": "A group selfie or a photo of your hosting setup",
+    "validationPrompt": "User should show a photo with friends, a group selfie, or evidence of hosting — a table setting, snacks, or similar."
+  },
+  {
+    "id": "social_ovulatory_03",
+    "category": "social",
+    "phases": ["ovulatory"],
+    "energyMin": 5,
+    "energyMax": 10,
+    "title": "Friend selfie time",
+    "description": "Snap a photo with someone you love — a friend, family member, or even a friendly pet — and celebrate your connection.",
+    "tips": [
+      "Natural light makes every selfie better",
+      "Capture a candid moment rather than a posed shot",
+      "Send the photo to the person afterward"
+    ],
+    "goldHint": "A genuine smiling selfie with someone special",
+    "validationPrompt": "User should show a selfie with at least one other person (or a beloved pet), capturing a moment of connection."
+  },
+  {
+    "id": "social_ovulatory_04",
+    "category": "social",
+    "phases": ["ovulatory", "follicular"],
+    "energyMin": 5,
+    "energyMax": 9,
+    "title": "Plan a Future Adventure",
+    "description": "Make concrete plans with a friend for something exciting — a trip, class, event, or new restaurant. Anticipation is a gift.",
+    "tips": [
+      "Put it in the calendar before you finish the conversation",
+      "Look up options together in real time",
+      "Even a local day trip counts as an adventure"
+    ],
+    "goldHint": "Screenshot of the plans confirmed in a chat or a calendar entry",
+    "validationPrompt": "User should show evidence of confirmed plans — a chat screenshot, calendar entry, or booking confirmation."
+  },
+  {
     "id": "social_follicular_01",
     "category": "social",
     "phases": ["follicular"],
@@ -30,6 +78,54 @@
     ],
     "goldHint": "A note or selfie from the moment",
     "validationPrompt": "User should describe or show evidence of giving a genuine compliment to someone."
+  },
+  {
+    "id": "social_follicular_02",
+    "category": "social",
+    "phases": ["follicular"],
+    "energyMin": 4,
+    "energyMax": 8,
+    "title": "Write a Heartfelt Note",
+    "description": "Write a handwritten or digital note to someone who's made a difference in your life. Tell them what they mean to you.",
+    "tips": [
+      "One specific memory makes notes feel extra special",
+      "It doesn't have to be long — three sentences is plenty",
+      "Mail or hand-deliver it for extra impact"
+    ],
+    "goldHint": "Photo of the written note or a screenshot of the message sent",
+    "validationPrompt": "User should show a handwritten note, typed message, or screenshot of a heartfelt note sent to someone."
+  },
+  {
+    "id": "social_follicular_03",
+    "category": "social",
+    "phases": ["follicular"],
+    "energyMin": 4,
+    "energyMax": 9,
+    "title": "Join a Community Event",
+    "description": "Attend a local class, meetup, or community gathering today. Put yourself in a room with new people.",
+    "tips": [
+      "Look for yoga classes, book clubs, or hobby meetups",
+      "You only need to stay for an hour to get the benefit",
+      "Introduce yourself to at least one new person"
+    ],
+    "goldHint": "A photo from the event or venue",
+    "validationPrompt": "User should show a photo from a community event, class, or gathering they attended."
+  },
+  {
+    "id": "social_follicular_04",
+    "category": "social",
+    "phases": ["follicular", "ovulatory"],
+    "energyMin": 5,
+    "energyMax": 9,
+    "title": "Coffee date debrief",
+    "description": "Share a coffee, tea, or smoothie with someone you care about and have a real conversation — no phones on the table.",
+    "tips": [
+      "Ask one meaningful question to spark depth",
+      "Practice active listening — really hear them",
+      "A video call counts if meeting in person isn't possible"
+    ],
+    "goldHint": "A photo of your drinks together or a selfie with your coffee date",
+    "validationPrompt": "User should show a photo of two drinks side by side, or a selfie with the person they met with."
   },
   {
     "id": "social_luteal_01",
@@ -48,6 +144,86 @@
     "validationPrompt": "User should show a caring message sent to someone they care about."
   },
   {
+    "id": "social_luteal_02",
+    "category": "social",
+    "phases": ["luteal"],
+    "energyMin": 2,
+    "energyMax": 5,
+    "title": "Quiet movie night in",
+    "description": "Watch a feel-good film with someone you love — in person, on a video call, or even in a watch party app.",
+    "tips": [
+      "Pick something lighthearted, not emotionally heavy",
+      "Make it cozy with blankets and a warm drink",
+      "Synchronized watching apps make long-distance movie nights easy"
+    ],
+    "goldHint": "A photo of your movie setup or a screenshot of you and a friend watching together",
+    "validationPrompt": "User should show their cozy movie setup, a screen showing the film, or evidence of watching with a friend."
+  },
+  {
+    "id": "social_luteal_03",
+    "category": "social",
+    "phases": ["luteal", "menstrual"],
+    "energyMin": 1,
+    "energyMax": 5,
+    "title": "Voice note love letter",
+    "description": "Send someone a voice note telling them one thing you appreciate about them. Your voice carries warmth that text can't.",
+    "tips": [
+      "Don't overthink it — speak from the heart",
+      "One minute is all it takes",
+      "Record it in a quiet, comfortable spot"
+    ],
+    "goldHint": "Screenshot of the sent voice message in your chat",
+    "validationPrompt": "User should show a screenshot of a voice message sent in a chat app to someone they care about."
+  },
+  {
+    "id": "social_menstrual_01",
+    "category": "social",
+    "phases": ["menstrual"],
+    "energyMin": 1,
+    "energyMax": 4,
+    "title": "Share something beautiful",
+    "description": "Send a photo, article, song, or poem to a friend that made you feel something. Let them into your inner world.",
+    "tips": [
+      "It can be as simple as a song on repeat",
+      "Add a one-line note about why you're sharing it",
+      "No need for a full conversation — just a small spark of connection"
+    ],
+    "goldHint": "Screenshot of what you shared and who you sent it to",
+    "validationPrompt": "User should show a screenshot of something meaningful shared with a friend — a song, article, photo, or poem."
+  },
+  {
+    "id": "social_menstrual_02",
+    "category": "social",
+    "phases": ["menstrual"],
+    "energyMin": 1,
+    "energyMax": 4,
+    "title": "Ask for support",
+    "description": "Tell one person how you're really feeling today. Vulnerability is strength, and you don't have to carry everything alone.",
+    "tips": [
+      "You can share as much or as little as you want",
+      "Even saying 'I'm having a hard day, can we chat?' is enough",
+      "Choose someone who feels safe and non-judgmental"
+    ],
+    "goldHint": "Screenshot of the conversation or a note you wrote to yourself about reaching out",
+    "validationPrompt": "User should show a screenshot of a supportive conversation, or a note showing they reached out to someone."
+  },
+  {
+    "id": "social_all_01",
+    "category": "social",
+    "phases": ["follicular", "ovulatory", "luteal", "menstrual"],
+    "energyMin": 2,
+    "energyMax": 8,
+    "title": "Smile at three people",
+    "description": "Make genuine eye contact and smile at three different people today. Small moments of human warmth ripple outward.",
+    "tips": [
+      "A real smile reaches your eyes — let it be authentic",
+      "Try it with the cashier, a neighbor, or a passerby",
+      "Notice how it feels in your body when someone smiles back"
+    ],
+    "goldHint": "A selfie showing your smile, or a brief note about the three moments",
+    "validationPrompt": "User should show a smiling selfie or describe three genuine smile moments from their day."
+  },
+  {
     "id": "self_care_menstrual_01",
     "category": "self_care",
     "phases": ["menstrual"],
@@ -62,6 +238,38 @@
     ],
     "goldHint": "Photo of your cozy setup",
     "validationPrompt": "User should show their warm comfort setup — a bath, hot drink, blanket, or similar cozy ritual."
+  },
+  {
+    "id": "self_care_menstrual_02",
+    "category": "self_care",
+    "phases": ["menstrual"],
+    "energyMin": 1,
+    "energyMax": 3,
+    "title": "Cozy corner setup",
+    "description": "Build yourself a little sanctuary — gather your softest blanket, a warm drink, and one thing that brings you joy.",
+    "tips": [
+      "Dim the lights or use candles for extra coziness",
+      "A good book or calming playlist completes the vibe",
+      "This is your permission to stay there as long as you need"
+    ],
+    "goldHint": "A photo of your cozy corner setup",
+    "validationPrompt": "User should show a photo of their comfort corner — blankets, pillows, warm drink, candles, or similar cozy elements."
+  },
+  {
+    "id": "self_care_menstrual_03",
+    "category": "self_care",
+    "phases": ["menstrual", "luteal"],
+    "energyMin": 1,
+    "energyMax": 4,
+    "title": "Nourishing herbal tea",
+    "description": "Brew a mug of herbal tea mindfully. Choose herbs that support your body this phase — raspberry leaf, chamomile, or ginger.",
+    "tips": [
+      "Raspberry leaf tea is a classic for menstrual support",
+      "Ginger helps with cramps and nausea",
+      "Sit somewhere comfortable and sip slowly — no multitasking"
+    ],
+    "goldHint": "A photo of your tea mug, ideally with cozy surroundings",
+    "validationPrompt": "User should show a photo of their herbal tea mug, with or without a cozy background."
   },
   {
     "id": "self_care_follicular_01",
@@ -80,6 +288,22 @@
     "validationPrompt": "User should show a selfie during or after their skincare routine."
   },
   {
+    "id": "self_care_follicular_02",
+    "category": "self_care",
+    "phases": ["follicular", "ovulatory"],
+    "energyMin": 4,
+    "energyMax": 8,
+    "title": "Fresh space refresh",
+    "description": "Tidy, rearrange, or refresh one space in your home — your desk, nightstand, or a single shelf. Fresh spaces spark fresh energy.",
+    "tips": [
+      "You don't need to deep clean — just make one space feel intentional",
+      "Add a plant, candle, or small object that makes you smile",
+      "The act of caring for your space is a form of self-care"
+    ],
+    "goldHint": "A before-and-after photo or a photo of your refreshed space",
+    "validationPrompt": "User should show a photo of a tidy, refreshed area in their home — desk, shelf, nightstand, or similar."
+  },
+  {
     "id": "self_care_luteal_01",
     "category": "self_care",
     "phases": ["luteal"],
@@ -94,6 +318,86 @@
     ],
     "goldHint": "Photo of your screen-free setup or journal page",
     "validationPrompt": "User should show their screen-free wind-down setup — a book, journal, or dim-lit room."
+  },
+  {
+    "id": "self_care_luteal_02",
+    "category": "self_care",
+    "phases": ["luteal"],
+    "energyMin": 2,
+    "energyMax": 5,
+    "title": "Evening foot soak",
+    "description": "Give your feet a warm soak with Epsom salts and a few drops of essential oil. Ground your body before sleep.",
+    "tips": [
+      "Epsom salts contain magnesium — great for luteal phase",
+      "Peppermint or lavender oil feels wonderful",
+      "Pair with gentle music and dim lights for full effect"
+    ],
+    "goldHint": "A photo of your foot soak setup",
+    "validationPrompt": "User should show a photo of their foot soak — a basin of water, salts, or essential oils visible."
+  },
+  {
+    "id": "self_care_luteal_03",
+    "category": "self_care",
+    "phases": ["luteal", "menstrual"],
+    "energyMin": 1,
+    "energyMax": 4,
+    "title": "Journaling wind-down",
+    "description": "Write three things that felt good today and one thing you're letting go of. Close the day with intention.",
+    "tips": [
+      "Even tiny good things count — a warm soup, a funny moment",
+      "Letting go doesn't mean forgetting — it means releasing tension",
+      "Write by hand if possible; it slows the mind down beautifully"
+    ],
+    "goldHint": "A photo of your open journal page (content can be private)",
+    "validationPrompt": "User should show a photo of an open journal with handwriting visible — content can be blurred or private."
+  },
+  {
+    "id": "self_care_ovulatory_01",
+    "category": "self_care",
+    "phases": ["ovulatory"],
+    "energyMin": 5,
+    "energyMax": 9,
+    "title": "Dress for yourself",
+    "description": "Wear something today that makes you feel exactly like yourself — confident, comfortable, or joyful. Dress intentionally.",
+    "tips": [
+      "It can be your favorite outfit or something new",
+      "Comfort and style can coexist — find what balances them for you",
+      "Let your energy phase guide your color choices"
+    ],
+    "goldHint": "A full-length mirror selfie or a flat-lay of the outfit",
+    "validationPrompt": "User should show a photo of their intentional outfit — a selfie, mirror shot, or flat-lay of their clothing."
+  },
+  {
+    "id": "self_care_all_01",
+    "category": "self_care",
+    "phases": ["menstrual", "follicular", "ovulatory", "luteal"],
+    "energyMin": 1,
+    "energyMax": 6,
+    "title": "Five-minute face massage",
+    "description": "Use a facial roller, gua sha, or just your fingertips to give your face a gentle massage. Tension lives here too.",
+    "tips": [
+      "Apply a few drops of facial oil first for slip",
+      "Use upward and outward strokes",
+      "A cool jade roller is especially lovely in the morning"
+    ],
+    "goldHint": "A selfie holding your face tool, or your glowing skin after",
+    "validationPrompt": "User should show a selfie with their face roller or gua sha tool, or a post-massage glow selfie."
+  },
+  {
+    "id": "self_care_all_02",
+    "category": "self_care",
+    "phases": ["menstrual", "follicular", "luteal"],
+    "energyMin": 1,
+    "energyMax": 5,
+    "title": "Solo candle moment",
+    "description": "Light a candle and sit quietly for five minutes — no agenda, no phone. Just you, the flame, and the present moment.",
+    "tips": [
+      "Choose a scent that feels right for your mood",
+      "Watch the flame rather than staring at a screen",
+      "Notice your breath naturally slowing down"
+    ],
+    "goldHint": "A photo of the lit candle in your space",
+    "validationPrompt": "User should show a photo of a lit candle in a cozy setting."
   },
   {
     "id": "creative_ovulatory_01",
@@ -112,6 +416,38 @@
     "validationPrompt": "User should show a creative output — artwork, writing, playlist screenshot, styled outfit, or rearranged space."
   },
   {
+    "id": "creative_ovulatory_02",
+    "category": "creative",
+    "phases": ["ovulatory"],
+    "energyMin": 6,
+    "energyMax": 10,
+    "title": "Bold color experiment",
+    "description": "Use color boldly today — in your outfit, makeup, art, or home. Pick a shade that feels exciting and wear it with confidence.",
+    "tips": [
+      "Your ovulatory energy is magnetic — let color amplify it",
+      "Even one bold accessory or lipstick shade counts",
+      "Mix colors you've never paired before"
+    ],
+    "goldHint": "A photo featuring your bold color choice",
+    "validationPrompt": "User should show a photo featuring a bold, intentional color — in their outfit, makeup, artwork, or surroundings."
+  },
+  {
+    "id": "creative_ovulatory_03",
+    "category": "creative",
+    "phases": ["ovulatory", "follicular"],
+    "energyMin": 5,
+    "energyMax": 10,
+    "title": "Start a creative project",
+    "description": "Begin something you've been putting off — a painting, a song, a scrapbook, a recipe you've wanted to try. Just start.",
+    "tips": [
+      "Start in the middle if the beginning feels daunting",
+      "Set a 20-minute timer — starting is the hardest part",
+      "Save your progress somewhere you'll find it again"
+    ],
+    "goldHint": "A photo of your in-progress project",
+    "validationPrompt": "User should show a photo of a creative project in progress — any medium counts."
+  },
+  {
     "id": "creative_follicular_01",
     "category": "creative",
     "phases": ["follicular"],
@@ -126,6 +462,54 @@
     ],
     "goldHint": "Screenshot or photo of your vision board",
     "validationPrompt": "User should show a vision board — digital or physical — with collected inspiring images."
+  },
+  {
+    "id": "creative_follicular_02",
+    "category": "creative",
+    "phases": ["follicular"],
+    "energyMin": 4,
+    "energyMax": 8,
+    "title": "Learn something new",
+    "description": "Spend 15 minutes learning a new skill — a chord on guitar, a watercolor technique, five words in a new language, or a recipe.",
+    "tips": [
+      "YouTube tutorials make almost anything accessible",
+      "You don't need to master it — just begin",
+      "Write down what you learned so you can pick it up again"
+    ],
+    "goldHint": "A photo showing your learning in action — an open tutorial, notes, or your first attempt",
+    "validationPrompt": "User should show evidence of learning something new — an open tutorial, handwritten notes, or a first attempt at a skill."
+  },
+  {
+    "id": "creative_follicular_03",
+    "category": "creative",
+    "phases": ["follicular", "ovulatory"],
+    "energyMin": 4,
+    "energyMax": 9,
+    "title": "Curate a playlist",
+    "description": "Build a playlist for a specific mood or moment — your morning ritual, a creative session, or a dinner with friends.",
+    "tips": [
+      "Start with 5-10 songs and see where it takes you",
+      "Mix tempos and genres for a journey feel",
+      "Name it something that captures the vibe"
+    ],
+    "goldHint": "Screenshot of your completed playlist",
+    "validationPrompt": "User should show a screenshot of a playlist they created, with a visible title and song list."
+  },
+  {
+    "id": "creative_follicular_04",
+    "category": "creative",
+    "phases": ["follicular"],
+    "energyMin": 3,
+    "energyMax": 8,
+    "title": "Rearrange one corner",
+    "description": "Pick one corner of your home and make it feel intentional. Move furniture, add a plant, or simply declutter.",
+    "tips": [
+      "Take a before photo first so you can see the transformation",
+      "You don't need to buy anything — work with what you have",
+      "Even a small change can completely refresh a space's energy"
+    ],
+    "goldHint": "A photo of your refreshed corner",
+    "validationPrompt": "User should show a photo of a refreshed, intentionally arranged corner or space in their home."
   },
   {
     "id": "creative_menstrual_01",
@@ -144,6 +528,70 @@
     "validationPrompt": "User should show a photo of their handwritten or typed free-writing page."
   },
   {
+    "id": "creative_menstrual_02",
+    "category": "creative",
+    "phases": ["menstrual"],
+    "energyMin": 1,
+    "energyMax": 4,
+    "title": "Doodle without purpose",
+    "description": "Pick up a pen and doodle for 10 minutes — patterns, shapes, faces, or abstract lines. Let your hand wander freely.",
+    "tips": [
+      "There's no right or wrong in doodling — it's just play",
+      "Try repeating patterns like mandalas or waves",
+      "Don't lift the pen — see what emerges"
+    ],
+    "goldHint": "A photo of your doodle page",
+    "validationPrompt": "User should show a photo of a page filled with doodles, sketches, or free-form drawings."
+  },
+  {
+    "id": "creative_luteal_01",
+    "category": "creative",
+    "phases": ["luteal"],
+    "energyMin": 2,
+    "energyMax": 6,
+    "title": "Memory box moment",
+    "description": "Look through old photos, letters, or mementos and choose one that made you smile. Create a small display or album page.",
+    "tips": [
+      "A phone photo album counts — scroll back to a favorite memory",
+      "Write a caption that captures what made that moment special",
+      "Display it somewhere you'll see it this week"
+    ],
+    "goldHint": "A photo of your displayed memory or the memory album page",
+    "validationPrompt": "User should show a photo of a displayed memory — a printed photo, memento arrangement, or digital album page."
+  },
+  {
+    "id": "creative_luteal_02",
+    "category": "creative",
+    "phases": ["luteal", "menstrual"],
+    "energyMin": 2,
+    "energyMax": 5,
+    "title": "Slow handwriting practice",
+    "description": "Write out a favorite quote, poem, or song lyric slowly and intentionally. Let the words sink in as you form each letter.",
+    "tips": [
+      "Try brush lettering or calligraphy if you want a challenge",
+      "Choose words that feel meaningful to where you are right now",
+      "Frame it or tape it somewhere visible"
+    ],
+    "goldHint": "A photo of your handwritten quote or lettering",
+    "validationPrompt": "User should show a photo of their handwritten quote, poem, or lettering practice."
+  },
+  {
+    "id": "creative_all_01",
+    "category": "creative",
+    "phases": ["follicular", "ovulatory", "luteal", "menstrual"],
+    "energyMin": 2,
+    "energyMax": 8,
+    "title": "Photo walk challenge",
+    "description": "Take a walk with the intention of taking 5 beautiful photos — of light, texture, color, or moments that catch your eye.",
+    "tips": [
+      "Look down and up, not just straight ahead",
+      "Seek light reflections, shadows, and patterns",
+      "Your phone camera is more than enough"
+    ],
+    "goldHint": "Your favorite photo from the walk",
+    "validationPrompt": "User should show at least one beautiful photo taken intentionally on a walk — landscape, texture, light, or a captured moment."
+  },
+  {
     "id": "movement_ovulatory_01",
     "category": "movement",
     "phases": ["ovulatory"],
@@ -158,6 +606,38 @@
     ],
     "goldHint": "A short video clip or sweaty selfie",
     "validationPrompt": "User should show evidence of dancing — a video clip, sweaty selfie, or screenshot of the song they danced to."
+  },
+  {
+    "id": "movement_ovulatory_02",
+    "category": "movement",
+    "phases": ["ovulatory"],
+    "energyMin": 7,
+    "energyMax": 10,
+    "title": "Post-workout glow",
+    "description": "Do a workout that challenges you — a HIIT session, run, spin class, or strength training. Your body is primed for it.",
+    "tips": [
+      "Ovulation is your peak strength window — push a little harder",
+      "Warm up for 5 minutes to protect your joints",
+      "Hydrate well before and after"
+    ],
+    "goldHint": "A post-workout selfie showing your glow and effort",
+    "validationPrompt": "User should show a post-workout selfie — flushed cheeks, workout clothes, or gym equipment visible."
+  },
+  {
+    "id": "movement_ovulatory_03",
+    "category": "movement",
+    "phases": ["ovulatory", "follicular"],
+    "energyMin": 6,
+    "energyMax": 10,
+    "title": "Try a new class",
+    "description": "Sign up for a fitness class you've never tried — aerial yoga, kickboxing, reformer pilates, or bouldering.",
+    "tips": [
+      "Many studios offer a free or discounted first class",
+      "Go with a friend if trying solo feels intimidating",
+      "The point is the experience, not mastering it"
+    ],
+    "goldHint": "A photo from the class or the studio",
+    "validationPrompt": "User should show a photo from a fitness class or studio they attended, or evidence of booking."
   },
   {
     "id": "movement_follicular_01",
@@ -176,6 +656,38 @@
     "validationPrompt": "User should show evidence of an outdoor walk — a nature photo, step count, or outdoor selfie."
   },
   {
+    "id": "movement_follicular_02",
+    "category": "movement",
+    "phases": ["follicular"],
+    "energyMin": 4,
+    "energyMax": 8,
+    "title": "Stretch and strengthen",
+    "description": "Do a 20-minute yoga or bodyweight session. Focus on building strength and flexibility in equal measure.",
+    "tips": [
+      "Combine flow poses with held strength poses",
+      "A free YouTube session works perfectly",
+      "Notice which parts of your body feel most alive today"
+    ],
+    "goldHint": "A photo of your workout setup or a post-session selfie",
+    "validationPrompt": "User should show their yoga mat, workout space, or a post-session selfie."
+  },
+  {
+    "id": "movement_follicular_03",
+    "category": "movement",
+    "phases": ["follicular", "ovulatory"],
+    "energyMin": 5,
+    "energyMax": 9,
+    "title": "Bike ride adventure",
+    "description": "Go for a bike ride — commute, explore a new neighborhood, or hit a trail. Let the movement feel like freedom.",
+    "tips": [
+      "Even a 15-minute ride counts as a win",
+      "Plan a small destination to give the ride a purpose",
+      "Bring water and enjoy the breeze"
+    ],
+    "goldHint": "A photo from your ride — scenery, your bike, or a step/distance tracker",
+    "validationPrompt": "User should show a photo from their bike ride — a scenic shot, photo of their bike, or fitness tracker screenshot."
+  },
+  {
     "id": "movement_menstrual_01",
     "category": "movement",
     "phases": ["menstrual"],
@@ -190,6 +702,22 @@
     ],
     "goldHint": "Photo of your stretching setup or a post-stretch selfie",
     "validationPrompt": "User should show their stretching setup — a yoga mat, pillow arrangement, or post-stretch selfie."
+  },
+  {
+    "id": "movement_menstrual_02",
+    "category": "movement",
+    "phases": ["menstrual"],
+    "energyMin": 1,
+    "energyMax": 4,
+    "title": "Slow restorative yoga",
+    "description": "Try a 10-minute restorative or yin yoga session. Hold each pose for 1-3 minutes and let your body fully release.",
+    "tips": [
+      "Supported child's pose, legs up the wall, and reclined butterfly are perfect",
+      "Use blankets and pillows to support each pose",
+      "This is rest, not exercise — let gravity do the work"
+    ],
+    "goldHint": "A photo of your restorative setup — bolsters, blankets, or legs up the wall",
+    "validationPrompt": "User should show a photo of their restorative yoga setup or a supported pose."
   },
   {
     "id": "movement_luteal_01",
@@ -208,6 +736,38 @@
     "validationPrompt": "User should show evidence of a mindful walk — a path photo, nature shot, or step count."
   },
   {
+    "id": "movement_luteal_02",
+    "category": "movement",
+    "phases": ["luteal"],
+    "energyMin": 2,
+    "energyMax": 6,
+    "title": "Swimming or water movement",
+    "description": "Move your body in water — swim laps, try water aerobics, or float. Water is uniquely soothing during the luteal phase.",
+    "tips": [
+      "Even gentle floating counts as movement",
+      "A cold plunge or cool shower can refresh your mood",
+      "Focus on the sensation of the water, not your speed"
+    ],
+    "goldHint": "A photo at the pool, lake, or ocean — or your wet hair after",
+    "validationPrompt": "User should show a photo at a pool, lake, or water setting, or evidence of water-based movement."
+  },
+  {
+    "id": "movement_all_01",
+    "category": "movement",
+    "phases": ["follicular", "ovulatory", "luteal", "menstrual"],
+    "energyMin": 2,
+    "energyMax": 8,
+    "title": "10-minute body tune-in",
+    "description": "Set a timer for 10 minutes and move in whatever way your body asks — stretch, walk, shake, or sway. No rules.",
+    "tips": [
+      "Put on a song that matches your current mood",
+      "Start by checking in with how each part of your body feels",
+      "This is about listening, not performing"
+    ],
+    "goldHint": "A selfie or photo from your 10-minute movement session",
+    "validationPrompt": "User should show a selfie or photo from their movement session — workout clothes, a yoga mat, or outdoor setting."
+  },
+  {
     "id": "mindfulness_menstrual_01",
     "category": "mindfulness",
     "phases": ["menstrual"],
@@ -224,20 +784,20 @@
     "validationPrompt": "User should show their resting setup — a cozy spot, timer, or meditation app screenshot."
   },
   {
-    "id": "mindfulness_follicular_01",
+    "id": "mindfulness_menstrual_02",
     "category": "mindfulness",
-    "phases": ["follicular", "ovulatory"],
-    "energyMin": 4,
-    "energyMax": 8,
-    "title": "Gratitude Snapshot",
-    "description": "Take a photo of something you're grateful for today. Write one sentence about why it matters to you.",
+    "phases": ["menstrual"],
+    "energyMin": 1,
+    "energyMax": 3,
+    "title": "Permission to rest",
+    "description": "Give yourself full, guilt-free permission to rest today. Horizontal is a valid position. Stillness is productive.",
     "tips": [
-      "Look for beauty in ordinary moments",
-      "It can be as simple as your morning coffee",
-      "Save it somewhere you'll see it later"
+      "Make your rest spot intentional — comfy pillow, soft blanket",
+      "Put your phone face-down or in another room",
+      "Rest isn't wasted time — it's where restoration happens"
     ],
-    "goldHint": "The gratitude photo with your written reason",
-    "validationPrompt": "User should show a photo of something they're grateful for, ideally with a brief note about why."
+    "goldHint": "A photo of your restful setup — cozy bed, hammock, couch fort, or nest of blankets",
+    "validationPrompt": "User should show a photo of their intentional rest setup — cozy bed, couch, hammock, or comfortable nesting spot."
   },
   {
     "id": "mindfulness_luteal_01",
@@ -256,6 +816,118 @@
     "validationPrompt": "User should show evidence of breathing practice — a timer, breathing app screenshot, or calm selfie."
   },
   {
+    "id": "mindfulness_luteal_02",
+    "category": "mindfulness",
+    "phases": ["luteal"],
+    "energyMin": 2,
+    "energyMax": 6,
+    "title": "Name the feeling",
+    "description": "Sit quietly for a few minutes and name what you're feeling — really name it. Emotions that are seen can be released.",
+    "tips": [
+      "Try: anxious, tender, heavy, scattered, hopeful, flat",
+      "You don't need to fix the feeling — just acknowledge it",
+      "Write it down if naming it out loud feels hard"
+    ],
+    "goldHint": "A photo of a word written down or a journal entry with the named feeling",
+    "validationPrompt": "User should show a word or phrase written on paper, or a journal entry naming their current emotional state."
+  },
+  {
+    "id": "mindfulness_luteal_03",
+    "category": "mindfulness",
+    "phases": ["luteal", "menstrual"],
+    "energyMin": 1,
+    "energyMax": 5,
+    "title": "Guided meditation session",
+    "description": "Try a 5-10 minute guided meditation — for sleep, anxiety, or simply presence. Let someone else's voice carry you.",
+    "tips": [
+      "Insight Timer, Calm, or YouTube all have free options",
+      "Choose 'sleep' or 'anxiety' themes for luteal phase",
+      "Lie down if sitting feels uncomfortable"
+    ],
+    "goldHint": "A screenshot of the meditation app or timer",
+    "validationPrompt": "User should show a screenshot of a meditation app, timer, or completed session."
+  },
+  {
+    "id": "mindfulness_follicular_01",
+    "category": "mindfulness",
+    "phases": ["follicular", "ovulatory"],
+    "energyMin": 4,
+    "energyMax": 8,
+    "title": "Gratitude Snapshot",
+    "description": "Take a photo of something you're grateful for today. Write one sentence about why it matters to you.",
+    "tips": [
+      "Look for beauty in ordinary moments",
+      "It can be as simple as your morning coffee",
+      "Save it somewhere you'll see it later"
+    ],
+    "goldHint": "The gratitude photo with your written reason",
+    "validationPrompt": "User should show a photo of something they're grateful for, ideally with a brief note about why."
+  },
+  {
+    "id": "mindfulness_follicular_02",
+    "category": "mindfulness",
+    "phases": ["follicular"],
+    "energyMin": 4,
+    "energyMax": 8,
+    "title": "Morning intentions",
+    "description": "Before reaching for your phone, spend 5 minutes setting intentions for the day. What do you want to feel and do?",
+    "tips": [
+      "Keep a small journal on your nightstand",
+      "Three intentions is enough — keep it focused",
+      "Intentions are different from to-do lists: they're about how you want to be"
+    ],
+    "goldHint": "A photo of your morning intentions in your journal or notes",
+    "validationPrompt": "User should show a photo of their written morning intentions — a journal, notes app, or sticky note."
+  },
+  {
+    "id": "mindfulness_ovulatory_01",
+    "category": "mindfulness",
+    "phases": ["ovulatory"],
+    "energyMin": 4,
+    "energyMax": 8,
+    "title": "Mindful pleasure walk",
+    "description": "Walk slowly through a place you find beautiful and let yourself take genuine pleasure in it. Look, listen, and feel.",
+    "tips": [
+      "A park, garden, market, or even a beautiful street works",
+      "Pause for 30 seconds when something catches your eye",
+      "Take nothing for granted — everything is more interesting up close"
+    ],
+    "goldHint": "A photo from your pleasure walk — something that genuinely delighted you",
+    "validationPrompt": "User should show a photo of something that brought them genuine pleasure or delight on their walk."
+  },
+  {
+    "id": "mindfulness_all_01",
+    "category": "mindfulness",
+    "phases": ["menstrual", "follicular", "ovulatory", "luteal"],
+    "energyMin": 1,
+    "energyMax": 6,
+    "title": "Phone-free hour",
+    "description": "Put your phone in another room for one full hour. Notice what fills the space — thoughts, creativity, presence.",
+    "tips": [
+      "Tell anyone who needs to know that you'll be unavailable briefly",
+      "Keep a pen and paper nearby to capture thoughts",
+      "Notice what you reach for when boredom arises"
+    ],
+    "goldHint": "A photo of your phone put away, or what you did during the hour",
+    "validationPrompt": "User should show their phone placed away from them, or a photo of an activity they did during their phone-free hour."
+  },
+  {
+    "id": "mindfulness_all_02",
+    "category": "mindfulness",
+    "phases": ["luteal", "menstrual", "follicular"],
+    "energyMin": 1,
+    "energyMax": 5,
+    "title": "Five senses grounding",
+    "description": "Name 5 things you can see, 4 you can touch, 3 you can hear, 2 you can smell, and 1 you can taste. Arrive in your body.",
+    "tips": [
+      "Do this whenever anxiety spikes or your mind won't slow down",
+      "Take your time with each sense — don't rush through",
+      "This is a clinically validated grounding technique"
+    ],
+    "goldHint": "A photo of your grounding moment — the space around you, or something you noticed",
+    "validationPrompt": "User should show a photo from their grounding moment — their surroundings, something they observed, or a written list."
+  },
+  {
     "id": "nutrition_menstrual_01",
     "category": "nutrition",
     "phases": ["menstrual"],
@@ -270,6 +942,22 @@
     ],
     "goldHint": "Photo of your iron-rich meal",
     "validationPrompt": "User should show a photo of their iron-rich meal or snack."
+  },
+  {
+    "id": "nutrition_menstrual_02",
+    "category": "nutrition",
+    "phases": ["menstrual"],
+    "energyMin": 1,
+    "energyMax": 4,
+    "title": "Warming bone broth bowl",
+    "description": "Have a cup of bone broth or a warming soup today. Replenish minerals and wrap yourself in something deeply nourishing.",
+    "tips": [
+      "Add turmeric and ginger for anti-inflammatory benefits",
+      "Sip slowly from a mug if a full bowl feels like too much",
+      "Store-bought broth is perfectly fine — no need to make it from scratch"
+    ],
+    "goldHint": "A photo of your broth or soup bowl",
+    "validationPrompt": "User should show a photo of their bone broth, soup, or warming liquid meal."
   },
   {
     "id": "nutrition_follicular_01",
@@ -288,6 +976,22 @@
     "validationPrompt": "User should show a photo of a meal with at least 4 different colored whole foods."
   },
   {
+    "id": "nutrition_follicular_02",
+    "category": "nutrition",
+    "phases": ["follicular"],
+    "energyMin": 4,
+    "energyMax": 8,
+    "title": "Fermented food boost",
+    "description": "Include a fermented food today — yogurt, kefir, kimchi, sauerkraut, or kombucha. Feed your gut and your energy.",
+    "tips": [
+      "Even a small serving of yogurt counts",
+      "Kimchi on eggs or sauerkraut on a sandwich is an easy addition",
+      "Gut health directly impacts mood and energy — worth prioritizing"
+    ],
+    "goldHint": "A photo of your fermented food or meal featuring it",
+    "validationPrompt": "User should show a photo of a fermented food — yogurt, kimchi, kefir, sauerkraut, or kombucha."
+  },
+  {
     "id": "nutrition_ovulatory_01",
     "category": "nutrition",
     "phases": ["ovulatory"],
@@ -304,6 +1008,22 @@
     "validationPrompt": "User should show their hydration setup — infused water bottle, tracker app, or tally marks."
   },
   {
+    "id": "nutrition_ovulatory_02",
+    "category": "nutrition",
+    "phases": ["ovulatory"],
+    "energyMin": 5,
+    "energyMax": 9,
+    "title": "Protein power plate",
+    "description": "Build a meal centered on quality protein — eggs, tofu, fish, legumes, or chicken. Your body uses it well this phase.",
+    "tips": [
+      "Aim for protein at every meal today",
+      "Greek yogurt, nut butters, and edamame are easy snack proteins",
+      "Pair with healthy fats to stay satisfied longer"
+    ],
+    "goldHint": "A photo of your protein-rich meal",
+    "validationPrompt": "User should show a photo of a protein-centered meal or snack."
+  },
+  {
     "id": "nutrition_luteal_01",
     "category": "nutrition",
     "phases": ["luteal"],
@@ -318,5 +1038,261 @@
     ],
     "goldHint": "Photo of your magnesium-rich snack",
     "validationPrompt": "User should show a photo of their magnesium-rich snack or treat."
+  },
+  {
+    "id": "nutrition_luteal_02",
+    "category": "nutrition",
+    "phases": ["luteal"],
+    "energyMin": 2,
+    "energyMax": 6,
+    "title": "Anti-inflammatory dinner",
+    "description": "Cook or order a meal featuring anti-inflammatory foods — turmeric, salmon, leafy greens, berries, or olive oil.",
+    "tips": [
+      "A simple salmon with greens and olive oil dressing ticks all boxes",
+      "Add turmeric to soups, rice, or golden milk",
+      "Berries on yogurt is an easy anti-inflammatory combo"
+    ],
+    "goldHint": "A photo of your anti-inflammatory meal",
+    "validationPrompt": "User should show a photo of a meal featuring anti-inflammatory ingredients like turmeric, salmon, greens, or berries."
+  },
+  {
+    "id": "nutrition_all_01",
+    "category": "nutrition",
+    "phases": ["menstrual", "follicular", "ovulatory", "luteal"],
+    "energyMin": 2,
+    "energyMax": 8,
+    "title": "Cook something new",
+    "description": "Try a recipe you've never made before. Cooking new food is creative, nourishing, and a little adventurous.",
+    "tips": [
+      "Pick something with 5 ingredients or fewer if time is short",
+      "Ask a friend or family member for their favorite recipe",
+      "It doesn't need to be perfect — the attempt is the win"
+    ],
+    "goldHint": "A photo of your finished dish",
+    "validationPrompt": "User should show a photo of a meal they cooked for the first time."
+  },
+  {
+    "id": "nutrition_all_02",
+    "category": "nutrition",
+    "phases": ["menstrual", "follicular", "ovulatory", "luteal"],
+    "energyMin": 1,
+    "energyMax": 7,
+    "title": "Mindful eating moment",
+    "description": "Eat one meal today without distractions. No phone, no TV. Just you and your food, tasting every bite.",
+    "tips": [
+      "Put your fork down between bites to slow the pace",
+      "Notice textures, flavors, and the sensation of fullness",
+      "Even 10 minutes of mindful eating counts"
+    ],
+    "goldHint": "A photo of your meal set up without screens — a nicely plated dish",
+    "validationPrompt": "User should show a photo of a beautifully plated meal set up for mindful eating, without visible screens."
+  },
+  {
+    "id": "nutrition_all_03",
+    "category": "nutrition",
+    "phases": ["menstrual", "follicular", "ovulatory", "luteal"],
+    "energyMin": 2,
+    "energyMax": 8,
+    "title": "Nourishing smoothie",
+    "description": "Blend a smoothie packed with whole foods — fruits, greens, seeds, or protein. Drink slowly and savor it.",
+    "tips": [
+      "Frozen spinach is tasteless in smoothies and packs a nutrient punch",
+      "Add a tablespoon of flax or chia seeds for omega-3s",
+      "Blend with coconut water or oat milk for extra nourishment"
+    ],
+    "goldHint": "A photo of your smoothie — in the glass, with toppings, or mid-blend",
+    "validationPrompt": "User should show a photo of their smoothie — in a glass, blender, or cup."
+  },
+  {
+    "id": "social_ovulatory_05",
+    "category": "social",
+    "phases": ["ovulatory", "follicular"],
+    "energyMin": 5,
+    "energyMax": 9,
+    "title": "Organize a group activity",
+    "description": "Be the one who makes the plan — organize a group walk, dinner, game night, or shared workout. Your energy is contagious.",
+    "tips": [
+      "A group chat message is all it takes to start",
+      "Keep the logistics simple so people actually show up",
+      "Your initiative is a gift — don't undersell it"
+    ],
+    "goldHint": "A group photo from the activity or a screenshot of the plan confirmed",
+    "validationPrompt": "User should show a group photo from the activity, or a screenshot of a group chat confirming plans."
+  },
+  {
+    "id": "social_follicular_05",
+    "category": "social",
+    "phases": ["follicular"],
+    "energyMin": 3,
+    "energyMax": 7,
+    "title": "Leave a kind review",
+    "description": "Write a genuine, positive review for a local business, book, or creator you love. Your words help others and spread goodness.",
+    "tips": [
+      "Be specific — mention what made it special",
+      "Take 3 minutes — it makes a real difference to small businesses",
+      "It feels good to give something with no expectation of return"
+    ],
+    "goldHint": "A screenshot of your posted review",
+    "validationPrompt": "User should show a screenshot of a review they posted on Google, Yelp, Amazon, or a similar platform."
+  },
+  {
+    "id": "self_care_all_03",
+    "category": "self_care",
+    "phases": ["menstrual", "follicular", "ovulatory", "luteal"],
+    "energyMin": 2,
+    "energyMax": 7,
+    "title": "Scent ritual",
+    "description": "Use a scent intentionally today — perfume, essential oil, a candle, or fresh flowers. Scent anchors presence.",
+    "tips": [
+      "Choose something that makes you feel how you want to feel",
+      "Apply it slowly and mindfully, not in a rush",
+      "Notice how your mood shifts with a scent you love"
+    ],
+    "goldHint": "A photo of your scent — your perfume, diffuser, candle, or flowers",
+    "validationPrompt": "User should show a photo of a scent-related item — perfume bottle, essential oil, candle, or fresh flowers."
+  },
+  {
+    "id": "self_care_menstrual_04",
+    "category": "self_care",
+    "phases": ["menstrual", "luteal"],
+    "energyMin": 1,
+    "energyMax": 4,
+    "title": "Heat therapy moment",
+    "description": "Apply a heating pad, hot water bottle, or warm compress to anywhere that needs it — belly, lower back, shoulders.",
+    "tips": [
+      "Heat increases blood flow and eases muscle tension",
+      "Wrap your hot water bottle in a towel to protect your skin",
+      "Combine with deep breathing for maximum relief"
+    ],
+    "goldHint": "A photo of your heat therapy setup",
+    "validationPrompt": "User should show a photo of their heat therapy — a heating pad, hot water bottle, or warm compress in use."
+  },
+  {
+    "id": "creative_ovulatory_04",
+    "category": "creative",
+    "phases": ["ovulatory"],
+    "energyMin": 6,
+    "energyMax": 10,
+    "title": "Record a video message",
+    "description": "Record a short video — a thought, a mini vlog, a song cover, or a message to your future self. Own the camera.",
+    "tips": [
+      "Natural light and a tidy background make videos feel polished",
+      "One minute is plenty — you don't need a script",
+      "Save it somewhere private if sharing doesn't feel right yet"
+    ],
+    "goldHint": "A screenshot of your recorded video or a still from it",
+    "validationPrompt": "User should show a screenshot from a video they recorded — of themselves, their surroundings, or a creative moment."
+  },
+  {
+    "id": "movement_follicular_04",
+    "category": "movement",
+    "phases": ["follicular", "ovulatory"],
+    "energyMin": 5,
+    "energyMax": 9,
+    "title": "Run your own race",
+    "description": "Go for a run — any distance, any pace. Put on something that motivates you and just move forward.",
+    "tips": [
+      "Run-walk intervals are a valid and effective approach",
+      "Track your route for the satisfaction of seeing the distance",
+      "A cool-down walk at the end is part of the run"
+    ],
+    "goldHint": "A screenshot of your running app or a sweaty post-run selfie",
+    "validationPrompt": "User should show a running app screenshot, route map, or a post-run selfie with flushed cheeks and workout clothes."
+  },
+  {
+    "id": "mindfulness_luteal_04",
+    "category": "mindfulness",
+    "phases": ["luteal", "menstrual"],
+    "energyMin": 1,
+    "energyMax": 5,
+    "title": "Nature observation sit",
+    "description": "Sit outside for 10 minutes and watch nature without agenda — clouds, birds, wind in leaves, light changing. Just observe.",
+    "tips": [
+      "A park bench, garden, or even an open window works",
+      "Try not to reach for your phone the whole time",
+      "Notice something you've never noticed before"
+    ],
+    "goldHint": "A photo of what you were observing — clouds, a tree, birds, or light",
+    "validationPrompt": "User should show a photo of something they observed in nature during their sit — clouds, birds, plants, or natural light."
+  },
+  {
+    "id": "nutrition_follicular_03",
+    "category": "nutrition",
+    "phases": ["follicular", "ovulatory"],
+    "energyMin": 4,
+    "energyMax": 8,
+    "title": "Omega-3 rich meal",
+    "description": "Eat something rich in omega-3 fatty acids today — salmon, sardines, walnuts, flaxseed, or chia seeds.",
+    "tips": [
+      "Salmon on a salad is a fast and satisfying option",
+      "Chia seeds in overnight oats are a barely-there addition",
+      "Walnuts as a snack tick the box with zero prep"
+    ],
+    "goldHint": "A photo of your omega-3 rich meal or snack",
+    "validationPrompt": "User should show a photo of a meal or snack rich in omega-3 fatty acids — salmon, sardines, walnuts, or seeds."
+  },
+  {
+    "id": "creative_luteal_03",
+    "category": "creative",
+    "phases": ["luteal"],
+    "energyMin": 2,
+    "energyMax": 6,
+    "title": "Collage therapy",
+    "description": "Cut or collect images that resonate with how you feel right now — not how you want to feel, but where you actually are.",
+    "tips": [
+      "Old magazines, printed photos, or digital collage apps all work",
+      "There's no theme needed — let your instincts guide you",
+      "This is a reflection, not a vision board"
+    ],
+    "goldHint": "A photo of your finished collage",
+    "validationPrompt": "User should show a photo of their collage — physical or digital."
+  },
+  {
+    "id": "self_care_ovulatory_02",
+    "category": "self_care",
+    "phases": ["ovulatory", "follicular"],
+    "energyMin": 4,
+    "energyMax": 9,
+    "title": "Treat yourself to something small",
+    "description": "Buy yourself something small that brings joy — a coffee upgrade, a fresh flower, a book, or a special snack. You deserve delight.",
+    "tips": [
+      "Small treats feel special when given with intention",
+      "Choose something you wouldn't normally allow yourself",
+      "Enjoy it slowly and completely"
+    ],
+    "goldHint": "A photo of your small treat",
+    "validationPrompt": "User should show a photo of a small treat they bought for themselves — a coffee, flower, book, or snack."
+  },
+  {
+    "id": "movement_luteal_03",
+    "category": "movement",
+    "phases": ["luteal", "follicular"],
+    "energyMin": 3,
+    "energyMax": 7,
+    "title": "Pilates core flow",
+    "description": "Try a 15-minute Pilates or core-focused session. Controlled, deliberate movement that builds strength and calm together.",
+    "tips": [
+      "Many free YouTube Pilates sessions are perfect for this",
+      "Focus on breathing through each movement",
+      "Slow and precise beats fast and sloppy every time"
+    ],
+    "goldHint": "A photo of your Pilates setup or a post-session selfie",
+    "validationPrompt": "User should show their Pilates mat or setup, or a selfie after a Pilates session."
+  },
+  {
+    "id": "mindfulness_follicular_03",
+    "category": "mindfulness",
+    "phases": ["follicular", "ovulatory"],
+    "energyMin": 3,
+    "energyMax": 8,
+    "title": "Sunrise or sunset watch",
+    "description": "Watch the sunrise or sunset in full — from the first blush of light to the last. Witness time passing beautifully.",
+    "tips": [
+      "Set an alarm if you need to catch the sunrise",
+      "Put your phone down and just look — no photo needed (unless you want one)",
+      "Invite a friend to join you"
+    ],
+    "goldHint": "A photo of the sunrise or sunset you witnessed",
+    "validationPrompt": "User should show a photo of a sunrise or sunset they watched in person."
   }
 ]
