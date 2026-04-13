@@ -30,7 +30,7 @@ struct DailyChallengeCardView: View {
             .foregroundStyle(DesignColors.accentWarm)
             .padding(.horizontal, 12)
             .padding(.vertical, 6)
-            .background { Capsule().fill(DesignColors.accentWarm.opacity(0.1)) }
+            .background { Capsule().fill(DesignColors.accentWarm.opacity(0.12)) }
             .accessibilityLabel("Challenge")
 
             Spacer(minLength: 12)
@@ -72,7 +72,8 @@ struct DailyChallengeCardView: View {
                     onDoIt()
                 } label: {
                     Text("Do It")
-                        .font(.custom("Raleway-SemiBold", size: 16, relativeTo: .body))
+                        .font(.custom("Raleway-Black", size: 16, relativeTo: .body))
+                        .tracking(-0.2)
                         .foregroundStyle(.white)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 14)
@@ -96,7 +97,7 @@ struct DailyChallengeCardView: View {
         }
         .padding(28)
         .frame(height: 380)
-        .glowCardBackground()
+        .glowCardBackground(tint: .cocoa)
     }
 
     // MARK: - Completed
@@ -141,7 +142,7 @@ struct DailyChallengeCardView: View {
         }
         .padding(28)
         .frame(height: 380)
-        .glowCardBackground()
+        .glowCardBackground(tint: .cocoa)
     }
 
     // MARK: - Skipped
@@ -160,7 +161,7 @@ struct DailyChallengeCardView: View {
 
             Button { onMaybeLater() } label: {
                 Text("Maybe Later")
-                    .font(.custom("Raleway-Medium", size: 15, relativeTo: .callout))
+                    .font(.custom("Raleway-Black", size: 15, relativeTo: .callout))
                     .foregroundStyle(DesignColors.accentWarm)
             }
             .buttonStyle(.plain)
@@ -171,7 +172,7 @@ struct DailyChallengeCardView: View {
         }
         .padding(28)
         .frame(height: 380)
-        .glowCardBackground()
+        .glowCardBackground(tint: .neutral)
     }
 
     private func tagPill(_ text: String) -> some View {

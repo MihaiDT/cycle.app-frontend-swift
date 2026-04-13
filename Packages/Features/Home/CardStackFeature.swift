@@ -460,13 +460,13 @@ private struct DailyCardView: View {
                          ? "\(day) days late"
                          : "Day \(day) · \(card.cyclePhase.displayName)")
                         .font(.custom("Raleway-Medium", size: 14, relativeTo: .caption))
-                        .foregroundStyle(phaseAccent.opacity(0.6))
+                        .foregroundStyle(DesignColors.accentWarm.opacity(0.7))
                 }
             }
             .padding(32)
         }
         .frame(height: 380)
-        .glowCardBackground()
+        .glowCardBackground(tint: .neutral)
     }
 
     // MARK: - DO
@@ -497,7 +497,7 @@ private struct DailyCardView: View {
                     .padding(.horizontal, 12)
                     .padding(.vertical, 6)
                     .background {
-                        Capsule().fill(DesignColors.accentWarm.opacity(0.1))
+                        Capsule().fill(DesignColors.accentWarm.opacity(0.12))
                     }
                 }
 
@@ -541,7 +541,7 @@ private struct DailyCardView: View {
             .padding(32)
         }
         .frame(height: 380)
-        .glowCardBackground()
+        .glowCardBackground(tint: .rose)
     }
 
     // MARK: - GO DEEPER
@@ -559,8 +559,8 @@ private struct DailyCardView: View {
 
                 if !card.body.isEmpty {
                     Text(card.body)
-                        .font(.custom("Raleway-Regular", size: 14, relativeTo: .body))
-                        .foregroundStyle(DesignColors.textSecondary)
+                        .font(.custom("Raleway-Medium", size: 14, relativeTo: .body))
+                        .foregroundStyle(DesignColors.background.opacity(0.78))
                         .lineSpacing(3)
                         .lineLimit(2)
                 }
@@ -597,7 +597,7 @@ private struct DailyCardView: View {
             .padding(32)
         }
         .frame(height: 380)
-        .glowCardBackground()
+        .glowCardBackground(tint: .taupe)
     }
 }
 
