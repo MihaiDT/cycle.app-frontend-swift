@@ -10,6 +10,8 @@ public struct ValidationFeature: Sendable {
         public let challenge: ChallengeSnapshot
         public let photoData: Data
         public let thumbnailData: Data
+        /// User's total XP before this challenge — used to show accurate level progress
+        public let profileTotalXP: Int
         public var validationState: ValidationState = .loading
 
         public enum ValidationState: Equatable, Sendable {
@@ -18,10 +20,11 @@ public struct ValidationFeature: Sendable {
             case failure(ValidationResult)
         }
 
-        public init(challenge: ChallengeSnapshot, photoData: Data, thumbnailData: Data) {
+        public init(challenge: ChallengeSnapshot, photoData: Data, thumbnailData: Data, profileTotalXP: Int = 0) {
             self.challenge = challenge
             self.photoData = photoData
             self.thumbnailData = thumbnailData
+            self.profileTotalXP = profileTotalXP
         }
     }
 

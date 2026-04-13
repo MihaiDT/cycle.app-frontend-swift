@@ -84,6 +84,11 @@ private struct StaggeredSuccessView: View {
     let result: ValidationFeature.ValidationResult
     let store: StoreOf<ValidationFeature>
 
+    /// Total XP after adding this challenge's XP
+    private var newTotalXP: Int {
+        store.profileTotalXP + result.xpEarned
+    }
+
     @State private var showBadge = false
     @State private var showFeedback = false
     @State private var showXP = false
@@ -114,8 +119,8 @@ private struct StaggeredSuccessView: View {
                     .opacity(showXP ? 1 : 0)
                     .scaleEffect(showXP ? 1 : 0.8)
 
-                // 4. Progress bar — appears at 2.2s
-                XPProgressBar(currentXP: result.xpEarned, animated: showProgress)
+                // 4. Progress bar — appears at 2.2s (shows total XP with new challenge included)
+                XPProgressBar(currentXP: newTotalXP, animated: showProgress)
                     .padding(.horizontal, 8)
                     .opacity(showProgress ? 1 : 0)
 

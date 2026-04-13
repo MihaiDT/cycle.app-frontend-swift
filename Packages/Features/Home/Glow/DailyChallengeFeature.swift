@@ -46,6 +46,9 @@ public struct DailyChallengeFeature: Sendable {
         case photoCaptured(Data)
         case photoCancelled
 
+        // Profile
+        case profileLoaded(GlowProfileSnapshot)
+
         // Level up trigger (from .run after XP added)
         case levelUpTriggered(level: Int, title: String, emoji: String, unlock: String)
 
@@ -125,12 +128,28 @@ public struct DailyChallengeFeature: Sendable {
                     case .available: state.challengeState = .available
                     }
                 }
-                return .send(.delegate(.challengeStateChanged(snapshot)))
+                return .merge(
+                    .send(.delegate(.challengeStateChanged(snapshot))),
+                    .run { [glowLocal] send in
+                        let profile = try await glowLocal.getProfile()
+                        await send(.profileLoaded(profile))
+                    }
+                )
 
             case let .challengeSelected(snapshot):
                 state.challenge = snapshot
                 state.challengeState = .available
-                return .send(.delegate(.challengeStateChanged(snapshot)))
+                return .merge(
+                    .send(.delegate(.challengeStateChanged(snapshot))),
+                    .run { [glowLocal] send in
+                        let profile = try await glowLocal.getProfile()
+                        await send(.profileLoaded(profile))
+                    }
+                )
+
+            case let .profileLoaded(profile):
+                state.profile = profile
+                return .none
 
             // MARK: - User Actions
 
@@ -197,10 +216,12 @@ public struct DailyChallengeFeature: Sendable {
             case let .photoReview(.presented(.delegate(.submit(fullSize, thumbnail)))):
                 state.photoReview = nil
                 guard let challenge = state.challenge else { return .none }
+                let totalXP = state.profile?.totalXP ?? 0
                 state.validation = ValidationFeature.State(
                     challenge: challenge,
                     photoData: fullSize,
-                    thumbnailData: thumbnail
+                    thumbnailData: thumbnail,
+                    profileTotalXP: totalXP
                 )
                 return .none
 
