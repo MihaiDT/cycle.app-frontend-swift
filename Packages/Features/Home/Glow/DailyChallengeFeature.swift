@@ -4,14 +4,14 @@ import Foundation
 // MARK: - Daily Challenge Feature
 
 @Reducer
-struct DailyChallengeFeature: Sendable {
+public struct DailyChallengeFeature: Sendable {
     @ObservableState
-    struct State: Equatable, Sendable {
-        var challenge: ChallengeSnapshot?
-        var profile: GlowProfileSnapshot?
-        var challengeState: ChallengeState = .idle
+    public struct State: Equatable, Sendable {
+        public var challenge: ChallengeSnapshot?
+        public var profile: GlowProfileSnapshot?
+        public var challengeState: ChallengeState = .idle
 
-        enum ChallengeState: Equatable, Sendable {
+        public enum ChallengeState: Equatable, Sendable {
             case idle
             case available
             case skipped
@@ -19,17 +19,19 @@ struct DailyChallengeFeature: Sendable {
         }
 
         // Photo capture — simple flags, not @Presents (UIKit wrappers)
-        var isShowingCamera: Bool = false
-        var isShowingGallery: Bool = false
+        public var isShowingCamera: Bool = false
+        public var isShowingGallery: Bool = false
 
         // TCA child features
-        @Presents var acceptSheet: ChallengeAcceptFeature.State?
-        @Presents var photoReview: PhotoReviewFeature.State?
-        @Presents var validation: ValidationFeature.State?
-        @Presents var levelUp: LevelUpFeature.State?
+        @Presents public var acceptSheet: ChallengeAcceptFeature.State?
+        @Presents public var photoReview: PhotoReviewFeature.State?
+        @Presents public var validation: ValidationFeature.State?
+        @Presents public var levelUp: LevelUpFeature.State?
+
+        public init() {}
     }
 
-    enum Action: BindableAction, Sendable {
+    public enum Action: BindableAction, Sendable {
         case binding(BindingAction<State>)
 
         // Challenge lifecycle
@@ -55,14 +57,16 @@ struct DailyChallengeFeature: Sendable {
 
         // Delegate to parent
         case delegate(Delegate)
-        enum Delegate: Sendable {
+        public enum Delegate: Sendable {
             case challengeStateChanged(ChallengeSnapshot?)
         }
     }
 
     @Dependency(\.glowLocal) var glowLocal
 
-    var body: some ReducerOf<Self> {
+    public init() {}
+
+    public var body: some ReducerOf<Self> {
         BindingReducer()
         Reduce { state, action in
             switch action {

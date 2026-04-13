@@ -2,31 +2,43 @@ import Foundation
 
 // MARK: - Glow Profile Snapshot
 
-struct GlowProfileSnapshot: Equatable, Sendable {
-    let id: UUID
-    var totalXP: Int
-    var currentLevel: Int
-    var totalCompleted: Int
-    var currentConsistencyDays: Int
-    var longestConsistencyDays: Int
-    var lastCompletedDate: Date?
-    var goldCount: Int
-    var silverCount: Int
-    var bronzeCount: Int
+public struct GlowProfileSnapshot: Equatable, Sendable {
+    public let id: UUID
+    public var totalXP: Int
+    public var currentLevel: Int
+    public var totalCompleted: Int
+    public var currentConsistencyDays: Int
+    public var longestConsistencyDays: Int
+    public var lastCompletedDate: Date?
+    public var goldCount: Int
+    public var silverCount: Int
+    public var bronzeCount: Int
 
-    var levelTitle: String {
+    public var levelTitle: String {
         GlowConstants.levelFor(xp: totalXP).title
     }
 
-    var levelEmoji: String {
+    public var levelEmoji: String {
         GlowConstants.levelFor(xp: totalXP).emoji
     }
 
-    var isMaxLevel: Bool {
+    public var isMaxLevel: Bool {
         currentLevel >= GlowConstants.levels.last!.level
     }
 
-    static let empty = GlowProfileSnapshot(
+    public init(
+        id: UUID, totalXP: Int, currentLevel: Int, totalCompleted: Int,
+        currentConsistencyDays: Int, longestConsistencyDays: Int,
+        lastCompletedDate: Date?, goldCount: Int, silverCount: Int, bronzeCount: Int
+    ) {
+        self.id = id; self.totalXP = totalXP; self.currentLevel = currentLevel
+        self.totalCompleted = totalCompleted; self.currentConsistencyDays = currentConsistencyDays
+        self.longestConsistencyDays = longestConsistencyDays
+        self.lastCompletedDate = lastCompletedDate
+        self.goldCount = goldCount; self.silverCount = silverCount; self.bronzeCount = bronzeCount
+    }
+
+    public static let empty = GlowProfileSnapshot(
         id: UUID(),
         totalXP: 0,
         currentLevel: 1,

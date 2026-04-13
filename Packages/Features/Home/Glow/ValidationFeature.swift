@@ -4,37 +4,43 @@ import Foundation
 // MARK: - Validation Feature
 
 @Reducer
-struct ValidationFeature: Sendable {
+public struct ValidationFeature: Sendable {
     @ObservableState
-    struct State: Equatable, Sendable {
-        let challenge: ChallengeSnapshot
-        let photoData: Data
-        let thumbnailData: Data
-        var validationState: ValidationState = .loading
+    public struct State: Equatable, Sendable {
+        public let challenge: ChallengeSnapshot
+        public let photoData: Data
+        public let thumbnailData: Data
+        public var validationState: ValidationState = .loading
 
-        enum ValidationState: Equatable, Sendable {
+        public enum ValidationState: Equatable, Sendable {
             case loading
             case success(ValidationResult)
             case failure(ValidationResult)
         }
+
+        public init(challenge: ChallengeSnapshot, photoData: Data, thumbnailData: Data) {
+            self.challenge = challenge
+            self.photoData = photoData
+            self.thumbnailData = thumbnailData
+        }
     }
 
-    struct ValidationResult: Equatable, Sendable {
-        let valid: Bool
-        let rating: String
-        let feedback: String
-        let xpMultiplier: Double
-        let xpEarned: Int
+    public struct ValidationResult: Equatable, Sendable {
+        public let valid: Bool
+        public let rating: String
+        public let feedback: String
+        public let xpMultiplier: Double
+        public let xpEarned: Int
     }
 
-    enum Action: Sendable {
+    public enum Action: Sendable {
         case appeared
         case validationResponse(Result<ChallengeValidationResponse, Error>)
         case dismissTapped
         case tryAgainTapped
         case skipForTodayTapped
         case delegate(Delegate)
-        enum Delegate: Sendable {
+        public enum Delegate: Sendable {
             case completed(
                 photoData: Data, thumbnailData: Data,
                 xpEarned: Int, rating: String, feedback: String
@@ -47,7 +53,9 @@ struct ValidationFeature: Sendable {
     @Dependency(\.apiClient) var apiClient
     @Dependency(\.anonymousID) var anonymousID
 
-    var body: some ReducerOf<Self> {
+    public init() {}
+
+    public var body: some ReducerOf<Self> {
         Reduce { state, action in
             switch action {
             case .appeared:

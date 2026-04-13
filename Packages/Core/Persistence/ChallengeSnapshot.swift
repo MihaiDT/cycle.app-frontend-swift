@@ -3,29 +3,48 @@ import Foundation
 // MARK: - Challenge Snapshot
 
 public struct ChallengeSnapshot: Equatable, Sendable {
-    let id: UUID
-    let date: Date
-    let templateId: String
-    let challengeCategory: String
-    let challengeTitle: String
-    let challengeDescription: String
-    let tips: [String]
-    let goldHint: String
-    let validationPrompt: String
-    let cyclePhase: String
-    let cycleDay: Int
-    let energyLevel: Int
-    var status: ChallengeStatus
-    var completedAt: Date?
-    var photoThumbnail: Data?
-    var validationRating: String?
-    var validationFeedback: String?
-    var xpEarned: Int
+    public let id: UUID
+    public let date: Date
+    public let templateId: String
+    public let challengeCategory: String
+    public let challengeTitle: String
+    public let challengeDescription: String
+    public let tips: [String]
+    public let goldHint: String
+    public let validationPrompt: String
+    public let cyclePhase: String
+    public let cycleDay: Int
+    public let energyLevel: Int
+    public var status: ChallengeStatus
+    public var completedAt: Date?
+    public var photoThumbnail: Data?
+    public var validationRating: String?
+    public var validationFeedback: String?
+    public var xpEarned: Int
 
-    enum ChallengeStatus: String, Equatable, Sendable {
+    public enum ChallengeStatus: String, Equatable, Sendable {
         case available
         case completed
         case skipped
+    }
+
+    public init(
+        id: UUID, date: Date, templateId: String, challengeCategory: String,
+        challengeTitle: String, challengeDescription: String, tips: [String],
+        goldHint: String, validationPrompt: String, cyclePhase: String,
+        cycleDay: Int, energyLevel: Int, status: ChallengeStatus,
+        completedAt: Date?, photoThumbnail: Data?, validationRating: String?,
+        validationFeedback: String?, xpEarned: Int
+    ) {
+        self.id = id; self.date = date; self.templateId = templateId
+        self.challengeCategory = challengeCategory; self.challengeTitle = challengeTitle
+        self.challengeDescription = challengeDescription; self.tips = tips
+        self.goldHint = goldHint; self.validationPrompt = validationPrompt
+        self.cyclePhase = cyclePhase; self.cycleDay = cycleDay
+        self.energyLevel = energyLevel; self.status = status
+        self.completedAt = completedAt; self.photoThumbnail = photoThumbnail
+        self.validationRating = validationRating; self.validationFeedback = validationFeedback
+        self.xpEarned = xpEarned
     }
 }
 

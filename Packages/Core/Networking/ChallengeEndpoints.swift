@@ -2,19 +2,19 @@ import Foundation
 
 // MARK: - Challenge Validation
 
-struct ChallengeValidationRequest: Encodable, Sendable {
-    let anonymousId: String
-    let challengeType: String
-    let challengeDescription: String
-    let goldHint: String
-    let imageBase64: String
+public struct ChallengeValidationRequest: Encodable, Sendable {
+    public let anonymousId: String
+    public let challengeType: String
+    public let challengeDescription: String
+    public let goldHint: String
+    public let imageBase64: String
 }
 
-struct ChallengeValidationResponse: Decodable, Sendable {
-    let valid: Bool
-    let rating: String
-    let feedback: String
-    let xpMultiplier: Double
+public struct ChallengeValidationResponse: Decodable, Sendable {
+    public let valid: Bool
+    public let rating: String
+    public let feedback: String
+    public let xpMultiplier: Double
 }
 
 extension Endpoint {

@@ -4,28 +4,36 @@ import SwiftUI
 // MARK: - Level Up Feature
 
 @Reducer
-struct LevelUpFeature: Sendable {
+public struct LevelUpFeature: Sendable {
     @ObservableState
-    struct State: Equatable, Sendable {
-        let newLevel: Int
-        let levelTitle: String
-        let levelEmoji: String
-        let unlockDescription: String
+    public struct State: Equatable, Sendable {
+        public let newLevel: Int
+        public let levelTitle: String
+        public let levelEmoji: String
+        public let unlockDescription: String
+        public init(newLevel: Int, levelTitle: String, levelEmoji: String, unlockDescription: String) {
+            self.newLevel = newLevel
+            self.levelTitle = levelTitle
+            self.levelEmoji = levelEmoji
+            self.unlockDescription = unlockDescription
+        }
     }
 
-    enum Action: Sendable {
+    public enum Action: Sendable {
         case appeared
         case dismissTapped
         case autoDismissTimerFired
         case delegate(Delegate)
-        enum Delegate: Sendable {
+        public enum Delegate: Sendable {
             case dismissed
         }
     }
 
     @Dependency(\.continuousClock) var clock
 
-    var body: some ReducerOf<Self> {
+    public init() {}
+
+    public var body: some ReducerOf<Self> {
         Reduce { _, action in
             switch action {
             case .appeared:

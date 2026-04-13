@@ -4,24 +4,30 @@ import SwiftUI
 // MARK: - Photo Review Feature
 
 @Reducer
-struct PhotoReviewFeature: Sendable {
+public struct PhotoReviewFeature: Sendable {
     @ObservableState
-    struct State: Equatable, Sendable {
-        let imageData: Data
-        let thumbnailData: Data
+    public struct State: Equatable, Sendable {
+        public let imageData: Data
+        public let thumbnailData: Data
+        public init(imageData: Data, thumbnailData: Data) {
+            self.imageData = imageData
+            self.thumbnailData = thumbnailData
+        }
     }
 
-    enum Action: Sendable {
+    public enum Action: Sendable {
         case submitTapped
         case retakeTapped
         case delegate(Delegate)
-        enum Delegate: Sendable {
+        public enum Delegate: Sendable {
             case submit(fullSize: Data, thumbnail: Data)
             case retake
         }
     }
 
-    var body: some ReducerOf<Self> {
+    public init() {}
+
+    public var body: some ReducerOf<Self> {
         Reduce { state, action in
             switch action {
             case .submitTapped:

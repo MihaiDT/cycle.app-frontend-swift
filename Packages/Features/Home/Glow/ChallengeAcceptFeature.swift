@@ -4,23 +4,26 @@ import SwiftUI
 // MARK: - Challenge Accept Feature
 
 @Reducer
-struct ChallengeAcceptFeature: Sendable {
+public struct ChallengeAcceptFeature: Sendable {
     @ObservableState
-    struct State: Equatable, Sendable {
-        let challenge: ChallengeSnapshot
+    public struct State: Equatable, Sendable {
+        public let challenge: ChallengeSnapshot
+        public init(challenge: ChallengeSnapshot) { self.challenge = challenge }
     }
 
-    enum Action: Sendable {
+    public enum Action: Sendable {
         case openCameraTapped
         case chooseFromGalleryTapped
         case delegate(Delegate)
-        enum Delegate: Sendable {
+        public enum Delegate: Sendable {
             case openCamera
             case openGallery
         }
     }
 
-    var body: some ReducerOf<Self> {
+    public init() {}
+
+    public var body: some ReducerOf<Self> {
         Reduce { _, action in
             switch action {
             case .openCameraTapped:

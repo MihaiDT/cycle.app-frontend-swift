@@ -94,6 +94,9 @@ public struct TodayFeature: Sendable {
         // Card stack
         public var cardStackState: CardStackFeature.State = CardStackFeature.State()
 
+        // Daily Glow challenge
+        public var dailyChallengeState: DailyChallengeFeature.State = DailyChallengeFeature.State()
+
         // Notifications
         public var recapBannerMonth: String?
         public var isRecapSheetVisible: Bool = false
@@ -106,6 +109,7 @@ public struct TodayFeature: Sendable {
         case binding(BindingAction<State>)
         case loadDashboard
         case cardStack(CardStackFeature.Action)
+        case dailyChallenge(DailyChallengeFeature.Action)
         case dashboardLoaded(Result<HBIDashboardResponse, Error>)
         case loadMenstrualStatus
         case menstrualStatusLoaded(Result<MenstrualStatusResponse, Error>)
@@ -456,14 +460,25 @@ public struct TodayFeature: Sendable {
                 return .send(.loadDashboard)
 
             case .logPeriodTapped(let date):
-                state.isRefreshingCycleData = true
-                state.syncStatus = .syncing
-                let logDate = date
+                // Open calendar in edit period mode with date pre-selected
+                state.isCalendarVisible = true
+                // Existing confirmed days
+                let confirmedDays = state.calendarState.periodDays.subtracting(state.calendarState.predictedPeriodDays)
+                // Pre-fill new days from selected date + bleeding length
                 let bleedingDays = state.cycle?.bleedingDays ?? 5
-                return .run { [menstrualLocal] send in
-                    try? await menstrualLocal.confirmPeriod(logDate, bleedingDays, nil, false)
-                    await send(.logPeriodCompleted)
+                let cal = Calendar.current
+                var preFilled = confirmedDays
+                for i in 0..<bleedingDays {
+                    if let d = cal.date(byAdding: .day, value: i, to: cal.startOfDay(for: date)) {
+                        preFilled.insert(CalendarFeature.dateKey(d))
+                    }
                 }
+                state.calendarState.editPeriodDays = preFilled
+                state.calendarState.editOriginalPeriodDays = confirmedDays
+                state.calendarState.isEditingPeriod = true
+                state.calendarState.isUpdatingPredictions = false
+                state.calendarState.predictionsDone = false
+                return .none
 
             case .logPeriodCompleted:
                 return .send(.loadMenstrualStatus)
@@ -511,7 +526,13 @@ public struct TodayFeature: Sendable {
             // All components that react to phase changes subscribe here.
             // To add a new component: add one .send line below.
             case let .phaseResolved(phase, day):
-                return .send(.cardStack(.loadCards(phase, day)))
+                // Energy from HBI (0-100) → 1-5 for challenge selection
+                let rawEnergy = state.dashboard?.today?.energyScore ?? 50
+                let energy = max(1, min(5, (rawEnergy / 20) + 1))
+                return .merge(
+                    .send(.cardStack(.loadCards(phase, day))),
+                    .send(.dailyChallenge(.selectChallenge(phase: phase.rawValue, energyLevel: energy)))
+                )
 
             case .backgroundSyncPeriod(let periodDays, let originalPeriodDays, let flowIntensity, let bleedingDays):
                 // Clear recap banner — cycle data is changing
@@ -621,6 +642,22 @@ public struct TodayFeature: Sendable {
                 // Future: present journal modal
                 return .none
 
+            case .cardStack(.delegate(.challengeDoItTapped)):
+                return .send(.dailyChallenge(.doItTapped))
+
+            case .cardStack(.delegate(.challengeSkipTapped)):
+                return .send(.dailyChallenge(.skipTapped))
+
+            case .cardStack(.delegate(.challengeMaybeLaterTapped)):
+                return .send(.dailyChallenge(.maybeLaterTapped))
+
+            case let .dailyChallenge(.delegate(.challengeStateChanged(snapshot))):
+                state.cardStackState.challengeSnapshot = snapshot
+                return .none
+
+            case .dailyChallenge:
+                return .none
+
             case .cardStack:
                 return .none
 
@@ -639,6 +676,9 @@ public struct TodayFeature: Sendable {
         }
         Scope(state: \.cardStackState, action: \.cardStack) {
             CardStackFeature()
+        }
+        Scope(state: \.dailyChallengeState, action: \.dailyChallenge) {
+            DailyChallengeFeature()
         }
     }
 }
@@ -746,8 +786,10 @@ public struct TodayView: View {
                     .frame(height: 1)
 
                     // Compensate for hero collapse — pins content to hero bottom
+                    // Use transaction to prevent this height change from feeding back into scroll offset
                     if store.cycle != nil {
                         Color.clear.frame(height: collapseCompensation)
+                            .transaction { $0.animation = nil }
                     }
 
                     // MARK: Content
@@ -841,6 +883,7 @@ public struct TodayView: View {
                 .presentationDragIndicator(.hidden)
                 .presentationCornerRadius(AppLayout.cornerRadiusL)
         }
+        .modifier(DailyGlowPresentations(store: store))
         .confirmationDialog(
             "Log your period",
             isPresented: $store.isShowingLateConfirmSheet,
@@ -1068,12 +1111,99 @@ private extension View {
         if #available(iOS 18.0, *) {
             self.onScrollGeometryChange(for: CGFloat.self) { geo in
                 geo.contentOffset.y
-            } action: { _, newValue in
-                offset.wrappedValue = max(0, newValue)
+            } action: { oldValue, newValue in
+                let clamped = max(0, newValue)
+                // Skip tiny changes to break feedback oscillation
+                if abs(clamped - offset.wrappedValue) > 0.5 {
+                    offset.wrappedValue = clamped
+                }
             }
         } else {
             self
         }
+    }
+}
+
+// MARK: - Daily Glow Presentations
+
+/// Extracted to a ViewModifier to reduce type-check complexity in TodayView.body.
+private struct DailyGlowPresentations: ViewModifier {
+    @Bindable var store: StoreOf<TodayFeature>
+
+    func body(content: Content) -> some View {
+        content
+            // Daily Glow — accept sheet
+            .sheet(
+                item: $store.scope(
+                    state: \.dailyChallengeState.acceptSheet,
+                    action: \.dailyChallenge.acceptSheet
+                )
+            ) { acceptStore in
+                ChallengeAcceptView(store: acceptStore)
+                    .presentationDetents([.medium])
+                    .presentationDragIndicator(.visible)
+                    .presentationCornerRadius(AppLayout.cornerRadiusL)
+                    .presentationBackground(DesignColors.background)
+            }
+            // Daily Glow — photo review
+            .fullScreenCover(
+                item: $store.scope(
+                    state: \.dailyChallengeState.photoReview,
+                    action: \.dailyChallenge.photoReview
+                )
+            ) { reviewStore in
+                PhotoReviewView(store: reviewStore)
+            }
+            // Daily Glow — validation result
+            .sheet(
+                item: $store.scope(
+                    state: \.dailyChallengeState.validation,
+                    action: \.dailyChallenge.validation
+                )
+            ) { validationStore in
+                ValidationResultView(store: validationStore)
+                    .presentationDetents([.medium])
+                    .presentationDragIndicator(.visible)
+                    .presentationCornerRadius(AppLayout.cornerRadiusL)
+                    .presentationBackground(DesignColors.background)
+            }
+            // Daily Glow — camera
+            .fullScreenCover(isPresented: Binding(
+                get: { store.dailyChallengeState.isShowingCamera },
+                set: { newValue in
+                    if !newValue { store.send(.dailyChallenge(.photoCancelled)) }
+                }
+            )) {
+                CameraPickerRepresentable(
+                    onCapture: { data in store.send(.dailyChallenge(.photoCaptured(data))) },
+                    onCancel: { store.send(.dailyChallenge(.photoCancelled)) }
+                )
+                .ignoresSafeArea()
+            }
+            // Daily Glow — gallery
+            .fullScreenCover(isPresented: Binding(
+                get: { store.dailyChallengeState.isShowingGallery },
+                set: { newValue in
+                    if !newValue { store.send(.dailyChallenge(.photoCancelled)) }
+                }
+            )) {
+                GalleryPickerRepresentable(
+                    onPick: { data in store.send(.dailyChallenge(.photoCaptured(data))) },
+                    onCancel: { store.send(.dailyChallenge(.photoCancelled)) }
+                )
+            }
+            // Daily Glow — level up overlay
+            .sheet(
+                item: $store.scope(
+                    state: \.dailyChallengeState.levelUp,
+                    action: \.dailyChallenge.levelUp
+                )
+            ) { levelUpStore in
+                LevelUpOverlay(store: levelUpStore)
+                    .presentationDetents([.medium])
+                    .presentationDragIndicator(.hidden)
+                    .presentationBackground(.ultraThinMaterial)
+            }
     }
 }
 
