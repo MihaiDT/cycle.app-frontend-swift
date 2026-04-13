@@ -7,6 +7,17 @@ public enum DesignColors {
     public static let background = Color(hex: 0xFDFCF7)  // Ivory Whisper - fundal
     public static let backgroundElegant = Color(hex: 0xFDFCF7)  // Champagne Silk - eleganta, confort
     public static let cardWarm = Color(hex: 0xF7F2E8)  // Warm card surface — stat boxes & how-to card
+    public static let cardGradientEnd = Color(hex: 0xF5E8E2)  // Warm pink — end of the glow card gradient
+
+    // MARK: - Semantic Opacities
+    /// Primary shadow pass on elevated CTAs (big ambient drop).
+    public static let shadowOpacityPrimary: Double = 0.22
+    /// Secondary shadow pass on elevated CTAs (tight contact shadow).
+    public static let shadowOpacitySecondary: Double = 0.12
+    /// 1px borders on warm cream cards — barely there, but present.
+    public static let borderOpacitySubtle: Double = 0.07
+    /// Hairline dividers inside cards (between tips, rows, etc.).
+    public static let dividerOpacity: Double = 0.08
 
     // MARK: - Text Colors
     public static let text = Color(hex: 0x5C4A3B)  // Cocoa Dark - text important
