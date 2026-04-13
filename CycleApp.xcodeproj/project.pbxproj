@@ -23,6 +23,7 @@
 		1E398DF44CDE89CED1E54CE8 /* RatingBadge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2FA7831814741F9DD13CF269 /* RatingBadge.swift */; };
 		1E3B4EC0E761F7ACF8F91F84 /* Raleway-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 9C912EA0509634526A9D7F08 /* Raleway-Bold.ttf */; };
 		1EBAF390664932B71CB5E403 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B38AB06E18B5A4632AE2761A /* Assets.xcassets */; };
+		23456C151B389D3726F53137 /* GlowIconButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68372D216C45E8F95742C783 /* GlowIconButton.swift */; };
 		24543E48DBC791E3EAE935D6 /* UserProfileLocalClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07F1D2E8D0B49CA5E71909AF /* UserProfileLocalClient.swift */; };
 		2463A9AD18BC23ACA9C05466 /* LevelUpFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = F837406D8C9EE075142E8207 /* LevelUpFeature.swift */; };
 		252BCB6AA080C70A04AB8767 /* CalendarTableView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 212BE822AA0E09D8482006E2 /* CalendarTableView.swift */; };
@@ -269,6 +270,7 @@
 		6425D254C1E1D5DCE2F328D6 /* CycleSelectionSheets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CycleSelectionSheets.swift; sourceTree = "<group>"; };
 		6512D0891C474022446C2D98 /* ValidationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ValidationTests.swift; sourceTree = "<group>"; };
 		67C8B598D2EF4F1218DF3C1C /* CalendarDayDetail.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarDayDetail.swift; sourceTree = "<group>"; };
+		68372D216C45E8F95742C783 /* GlowIconButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlowIconButton.swift; sourceTree = "<group>"; };
 		6A6E83503725369D0FB426A7 /* AuthenticationFeatureTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthenticationFeatureTests.swift; sourceTree = "<group>"; };
 		6A744F4748AE7AFCE59451A9 /* GlowConstants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlowConstants.swift; sourceTree = "<group>"; };
 		6BFE864C0E5835D700F0162D /* CyclePhaseBanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CyclePhaseBanner.swift; sourceTree = "<group>"; };
@@ -654,6 +656,7 @@
 				F8E62ACB6092862D952F78FB /* GlassSelectionCard.swift */,
 				E6443B1A872FD8D9CA385C44 /* GlassTextField.swift */,
 				992E17679A9E07576431CBF1 /* GlassWeekCalendar.swift */,
+				68372D216C45E8F95742C783 /* GlowIconButton.swift */,
 				E3FD2B1629CCE01C8D0887F3 /* GlowPrimaryButton.swift */,
 				A4E7E9A068ECB15A84A721A7 /* GradientBackground.swift */,
 				0BC45BF7323F201338BFDA2E /* GradientTagline.swift */,
@@ -985,6 +988,7 @@
 				5791F41BCD82D8F186E235D6 /* GlassTextField.swift in Sources */,
 				00C8A8ED594CBB3847F13F8C /* GlassWeekCalendar.swift in Sources */,
 				497994E9A0C6F0E200D43FD9 /* GlowConstants.swift in Sources */,
+				23456C151B389D3726F53137 /* GlowIconButton.swift in Sources */,
 				B5B59BD7A5531DBBA45DE149 /* GlowLocalClient.swift in Sources */,
 				F5791588230E37ECC470FD77 /* GlowPrimaryButton.swift in Sources */,
 				0450EC4C07F797651BABF91D /* GlowProfileRecord.swift in Sources */,

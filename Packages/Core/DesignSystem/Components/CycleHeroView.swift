@@ -113,8 +113,14 @@ public struct CycleHeroView: View {
         Self.monthFormatter.string(from: effectiveDate)
     }
 
+    // `glassCircle` was removed — all top-bar icon buttons now use `GlowIconButtonStyle`.
+
     private var periodCountdownText: String {
+        if isPeriod && !isPredictedPeriod {
+            return "Period · Day \(displayCycleDay)"
+        }
         let days = daysUntilPeriod
+        if days == 0 { return "Period expected today" }
         if days == 1 { return "Period expected tomorrow" }
         if days <= 3 { return "Period in \(days) days" }
         return "\(days) days until period"
@@ -360,16 +366,7 @@ public struct CycleHeroView: View {
     }
 
     private var textOnHeroColor: Color {
-        if isLateMode {
-            return Color(red: 0.28, green: 0.26, blue: 0.25) // Neutral dark
-        }
-        switch displayPhase {
-        case .menstrual: return Color(red: 0.35, green: 0.15, blue: 0.17)
-        case .follicular: return Color(red: 0.15, green: 0.30, blue: 0.25)
-        case .ovulatory: return Color(red: 0.38, green: 0.28, blue: 0.12)
-        case .luteal: return Color(red: 0.25, green: 0.20, blue: 0.38)
-        case .late: return Color(red: 0.28, green: 0.26, blue: 0.25)
-        }
+        DesignColors.text
     }
 
     // MARK: - Body
@@ -431,25 +428,18 @@ public struct CycleHeroView: View {
             // Top bar: profile + day/phase info + calendar button
             HStack(spacing: 0) {
                 Button {
+                    UIImpactFeedbackGenerator(style: .light).impactOccurred()
                     onNotificationTapped?()
                 } label: {
-                    ZStack(alignment: .topTrailing) {
-                        Circle()
-                            .fill(.ultraThinMaterial)
-                            .frame(width: 36, height: 36)
-                            .overlay {
-                                Image(systemName: hasNotification ? "bell.badge.fill" : "bell.fill")
-                                    .font(.system(size: 16, weight: .medium))
-                                    .foregroundColor(textOnHeroColor.opacity(hasNotification ? 0.9 : 0.6))
-                                    .symbolRenderingMode(hasNotification ? .palette : .monochrome)
-                                    .foregroundStyle(
-                                        hasNotification ? DesignColors.accentWarm : textOnHeroColor.opacity(0.6),
-                                        hasNotification ? DesignColors.accentWarm : .clear
-                                    )
-                            }
-                    }
+                    Image(systemName: hasNotification ? "bell.badge.fill" : "bell.fill")
+                        .symbolRenderingMode(hasNotification ? .palette : .monochrome)
+                        .foregroundStyle(
+                            DesignColors.background,
+                            DesignColors.accentWarm
+                        )
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(GlowIconButtonStyle())
+                .accessibilityLabel(hasNotification ? "Notifications, new" : "Notifications")
 
                 Spacer()
 
@@ -464,23 +454,17 @@ public struct CycleHeroView: View {
                     UIImpactFeedbackGenerator(style: .light).impactOccurred()
                     onCalendarTapped?()
                 } label: {
-                    ZStack {
-                        if isRefreshing {
-                            ProgressView()
-                                .tint(phaseAccent)
-                                .scaleEffect(0.7)
-                                .transition(.opacity)
-                        } else {
-                            Image(systemName: "calendar")
-                                .font(.system(size: 18, weight: .medium))
-                                .foregroundColor(textOnHeroColor.opacity(0.7))
-                                .transition(.opacity)
-                        }
+                    if isRefreshing {
+                        ProgressView()
+                            .tint(DesignColors.background)
+                            .scaleEffect(0.8)
+                    } else {
+                        Image(systemName: "calendar")
                     }
-                    .animation(.easeInOut(duration: 0.25), value: isRefreshing)
-                    .frame(width: 44, height: 44)
-                    .contentShape(Rectangle())
                 }
+                .buttonStyle(GlowIconButtonStyle())
+                .animation(.easeInOut(duration: 0.25), value: isRefreshing)
+                .accessibilityLabel("Calendar")
             }
             .padding(.horizontal, 16)
             .padding(.top, 10)
@@ -494,25 +478,23 @@ public struct CycleHeroView: View {
             )
             .padding(.top, 4)
             .opacity(staggeredOpacity(fadeEnd: 0.55))
+            .allowsHitTesting(progress < 0.3)
 
             // Warm wellness message under calendar
-            Group {
-                if isLoadingWellnessMessage {
-                    // Shimmer placeholder
-                    RoundedRectangle(cornerRadius: 4)
-                        .fill(DesignColors.structure.opacity(0.3))
-                        .frame(width: 200, height: 16)
-                        .modifier(ShimmerEffect())
-                } else {
-                    Text(aiWellnessMessage ?? wellnessMessage)
-                        .font(.custom("Raleway-MediumItalic", size: 17))
-                        .foregroundColor(textOnHeroColor.opacity(0.75))
-                        .multilineTextAlignment(.center)
-                        .lineLimit(2)
-                        .minimumScaleFactor(0.85)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .transition(.opacity)
-                }
+            ZStack {
+                RoundedRectangle(cornerRadius: 4)
+                    .fill(DesignColors.structure.opacity(0.3))
+                    .frame(width: 200, height: 16)
+                    .opacity(isLoadingWellnessMessage ? 1 : 0)
+
+                Text(aiWellnessMessage ?? wellnessMessage)
+                    .font(.custom("Raleway-MediumItalic", size: 17))
+                    .foregroundColor(textOnHeroColor.opacity(0.75))
+                    .multilineTextAlignment(.center)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.85)
+                    .frame(height: 44)
+                    .opacity(isLoadingWellnessMessage ? 0 : 1)
             }
             .frame(maxWidth: .infinity)
             .padding(.horizontal, 20)
@@ -520,33 +502,53 @@ public struct CycleHeroView: View {
             .animation(.easeInOut(duration: 0.3), value: aiWellnessMessage)
             .opacity(staggeredOpacity(fadeEnd: 0.50))
 
-            // Period countdown — always rendered to prevent layout oscillation
-            Text(!cycle.isLate && daysUntilPeriod > 0 ? periodCountdownText : " ")
+            // Cycle status — matches collapsed header
+            Text(collapsedHeadline)
                 .font(.custom("Raleway-SemiBold", size: 15))
                 .foregroundColor(textOnHeroColor.opacity(0.5))
                 .padding(.top, 6)
-                .opacity(!cycle.isLate && daysUntilPeriod > 0 ? staggeredOpacity(fadeEnd: 0.45) : 0)
+                .opacity(staggeredOpacity(fadeEnd: 0.45))
 
             Spacer(minLength: 12)
 
             // Action buttons — compact row
             HStack(spacing: 10) {
                 if let onLogPeriod, !isConfirmedPeriodDay,
-                   effectiveDate <= cal.startOfDay(for: Date()),
-                   isPredictedPeriod || isLatePrediction || isLateForDate || displayPhase == .menstrual {
+                   cycle.isLate || isPredictedPeriod || isLatePrediction || isLateForDate || displayPhase == .menstrual {
                     Button {
+                        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
                         onLogPeriod()
                     } label: {
                         HStack(spacing: 6) {
                             Image(systemName: "drop.fill")
-                                .font(.system(size: 11, weight: .medium))
+                                .font(.system(size: 12, weight: .medium))
                             Text("Log period")
-                                .font(.custom("Raleway-SemiBold", size: 13))
+                                .font(.custom("Raleway-SemiBold", size: 15))
                         }
                         .foregroundColor(.white)
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 8)
-                        .background { Capsule().fill(phaseAccent) }
+                        .padding(.horizontal, 22)
+                        .padding(.vertical, 10)
+                        .background {
+                            Capsule()
+                                .fill(
+                                    LinearGradient(
+                                        colors: [DesignColors.accentWarm, DesignColors.accentSecondary],
+                                        startPoint: .leading,
+                                        endPoint: .trailing
+                                    )
+                                )
+                                .overlay {
+                                    Capsule()
+                                        .fill(
+                                            LinearGradient(
+                                                colors: [Color.white.opacity(0.2), Color.clear],
+                                                startPoint: .top,
+                                                endPoint: .center
+                                            )
+                                        )
+                                }
+                                .shadow(color: DesignColors.accentWarm.opacity(0.4), radius: 12, x: 0, y: 4)
+                        }
                     }
                     .buttonStyle(.plain)
                     .disabled(isRefreshing)
@@ -621,38 +623,22 @@ public struct CycleHeroView: View {
 
             Spacer(minLength: 12)
 
-            // Calendar button
+            // Calendar button — dark cocoa GlowIconButtonStyle
             Button {
                 UIImpactFeedbackGenerator(style: .light).impactOccurred()
                 onCalendarTapped?()
             } label: {
-                ZStack {
-                    if isRefreshing {
-                        ProgressView()
-                            .tint(phaseAccent)
-                            .scaleEffect(0.7)
-                            .transition(.opacity)
-                    } else {
-                        Image(systemName: "calendar")
-                            .font(.system(size: 14, weight: .medium))
-                            .foregroundColor(textOnHeroColor.opacity(0.5))
-                            .transition(.opacity)
-                    }
-                }
-                .animation(.easeInOut(duration: 0.25), value: isRefreshing)
-                .frame(width: 44, height: 44)
-                .contentShape(Circle())
-                .background {
-                    Circle()
-                        .fill(.ultraThinMaterial)
-                        .frame(width: 32, height: 32)
-                        .overlay {
-                            Circle()
-                                .strokeBorder(textOnHeroColor.opacity(0.08), lineWidth: 0.5)
-                                .frame(width: 32, height: 32)
-                        }
+                if isRefreshing {
+                    ProgressView()
+                        .tint(DesignColors.background)
+                        .scaleEffect(0.8)
+                } else {
+                    Image(systemName: "calendar")
                 }
             }
+            .buttonStyle(GlowIconButtonStyle())
+            .animation(.easeInOut(duration: 0.25), value: isRefreshing)
+            .accessibilityLabel("Calendar")
         }
         .padding(.horizontal, 16)
     }
@@ -661,7 +647,11 @@ public struct CycleHeroView: View {
 
     private var collapsedHeadline: String {
         if isRefreshing { return "Updating..." }
-        if cycle.isLate { return "Period expected" }
+        if cycle.isLate {
+            let late = cycle.effectiveDaysLate
+            if late <= 1 { return "Period expected" }
+            return "Period expected \(late) days ago"
+        }
 
         if isPeriod && !isPredictedPeriod {
             let bleed = cycle.bleedingDays
