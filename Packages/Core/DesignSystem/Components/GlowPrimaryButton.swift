@@ -28,8 +28,8 @@ public struct GlowPrimaryButtonStyle: ButtonStyle {
             RoundedRectangle(cornerRadius: 30, style: .continuous)
                 .fill(DesignColors.text)
         )
-        .shadow(color: DesignColors.text.opacity(0.22), radius: 20, x: 0, y: 8)
-        .shadow(color: DesignColors.text.opacity(0.12), radius: 4, x: 0, y: 2)
+        .shadow(color: DesignColors.text.opacity(DesignColors.shadowOpacityPrimary), radius: 20, x: 0, y: 8)
+        .shadow(color: DesignColors.text.opacity(DesignColors.shadowOpacitySecondary), radius: 4, x: 0, y: 2)
         .scaleEffect(configuration.isPressed ? 0.98 : 1.0)
         .animation(.spring(response: 0.3, dampingFraction: 0.7), value: configuration.isPressed)
     }

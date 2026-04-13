@@ -244,28 +244,9 @@ struct ChallengeAcceptView: View {
                     UIImpactFeedbackGenerator(style: .medium).impactOccurred()
                     store.send(.openCameraTapped)
                 } label: {
-                    HStack {
-                        Text("Start challenge")
-                            .font(.custom("Raleway-Black", size: 17))
-                            .tracking(-0.2)
-                            .foregroundStyle(DesignColors.background)
-                        Spacer()
-                        Image(systemName: "arrow.right")
-                            .font(.system(size: 16, weight: .bold))
-                            .foregroundStyle(DesignColors.text)
-                            .frame(width: 32, height: 32)
-                            .background(Circle().fill(DesignColors.background))
-                    }
-                    .padding(.vertical, 20)
-                    .padding(.horizontal, 26)
-                    .background(
-                        RoundedRectangle(cornerRadius: 30, style: .continuous)
-                            .fill(DesignColors.text)
-                    )
-                    .shadow(color: DesignColors.text.opacity(0.22), radius: 20, x: 0, y: 8)
-                    .shadow(color: DesignColors.text.opacity(0.12), radius: 4, x: 0, y: 2)
+                    Text("Start challenge")
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(GlowPrimaryButtonStyle())
                 .accessibilityLabel("Start challenge")
                 .accessibilityHint("Opens the camera to take a photo of your challenge")
 

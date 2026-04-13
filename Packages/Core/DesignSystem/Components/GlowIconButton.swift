@@ -17,8 +17,8 @@ public struct GlowIconButtonStyle: ButtonStyle {
             .background(
                 Circle().fill(DesignColors.text)
             )
-            .shadow(color: DesignColors.text.opacity(0.22), radius: 12, x: 0, y: 6)
-            .shadow(color: DesignColors.text.opacity(0.12), radius: 3, x: 0, y: 2)
+            .shadow(color: DesignColors.text.opacity(DesignColors.shadowOpacityPrimary), radius: 12, x: 0, y: 6)
+            .shadow(color: DesignColors.text.opacity(DesignColors.shadowOpacitySecondary), radius: 3, x: 0, y: 2)
             .scaleEffect(configuration.isPressed ? 0.94 : 1.0)
             .animation(.spring(response: 0.3, dampingFraction: 0.7), value: configuration.isPressed)
     }
