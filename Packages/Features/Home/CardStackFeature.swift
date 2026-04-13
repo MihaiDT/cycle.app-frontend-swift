@@ -182,43 +182,14 @@ struct CardStackView: View {
 
     private var cardContent: some View {
         VStack(alignment: .leading, spacing: 16) {
-            // How do you feel — separate button
+            // How do you feel — primary daily ritual CTA
             Button {
                 UIImpactFeedbackGenerator(style: .light).impactOccurred()
                 store.send(.delegate(.openCheckIn))
             } label: {
-                HStack(spacing: 8) {
-                    Text("How do you feel?")
-                        .font(.custom("Raleway-SemiBold", size: 15))
-                    Image(systemName: "arrow.right")
-                        .font(.system(size: 12, weight: .semibold))
-                }
-                .foregroundStyle(.white)
-                .padding(.horizontal, 22)
-                .padding(.vertical, 12)
-                .background {
-                    Capsule()
-                        .fill(
-                            LinearGradient(
-                                colors: [DesignColors.accentWarm, DesignColors.accentSecondary],
-                                startPoint: .leading,
-                                endPoint: .trailing
-                            )
-                        )
-                        .overlay {
-                            Capsule()
-                                .fill(
-                                    LinearGradient(
-                                        colors: [Color.white.opacity(0.2), Color.clear],
-                                        startPoint: .top,
-                                        endPoint: .center
-                                    )
-                                )
-                        }
-                        .shadow(color: DesignColors.accentWarm.opacity(0.3), radius: 8, x: 0, y: 4)
-                }
+                Text("How do you feel?")
             }
-            .buttonStyle(.plain)
+            .buttonStyle(GlowPrimaryButtonStyle())
             .padding(.horizontal, AppLayout.horizontalPadding)
 
             HStack(alignment: .lastTextBaseline) {

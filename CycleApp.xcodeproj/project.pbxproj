@@ -82,6 +82,7 @@
 		6B8F7B2F07C84BB5B8F1D62A /* XPProgressBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = C148CEAD0B66E8A2031B2B99 /* XPProgressBar.swift */; };
 		6BE0ED40E9BBE330AE30556D /* ComposableArchitecture in Frameworks */ = {isa = PBXBuildFile; productRef = E34B6B4CD3FFA24A82AA97ED /* ComposableArchitecture */; };
 		6E607C996918E28B985183F0 /* MenstrualPredictor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 847BC930202DF1E22429093B /* MenstrualPredictor.swift */; };
+		6E99EB3777AB26D24A1AC889 /* CalendarYearCollectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC5090DAA591F27C640D9D4A /* CalendarYearCollectionView.swift */; };
 		7215422C36DCB684CF032594 /* CalendarYearView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8030F59AC5C6C3D0782DC89 /* CalendarYearView.swift */; };
 		72DE23DE50FC30C04B0730B2 /* ChallengeSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 506A05DCABFD9B74071A4DF0 /* ChallengeSnapshot.swift */; };
 		73751010818B10B59916451D /* ChallengeSnapshotTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F7823769E6FBFCECBCB6CAE /* ChallengeSnapshotTests.swift */; };
@@ -177,6 +178,7 @@
 		F111ECFB1ABCC7C05131215B /* Endpoints.swift in Sources */ = {isa = PBXBuildFile; fileRef = C37CC78C0030CB6EEA71B9C7 /* Endpoints.swift */; };
 		F38C3DB0B0EB1DE32EE83688 /* Raleway-BoldItalic.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 0DDA4D46AFEF6322A76391AA /* Raleway-BoldItalic.ttf */; };
 		F553D5D7D1563E6D5DC62F51 /* ConsentPrivacy.json in Resources */ = {isa = PBXBuildFile; fileRef = 929A3B534A8BCD8044EA93C4 /* ConsentPrivacy.json */; };
+		F5791588230E37ECC470FD77 /* GlowPrimaryButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3FD2B1629CCE01C8D0887F3 /* GlowPrimaryButton.swift */; };
 		F5EA81C29EE997219835D532 /* CelestialCycleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 91D49DDC5F4C3DAE7EF32645 /* CelestialCycleView.swift */; };
 		F63006C2A2957A33DEB472FE /* PhotoReviewFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEDC94436897365CDB098DFB /* PhotoReviewFeature.swift */; };
 		F6EE431810A1618291C3FF85 /* CycleInsightsFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA3B9C4C5B8CCFEC092F2EEE /* CycleInsightsFeature.swift */; };
@@ -312,6 +314,7 @@
 		AA3DA29117E0B7B54191D57F /* CardStackFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardStackFeature.swift; sourceTree = "<group>"; };
 		AAE2E54DEE19A7F71CEE3E72 /* Raleway-Italic.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Raleway-Italic.ttf"; sourceTree = "<group>"; };
 		AC21FE2951F51FFA372CB45A /* LifestyleRhythmView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LifestyleRhythmView.swift; sourceTree = "<group>"; };
+		AC5090DAA591F27C640D9D4A /* CalendarYearCollectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarYearCollectionView.swift; sourceTree = "<group>"; };
 		ACA20E6BDC2387B8AB381B71 /* MenstrualLocalClient+Journey.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MenstrualLocalClient+Journey.swift"; sourceTree = "<group>"; };
 		B0A5D544979E59D9EEF6F45A /* MenstrualLocalClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenstrualLocalClient.swift; sourceTree = "<group>"; };
 		B25F0848D5EE9FBB722FBAD6 /* CycleDataView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CycleDataView.swift; sourceTree = "<group>"; };
@@ -348,6 +351,7 @@
 		DFB5C69AF9E8C6B3B5A8F50C /* CycleJourneyEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CycleJourneyEngine.swift; sourceTree = "<group>"; };
 		E1D75A3020910AA2ED96FB84 /* CycleDataComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CycleDataComponents.swift; sourceTree = "<group>"; };
 		E234B15081BB567827B75E0E /* CalendarAriaInsight.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarAriaInsight.swift; sourceTree = "<group>"; };
+		E3FD2B1629CCE01C8D0887F3 /* GlowPrimaryButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlowPrimaryButton.swift; sourceTree = "<group>"; };
 		E438E6CA574859596F3B8702 /* CycleContext.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CycleContext.swift; sourceTree = "<group>"; };
 		E6443B1A872FD8D9CA385C44 /* GlassTextField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassTextField.swift; sourceTree = "<group>"; };
 		E687F11BA153A2DF683BD9B0 /* logo_animation.splineswift */ = {isa = PBXFileReference; path = logo_animation.splineswift; sourceTree = "<group>"; };
@@ -650,6 +654,7 @@
 				F8E62ACB6092862D952F78FB /* GlassSelectionCard.swift */,
 				E6443B1A872FD8D9CA385C44 /* GlassTextField.swift */,
 				992E17679A9E07576431CBF1 /* GlassWeekCalendar.swift */,
+				E3FD2B1629CCE01C8D0887F3 /* GlowPrimaryButton.swift */,
 				A4E7E9A068ECB15A84A721A7 /* GradientBackground.swift */,
 				0BC45BF7323F201338BFDA2E /* GradientTagline.swift */,
 				0C5722C7E3AC41AE065FC9F2 /* HBIScoreRing.swift */,
@@ -710,6 +715,7 @@
 				5886220E666CF879F28AA495 /* CalendarSymptomSheet.swift */,
 				212BE822AA0E09D8482006E2 /* CalendarTableView.swift */,
 				1E11CC02F06A23385C8E3602 /* CalendarView.swift */,
+				AC5090DAA591F27C640D9D4A /* CalendarYearCollectionView.swift */,
 				C8030F59AC5C6C3D0782DC89 /* CalendarYearView.swift */,
 				AA3DA29117E0B7B54191D57F /* CardStackFeature.swift */,
 				0E943F4688D7290A2D03A26C /* ChatFeature.swift */,
@@ -928,6 +934,7 @@
 				42BCE80B18AF903A1B03EC79 /* CalendarSymptomSheet.swift in Sources */,
 				252BCB6AA080C70A04AB8767 /* CalendarTableView.swift in Sources */,
 				B224E12C6ABB07914CE60F82 /* CalendarView.swift in Sources */,
+				6E99EB3777AB26D24A1AC889 /* CalendarYearCollectionView.swift in Sources */,
 				7215422C36DCB684CF032594 /* CalendarYearView.swift in Sources */,
 				999CF4AFDCC8015DFDBB5439 /* CardStackFeature.swift in Sources */,
 				F5EA81C29EE997219835D532 /* CelestialCycleView.swift in Sources */,
@@ -979,6 +986,7 @@
 				00C8A8ED594CBB3847F13F8C /* GlassWeekCalendar.swift in Sources */,
 				497994E9A0C6F0E200D43FD9 /* GlowConstants.swift in Sources */,
 				B5B59BD7A5531DBBA45DE149 /* GlowLocalClient.swift in Sources */,
+				F5791588230E37ECC470FD77 /* GlowPrimaryButton.swift in Sources */,
 				0450EC4C07F797651BABF91D /* GlowProfileRecord.swift in Sources */,
 				2F24A9251D263E5F9C114837 /* GlowProfileSnapshot.swift in Sources */,
 				5C0CAB20DB0824AC800714AF /* GradientBackground.swift in Sources */,
