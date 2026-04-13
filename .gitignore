@@ -80,3 +80,6 @@ Tuist/Dependencies
 
 # Superpowers brainstorming
 .superpowers/
+
+# Git worktrees (local isolated workspaces)
+.worktrees/
