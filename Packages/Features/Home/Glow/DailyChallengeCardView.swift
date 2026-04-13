@@ -24,24 +24,26 @@ struct DailyChallengeCardView: View {
                 Image(systemName: "flag.fill")
                     .font(.system(size: 12, weight: .medium))
                 Text("Challenge")
-                    .font(.custom("Raleway-SemiBold", size: 12))
+                    .font(.custom("Raleway-SemiBold", size: 12, relativeTo: .caption))
             }
             .foregroundStyle(DesignColors.accentWarm)
             .padding(.horizontal, 12)
             .padding(.vertical, 6)
             .background { Capsule().fill(DesignColors.accentWarm.opacity(0.1)) }
+            .accessibilityLabel("Challenge")
 
             Spacer(minLength: 12)
 
             Text(challenge.challengeTitle)
-                .font(.custom("Raleway-Bold", size: 24))
+                .font(.custom("Raleway-Bold", size: 24, relativeTo: .title2))
                 .foregroundStyle(DesignColors.text)
                 .lineSpacing(2)
                 .lineLimit(2)
                 .fixedSize(horizontal: false, vertical: true)
+                .accessibilityAddTraits(.isHeader)
 
             Text(challenge.challengeDescription)
-                .font(.custom("Raleway-Regular", size: 14))
+                .font(.custom("Raleway-Regular", size: 14, relativeTo: .body))
                 .foregroundStyle(DesignColors.textSecondary)
                 .lineSpacing(3)
                 .lineLimit(3)
@@ -53,6 +55,12 @@ struct DailyChallengeCardView: View {
                 tagPill(challenge.effortDisplay)
             }
             .padding(.top, 2)
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel(
+                "\(challenge.cyclePhase.capitalized), " +
+                "\(challenge.durationDisplay), " +
+                "\(challenge.effortDisplay)"
+            )
 
             Spacer().frame(height: 14)
 
@@ -62,7 +70,7 @@ struct DailyChallengeCardView: View {
                     onDoIt()
                 } label: {
                     Text("Do It")
-                        .font(.custom("Raleway-SemiBold", size: 16))
+                        .font(.custom("Raleway-SemiBold", size: 16, relativeTo: .body))
                         .foregroundStyle(.white)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 14)
@@ -72,13 +80,16 @@ struct DailyChallengeCardView: View {
                         }
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel("Do challenge")
+                .accessibilityHint("Opens the challenge detail screen")
 
                 Button { onSkip() } label: {
                     Text("Skip")
-                        .font(.custom("Raleway-Medium", size: 15))
+                        .font(.custom("Raleway-Medium", size: 15, relativeTo: .callout))
                         .foregroundStyle(DesignColors.textSecondary)
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel("Skip today's challenge")
             }
         }
         .padding(28)
@@ -99,6 +110,7 @@ struct DailyChallengeCardView: View {
                         .scaledToFill()
                         .frame(width: 64, height: 64)
                         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                        .accessibilityHidden(true)
                 }
 
                 VStack(alignment: .leading, spacing: 4) {
@@ -106,7 +118,7 @@ struct DailyChallengeCardView: View {
                         RatingBadge(rating: rating, size: 24)
                     }
                     Text("+\(challenge.xpEarned) XP")
-                        .font(.custom("Raleway-SemiBold", size: 14))
+                        .font(.custom("Raleway-SemiBold", size: 14, relativeTo: .callout))
                         .foregroundStyle(DesignColors.accentWarm)
                 }
             }
@@ -115,14 +127,14 @@ struct DailyChallengeCardView: View {
 
             if let feedback = challenge.validationFeedback {
                 Text(feedback)
-                    .font(.custom("Raleway-Medium", size: 16))
+                    .font(.custom("Raleway-Medium", size: 16, relativeTo: .body))
                     .foregroundStyle(DesignColors.text)
                     .lineSpacing(4)
                     .lineLimit(3)
             }
 
             Text(challenge.challengeTitle)
-                .font(.custom("Raleway-Regular", size: 14))
+                .font(.custom("Raleway-Regular", size: 14, relativeTo: .body))
                 .foregroundStyle(DesignColors.textSecondary)
         }
         .padding(28)
@@ -137,7 +149,7 @@ struct DailyChallengeCardView: View {
             Spacer()
 
             Text("Your challenge is here whenever you're ready")
-                .font(.custom("Raleway-Medium", size: 17))
+                .font(.custom("Raleway-Medium", size: 17, relativeTo: .body))
                 .foregroundStyle(DesignColors.textSecondary)
                 .multilineTextAlignment(.center)
                 .lineSpacing(4)
@@ -146,10 +158,12 @@ struct DailyChallengeCardView: View {
 
             Button { onMaybeLater() } label: {
                 Text("Maybe Later")
-                    .font(.custom("Raleway-Medium", size: 15))
+                    .font(.custom("Raleway-Medium", size: 15, relativeTo: .callout))
                     .foregroundStyle(DesignColors.accentWarm)
             }
             .buttonStyle(.plain)
+            .accessibilityLabel("Maybe later")
+            .accessibilityHint("Keep today's challenge available for later")
 
             Spacer()
         }
@@ -160,7 +174,7 @@ struct DailyChallengeCardView: View {
 
     private func tagPill(_ text: String) -> some View {
         Text(text)
-            .font(.custom("Raleway-Medium", size: 11))
+            .font(.custom("Raleway-Medium", size: 11, relativeTo: .caption))
             .foregroundStyle(DesignColors.textSecondary)
             .padding(.horizontal, 8)
             .padding(.vertical, 4)

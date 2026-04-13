@@ -88,7 +88,7 @@ struct ChallengeAcceptView: View {
 
     private var phaseAnchor: some View {
         Text("Today · \(store.challenge.cyclePhase) phase")
-            .font(.custom("Raleway-Bold", size: 11))
+            .font(.custom("Raleway-Bold", size: 11, relativeTo: .caption2))
             .tracking(1.3)
             .textCase(.uppercase)
             .foregroundStyle(DesignColors.accentWarm)
@@ -102,7 +102,7 @@ struct ChallengeAcceptView: View {
 
     private var titleBlock: some View {
         Text(store.challenge.challengeTitle)
-            .font(.custom("Raleway-Black", size: 44))
+            .font(.custom("Raleway-Black", size: 44, relativeTo: .largeTitle))
             .tracking(-0.9)
             .lineSpacing(-6)
             .foregroundStyle(DesignColors.text)
@@ -117,7 +117,7 @@ struct ChallengeAcceptView: View {
 
     private var whySubtitle: some View {
         Text(store.challenge.challengeDescription)
-            .font(.custom("Raleway-Medium", size: 17))
+            .font(.custom("Raleway-Medium", size: 17, relativeTo: .body))
             .foregroundStyle(DesignColors.textPrincipal)
             .lineSpacing(3)
             .fixedSize(horizontal: false, vertical: true)
@@ -147,13 +147,13 @@ struct ChallengeAcceptView: View {
     private func statBox(value: String, label: String) -> some View {
         VStack(spacing: 7) {
             Text(value)
-                .font(.custom("Raleway-Black", size: 20))
+                .font(.custom("Raleway-Black", size: 20, relativeTo: .title3))
                 .tracking(-0.3)
                 .foregroundStyle(DesignColors.text)
                 .minimumScaleFactor(0.8)
                 .lineLimit(1)
             Text(label)
-                .font(.custom("Raleway-Bold", size: 9))
+                .font(.custom("Raleway-Bold", size: 9, relativeTo: .caption2))
                 .tracking(0.9)
                 .textCase(.uppercase)
                 .foregroundStyle(DesignColors.textSecondary)
@@ -166,7 +166,7 @@ struct ChallengeAcceptView: View {
                 .fill(DesignColors.cardWarm)
                 .overlay(
                     RoundedRectangle(cornerRadius: 20, style: .continuous)
-                        .stroke(DesignColors.text.opacity(0.07), lineWidth: 1)
+                        .stroke(DesignColors.text.opacity(DesignColors.borderOpacitySubtle), lineWidth: 1)
                 )
         )
     }
@@ -176,7 +176,7 @@ struct ChallengeAcceptView: View {
     private var howCard: some View {
         VStack(alignment: .leading, spacing: 0) {
             Text("How to do it")
-                .font(.custom("Raleway-Black", size: 10))
+                .font(.custom("Raleway-Black", size: 10, relativeTo: .caption2))
                 .tracking(1.2)
                 .textCase(.uppercase)
                 .foregroundStyle(DesignColors.accentWarm)
@@ -194,7 +194,7 @@ struct ChallengeAcceptView: View {
                 .fill(DesignColors.cardWarm)
                 .overlay(
                     RoundedRectangle(cornerRadius: 24, style: .continuous)
-                        .stroke(DesignColors.text.opacity(0.07), lineWidth: 1)
+                        .stroke(DesignColors.text.opacity(DesignColors.borderOpacitySubtle), lineWidth: 1)
                 )
         )
         .padding(.horizontal, 20)
@@ -205,17 +205,17 @@ struct ChallengeAcceptView: View {
         VStack(spacing: 0) {
             if !isFirst {
                 Rectangle()
-                    .fill(DesignColors.text.opacity(0.08))
+                    .fill(DesignColors.text.opacity(DesignColors.dividerOpacity))
                     .frame(height: 1)
             }
             HStack(alignment: .top, spacing: 14) {
                 Text("\(number)")
-                    .font(.custom("Raleway-Black", size: 11))
+                    .font(.custom("Raleway-Black", size: 11, relativeTo: .caption))
                     .foregroundStyle(DesignColors.background)
                     .frame(width: 24, height: 24)
                     .background(Circle().fill(DesignColors.text))
                 Text(text)
-                    .font(.custom("Raleway-Medium", size: 15))
+                    .font(.custom("Raleway-Medium", size: 15, relativeTo: .body))
                     .foregroundStyle(DesignColors.textPrincipal)
                     .lineSpacing(2)
                     .fixedSize(horizontal: false, vertical: true)
@@ -254,14 +254,14 @@ struct ChallengeAcceptView: View {
                     store.send(.chooseFromGalleryTapped)
                 } label: {
                     Text("Or choose from gallery")
-                        .font(.custom("Raleway-SemiBold", size: 13))
+                        .font(.custom("Raleway-SemiBold", size: 13, relativeTo: .footnote))
                         .foregroundStyle(DesignColors.textSecondary)
                 }
                 .buttonStyle(.plain)
                 .accessibilityHint("Choose an existing photo instead of taking a new one")
 
                 Text("Earns 50–100 glow on completion")
-                    .font(.custom("Raleway-SemiBold", size: 11))
+                    .font(.custom("Raleway-SemiBold", size: 11, relativeTo: .caption))
                     .foregroundStyle(DesignColors.textSecondary)
                     .padding(.top, 4)
                     .accessibilityLabel("Earns 50 to 100 glow points on completion")
