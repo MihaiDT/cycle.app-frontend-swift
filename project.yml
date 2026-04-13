@@ -74,6 +74,7 @@ targets:
     resources:
       - path: CycleApp/Resources/logo_animation.splineswift
       - path: CycleApp/Resources/glowing_orb.riv
+      - path: Packages/Core/CycleEngine/Resources/challenge_templates.json
     dependencies:
       - package: ComposableArchitecture
       - package: Tagged

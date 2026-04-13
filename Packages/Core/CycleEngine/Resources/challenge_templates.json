@@ -1,0 +1,322 @@
+[
+  {
+    "id": "social_ovulatory_01",
+    "category": "social",
+    "phases": ["ovulatory"],
+    "energyMin": 6,
+    "energyMax": 10,
+    "title": "Reconnect with a Friend",
+    "description": "Reach out to someone you haven't spoken to in a while. Send a voice note, call, or plan a catch-up.",
+    "tips": [
+      "Pick someone who makes you feel energized",
+      "A quick voice note counts — it doesn't have to be a long call",
+      "Share something positive from your week"
+    ],
+    "goldHint": "Screenshot of the conversation or a selfie together",
+    "validationPrompt": "User should show evidence of reaching out to a friend — a chat screenshot, selfie, or call log."
+  },
+  {
+    "id": "social_follicular_01",
+    "category": "social",
+    "phases": ["follicular"],
+    "energyMin": 4,
+    "energyMax": 8,
+    "title": "Compliment a Stranger",
+    "description": "Give a genuine compliment to someone you encounter today — a barista, coworker, or fellow commuter.",
+    "tips": [
+      "Be specific — mention what you actually noticed",
+      "Smile and make eye contact",
+      "Don't expect anything in return, just spread warmth"
+    ],
+    "goldHint": "A note or selfie from the moment",
+    "validationPrompt": "User should describe or show evidence of giving a genuine compliment to someone."
+  },
+  {
+    "id": "social_luteal_01",
+    "category": "social",
+    "phases": ["luteal"],
+    "energyMin": 2,
+    "energyMax": 6,
+    "title": "Cozy Check-In",
+    "description": "Send a thoughtful message to someone you care about. Ask how they're really doing.",
+    "tips": [
+      "Keep it low-pressure — a text is perfect",
+      "Ask an open-ended question",
+      "Listen more than you share"
+    ],
+    "goldHint": "Screenshot of the caring message exchange",
+    "validationPrompt": "User should show a caring message sent to someone they care about."
+  },
+  {
+    "id": "self_care_menstrual_01",
+    "category": "self_care",
+    "phases": ["menstrual"],
+    "energyMin": 1,
+    "energyMax": 4,
+    "title": "Warm Comfort Ritual",
+    "description": "Create a cozy self-care moment: a warm bath, hot water bottle, heated blanket, or warm drink with intention.",
+    "tips": [
+      "Add lavender or chamomile for extra calm",
+      "Put your phone on Do Not Disturb",
+      "Set a timer so you can fully relax without watching the clock"
+    ],
+    "goldHint": "Photo of your cozy setup",
+    "validationPrompt": "User should show their warm comfort setup — a bath, hot drink, blanket, or similar cozy ritual."
+  },
+  {
+    "id": "self_care_follicular_01",
+    "category": "self_care",
+    "phases": ["follicular"],
+    "energyMin": 4,
+    "energyMax": 8,
+    "title": "Skincare Reset",
+    "description": "Do a full skincare routine — cleanse, mask, moisturize. Take your time and enjoy the process.",
+    "tips": [
+      "Your skin is most receptive during the follicular phase",
+      "Try a hydrating or brightening mask",
+      "Play calm music while you wait for the mask"
+    ],
+    "goldHint": "Selfie with your mask on or your glowing skin after",
+    "validationPrompt": "User should show a selfie during or after their skincare routine."
+  },
+  {
+    "id": "self_care_luteal_01",
+    "category": "self_care",
+    "phases": ["luteal"],
+    "energyMin": 2,
+    "energyMax": 5,
+    "title": "Digital Sunset",
+    "description": "Put all screens away 30 minutes before bed. Read, journal, or just breathe.",
+    "tips": [
+      "Set an alarm to remind you when to start",
+      "Prepare a book or journal in advance",
+      "Dim the lights to signal wind-down time"
+    ],
+    "goldHint": "Photo of your screen-free setup or journal page",
+    "validationPrompt": "User should show their screen-free wind-down setup — a book, journal, or dim-lit room."
+  },
+  {
+    "id": "creative_ovulatory_01",
+    "category": "creative",
+    "phases": ["ovulatory"],
+    "energyMin": 5,
+    "energyMax": 10,
+    "title": "Express Yourself",
+    "description": "Create something — draw, paint, write a poem, compose a playlist, style an outfit, or rearrange a space.",
+    "tips": [
+      "Don't aim for perfection — aim for expression",
+      "Set a 15-minute timer and just go",
+      "Your creative energy peaks during ovulation — ride the wave"
+    ],
+    "goldHint": "Photo of your creation",
+    "validationPrompt": "User should show a creative output — artwork, writing, playlist screenshot, styled outfit, or rearranged space."
+  },
+  {
+    "id": "creative_follicular_01",
+    "category": "creative",
+    "phases": ["follicular"],
+    "energyMin": 4,
+    "energyMax": 9,
+    "title": "Vision Board Moment",
+    "description": "Spend 10 minutes creating a mini vision board — digital or physical. Collect images that inspire your goals.",
+    "tips": [
+      "Pinterest or a notes app work great for digital boards",
+      "Focus on how you want to feel, not just what you want",
+      "Include at least one bold dream"
+    ],
+    "goldHint": "Screenshot or photo of your vision board",
+    "validationPrompt": "User should show a vision board — digital or physical — with collected inspiring images."
+  },
+  {
+    "id": "creative_menstrual_01",
+    "category": "creative",
+    "phases": ["menstrual"],
+    "energyMin": 1,
+    "energyMax": 5,
+    "title": "Stream of Consciousness",
+    "description": "Write freely for 5 minutes. No editing, no rules. Let whatever comes out flow onto the page.",
+    "tips": [
+      "Use paper — the tactile feel helps during low energy",
+      "There's no wrong way to do this",
+      "If you're stuck, start with 'Right now I feel...'"
+    ],
+    "goldHint": "Photo of your written page (content can be private)",
+    "validationPrompt": "User should show a photo of their handwritten or typed free-writing page."
+  },
+  {
+    "id": "movement_ovulatory_01",
+    "category": "movement",
+    "phases": ["ovulatory"],
+    "energyMin": 7,
+    "energyMax": 10,
+    "title": "Dance It Out",
+    "description": "Put on your favorite upbeat song and dance for the full duration. No choreography needed — just move.",
+    "tips": [
+      "Close the door if you need privacy",
+      "Pick a song that makes you feel powerful",
+      "Let your body lead — don't think, just move"
+    ],
+    "goldHint": "A short video clip or sweaty selfie",
+    "validationPrompt": "User should show evidence of dancing — a video clip, sweaty selfie, or screenshot of the song they danced to."
+  },
+  {
+    "id": "movement_follicular_01",
+    "category": "movement",
+    "phases": ["follicular"],
+    "energyMin": 5,
+    "energyMax": 9,
+    "title": "Sunrise Walk",
+    "description": "Take a 15-minute walk outside, ideally in morning light. Focus on your surroundings — no phone scrolling.",
+    "tips": [
+      "Morning light helps regulate your circadian rhythm",
+      "Notice three things you can see, hear, and feel",
+      "Walk at a pace that feels energizing, not exhausting"
+    ],
+    "goldHint": "Photo from your walk — scenery, shadow, or step count",
+    "validationPrompt": "User should show evidence of an outdoor walk — a nature photo, step count, or outdoor selfie."
+  },
+  {
+    "id": "movement_menstrual_01",
+    "category": "movement",
+    "phases": ["menstrual"],
+    "energyMin": 1,
+    "energyMax": 4,
+    "title": "Gentle Stretch",
+    "description": "Do 5 minutes of gentle stretching. Focus on hips, lower back, and shoulders — areas that hold tension.",
+    "tips": [
+      "Child's pose and cat-cow are great starting points",
+      "Breathe deeply into each stretch",
+      "Use a pillow or blanket for extra comfort"
+    ],
+    "goldHint": "Photo of your stretching setup or a post-stretch selfie",
+    "validationPrompt": "User should show their stretching setup — a yoga mat, pillow arrangement, or post-stretch selfie."
+  },
+  {
+    "id": "movement_luteal_01",
+    "category": "movement",
+    "phases": ["luteal"],
+    "energyMin": 3,
+    "energyMax": 7,
+    "title": "Grounding Walk",
+    "description": "Take a slow, mindful walk. Focus on the sensation of your feet touching the ground with each step.",
+    "tips": [
+      "Leave your headphones behind for this one",
+      "Walk slower than you think you should",
+      "If possible, walk on grass or natural terrain"
+    ],
+    "goldHint": "Photo from your walk or a shot of where you walked",
+    "validationPrompt": "User should show evidence of a mindful walk — a path photo, nature shot, or step count."
+  },
+  {
+    "id": "mindfulness_menstrual_01",
+    "category": "mindfulness",
+    "phases": ["menstrual"],
+    "energyMin": 1,
+    "energyMax": 3,
+    "title": "Body Scan Rest",
+    "description": "Lie down and do a 5-minute body scan. Start from your toes and slowly move attention up to the crown of your head.",
+    "tips": [
+      "Use a guided body scan if you're new to this",
+      "It's okay to fall asleep — your body might need it",
+      "Place a hand on your belly to anchor your attention"
+    ],
+    "goldHint": "Photo of your resting setup or a timer screenshot",
+    "validationPrompt": "User should show their resting setup — a cozy spot, timer, or meditation app screenshot."
+  },
+  {
+    "id": "mindfulness_follicular_01",
+    "category": "mindfulness",
+    "phases": ["follicular", "ovulatory"],
+    "energyMin": 4,
+    "energyMax": 8,
+    "title": "Gratitude Snapshot",
+    "description": "Take a photo of something you're grateful for today. Write one sentence about why it matters to you.",
+    "tips": [
+      "Look for beauty in ordinary moments",
+      "It can be as simple as your morning coffee",
+      "Save it somewhere you'll see it later"
+    ],
+    "goldHint": "The gratitude photo with your written reason",
+    "validationPrompt": "User should show a photo of something they're grateful for, ideally with a brief note about why."
+  },
+  {
+    "id": "mindfulness_luteal_01",
+    "category": "mindfulness",
+    "phases": ["luteal"],
+    "energyMin": 2,
+    "energyMax": 6,
+    "title": "Breathing Anchor",
+    "description": "Practice box breathing for 3 minutes: inhale 4 counts, hold 4, exhale 4, hold 4. Repeat.",
+    "tips": [
+      "Place one hand on your chest and one on your belly",
+      "If 4 counts feels long, start with 3",
+      "This activates your parasympathetic nervous system"
+    ],
+    "goldHint": "Screenshot of a breathing timer or a calm selfie after",
+    "validationPrompt": "User should show evidence of breathing practice — a timer, breathing app screenshot, or calm selfie."
+  },
+  {
+    "id": "nutrition_menstrual_01",
+    "category": "nutrition",
+    "phases": ["menstrual"],
+    "energyMin": 1,
+    "energyMax": 5,
+    "title": "Iron-Rich Comfort Meal",
+    "description": "Prepare or order a meal rich in iron — spinach, lentils, red meat, or dark chocolate. Nourish your body.",
+    "tips": [
+      "Pair iron-rich foods with vitamin C for better absorption",
+      "Dark chocolate counts — enjoy it guilt-free",
+      "Warm meals feel extra comforting during this phase"
+    ],
+    "goldHint": "Photo of your iron-rich meal",
+    "validationPrompt": "User should show a photo of their iron-rich meal or snack."
+  },
+  {
+    "id": "nutrition_follicular_01",
+    "category": "nutrition",
+    "phases": ["follicular"],
+    "energyMin": 4,
+    "energyMax": 8,
+    "title": "Colorful Plate Challenge",
+    "description": "Make a meal with at least 4 different colors of whole foods. Think rainbow — the more variety, the better.",
+    "tips": [
+      "Berries, greens, sweet potato, and avocado are easy wins",
+      "Fresh is great but frozen veggies count too",
+      "Arrange it nicely — eating with your eyes first is real"
+    ],
+    "goldHint": "Photo of your colorful plate",
+    "validationPrompt": "User should show a photo of a meal with at least 4 different colored whole foods."
+  },
+  {
+    "id": "nutrition_ovulatory_01",
+    "category": "nutrition",
+    "phases": ["ovulatory"],
+    "energyMin": 5,
+    "energyMax": 10,
+    "title": "Hydration Hero",
+    "description": "Drink at least 8 glasses of water today. Add lemon, cucumber, or mint to make it feel special.",
+    "tips": [
+      "Start your day with a full glass before coffee",
+      "Set hourly reminders if you tend to forget",
+      "Herbal teas count toward your water intake"
+    ],
+    "goldHint": "Photo of your infused water or hydration tracker screenshot",
+    "validationPrompt": "User should show their hydration setup — infused water bottle, tracker app, or tally marks."
+  },
+  {
+    "id": "nutrition_luteal_01",
+    "category": "nutrition",
+    "phases": ["luteal"],
+    "energyMin": 2,
+    "energyMax": 6,
+    "title": "Magnesium Moment",
+    "description": "Have a magnesium-rich snack — dark chocolate, almonds, banana, or pumpkin seeds. Your body craves it this phase.",
+    "tips": [
+      "Magnesium helps with PMS symptoms and sleep",
+      "A small handful of almonds is enough",
+      "Pair with herbal tea for a calming combo"
+    ],
+    "goldHint": "Photo of your magnesium-rich snack",
+    "validationPrompt": "User should show a photo of their magnesium-rich snack or treat."
+  }
+]
