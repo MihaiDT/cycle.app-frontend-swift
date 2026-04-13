@@ -84,6 +84,7 @@
 		6E607C996918E28B985183F0 /* MenstrualPredictor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 847BC930202DF1E22429093B /* MenstrualPredictor.swift */; };
 		7215422C36DCB684CF032594 /* CalendarYearView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8030F59AC5C6C3D0782DC89 /* CalendarYearView.swift */; };
 		72DE23DE50FC30C04B0730B2 /* ChallengeSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 506A05DCABFD9B74071A4DF0 /* ChallengeSnapshot.swift */; };
+		73751010818B10B59916451D /* ChallengeSnapshotTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F7823769E6FBFCECBCB6CAE /* ChallengeSnapshotTests.swift */; };
 		768753B77A0E07A705B892F9 /* ProfessionalContextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0B6FD470F322B5A59DD7E00 /* ProfessionalContextView.swift */; };
 		7C13CC4BABF0121CDDA43C94 /* SplashView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 94278F98041D7E509F99939B /* SplashView.swift */; };
 		7D383F183C5E202BD1376605 /* Raleway-ExtraLightItalic.ttf in Resources */ = {isa = PBXBuildFile; fileRef = BB56C4D402DE76F749F5763C /* Raleway-ExtraLightItalic.ttf */; };
@@ -219,6 +220,7 @@
 		15E5BBC3280206FB17B4DB65 /* AppFeatureTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppFeatureTests.swift; sourceTree = "<group>"; };
 		17E7EF949EF91E4ADFB45166 /* DailyChallengeCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyChallengeCardView.swift; sourceTree = "<group>"; };
 		1E11CC02F06A23385C8E3602 /* CalendarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarView.swift; sourceTree = "<group>"; };
+		1F7823769E6FBFCECBCB6CAE /* ChallengeSnapshotTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChallengeSnapshotTests.swift; sourceTree = "<group>"; };
 		212BE822AA0E09D8482006E2 /* CalendarTableView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarTableView.swift; sourceTree = "<group>"; };
 		21F7C0B5678F3BB91C0D896A /* LiquidGlassModifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiquidGlassModifier.swift; sourceTree = "<group>"; };
 		226DF4A873C9600CC4F0B40D /* KeychainClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainClient.swift; sourceTree = "<group>"; };
@@ -458,6 +460,7 @@
 			children = (
 				15E5BBC3280206FB17B4DB65 /* AppFeatureTests.swift */,
 				6A6E83503725369D0FB426A7 /* AuthenticationFeatureTests.swift */,
+				1F7823769E6FBFCECBCB6CAE /* ChallengeSnapshotTests.swift */,
 				6F1A4A6CC1D5B26BCF74322D /* CycleEngineTests.swift */,
 				8E8FBBDC5F3C40247FE20177 /* Info.plist */,
 				60A69777B121E02CCD9ED6FD /* ModelTests.swift */,
@@ -1054,6 +1057,7 @@
 			files = (
 				59BDEC46151CF3B972C59468 /* AppFeatureTests.swift in Sources */,
 				F87DFD52B294C919139429EA /* AuthenticationFeatureTests.swift in Sources */,
+				73751010818B10B59916451D /* ChallengeSnapshotTests.swift in Sources */,
 				A71309027B1FFC7844AB60CD /* CycleEngineTests.swift in Sources */,
 				54BBA1A69E4714934F1D8300 /* ModelTests.swift in Sources */,
 				53BBEBB468E1946BF1682D48 /* ValidationTests.swift in Sources */,

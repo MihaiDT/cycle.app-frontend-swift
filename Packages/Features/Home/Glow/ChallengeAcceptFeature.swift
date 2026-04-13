@@ -149,3 +149,38 @@ struct ChallengeAcceptView: View {
         .background { Capsule().fill(DesignColors.structure.opacity(0.15)) }
     }
 }
+
+// MARK: - ChallengeSnapshot Display Helpers
+
+extension ChallengeSnapshot {
+    /// Short label for the stat row. `energyLevel` is a 1–10 scale.
+    var effortDisplay: String {
+        switch energyLevel {
+        case ...3:  return "Gentle"
+        case 4...6: return "Moderate"
+        default:    return "Active"
+        }
+    }
+
+    /// Human-readable category label for the stat row.
+    var themeDisplay: String {
+        switch challengeCategory.lowercased() {
+        case "self_care":   return "Self care"
+        case "mindfulness": return "Mindful"
+        case "movement":    return "Movement"
+        case "creative":    return "Creative"
+        case "nutrition":   return "Nutrition"
+        case "social":      return "Social"
+        default:            return challengeCategory.prefix(1).uppercased() + challengeCategory.dropFirst()
+        }
+    }
+
+    /// Time estimate for the stat row. Local heuristic until backend adds an estimatedMinutes field.
+    var durationDisplay: String {
+        switch challengeCategory.lowercased() {
+        case "creative": return "15 min"
+        case "movement": return "10 min"
+        default:         return "5 min"
+        }
+    }
+}
