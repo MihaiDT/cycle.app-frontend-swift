@@ -7,7 +7,8 @@ public enum DesignColors {
     public static let background = Color(hex: 0xFDFCF7)  // Ivory Whisper - fundal
     public static let backgroundElegant = Color(hex: 0xFDFCF7)  // Champagne Silk - eleganta, confort
     public static let cardWarm = Color(hex: 0xF7F2E8)  // Warm card surface — stat boxes & how-to card
-    public static let cardGradientEnd = Color(hex: 0xF5E8E2)  // Warm pink — end of the glow card gradient
+    public static let cardGradientStart = Color(hex: 0xF2EBDC)  // Deep cream — start of the glow card gradient
+    public static let cardGradientEnd = Color(hex: 0xE6D4C4)  // Warm sandstone — end of the glow card gradient
 
     // MARK: - Semantic Opacities
     /// Primary shadow pass on elevated CTAs (big ambient drop).

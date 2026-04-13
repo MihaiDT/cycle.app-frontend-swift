@@ -11,7 +11,7 @@ public extension View {
             RoundedRectangle(cornerRadius: AppLayout.cornerRadiusL, style: .continuous)
                 .fill(
                     LinearGradient(
-                        colors: [DesignColors.background, DesignColors.cardGradientEnd],
+                        colors: [DesignColors.cardGradientStart, DesignColors.cardGradientEnd],
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
                     )
@@ -21,13 +21,13 @@ public extension View {
                         .strokeBorder(
                             LinearGradient(
                                 colors: [
-                                    DesignColors.structure.opacity(0.4),
-                                    DesignColors.accentWarm.opacity(0.15),
+                                    DesignColors.text.opacity(0.08),
+                                    DesignColors.accentWarm.opacity(0.22),
                                 ],
                                 startPoint: .topLeading,
                                 endPoint: .bottomTrailing
                             ),
-                            lineWidth: 0.5
+                            lineWidth: 0.8
                         )
                 }
         )
