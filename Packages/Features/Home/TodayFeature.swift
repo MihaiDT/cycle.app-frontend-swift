@@ -1132,18 +1132,14 @@ private struct DailyGlowPresentations: ViewModifier {
 
     func body(content: Content) -> some View {
         content
-            // Daily Glow — accept sheet
-            .sheet(
+            // Daily Glow — accept (full-screen)
+            .fullScreenCover(
                 item: $store.scope(
                     state: \.dailyChallengeState.acceptSheet,
                     action: \.dailyChallenge.acceptSheet
                 )
             ) { acceptStore in
                 ChallengeAcceptView(store: acceptStore)
-                    .presentationDetents([.medium])
-                    .presentationDragIndicator(.visible)
-                    .presentationCornerRadius(AppLayout.cornerRadiusL)
-                    .presentationBackground(DesignColors.background)
             }
             // Daily Glow — photo review
             .fullScreenCover(

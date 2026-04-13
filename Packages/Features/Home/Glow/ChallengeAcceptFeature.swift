@@ -41,112 +41,254 @@ public struct ChallengeAcceptFeature: Sendable {
 
 struct ChallengeAcceptView: View {
     let store: StoreOf<ChallengeAcceptFeature>
+    @Environment(\.dismiss) private var dismiss
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
-                HStack(spacing: 12) {
-                    Image(systemName: "flag.fill")
-                        .font(.system(size: 20))
-                        .foregroundStyle(DesignColors.accentWarm)
-                    Text(store.challenge.challengeTitle)
-                        .font(.custom("Raleway-Bold", size: 22))
-                        .foregroundStyle(DesignColors.text)
-                }
-
-                Text(store.challenge.challengeDescription)
-                    .font(.custom("Raleway-Regular", size: 16))
-                    .foregroundStyle(DesignColors.textSecondary)
-                    .lineSpacing(4)
-
-                HStack(spacing: 8) {
-                    contextPill(store.challenge.cyclePhase.capitalized)
-                    contextPill("Day \(store.challenge.cycleDay)")
-                    energyDots(level: store.challenge.energyLevel)
-                }
-
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Tips")
-                        .font(.custom("Raleway-SemiBold", size: 16))
-                        .foregroundStyle(DesignColors.text)
-                    ForEach(store.challenge.tips, id: \.self) { tip in
-                        HStack(alignment: .top, spacing: 8) {
-                            Text("\u{2022}").foregroundStyle(DesignColors.accentWarm)
-                            Text(tip)
-                                .font(.custom("Raleway-Regular", size: 14))
-                                .foregroundStyle(DesignColors.textSecondary)
-                        }
-                    }
-                }
-
-                HStack(spacing: 8) {
-                    Text("\u{1F947}")
-                    Text(store.challenge.goldHint)
-                        .font(.custom("Raleway-Medium", size: 14))
-                        .foregroundStyle(DesignColors.accentWarm)
-                }
-                .padding(12)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background {
-                    RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .fill(DesignColors.accentWarm.opacity(0.08))
-                }
-
-                Text("50\u{2013}100 XP")
-                    .font(.custom("Raleway-SemiBold", size: 18))
-                    .foregroundStyle(DesignColors.accentWarm)
-                    .frame(maxWidth: .infinity, alignment: .center)
-
-                VStack(spacing: 12) {
-                    Button {
-                        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
-                        store.send(.openCameraTapped)
-                    } label: {
-                        Label("Open Camera", systemImage: "camera.fill")
-                            .font(.custom("Raleway-SemiBold", size: 16))
-                            .foregroundStyle(.white)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 16)
-                            .background {
-                                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                                    .fill(DesignColors.accentWarm)
-                            }
-                    }
-                    .buttonStyle(.plain)
-
-                    Button { store.send(.chooseFromGalleryTapped) } label: {
-                        Text("Choose from Gallery")
-                            .font(.custom("Raleway-Medium", size: 15))
-                            .foregroundStyle(DesignColors.textSecondary)
-                    }
-                    .buttonStyle(.plain)
+        ZStack(alignment: .bottom) {
+            ScrollView(showsIndicators: false) {
+                VStack(alignment: .leading, spacing: 0) {
+                    topBar
+                    phaseAnchor
+                    titleBlock
+                    whySubtitle
+                    statRow
+                    howCard
+                    Spacer(minLength: 170)
                 }
             }
-            .padding(24)
+
+            ctaCluster
         }
-        .background(DesignColors.background)
+        .background(DesignColors.background.ignoresSafeArea())
     }
 
-    private func contextPill(_ text: String) -> some View {
-        Text(text)
-            .font(.custom("Raleway-Medium", size: 12))
-            .foregroundStyle(DesignColors.textSecondary)
-            .padding(.horizontal, 10)
-            .padding(.vertical, 5)
-            .background { Capsule().fill(DesignColors.structure.opacity(0.15)) }
-    }
+    // MARK: - Top bar
 
-    private func energyDots(level: Int) -> some View {
-        HStack(spacing: 3) {
-            ForEach(1...5, id: \.self) { i in
-                Circle()
-                    .fill(i <= level ? DesignColors.accentWarm : DesignColors.structure.opacity(0.2))
-                    .frame(width: 6, height: 6)
+    private var topBar: some View {
+        HStack {
+            Spacer()
+            Button {
+                dismiss()
+            } label: {
+                Image(systemName: "xmark")
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundStyle(DesignColors.text)
+                    .frame(width: 38, height: 38)
+                    .background(Circle().fill(DesignColors.text.opacity(0.08)))
             }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Close")
         }
+        .padding(.horizontal, 18)
+        .padding(.top, 14)
+        .padding(.bottom, 12)
+    }
+
+    // MARK: - Phase anchor
+
+    private var phaseAnchor: some View {
+        Text("Today · \(store.challenge.cyclePhase) phase")
+            .font(.custom("Raleway-Bold", size: 11))
+            .tracking(1.3)
+            .textCase(.uppercase)
+            .foregroundStyle(DesignColors.accentWarm)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 22)
+            .padding(.bottom, 14)
+            .accessibilityLabel("Today, \(store.challenge.cyclePhase) phase")
+    }
+
+    // MARK: - Title block
+
+    private var titleBlock: some View {
+        Text(store.challenge.challengeTitle)
+            .font(.custom("Raleway-Black", size: 44))
+            .tracking(-0.9)
+            .lineSpacing(-6)
+            .foregroundStyle(DesignColors.text)
+            .fixedSize(horizontal: false, vertical: true)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 22)
+            .padding(.bottom, 16)
+            .accessibilityAddTraits(.isHeader)
+    }
+
+    // MARK: - Why subtitle
+
+    private var whySubtitle: some View {
+        Text(store.challenge.challengeDescription)
+            .font(.custom("Raleway-Medium", size: 17))
+            .foregroundStyle(DesignColors.textPrincipal)
+            .lineSpacing(3)
+            .fixedSize(horizontal: false, vertical: true)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 22)
+            .padding(.bottom, 26)
+    }
+
+    // MARK: - Stat row
+
+    private var statRow: some View {
+        HStack(spacing: 10) {
+            statBox(value: store.challenge.durationDisplay, label: "Time")
+            statBox(value: store.challenge.effortDisplay, label: "Effort")
+            statBox(value: store.challenge.themeDisplay, label: "Theme")
+        }
+        .padding(.horizontal, 20)
+        .padding(.bottom, 14)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(
+            "Takes \(store.challenge.durationDisplay), " +
+            "effort \(store.challenge.effortDisplay), " +
+            "theme \(store.challenge.themeDisplay)"
+        )
+    }
+
+    private func statBox(value: String, label: String) -> some View {
+        VStack(spacing: 7) {
+            Text(value)
+                .font(.custom("Raleway-Black", size: 20))
+                .tracking(-0.3)
+                .foregroundStyle(DesignColors.text)
+                .minimumScaleFactor(0.8)
+                .lineLimit(1)
+            Text(label)
+                .font(.custom("Raleway-Bold", size: 9))
+                .tracking(0.9)
+                .textCase(.uppercase)
+                .foregroundStyle(DesignColors.textSecondary)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 18)
         .padding(.horizontal, 10)
-        .padding(.vertical, 5)
-        .background { Capsule().fill(DesignColors.structure.opacity(0.15)) }
+        .background(
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .fill(DesignColors.cardWarm)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 20, style: .continuous)
+                        .stroke(DesignColors.text.opacity(0.07), lineWidth: 1)
+                )
+        )
+    }
+
+    // MARK: - How card
+
+    private var howCard: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Text("How to do it")
+                .font(.custom("Raleway-Black", size: 10))
+                .tracking(1.2)
+                .textCase(.uppercase)
+                .foregroundStyle(DesignColors.accentWarm)
+                .padding(.bottom, 14)
+
+            ForEach(Array(store.challenge.tips.enumerated()), id: \.offset) { index, tip in
+                tipRow(number: index + 1, text: tip, isFirst: index == 0)
+            }
+        }
+        .padding(.vertical, 18)
+        .padding(.horizontal, 22)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: 24, style: .continuous)
+                .fill(DesignColors.cardWarm)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 24, style: .continuous)
+                        .stroke(DesignColors.text.opacity(0.07), lineWidth: 1)
+                )
+        )
+        .padding(.horizontal, 20)
+        .padding(.bottom, 20)
+    }
+
+    private func tipRow(number: Int, text: String, isFirst: Bool) -> some View {
+        VStack(spacing: 0) {
+            if !isFirst {
+                Rectangle()
+                    .fill(DesignColors.text.opacity(0.08))
+                    .frame(height: 1)
+            }
+            HStack(alignment: .top, spacing: 14) {
+                Text("\(number)")
+                    .font(.custom("Raleway-Black", size: 11))
+                    .foregroundStyle(DesignColors.background)
+                    .frame(width: 24, height: 24)
+                    .background(Circle().fill(DesignColors.text))
+                Text(text)
+                    .font(.custom("Raleway-Medium", size: 15))
+                    .foregroundStyle(DesignColors.textPrincipal)
+                    .lineSpacing(2)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .padding(.vertical, 12)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Step \(number): \(text)")
+    }
+
+    // MARK: - CTA cluster
+
+    private var ctaCluster: some View {
+        VStack(spacing: 0) {
+            LinearGradient(
+                colors: [DesignColors.background.opacity(0), DesignColors.background],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .frame(height: 28)
+            .allowsHitTesting(false)
+
+            VStack(spacing: 12) {
+                Button {
+                    UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                    store.send(.openCameraTapped)
+                } label: {
+                    HStack {
+                        Text("Start challenge")
+                            .font(.custom("Raleway-Black", size: 17))
+                            .tracking(-0.2)
+                            .foregroundStyle(DesignColors.background)
+                        Spacer()
+                        Image(systemName: "arrow.right")
+                            .font(.system(size: 16, weight: .bold))
+                            .foregroundStyle(DesignColors.text)
+                            .frame(width: 32, height: 32)
+                            .background(Circle().fill(DesignColors.background))
+                    }
+                    .padding(.vertical, 20)
+                    .padding(.horizontal, 26)
+                    .background(
+                        RoundedRectangle(cornerRadius: 30, style: .continuous)
+                            .fill(DesignColors.text)
+                    )
+                    .shadow(color: DesignColors.text.opacity(0.22), radius: 20, x: 0, y: 8)
+                    .shadow(color: DesignColors.text.opacity(0.12), radius: 4, x: 0, y: 2)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Start challenge")
+                .accessibilityHint("Opens the camera to take a photo of your challenge")
+
+                Button {
+                    store.send(.chooseFromGalleryTapped)
+                } label: {
+                    Text("Or choose from gallery")
+                        .font(.custom("Raleway-SemiBold", size: 13))
+                        .foregroundStyle(DesignColors.textSecondary)
+                }
+                .buttonStyle(.plain)
+                .accessibilityHint("Choose an existing photo instead of taking a new one")
+
+                Text("Earns 50–100 glow on completion")
+                    .font(.custom("Raleway-SemiBold", size: 11))
+                    .foregroundStyle(DesignColors.textSecondary)
+                    .padding(.top, 4)
+                    .accessibilityLabel("Earns 50 to 100 glow points on completion")
+            }
+            .padding(.horizontal, 20)
+            .padding(.bottom, 18)
+            .background(DesignColors.background)
+        }
     }
 }
 
