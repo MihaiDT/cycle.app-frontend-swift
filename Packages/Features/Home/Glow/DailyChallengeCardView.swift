@@ -52,14 +52,22 @@ struct DailyChallengeCardView: View {
 
             Spacer().frame(height: 16)
 
-            VStack(spacing: 12) {
+            HStack(spacing: 12) {
                 Button {
                     UIImpactFeedbackGenerator(style: .light).impactOccurred()
                     onDoIt()
                 } label: {
                     Text("Do It")
+                        .font(.custom("Raleway-SemiBold", size: 16))
+                        .foregroundStyle(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 14)
+                        .background {
+                            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                .fill(DesignColors.accentWarm)
+                        }
                 }
-                .buttonStyle(GlowPrimaryButtonStyle())
+                .buttonStyle(.plain)
 
                 Button { onSkip() } label: {
                     Text("Skip")
