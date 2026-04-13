@@ -114,10 +114,17 @@ private struct StaggeredSuccessView: View {
                     .opacity(showFeedback ? 1 : 0)
                     .offset(y: showFeedback ? 0 : 12)
 
-                // 3. XP count-up — appears at 1.5s
-                ValidationXPCountUp(targetXP: result.xpEarned, startCounting: showXP)
-                    .opacity(showXP ? 1 : 0)
-                    .scaleEffect(showXP ? 1 : 0.8)
+                // 3. XP count-up + level — appears at 1.5s
+                VStack(spacing: 4) {
+                    ValidationXPCountUp(targetXP: result.xpEarned, startCounting: showXP)
+
+                    let level = GlowConstants.levelFor(xp: newTotalXP)
+                    Text("\(level.emoji) \(level.title) · \(newTotalXP) XP total")
+                        .font(.custom("Raleway-Medium", size: 14))
+                        .foregroundStyle(DesignColors.textSecondary)
+                }
+                .opacity(showXP ? 1 : 0)
+                .scaleEffect(showXP ? 1 : 0.8)
 
                 // 4. Progress bar — appears at 2.2s (shows total XP with new challenge included)
                 XPProgressBar(currentXP: newTotalXP, animated: showProgress)

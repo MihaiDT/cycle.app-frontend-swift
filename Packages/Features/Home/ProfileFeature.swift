@@ -11,6 +11,7 @@ public struct ProfileFeature: Sendable {
         public var user: User?
         public var menstrualStatus: MenstrualStatusResponse?
         public var hbiDashboard: HBIDashboardResponse?
+        public var glowProfile: GlowProfileSnapshot?
 
         public init(
             user: User? = nil,
@@ -63,6 +64,8 @@ public struct ProfileFeature: Sendable {
     }
 
     public enum Action: Sendable {
+        case loadGlowProfile
+        case glowProfileLoaded(GlowProfileSnapshot)
         case logoutTapped
         case deleteChatDataTapped
         case chatDataDeleted
@@ -76,12 +79,23 @@ public struct ProfileFeature: Sendable {
     }
 
     @Dependency(\.anonymousID) var anonymousID
+    @Dependency(\.glowLocal) var glowLocal
 
     public init() {}
 
     public var body: some ReducerOf<Self> {
         Reduce { state, action in
             switch action {
+            case .loadGlowProfile:
+                return .run { [glowLocal] send in
+                    let profile = try await glowLocal.getProfile()
+                    await send(.glowProfileLoaded(profile))
+                }
+
+            case let .glowProfileLoaded(profile):
+                state.glowProfile = profile
+                return .none
+
             case .logoutTapped:
                 return .send(.delegate(.didLogout))
 
@@ -130,6 +144,7 @@ public struct ProfileView: View {
             ScrollView(showsIndicators: false) {
                 VStack(spacing: AppLayout.spacingL) {
                     profileHeader
+                    glowSection
                     cycleOverviewCard
                     wellnessCard
                     settingsSection
@@ -143,6 +158,7 @@ public struct ProfileView: View {
         }
         .navigationTitle("Me")
         .navigationBarTitleDisplayMode(.large)
+        .onAppear { store.send(.loadGlowProfile) }
         .enableInjection()
     }
 
@@ -231,6 +247,86 @@ public struct ProfileView: View {
         .padding(.vertical, AppLayout.spacingL)
         .frame(maxWidth: .infinity)
         .background { glassCard(cornerRadius: AppLayout.cornerRadiusXL) }
+    }
+
+    // MARK: - Glow Section
+
+    @ViewBuilder
+    private var glowSection: some View {
+        if let profile = store.glowProfile, profile.totalCompleted > 0 {
+            let level = GlowConstants.levelFor(xp: profile.totalXP)
+            VStack(spacing: 16) {
+                // Header
+                HStack {
+                    Text("Daily Glow")
+                        .font(.custom("Raleway-Bold", size: 18))
+                        .foregroundStyle(DesignColors.text)
+                    Spacer()
+                }
+
+                // Level + XP
+                HStack(spacing: 16) {
+                    // Level emoji big
+                    Text(level.emoji)
+                        .font(.system(size: 44))
+
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text(level.title)
+                            .font(.custom("Raleway-Bold", size: 20))
+                            .foregroundStyle(DesignColors.text)
+
+                        Text("Level \(level.level) · \(profile.totalXP) XP")
+                            .font(.custom("Raleway-Medium", size: 14))
+                            .foregroundStyle(DesignColors.textSecondary)
+                    }
+
+                    Spacer()
+                }
+
+                // Progress bar
+                XPProgressBar(currentXP: profile.totalXP, animated: false)
+
+                // Stats row
+                HStack(spacing: 0) {
+                    glowStat(value: "\(profile.totalCompleted)", label: "Challenges")
+                    Spacer()
+                    glowStat(value: "\(profile.goldCount)", label: "🥇")
+                    Spacer()
+                    glowStat(value: "\(profile.silverCount)", label: "🥈")
+                    Spacer()
+                    glowStat(value: "\(profile.bronzeCount)", label: "🥉")
+                    Spacer()
+                    glowStat(value: "\(profile.currentConsistencyDays)d", label: "Streak")
+                }
+            }
+            .padding(20)
+            .background {
+                RoundedRectangle(cornerRadius: AppLayout.cornerRadiusL, style: .continuous)
+                    .fill(.ultraThinMaterial)
+                    .overlay {
+                        RoundedRectangle(cornerRadius: AppLayout.cornerRadiusL, style: .continuous)
+                            .strokeBorder(
+                                LinearGradient(
+                                    colors: [DesignColors.structure.opacity(0.4), DesignColors.accentWarm.opacity(0.2)],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                ),
+                                lineWidth: 0.5
+                            )
+                    }
+            }
+        }
+    }
+
+    private func glowStat(value: String, label: String) -> some View {
+        VStack(spacing: 2) {
+            Text(value)
+                .font(.custom("Raleway-Bold", size: 16))
+                .foregroundStyle(DesignColors.text)
+            Text(label)
+                .font(.custom("Raleway-Regular", size: 11))
+                .foregroundStyle(DesignColors.textSecondary)
+        }
     }
 
     // MARK: - Cycle Overview Card

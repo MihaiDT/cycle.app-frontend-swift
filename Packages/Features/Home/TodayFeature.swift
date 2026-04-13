@@ -1162,7 +1162,7 @@ private struct DailyGlowPresentations: ViewModifier {
                 )
             ) { validationStore in
                 ValidationResultView(store: validationStore)
-                    .presentationDetents([.medium])
+                    .presentationDetents([.medium, .large])
                     .presentationDragIndicator(.visible)
                     .presentationCornerRadius(AppLayout.cornerRadiusL)
                     .presentationBackground(DesignColors.background)
