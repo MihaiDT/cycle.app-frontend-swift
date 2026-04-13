@@ -22,6 +22,8 @@ public enum CycleDataStore {
         DailyCardRecord.self,
         CycleRecapRecord.self,
         WellnessMessageRecord.self,
+        ChallengeRecord.self,
+        GlowProfileRecord.self,
     ])
 
     /// Shared container for the app and TCA dependencies.
