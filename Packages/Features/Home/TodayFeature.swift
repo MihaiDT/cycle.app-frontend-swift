@@ -526,9 +526,9 @@ public struct TodayFeature: Sendable {
             // All components that react to phase changes subscribe here.
             // To add a new component: add one .send line below.
             case let .phaseResolved(phase, day):
-                // Energy from HBI (0-100) → 1-5 for challenge selection
+                // Energy from HBI (0-100) → 1-10 for challenge selection
                 let rawEnergy = state.dashboard?.today?.energyScore ?? 50
-                let energy = max(1, min(5, (rawEnergy / 20) + 1))
+                let energy = max(1, min(10, (rawEnergy / 10) + 1))
                 return .merge(
                     .send(.cardStack(.loadCards(phase, day))),
                     .send(.dailyChallenge(.selectChallenge(phase: phase.rawValue, energyLevel: energy)))

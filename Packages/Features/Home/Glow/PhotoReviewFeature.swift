@@ -15,7 +15,8 @@ public struct PhotoReviewFeature: Sendable {
         }
     }
 
-    public enum Action: Sendable {
+    public enum Action: BindableAction, Sendable {
+        case binding(BindingAction<State>)
         case submitTapped
         case retakeTapped
         case delegate(Delegate)
@@ -28,8 +29,11 @@ public struct PhotoReviewFeature: Sendable {
     public init() {}
 
     public var body: some ReducerOf<Self> {
+        BindingReducer()
         Reduce { state, action in
             switch action {
+            case .binding:
+                return .none
             case .submitTapped:
                 return .send(.delegate(.submit(fullSize: state.imageData, thumbnail: state.thumbnailData)))
             case .retakeTapped:

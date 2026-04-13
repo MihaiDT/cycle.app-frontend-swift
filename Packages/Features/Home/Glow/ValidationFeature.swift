@@ -33,7 +33,8 @@ public struct ValidationFeature: Sendable {
         public let xpEarned: Int
     }
 
-    public enum Action: Sendable {
+    public enum Action: BindableAction, Sendable {
+        case binding(BindingAction<State>)
         case appeared
         case validationResponse(Result<ChallengeValidationResponse, Error>)
         case dismissTapped
@@ -56,8 +57,11 @@ public struct ValidationFeature: Sendable {
     public init() {}
 
     public var body: some ReducerOf<Self> {
+        BindingReducer()
         Reduce { state, action in
             switch action {
+            case .binding:
+                return .none
             case .appeared:
                 let challenge = state.challenge
                 let photoData = state.photoData
