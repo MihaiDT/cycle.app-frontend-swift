@@ -181,6 +181,10 @@ public struct HomeFeature: Sendable {
                     try? context.delete(model: HBIScoreRecord.self)
                     try? context.delete(model: ChatMessageRecord.self)
                     try? context.delete(model: DailyCardRecord.self)
+                    try? context.delete(model: CycleRecapRecord.self)
+                    try? context.delete(model: WellnessMessageRecord.self)
+                    try? context.delete(model: ChallengeRecord.self)
+                    try? context.delete(model: GlowProfileRecord.self)
                     try? context.save()
                     // Clear chat session
                     UserDefaults.standard.removeObject(forKey: "cycle.chat.sessionID")
@@ -323,7 +327,7 @@ public struct HomeView: View {
 
             if store.todayState.isCalendarVisible {
                 ZStack {
-                    DesignColors.background.ignoresSafeArea()
+                    Color.white.ignoresSafeArea()
                     CalendarView(
                         store: store.scope(
                             state: \.todayState.calendarState,
@@ -331,7 +335,7 @@ public struct HomeView: View {
                         )
                     )
                 }
-                .transition(.move(edge: .trailing))
+                .transition(.move(edge: .trailing).combined(with: .opacity))
                 .zIndex(1)
             }
 
