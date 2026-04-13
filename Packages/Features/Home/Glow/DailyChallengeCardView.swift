@@ -22,9 +22,10 @@ struct DailyChallengeCardView: View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 6) {
                 Image(systemName: "flag.fill")
-                    .font(.system(size: 12, weight: .medium))
+                    .font(.system(size: 12, weight: .bold))
                 Text("Challenge")
-                    .font(.custom("Raleway-SemiBold", size: 12, relativeTo: .caption))
+                    .font(.custom("Raleway-Black", size: 12, relativeTo: .caption))
+                    .tracking(0.3)
             }
             .foregroundStyle(DesignColors.accentWarm)
             .padding(.horizontal, 12)
@@ -35,7 +36,8 @@ struct DailyChallengeCardView: View {
             Spacer(minLength: 12)
 
             Text(challenge.challengeTitle)
-                .font(.custom("Raleway-Bold", size: 24, relativeTo: .title2))
+                .font(.custom("Raleway-Black", size: 24, relativeTo: .title2))
+                .tracking(-0.4)
                 .foregroundStyle(DesignColors.text)
                 .lineSpacing(2)
                 .lineLimit(2)
@@ -43,8 +45,8 @@ struct DailyChallengeCardView: View {
                 .accessibilityAddTraits(.isHeader)
 
             Text(challenge.challengeDescription)
-                .font(.custom("Raleway-Regular", size: 14, relativeTo: .body))
-                .foregroundStyle(DesignColors.textSecondary)
+                .font(.custom("Raleway-Medium", size: 14, relativeTo: .body))
+                .foregroundStyle(DesignColors.textPrincipal)
                 .lineSpacing(3)
                 .lineLimit(3)
                 .fixedSize(horizontal: false, vertical: true)
@@ -174,11 +176,11 @@ struct DailyChallengeCardView: View {
 
     private func tagPill(_ text: String) -> some View {
         Text(text)
-            .font(.custom("Raleway-Medium", size: 11, relativeTo: .caption))
-            .foregroundStyle(DesignColors.textSecondary)
-            .padding(.horizontal, 8)
-            .padding(.vertical, 4)
-            .background { Capsule().fill(DesignColors.structure.opacity(0.15)) }
+            .font(.custom("Raleway-SemiBold", size: 11, relativeTo: .caption))
+            .foregroundStyle(DesignColors.textPrincipal)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 5)
+            .background { Capsule().fill(DesignColors.text.opacity(0.06)) }
     }
 }
 

@@ -194,7 +194,8 @@ struct CardStackView: View {
 
             HStack(alignment: .lastTextBaseline) {
                 Text("Your day")
-                    .font(.custom("Raleway-Bold", size: 28, relativeTo: .title))
+                    .font(.custom("Raleway-Black", size: 28, relativeTo: .title))
+                    .tracking(-0.5)
                     .foregroundStyle(DesignColors.text)
 
                 Spacer()
@@ -337,7 +338,8 @@ private struct CardSkeletonView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             Text("Your day")
-                .font(.custom("Raleway-Bold", size: 28, relativeTo: .title))
+                .font(.custom("Raleway-Black", size: 28, relativeTo: .title))
+                .tracking(-0.5)
                 .foregroundStyle(DesignColors.text)
                 .padding(.horizontal, AppLayout.horizontalPadding)
 
@@ -438,14 +440,15 @@ private struct DailyCardView: View {
                 Spacer()
 
                 Text(card.title)
-                    .font(.custom("Raleway-Bold", size: 24, relativeTo: .title))
+                    .font(.custom("Raleway-Black", size: 24, relativeTo: .title))
+                    .tracking(-0.4)
                     .foregroundStyle(DesignColors.text)
-                    .lineSpacing(4)
+                    .lineSpacing(2)
 
                 if !card.body.isEmpty {
                     Text(card.body)
-                        .font(.custom("Raleway-Regular", size: 14, relativeTo: .body))
-                        .foregroundStyle(DesignColors.textSecondary)
+                        .font(.custom("Raleway-Medium", size: 14, relativeTo: .body))
+                        .foregroundStyle(DesignColors.textPrincipal)
                         .lineSpacing(3)
                         .lineLimit(3)
                 }
@@ -483,11 +486,12 @@ private struct DailyCardView: View {
                     }
                     HStack(spacing: 6) {
                         Image(systemName: iconName)
-                            .font(.system(size: 12, weight: .medium))
+                            .font(.system(size: 12, weight: .bold))
                         Text(action.actionType == .breathing ? "Breathe" :
                                 action.actionType == .journal ? "Journal" :
                                 action.actionType == .challenge ? "Challenge" : "Check in")
-                            .font(.custom("Raleway-SemiBold", size: 12, relativeTo: .caption))
+                            .font(.custom("Raleway-Black", size: 12, relativeTo: .caption))
+                            .tracking(0.3)
                     }
                     .foregroundStyle(DesignColors.accentWarm)
                     .padding(.horizontal, 12)
@@ -500,14 +504,15 @@ private struct DailyCardView: View {
                 Spacer()
 
                 Text(card.title)
-                    .font(.custom("Raleway-Bold", size: 24, relativeTo: .title2))
+                    .font(.custom("Raleway-Black", size: 24, relativeTo: .title2))
+                    .tracking(-0.4)
                     .foregroundStyle(DesignColors.text)
-                    .lineSpacing(4)
+                    .lineSpacing(2)
 
                 if !card.body.isEmpty {
                     Text(card.body)
-                        .font(.custom("Raleway-Regular", size: 14, relativeTo: .body))
-                        .foregroundStyle(DesignColors.textSecondary)
+                        .font(.custom("Raleway-Medium", size: 14, relativeTo: .body))
+                        .foregroundStyle(DesignColors.textPrincipal)
                         .lineSpacing(3)
                         .lineLimit(3)
                 }
@@ -547,9 +552,10 @@ private struct DailyCardView: View {
                 Spacer()
 
                 Text(card.title)
-                    .font(.custom("Raleway-Bold", size: 24, relativeTo: .title))
+                    .font(.custom("Raleway-Black", size: 24, relativeTo: .title))
+                    .tracking(-0.4)
                     .foregroundStyle(DesignColors.text)
-                    .lineSpacing(4)
+                    .lineSpacing(2)
 
                 if !card.body.isEmpty {
                     Text(card.body)
