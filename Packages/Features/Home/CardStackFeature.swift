@@ -463,28 +463,7 @@ private struct DailyCardView: View {
             .padding(32)
         }
         .frame(height: 380)
-        .background(
-            RoundedRectangle(cornerRadius: AppLayout.cornerRadiusL, style: .continuous)
-                .fill(
-                    LinearGradient(
-                        colors: [DesignColors.background, Color(hex: 0xF5E8E2)],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                )
-                .overlay {
-                    RoundedRectangle(cornerRadius: AppLayout.cornerRadiusL, style: .continuous)
-                        .strokeBorder(
-                            LinearGradient(
-                                colors: [DesignColors.structure.opacity(0.4), DesignColors.accentWarm.opacity(0.15)],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            ),
-                            lineWidth: 0.5
-                        )
-                }
-        )
-        .clipShape(RoundedRectangle(cornerRadius: AppLayout.cornerRadiusL, style: .continuous))
+        .glowCardBackground()
     }
 
     // MARK: - DO
@@ -557,28 +536,7 @@ private struct DailyCardView: View {
             .padding(32)
         }
         .frame(height: 380)
-        .background(
-            RoundedRectangle(cornerRadius: AppLayout.cornerRadiusL, style: .continuous)
-                .fill(
-                    LinearGradient(
-                        colors: [DesignColors.background, Color(hex: 0xF5E8E2)],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                )
-                .overlay {
-                    RoundedRectangle(cornerRadius: AppLayout.cornerRadiusL, style: .continuous)
-                        .strokeBorder(
-                            LinearGradient(
-                                colors: [DesignColors.structure.opacity(0.4), DesignColors.accentWarm.opacity(0.15)],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            ),
-                            lineWidth: 0.5
-                        )
-                }
-        )
-        .clipShape(RoundedRectangle(cornerRadius: AppLayout.cornerRadiusL, style: .continuous))
+        .glowCardBackground()
     }
 
     // MARK: - GO DEEPER
@@ -633,28 +591,7 @@ private struct DailyCardView: View {
             .padding(32)
         }
         .frame(height: 380)
-        .background(
-            RoundedRectangle(cornerRadius: AppLayout.cornerRadiusL, style: .continuous)
-                .fill(
-                    LinearGradient(
-                        colors: [DesignColors.background, Color(hex: 0xF5E8E2)],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                )
-                .overlay {
-                    RoundedRectangle(cornerRadius: AppLayout.cornerRadiusL, style: .continuous)
-                        .strokeBorder(
-                            LinearGradient(
-                                colors: [DesignColors.structure.opacity(0.4), DesignColors.accentWarm.opacity(0.15)],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            ),
-                            lineWidth: 0.5
-                        )
-                }
-        )
-        .clipShape(RoundedRectangle(cornerRadius: AppLayout.cornerRadiusL, style: .continuous))
+        .glowCardBackground()
     }
 }
 
