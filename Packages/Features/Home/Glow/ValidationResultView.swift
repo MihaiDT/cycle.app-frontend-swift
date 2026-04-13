@@ -35,40 +35,7 @@ struct ValidationResultView: View {
     }
 
     private func successView(result: ValidationFeature.ValidationResult) -> some View {
-        ScrollView {
-            VStack(spacing: 24) {
-                Spacer().frame(height: 12)
-                RatingBadge(rating: result.rating, size: 48, animated: true)
-
-                Text(result.feedback)
-                    .font(.custom("Raleway-Medium", size: 17))
-                    .foregroundStyle(DesignColors.text)
-                    .multilineTextAlignment(.center)
-                    .lineSpacing(4)
-
-                ValidationXPCountUp(targetXP: result.xpEarned)
-
-                XPProgressBar(currentXP: result.xpEarned, animated: true)
-                    .padding(.horizontal, 8)
-
-                Button {
-                    UIImpactFeedbackGenerator(style: .light).impactOccurred()
-                    store.send(.dismissTapped)
-                } label: {
-                    Text("Amazing!")
-                        .font(.custom("Raleway-SemiBold", size: 16))
-                        .foregroundStyle(.white)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 16)
-                        .background {
-                            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                                .fill(DesignColors.accentWarm)
-                        }
-                }
-                .buttonStyle(.plain)
-            }
-            .padding(24)
-        }
+        StaggeredSuccessView(result: result, store: store)
     }
 
     private func failureView(result: ValidationFeature.ValidationResult) -> some View {
@@ -111,6 +78,88 @@ struct ValidationResultView: View {
     }
 }
 
+// MARK: - Staggered Success View
+
+private struct StaggeredSuccessView: View {
+    let result: ValidationFeature.ValidationResult
+    let store: StoreOf<ValidationFeature>
+
+    @State private var showBadge = false
+    @State private var showFeedback = false
+    @State private var showXP = false
+    @State private var showProgress = false
+    @State private var showButton = false
+
+    var body: some View {
+        ScrollView {
+            VStack(spacing: 24) {
+                Spacer().frame(height: 12)
+
+                // 1. Rating badge — appears at 0.3s
+                RatingBadge(rating: result.rating, size: 48, animated: true)
+                    .opacity(showBadge ? 1 : 0)
+                    .scaleEffect(showBadge ? 1 : 0.5)
+
+                // 2. Feedback — appears at 0.9s
+                Text(result.feedback)
+                    .font(.custom("Raleway-Medium", size: 17))
+                    .foregroundStyle(DesignColors.text)
+                    .multilineTextAlignment(.center)
+                    .lineSpacing(4)
+                    .opacity(showFeedback ? 1 : 0)
+                    .offset(y: showFeedback ? 0 : 12)
+
+                // 3. XP count-up — appears at 1.5s
+                ValidationXPCountUp(targetXP: result.xpEarned, startCounting: showXP)
+                    .opacity(showXP ? 1 : 0)
+                    .scaleEffect(showXP ? 1 : 0.8)
+
+                // 4. Progress bar — appears at 2.2s
+                XPProgressBar(currentXP: result.xpEarned, animated: showProgress)
+                    .padding(.horizontal, 8)
+                    .opacity(showProgress ? 1 : 0)
+
+                // 5. Button — appears at 2.8s
+                Button {
+                    UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                    store.send(.dismissTapped)
+                } label: {
+                    Text("Amazing!")
+                        .font(.custom("Raleway-SemiBold", size: 16))
+                        .foregroundStyle(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 16)
+                        .background {
+                            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                                .fill(DesignColors.accentWarm)
+                        }
+                }
+                .buttonStyle(.plain)
+                .opacity(showButton ? 1 : 0)
+                .offset(y: showButton ? 0 : 16)
+            }
+            .padding(24)
+        }
+        .onAppear {
+            withAnimation(.spring(response: 0.5, dampingFraction: 0.7).delay(0.3)) {
+                showBadge = true
+            }
+            withAnimation(.easeOut(duration: 0.5).delay(0.9)) {
+                showFeedback = true
+            }
+            withAnimation(.spring(response: 0.4, dampingFraction: 0.8).delay(1.5)) {
+                showXP = true
+            }
+            withAnimation(.easeOut(duration: 0.4).delay(2.2)) {
+                showProgress = true
+            }
+            withAnimation(.easeOut(duration: 0.4).delay(2.8)) {
+                showButton = true
+            }
+        }
+    }
+}
+
 // MARK: - Validation Pulsing Circle
 
 private struct ValidationPulsingCircle: View {
@@ -134,6 +183,7 @@ private struct ValidationPulsingCircle: View {
 
 private struct ValidationXPCountUp: View {
     let targetXP: Int
+    var startCounting: Bool = true
     @State private var displayXP: Int = 0
 
     var body: some View {
@@ -141,8 +191,9 @@ private struct ValidationXPCountUp: View {
             .font(.custom("Raleway-Bold", size: 32))
             .foregroundStyle(DesignColors.accentWarm)
             .contentTransition(.numericText())
-            .onAppear {
-                withAnimation(.easeOut(duration: 1.0).delay(0.5)) {
+            .onChange(of: startCounting) { _, counting in
+                guard counting else { return }
+                withAnimation(.easeOut(duration: 1.2)) {
                     displayXP = targetXP
                 }
             }
