@@ -11,9 +11,9 @@ public struct CardStackFeature: Sendable {
     public struct State: Equatable, Sendable {
         public var cards: [DailyCard] = []
         public var isLoading: Bool = false
+        /// Current front card index. Clamped to [0, cards.count - 1] — no wrap.
+        /// Swiping forward/backward preserves card order.
         public var frontIndex: Int = 0
-        public var dragOffset: CGFloat = 0
-        public var isDragging: Bool = false
         /// Track current combo to skip redundant loads
         public var currentPhase: CyclePhase?
         public var currentDay: Int?
@@ -25,6 +25,8 @@ public struct CardStackFeature: Sendable {
         var visibleCards: [(card: DailyCard, depth: Int)] {
             guard !cards.isEmpty else { return [] }
             let count = cards.count
+            // Wraps cyclically so the stack always has peek-behind cards.
+            // Order is preserved: forward swipes advance, backward swipes reverse.
             return (0..<min(3, count)).map { depth in
                 let index = (frontIndex + depth) % count
                 return (cards[index], depth)
@@ -35,9 +37,8 @@ public struct CardStackFeature: Sendable {
     public enum Action: Sendable {
         case loadCards(CyclePhase, Int)
         case cardsGenerated([DailyCard])
-        case dragChanged(CGFloat)
-        case dragEnded(CGFloat, CGFloat)
-        case dismissFront
+        /// Move frontIndex by `direction` (+1 forward, -1 backward). Clamped; no-op at boundary.
+        case advance(by: Int)
         case cardTapped(DailyCard)
         case actionTapped(DailyCard)
         case delegate(Delegate)
@@ -80,7 +81,6 @@ public struct CardStackFeature: Sendable {
                 if !cached.isEmpty {
                     state.cards = cached
                     state.frontIndex = 0
-                    state.dragOffset = 0
                     state.isLoading = false
                     return .none
                 }
@@ -109,31 +109,13 @@ public struct CardStackFeature: Sendable {
                 guard !cards.isEmpty else { return .none }
                 state.cards = cards
                 state.frontIndex = 0
-                state.dragOffset = 0
                 return .none
 
-            case let .dragChanged(offset):
-                state.dragOffset = offset
-                state.isDragging = true
-                return .none
-
-            case let .dragEnded(translation, velocity):
-                state.isDragging = false
-                let threshold: CGFloat = 100
-                let velocityThreshold: CGFloat = 500
-                if abs(translation) > threshold || abs(velocity) > velocityThreshold {
-                    let direction: CGFloat = translation > 0 ? 1 : -1
-                    state.dragOffset = direction * 500
-                    return .send(.dismissFront)
-                } else {
-                    state.dragOffset = 0
-                    return .none
-                }
-
-            case .dismissFront:
-                guard !state.cards.isEmpty else { return .none }
-                state.frontIndex = (state.frontIndex + 1) % state.cards.count
-                state.dragOffset = 0
+            case let .advance(direction):
+                let count = state.cards.count
+                guard count > 0 else { return .none }
+                // Cyclic wrap in both directions — +count handles negative modulo.
+                state.frontIndex = ((state.frontIndex + direction) % count + count) % count
                 return .none
 
             case let .cardTapped(card):
@@ -167,6 +149,10 @@ public struct CardStackFeature: Sendable {
 struct CardStackView: View {
     let store: StoreOf<CardStackFeature>
 
+    // Local drag state — pure visual, no need to round-trip through the reducer.
+    @State private var dragOffset: CGFloat = 0
+    @State private var isDragging: Bool = false
+
     var body: some View {
         if store.isLoading {
             CardSkeletonView()
@@ -181,7 +167,7 @@ struct CardStackView: View {
     }
 
     private var cardContent: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: 0) {
             // How do you feel — primary daily ritual CTA
             Button {
                 UIImpactFeedbackGenerator(style: .light).impactOccurred()
@@ -191,101 +177,79 @@ struct CardStackView: View {
             }
             .buttonStyle(GlowPrimaryButtonStyle())
             .padding(.horizontal, AppLayout.horizontalPadding)
+            .padding(.bottom, 26)
 
             HStack(alignment: .lastTextBaseline) {
                 Text("Your day")
-                    .font(.custom("Raleway-Black", size: 28, relativeTo: .title))
-                    .tracking(-0.5)
+                    .font(.custom("Raleway-Bold", size: 26, relativeTo: .title))
+                    .tracking(-0.3)
                     .foregroundStyle(DesignColors.text)
 
                 Spacer()
 
-                // Card position dots
+                // Card position dots — active is a pill
                 HStack(spacing: 6) {
                     ForEach(0..<store.cards.count, id: \.self) { i in
-                        Circle()
+                        let isActive = i == store.frontIndex % max(store.cards.count, 1)
+                        Capsule()
                             .fill(
-                                i == store.frontIndex % max(store.cards.count, 1)
+                                isActive
                                     ? DesignColors.accentWarm
                                     : DesignColors.structure.opacity(0.25)
                             )
-                            .frame(width: 7, height: 7)
-                            .animation(.easeInOut(duration: 0.2), value: store.frontIndex)
+                            .frame(width: isActive ? 20 : 7, height: 7)
+                            .animation(.spring(response: 0.35, dampingFraction: 0.7), value: store.frontIndex)
                     }
                 }
                 .padding(.bottom, 4)
             }
             .padding(.horizontal, AppLayout.horizontalPadding)
+            .padding(.bottom, 2)
 
-            ZStack {
-                ForEach(store.visibleCards, id: \.card.id) { item in
-                    let isFront = item.depth == 0
+            ZStack(alignment: .top) {
+                ForEach(Array(store.cards.enumerated()), id: \.element.id) { index, card in
+                    // Each card's depth is computed from its stable array position
+                    // relative to the current frontIndex. This keeps the ForEach data
+                    // source stable (iterated in the same order every frame), so
+                    // SwiftUI's identity-based diffing is happy and .animation(value:)
+                    // reliably picks up depth changes across renders.
+                    let count = store.cards.count
+                    let depth = count > 0
+                        ? ((index - store.frontIndex) % count + count) % count
+                        : 0
+                    let isFront = depth == 0
+                    let isVisible = depth < 3
 
-                    Group {
-                        if item.card.cardType == .do, let challenge = store.challengeSnapshot {
-                            DailyChallengeCardView(
-                                challenge: challenge,
-                                onDoIt: { store.send(.delegate(.challengeDoItTapped)) },
-                                onSkip: { store.send(.delegate(.challengeSkipTapped)) },
-                                onMaybeLater: { store.send(.delegate(.challengeMaybeLaterTapped)) }
-                            )
-                            .padding(.horizontal, AppLayout.horizontalPadding)
-                        } else {
-                            DailyCardView(
-                                card: item.card,
-                                displayDay: store.currentDay,
-                                onAction: { store.send(.actionTapped(item.card)) },
-                                onCheckIn: { store.send(.delegate(.openCheckIn)) }
-                            )
-                            .padding(.horizontal, AppLayout.horizontalPadding)
+                    cardBody(for: card)
+                        .shadow(
+                            color: .black.opacity(isFront ? 0.08 : 0.04),
+                            radius: isFront ? 12 : 4,
+                            x: 0,
+                            y: isFront ? 4 : 2
+                        )
+                        .scaleEffect(scale(for: depth))
+                        .offset(
+                            x: isFront ? dragOffset : fanOffsetX(for: depth),
+                            y: fanOffsetY(for: depth)
+                        )
+                        .rotationEffect(
+                            isFront
+                                ? .degrees(Double(dragOffset) * 0.02)
+                                : fanRotation(for: depth),
+                            anchor: .bottom
+                        )
+                        .opacity(depthOpacity(for: depth))
+                        .zIndex(Double(10 - depth))
+                        .allowsHitTesting(isFront)
+                        .animation(.spring(response: 0.45, dampingFraction: 0.92), value: store.frontIndex)
+                        .simultaneousGesture(isFront ? cardDragGesture : nil)
+                        .onTapGesture {
+                            store.send(.cardTapped(card))
                         }
-                    }
-                    .shadow(color: .black.opacity(isFront ? 0.08 : 0.04), radius: isFront ? 12 : 4, x: 0, y: isFront ? 4 : 2)
-                    .scaleEffect(scale(for: item.depth))
-                    .offset(
-                        x: isFront ? store.dragOffset : fanOffsetX(for: item.depth),
-                        y: fanOffsetY(for: item.depth)
-                    )
-                    .rotationEffect(
-                        isFront
-                            ? .degrees(Double(store.dragOffset) * 0.03)
-                            : fanRotation(for: item.depth),
-                        anchor: .bottom
-                    )
-                    .opacity(1)
-                    .zIndex(Double(3 - item.depth))
-                    .allowsHitTesting(isFront)
-                    .animation(
-                        store.isDragging
-                            ? .interactiveSpring(response: 0.15, dampingFraction: 0.8)
-                            : .spring(response: 0.4, dampingFraction: 0.75),
-                        value: store.dragOffset
-                    )
-                    .animation(.spring(response: 0.4, dampingFraction: 0.75), value: store.frontIndex)
-                    .simultaneousGesture(
-                        isFront
-                            ? DragGesture(minimumDistance: 30)
-                                .onChanged { value in
-                                    let dx = abs(value.translation.width)
-                                    let dy = abs(value.translation.height)
-                                    guard dx > dy * 1.5 else { return }
-                                    store.send(.dragChanged(value.translation.width))
-                                }
-                                .onEnded { value in
-                                    UIImpactFeedbackGenerator(style: .medium).impactOccurred()
-                                    store.send(.dragEnded(
-                                        value.translation.width,
-                                        value.velocity.width
-                                    ))
-                                }
-                            : nil
-                    )
-                    .onTapGesture {
-                        store.send(.cardTapped(item.card))
-                    }
                 }
             }
-            .frame(height: 430)
+            .fixedSize(horizontal: false, vertical: true)
+            .frame(maxWidth: .infinity)
         }
     }
 
@@ -328,6 +292,94 @@ struct CardStackView: View {
         default: return 0.65
         }
     }
+
+    /// Depth-based opacity for the live card stack. Front is full opacity,
+    /// back cards dim slightly to create a sense of "receding depth" and
+    /// smooth out entry/exit of cards as they rotate through the stack.
+    private func depthOpacity(for depth: Int) -> Double {
+        switch depth {
+        case 0:  return 1.0
+        case 1:  return 0.96
+        case 2:  return 0.86
+        default: return 0.0  // hidden
+        }
+    }
+
+    // MARK: - Card Body
+
+    @ViewBuilder
+    private func cardBody(for card: DailyCard) -> some View {
+        if card.cardType == .do, let challenge = store.challengeSnapshot {
+            DailyChallengeCardView(
+                challenge: challenge,
+                onDoIt: { store.send(.delegate(.challengeDoItTapped)) },
+                onSkip: { store.send(.delegate(.challengeSkipTapped)) },
+                onMaybeLater: { store.send(.delegate(.challengeMaybeLaterTapped)) }
+            )
+            .padding(.horizontal, AppLayout.horizontalPadding)
+        } else {
+            DailyCardView(
+                card: card,
+                displayDay: store.currentDay,
+                onAction: { store.send(.actionTapped(card)) },
+                onCheckIn: { store.send(.delegate(.openCheckIn)) }
+            )
+            .padding(.horizontal, AppLayout.horizontalPadding)
+        }
+    }
+
+    // MARK: - Drag Gesture
+
+    /// Tinder-style horizontal drag with forward/backward navigation.
+    /// - Left swipe commits `advance(by: +1)` (next card, preserves order)
+    /// - Right swipe commits `advance(by: -1)` (previous card)
+    /// - Below threshold bounces back with a spring
+    /// - At boundaries (first or last card) bounces back with a rigid haptic
+    private var cardDragGesture: some Gesture {
+        // minimumDistance 20 gives the parent ScrollView first shot at the gesture —
+        // only clearly horizontal swipes engage the card.
+        DragGesture(minimumDistance: 20)
+            .onChanged { value in
+                let dx = value.translation.width
+                let dy = value.translation.height
+                if !isDragging {
+                    // Only check angle at the FIRST engaging frame — if horizontal
+                    // dominates by 1.5×, we commit to tracking this drag to the end.
+                    // Checking every frame caused stutters on rapid diagonal flicks.
+                    guard abs(dx) > abs(dy) * 1.5 else { return }
+                    isDragging = true
+                }
+                dragOffset = dx
+            }
+            .onEnded { value in
+                isDragging = false
+                let translation = value.translation.width
+                let velocity = value.velocity.width
+                // Commit thresholds — distance OR velocity triggers.
+                let distanceThreshold: CGFloat = 80
+                let velocityThreshold: CGFloat = 320
+                let shouldCommit =
+                    abs(translation) > distanceThreshold || abs(velocity) > velocityThreshold
+                guard shouldCommit else {
+                    withAnimation(.spring(response: 0.28, dampingFraction: 0.78)) {
+                        dragOffset = 0
+                    }
+                    return
+                }
+                // Left (translation < 0) = forward, right = backward. Wraps cyclically.
+                let direction = translation < 0 ? 1 : -1
+                UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+
+                // Rotate the stack: front card shrinks + retreats to depth 2,
+                // middle card slides forward to depth 0 (new front), back card
+                // slides to depth 1. All three moves happen via the same spring
+                // driven by frontIndex — nothing teleports, nothing lags.
+                withAnimation(.spring(response: 0.45, dampingFraction: 0.92)) {
+                    dragOffset = 0
+                    store.send(.advance(by: direction))
+                }
+            }
+    }
 }
 
 // MARK: - Card Skeleton (Shimmer Loading)
@@ -338,8 +390,8 @@ private struct CardSkeletonView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             Text("Your day")
-                .font(.custom("Raleway-Black", size: 28, relativeTo: .title))
-                .tracking(-0.5)
+                .font(.custom("Raleway-Bold", size: 28, relativeTo: .title))
+                .tracking(-0.4)
                 .foregroundStyle(DesignColors.text)
                 .padding(.horizontal, AppLayout.horizontalPadding)
 
@@ -372,7 +424,7 @@ private struct CardSkeletonView: View {
     private var skeletonCard: some View {
         RoundedRectangle(cornerRadius: AppLayout.cornerRadiusL, style: .continuous)
             .fill(Color(red: 0.94, green: 0.93, blue: 0.91))
-            .frame(height: 380)
+            .frame(height: 340)
             .overlay(
                 RoundedRectangle(cornerRadius: AppLayout.cornerRadiusL, style: .continuous)
                     .fill(
@@ -434,181 +486,171 @@ private struct DailyCardView: View {
     // MARK: - FEEL
 
     private var feelLayout: some View {
-        ZStack(alignment: .bottomLeading) {
+        VStack(alignment: .leading, spacing: 12) {
+            Text(card.title)
+                .font(.custom("Raleway-Bold", size: 24, relativeTo: .title))
+                .tracking(-0.3)
+                .foregroundStyle(DesignColors.text)
+                .lineSpacing(2)
+                .lineLimit(2)
+                .fixedSize(horizontal: false, vertical: true)
+                .shadow(color: DesignColors.background.opacity(0.75), radius: 4, x: 0, y: 0)
 
-            VStack(alignment: .leading) {
-                Spacer()
-
-                Text(card.title)
-                    .font(.custom("Raleway-Black", size: 24, relativeTo: .title))
-                    .tracking(-0.4)
-                    .foregroundStyle(DesignColors.text)
-                    .lineSpacing(2)
-                    .shadow(color: DesignColors.background.opacity(0.75), radius: 4, x: 0, y: 0)
-
-                if !card.body.isEmpty {
-                    Text(card.body)
-                        .font(.custom("Raleway-Medium", size: 14, relativeTo: .body))
-                        .foregroundStyle(DesignColors.textPrincipal)
-                        .lineSpacing(3)
-                        .lineLimit(3)
-                        .shadow(color: DesignColors.background.opacity(0.6), radius: 3, x: 0, y: 0)
-                }
-
-                Spacer().frame(height: 16)
-
-                if let day = displayDay ?? card.cycleDay {
-                    Text(card.cyclePhase == .late
-                         ? "\(day) days late"
-                         : "Day \(day) · \(card.cyclePhase.displayName)")
-                        .font(.custom("Raleway-Medium", size: 14, relativeTo: .caption))
-                        .foregroundStyle(DesignColors.text.opacity(0.8))
-                        .shadow(color: DesignColors.background.opacity(0.5), radius: 3, x: 0, y: 0)
-                }
+            if !card.body.isEmpty {
+                Text(card.body)
+                    .font(.custom("Raleway-Medium", size: 14, relativeTo: .body))
+                    .foregroundStyle(DesignColors.textPrincipal)
+                    .lineSpacing(3)
+                    .lineLimit(4)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .shadow(color: DesignColors.background.opacity(0.6), radius: 3, x: 0, y: 0)
             }
-            .padding(32)
+
+            if let day = displayDay ?? card.cycleDay {
+                Text(card.cyclePhase == .late
+                     ? "\(day) days late"
+                     : "Day \(day) · \(card.cyclePhase.displayName)")
+                    .font(.custom("Raleway-Medium", size: 14, relativeTo: .caption))
+                    .foregroundStyle(DesignColors.text.opacity(0.8))
+                    .shadow(color: DesignColors.background.opacity(0.5), radius: 3, x: 0, y: 0)
+                    .padding(.top, 2)
+            }
         }
-        .frame(height: 380)
+        .padding(28)
+        .frame(maxWidth: .infinity, alignment: .topLeading)
         .glowCardBackground(tint: .neutral)
     }
 
     // MARK: - DO
 
     private var doLayout: some View {
-        ZStack {
-
-            VStack(alignment: .leading) {
-                // Action type pill
-                if let action = card.action {
-                    let iconName: String = switch action.actionType {
-                    case .breathing: "wind"
-                    case .journal: "pencil.line"
-                    case .challenge: "flag.fill"
-                    case .quickCheck: "hand.tap.fill"
-                    case .openLens: "sparkles"
-                    }
-                    HStack(spacing: 6) {
-                        Image(systemName: iconName)
-                            .font(.system(size: 12, weight: .bold))
-                        Text(action.actionType == .breathing ? "Breathe" :
-                                action.actionType == .journal ? "Journal" :
-                                action.actionType == .challenge ? "Challenge" : "Check in")
-                            .font(.custom("Raleway-Black", size: 12, relativeTo: .caption))
-                            .tracking(0.3)
-                    }
-                    .foregroundStyle(DesignColors.accentWarm)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 6)
-                    .background {
-                        Capsule().fill(DesignColors.accentWarm.opacity(0.12))
-                    }
+        VStack(alignment: .leading, spacing: 12) {
+            // Action type pill
+            if let action = card.action {
+                let iconName: String = switch action.actionType {
+                case .breathing: "wind"
+                case .journal: "pencil.line"
+                case .challenge: "flag.fill"
+                case .quickCheck: "hand.tap.fill"
+                case .openLens: "sparkles"
                 }
-
-                Spacer()
-
-                Text(card.title)
-                    .font(.custom("Raleway-Black", size: 24, relativeTo: .title2))
-                    .tracking(-0.4)
-                    .foregroundStyle(DesignColors.text)
-                    .lineSpacing(2)
-                    .shadow(color: DesignColors.background.opacity(0.75), radius: 4, x: 0, y: 0)
-
-                if !card.body.isEmpty {
-                    Text(card.body)
-                        .font(.custom("Raleway-Medium", size: 14, relativeTo: .body))
-                        .foregroundStyle(DesignColors.textPrincipal)
-                        .lineSpacing(3)
-                        .lineLimit(3)
-                        .shadow(color: DesignColors.background.opacity(0.6), radius: 3, x: 0, y: 0)
+                HStack(spacing: 6) {
+                    Image(systemName: iconName)
+                        .font(.system(size: 12, weight: .semibold))
+                    Text(action.actionType == .breathing ? "Breathe" :
+                            action.actionType == .journal ? "Journal" :
+                            action.actionType == .challenge ? "Challenge" : "Check in")
+                        .font(.custom("Raleway-SemiBold", size: 12, relativeTo: .caption))
+                        .tracking(0.2)
                 }
-
-                Spacer().frame(height: 16)
-
-                // CTA
-                if let action = card.action {
-                    Button {
-                        UIImpactFeedbackGenerator(style: .light).impactOccurred()
-                        onAction?()
-                    } label: {
-                        Text(action.label)
-                            .font(.custom("Raleway-Black", size: 16, relativeTo: .body))
-                            .tracking(-0.2)
-                            .foregroundStyle(.white)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 16)
-                            .background {
-                                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                                    .fill(DesignColors.accentWarm)
-                            }
-                            .shadow(color: DesignColors.text.opacity(0.28), radius: 10, x: 0, y: 4)
-                            .shadow(color: DesignColors.text.opacity(0.14), radius: 3, x: 0, y: 1)
-                    }
-                    .buttonStyle(.plain)
+                .foregroundStyle(DesignColors.accentWarm)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 6)
+                .background {
+                    Capsule().fill(DesignColors.accentWarm.opacity(0.12))
                 }
             }
-            .padding(32)
+
+            Text(card.title)
+                .font(.custom("Raleway-Bold", size: 22, relativeTo: .title2))
+                .tracking(-0.3)
+                .foregroundStyle(DesignColors.text)
+                .lineSpacing(2)
+                .lineLimit(2)
+                .fixedSize(horizontal: false, vertical: true)
+                .shadow(color: DesignColors.background.opacity(0.75), radius: 4, x: 0, y: 0)
+
+            if !card.body.isEmpty {
+                Text(card.body)
+                    .font(.custom("Raleway-Medium", size: 14, relativeTo: .body))
+                    .foregroundStyle(DesignColors.textPrincipal)
+                    .lineSpacing(3)
+                    .lineLimit(4)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .shadow(color: DesignColors.background.opacity(0.6), radius: 3, x: 0, y: 0)
+            }
+
+            // CTA
+            if let action = card.action {
+                Button {
+                    UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                    onAction?()
+                } label: {
+                    Text(action.label)
+                        .font(.custom("Raleway-SemiBold", size: 16, relativeTo: .body))
+                        .foregroundStyle(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 14)
+                        .background {
+                            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                .fill(DesignColors.accentWarm)
+                        }
+                        .shadow(color: DesignColors.text.opacity(0.28), radius: 10, x: 0, y: 4)
+                        .shadow(color: DesignColors.text.opacity(0.14), radius: 3, x: 0, y: 1)
+                }
+                .buttonStyle(.plain)
+                .padding(.top, 4)
+            }
         }
-        .frame(height: 380)
+        .padding(28)
+        .frame(maxWidth: .infinity, alignment: .topLeading)
         .glowCardBackground(tint: .rose)
     }
 
     // MARK: - GO DEEPER
 
     private var goDeeperLayout: some View {
-        ZStack {
-            VStack(alignment: .leading) {
-                Spacer()
+        VStack(alignment: .leading, spacing: 14) {
+            Text(card.title)
+                .font(.custom("Raleway-Bold", size: 22, relativeTo: .title2))
+                .tracking(-0.3)
+                .foregroundStyle(DesignColors.text)
+                .lineSpacing(2)
+                .lineLimit(2)
+                .fixedSize(horizontal: false, vertical: true)
+                .shadow(color: DesignColors.background.opacity(0.75), radius: 4, x: 0, y: 0)
 
-                Text(card.title)
-                    .font(.custom("Raleway-Black", size: 24, relativeTo: .title))
-                    .tracking(-0.4)
-                    .foregroundStyle(DesignColors.text)
-                    .lineSpacing(2)
-                    .shadow(color: DesignColors.background.opacity(0.75), radius: 4, x: 0, y: 0)
-
-                if !card.body.isEmpty {
-                    Text(card.body)
-                        .font(.custom("Raleway-Medium", size: 14, relativeTo: .body))
-                        .foregroundStyle(DesignColors.textPrincipal)
-                        .lineSpacing(3)
-                        .lineLimit(2)
-                        .shadow(color: DesignColors.background.opacity(0.6), radius: 3, x: 0, y: 0)
-                }
-
-                Spacer().frame(height: 16)
-
-                Button {
-                    UIImpactFeedbackGenerator(style: .light).impactOccurred()
-                    onAction?()
-                } label: {
-                    HStack(spacing: 8) {
-                        Text(card.action?.label ?? "Discover")
-                            .font(.custom("Raleway-Black", size: 16, relativeTo: .body))
-                            .tracking(-0.2)
-                        Image(systemName: "arrow.right")
-                            .font(.system(size: 14, weight: .bold))
-                    }
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, 24)
-                    .padding(.vertical, 14)
-                    .background {
-                        Capsule()
-                            .fill(
-                                LinearGradient(
-                                    colors: [DesignColors.accentWarm, DesignColors.accentSecondary],
-                                    startPoint: .leading,
-                                    endPoint: .trailing
-                                )
-                            )
-                    }
-                    .shadow(color: DesignColors.text.opacity(0.32), radius: 12, x: 0, y: 5)
-                    .shadow(color: DesignColors.text.opacity(0.16), radius: 3, x: 0, y: 1)
-                }
-                .buttonStyle(.plain)
+            if !card.body.isEmpty {
+                Text(card.body)
+                    .font(.custom("Raleway-Medium", size: 14, relativeTo: .body))
+                    .foregroundStyle(DesignColors.textPrincipal)
+                    .lineSpacing(3)
+                    .lineLimit(6)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .shadow(color: DesignColors.background.opacity(0.6), radius: 3, x: 0, y: 0)
             }
-            .padding(32)
+
+            Button {
+                UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                onAction?()
+            } label: {
+                HStack(spacing: 8) {
+                    Text(card.action?.label ?? "Discover")
+                        .font(.custom("Raleway-SemiBold", size: 16, relativeTo: .body))
+                    Image(systemName: "arrow.right")
+                        .font(.system(size: 14, weight: .semibold))
+                }
+                .foregroundStyle(.white)
+                .padding(.horizontal, 24)
+                .padding(.vertical, 14)
+                .background {
+                    Capsule()
+                        .fill(
+                            LinearGradient(
+                                colors: [DesignColors.accentWarm, DesignColors.accentSecondary],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                        )
+                }
+                .shadow(color: DesignColors.text.opacity(0.32), radius: 12, x: 0, y: 5)
+                .shadow(color: DesignColors.text.opacity(0.16), radius: 3, x: 0, y: 1)
+            }
+            .buttonStyle(.plain)
+            .padding(.top, 4)
         }
-        .frame(height: 380)
+        .padding(28)
+        .frame(maxWidth: .infinity, alignment: .topLeading)
         .glowCardBackground(tint: .taupe)
     }
 }

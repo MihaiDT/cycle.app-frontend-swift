@@ -19,13 +19,13 @@ struct DailyChallengeCardView: View {
     // MARK: - Available
 
     private var availableState: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 6) {
                 Image(systemName: "flag.fill")
-                    .font(.system(size: 12, weight: .bold))
+                    .font(.system(size: 12, weight: .semibold))
                 Text("Challenge")
-                    .font(.custom("Raleway-Black", size: 12, relativeTo: .caption))
-                    .tracking(0.3)
+                    .font(.custom("Raleway-SemiBold", size: 12, relativeTo: .caption))
+                    .tracking(0.2)
             }
             .foregroundStyle(DesignColors.accentWarm)
             .padding(.horizontal, 12)
@@ -33,11 +33,9 @@ struct DailyChallengeCardView: View {
             .background { Capsule().fill(DesignColors.accentWarm.opacity(0.12)) }
             .accessibilityLabel("Challenge")
 
-            Spacer(minLength: 12)
-
             Text(challenge.challengeTitle)
-                .font(.custom("Raleway-Black", size: 24, relativeTo: .title2))
-                .tracking(-0.4)
+                .font(.custom("Raleway-Bold", size: 22, relativeTo: .title2))
+                .tracking(-0.3)
                 .foregroundStyle(DesignColors.text)
                 .lineSpacing(2)
                 .lineLimit(2)
@@ -58,7 +56,6 @@ struct DailyChallengeCardView: View {
                 tagPill(challenge.durationDisplay)
                 tagPill(challenge.effortDisplay)
             }
-            .padding(.top, 2)
             .accessibilityElement(children: .combine)
             .accessibilityLabel(
                 "\(challenge.cyclePhase.capitalized), " +
@@ -66,16 +63,13 @@ struct DailyChallengeCardView: View {
                 "\(challenge.effortDisplay)"
             )
 
-            Spacer().frame(height: 14)
-
             HStack(spacing: 12) {
                 Button {
                     UIImpactFeedbackGenerator(style: .light).impactOccurred()
                     onDoIt()
                 } label: {
                     Text("Do It")
-                        .font(.custom("Raleway-Black", size: 16, relativeTo: .body))
-                        .tracking(-0.2)
+                        .font(.custom("Raleway-SemiBold", size: 16, relativeTo: .body))
                         .foregroundStyle(.white)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 14)
@@ -98,9 +92,10 @@ struct DailyChallengeCardView: View {
                 .buttonStyle(.plain)
                 .accessibilityLabel("Skip today's challenge")
             }
+            .padding(.top, 4)
         }
-        .padding(28)
-        .frame(height: 380)
+        .padding(24)
+        .frame(maxWidth: .infinity, alignment: .topLeading)
         .glowCardBackground(tint: .cocoa)
     }
 
@@ -145,7 +140,7 @@ struct DailyChallengeCardView: View {
                 .foregroundStyle(DesignColors.textSecondary)
         }
         .padding(28)
-        .frame(height: 380)
+        .frame(height: 340)
         .glowCardBackground(tint: .cocoa)
     }
 
@@ -175,7 +170,7 @@ struct DailyChallengeCardView: View {
             Spacer()
         }
         .padding(28)
-        .frame(height: 380)
+        .frame(height: 340)
         .glowCardBackground(tint: .neutral)
     }
 

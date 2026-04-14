@@ -11,8 +11,7 @@ public struct GlowPrimaryButtonStyle: ButtonStyle {
     public func makeBody(configuration: Configuration) -> some View {
         HStack(spacing: 12) {
             configuration.label
-                .font(.custom("Raleway-Black", size: 17, relativeTo: .body))
-                .tracking(-0.2)
+                .font(.custom("Raleway-Bold", size: 17, relativeTo: .body))
                 .foregroundStyle(DesignColors.background)
                 .frame(maxWidth: .infinity, alignment: .leading)
 

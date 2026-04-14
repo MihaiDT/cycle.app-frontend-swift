@@ -445,8 +445,8 @@ public struct CycleHeroView: View {
 
                 // Month name centered in top bar
                 Text(monthLabel)
-                    .font(.custom("Raleway-Black", size: 17, relativeTo: .body))
-                    .tracking(-0.3)
+                    .font(.custom("Raleway-Bold", size: 17, relativeTo: .body))
+                    .tracking(-0.2)
                     .foregroundColor(textOnHeroColor)
 
                 Spacer()
@@ -527,10 +527,9 @@ public struct CycleHeroView: View {
                     } label: {
                         HStack(spacing: 6) {
                             Image(systemName: "drop.fill")
-                                .font(.system(size: 12, weight: .bold))
+                                .font(.system(size: 12, weight: .semibold))
                             Text("Log period")
-                                .font(.custom("Raleway-Black", size: 15, relativeTo: .callout))
-                                .tracking(-0.2)
+                                .font(.custom("Raleway-SemiBold", size: 15, relativeTo: .callout))
                         }
                         .foregroundColor(.white)
                         .padding(.horizontal, 22)
@@ -568,8 +567,7 @@ public struct CycleHeroView: View {
                         onEditPeriod()
                     } label: {
                         Text("My cycle")
-                            .font(.custom("Raleway-Black", size: 15, relativeTo: .callout))
-                            .tracking(-0.2)
+                            .font(.custom("Raleway-SemiBold", size: 15, relativeTo: .callout))
                             .foregroundColor(textOnHeroColor)
                             .padding(.horizontal, 22)
                             .padding(.vertical, 10)
@@ -624,8 +622,8 @@ public struct CycleHeroView: View {
             // Status summary
             VStack(alignment: .leading, spacing: 3) {
                 Text(collapsedHeadline)
-                    .font(.custom("Raleway-Black", size: 17, relativeTo: .body))
-                    .tracking(-0.3)
+                    .font(.custom("Raleway-Bold", size: 17, relativeTo: .body))
+                    .tracking(-0.2)
                     .foregroundColor(textOnHeroColor)
                     .lineLimit(1)
             }
