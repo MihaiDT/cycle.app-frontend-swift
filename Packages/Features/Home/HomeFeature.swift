@@ -18,6 +18,7 @@ public struct HomeFeature: Sendable {
 
         // Child features
         public var todayState: TodayFeature.State = TodayFeature.State()
+        public var lensState: LensFeature.State = LensFeature.State()
         public var chatState: ChatFeature.State = ChatFeature.State()
         public var profileState: ProfileFeature.State = ProfileFeature.State()
         public var cycleInsightsState: CycleInsightsFeature.State = CycleInsightsFeature.State()
@@ -28,12 +29,14 @@ public struct HomeFeature: Sendable {
 
         public enum Tab: Int, Equatable, Sendable, CaseIterable {
             case today = 0
-            case chat = 1
-            case me = 2
+            case lens = 1
+            case chat = 2
+            case me = 3
 
             var title: String {
                 switch self {
                 case .today: "Today"
+                case .lens: "Lens"
                 case .chat: "Aria"
                 case .me: "Me"
                 }
@@ -42,6 +45,7 @@ public struct HomeFeature: Sendable {
             var icon: String {
                 switch self {
                 case .today: "sun.horizon"
+                case .lens: "sparkles"
                 case .chat: "bubble.left.and.text.bubble.right"
                 case .me: "person"
                 }
@@ -50,6 +54,7 @@ public struct HomeFeature: Sendable {
             var selectedIcon: String {
                 switch self {
                 case .today: "sun.horizon.fill"
+                case .lens: "sparkles"
                 case .chat: "bubble.left.and.text.bubble.right.fill"
                 case .me: "person.fill"
                 }
@@ -77,6 +82,7 @@ public struct HomeFeature: Sendable {
 
         // Child features
         case today(TodayFeature.Action)
+        case lens(LensFeature.Action)
         case chat(ChatFeature.Action)
         case profile(ProfileFeature.Action)
         case cycleInsights(CycleInsightsFeature.Action)
@@ -99,6 +105,10 @@ public struct HomeFeature: Sendable {
 
         Scope(state: \.todayState, action: \.today) {
             TodayFeature()
+        }
+
+        Scope(state: \.lensState, action: \.lens) {
+            LensFeature()
         }
 
         Scope(state: \.chatState, action: \.chat) {
@@ -256,7 +266,7 @@ public struct HomeFeature: Sendable {
             case .profile(.delegate(.didLogout)):
                 return .send(.logoutTapped)
 
-            case .today, .chat, .profile, .cycleInsights, .cycleJourney, .delegate:
+            case .today, .lens, .chat, .profile, .cycleInsights, .cycleJourney, .delegate:
                 return .none
             }
         }
@@ -294,6 +304,18 @@ public struct HomeView: View {
                     )
                 }
                 .tag(HomeFeature.State.Tab.today)
+
+                // Lens Tab
+                LensView(store: store.scope(state: \.lensState, action: \.lens))
+                    .tabItem {
+                        Label(
+                            HomeFeature.State.Tab.lens.title,
+                            systemImage: store.selectedTab == .lens
+                                ? HomeFeature.State.Tab.lens.selectedIcon
+                                : HomeFeature.State.Tab.lens.icon
+                        )
+                    }
+                    .tag(HomeFeature.State.Tab.lens)
 
                 // Chat Tab (Aria)
                 ChatView(store: store.scope(state: \.chatState, action: \.chat))
