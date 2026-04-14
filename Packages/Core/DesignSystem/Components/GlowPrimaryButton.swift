@@ -26,7 +26,41 @@ public struct GlowPrimaryButtonStyle: ButtonStyle {
         .padding(.horizontal, 26)
         .background(
             RoundedRectangle(cornerRadius: 30, style: .continuous)
-                .fill(DesignColors.text)
+                .fill(
+                    LinearGradient(
+                        colors: [
+                            DesignColors.textPrincipal,
+                            DesignColors.text,
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+                .overlay {
+                    RoundedRectangle(cornerRadius: 30, style: .continuous)
+                        .fill(
+                            LinearGradient(
+                                colors: [Color.white.opacity(0.10), Color.clear],
+                                startPoint: .top,
+                                endPoint: .center
+                            )
+                        )
+                }
+                .overlay {
+                    RoundedRectangle(cornerRadius: 30, style: .continuous)
+                        .stroke(
+                            LinearGradient(
+                                colors: [
+                                    Color.white.opacity(0.32),
+                                    Color.white.opacity(0.06),
+                                    .clear,
+                                ],
+                                startPoint: .top,
+                                endPoint: .center
+                            ),
+                            lineWidth: 1
+                        )
+                }
         )
         .shadow(color: DesignColors.text.opacity(DesignColors.shadowOpacityPrimary), radius: 20, x: 0, y: 8)
         .shadow(color: DesignColors.text.opacity(DesignColors.shadowOpacitySecondary), radius: 4, x: 0, y: 2)

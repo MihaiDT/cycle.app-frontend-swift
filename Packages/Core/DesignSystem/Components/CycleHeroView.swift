@@ -113,8 +113,6 @@ public struct CycleHeroView: View {
         Self.monthFormatter.string(from: effectiveDate)
     }
 
-    // `glassCircle` was removed — all top-bar icon buttons now use `GlowIconButtonStyle`.
-
     private var periodCountdownText: String {
         if isPeriod && !isPredictedPeriod {
             return "Period · Day \(displayCycleDay)"
@@ -408,7 +406,7 @@ public struct CycleHeroView: View {
         }
         .frame(height: currentHeight)
         .clipped()
-        .modifier(GlassCardModifier())
+        .glowCardBackground(tint: .neutral)
     }
 
     // MARK: - Expanded Content (full hero)
@@ -432,13 +430,15 @@ public struct CycleHeroView: View {
                     onNotificationTapped?()
                 } label: {
                     Image(systemName: hasNotification ? "bell.badge.fill" : "bell.fill")
+                        .font(.system(size: 22, weight: .semibold))
                         .symbolRenderingMode(hasNotification ? .palette : .monochrome)
                         .foregroundStyle(
-                            DesignColors.background,
-                            DesignColors.accentWarm
+                            DesignColors.accentWarm,
+                            hasNotification ? DesignColors.accentWarm : .clear
                         )
+                        .frame(width: 44, height: 44)
                 }
-                .buttonStyle(GlowIconButtonStyle())
+                .buttonStyle(.plain)
                 .accessibilityLabel(hasNotification ? "Notifications, new" : "Notifications")
 
                 Spacer()
@@ -455,16 +455,21 @@ public struct CycleHeroView: View {
                     UIImpactFeedbackGenerator(style: .light).impactOccurred()
                     onCalendarTapped?()
                 } label: {
-                    if isRefreshing {
-                        ProgressView()
-                            .tint(DesignColors.background)
-                            .scaleEffect(0.8)
-                    } else {
-                        Image(systemName: "calendar")
+                    Group {
+                        if isRefreshing {
+                            ProgressView()
+                                .tint(DesignColors.accentWarm)
+                                .scaleEffect(0.9)
+                        } else {
+                            Image(systemName: "calendar")
+                                .font(.system(size: 22, weight: .semibold))
+                                .foregroundColor(DesignColors.accentWarm)
+                        }
                     }
+                    .frame(width: 44, height: 44)
+                    .animation(.easeInOut(duration: 0.25), value: isRefreshing)
                 }
-                .buttonStyle(GlowIconButtonStyle())
-                .animation(.easeInOut(duration: 0.25), value: isRefreshing)
+                .buttonStyle(.plain)
                 .accessibilityLabel("Calendar")
             }
             .padding(.horizontal, 16)
@@ -627,21 +632,26 @@ public struct CycleHeroView: View {
 
             Spacer(minLength: 12)
 
-            // Calendar button — dark cocoa GlowIconButtonStyle
+            // Calendar button — no background
             Button {
                 UIImpactFeedbackGenerator(style: .light).impactOccurred()
                 onCalendarTapped?()
             } label: {
-                if isRefreshing {
-                    ProgressView()
-                        .tint(DesignColors.background)
-                        .scaleEffect(0.8)
-                } else {
-                    Image(systemName: "calendar")
+                Group {
+                    if isRefreshing {
+                        ProgressView()
+                            .tint(DesignColors.accentWarm)
+                            .scaleEffect(0.9)
+                    } else {
+                        Image(systemName: "calendar")
+                            .font(.system(size: 22, weight: .semibold))
+                            .foregroundColor(DesignColors.accentWarm)
+                    }
                 }
+                .frame(width: 44, height: 44)
+                .animation(.easeInOut(duration: 0.25), value: isRefreshing)
             }
-            .buttonStyle(GlowIconButtonStyle())
-            .animation(.easeInOut(duration: 0.25), value: isRefreshing)
+            .buttonStyle(.plain)
             .accessibilityLabel("Calendar")
         }
         .padding(.horizontal, 16)

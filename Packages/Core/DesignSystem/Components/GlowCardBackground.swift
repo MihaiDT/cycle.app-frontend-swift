@@ -28,22 +28,22 @@ private func glowAuroraLayers(_ tint: GlowCardTint) -> some View {
             RadialGradient(
                 gradient: Gradient(colors: [DesignColors.accent.opacity(0.80), .clear]),
                 center: UnitPoint(x: 0.25, y: 0.30),
-                startRadius: 30, endRadius: 180
+                startRadius: 0, endRadius: 200
             )
             RadialGradient(
-                gradient: Gradient(colors: [DesignColors.structure.opacity(0.90), .clear]),
+                gradient: Gradient(colors: [DesignColors.structure.opacity(0.85), .clear]),
                 center: UnitPoint(x: 0.80, y: 0.60),
-                startRadius: 40, endRadius: 210
+                startRadius: 0, endRadius: 220
             )
             RadialGradient(
-                gradient: Gradient(colors: [DesignColors.roseTaupeLight.opacity(0.70), .clear]),
+                gradient: Gradient(colors: [DesignColors.roseTaupeLight.opacity(0.65), .clear]),
                 center: UnitPoint(x: 0.55, y: 0.95),
-                startRadius: 30, endRadius: 190
+                startRadius: 0, endRadius: 200
             )
             RadialGradient(
                 gradient: Gradient(colors: [DesignColors.cardWarm, .clear]),
                 center: UnitPoint(x: 0.05, y: 0.90),
-                startRadius: 20, endRadius: 160
+                startRadius: 0, endRadius: 180
             )
         }
 
@@ -51,49 +51,50 @@ private func glowAuroraLayers(_ tint: GlowCardTint) -> some View {
         // Ember Glow: terracotta top-left, dusty rose center-right, blush bottom.
         ZStack {
             RadialGradient(
-                gradient: Gradient(colors: [DesignColors.accentWarm.opacity(0.65), .clear]),
+                gradient: Gradient(colors: [DesignColors.accentWarm.opacity(0.55), .clear]),
                 center: UnitPoint(x: 0.30, y: 0.25),
-                startRadius: 30, endRadius: 200
+                startRadius: 0, endRadius: 210
             )
             RadialGradient(
-                gradient: Gradient(colors: [DesignColors.accentSecondary.opacity(0.75), .clear]),
+                gradient: Gradient(colors: [DesignColors.accentSecondary.opacity(0.65), .clear]),
                 center: UnitPoint(x: 0.80, y: 0.65),
-                startRadius: 40, endRadius: 210
+                startRadius: 0, endRadius: 230
             )
             RadialGradient(
                 gradient: Gradient(colors: [DesignColors.accent.opacity(0.80), .clear]),
                 center: UnitPoint(x: 0.20, y: 0.95),
-                startRadius: 30, endRadius: 180
+                startRadius: 0, endRadius: 200
             )
             RadialGradient(
                 gradient: Gradient(colors: [DesignColors.cardWarm, .clear]),
                 center: UnitPoint(x: 0.55, y: 0.05),
-                startRadius: 20, endRadius: 150
+                startRadius: 0, endRadius: 170
             )
         }
 
     case .taupe:
-        // Rose Twilight: rose taupe top-right, dusty rose bottom-left, warm brown depth, cream spark.
+        // Rose Twilight: rose taupe top-right, dusty rose bottom-left, cream edge + cream spark.
+        // Intentionally lighter than the other tints — warmBrown caused the card to read too dark.
         ZStack {
             RadialGradient(
-                gradient: Gradient(colors: [DesignColors.roseTaupe.opacity(0.85), .clear]),
+                gradient: Gradient(colors: [DesignColors.roseTaupe.opacity(0.65), .clear]),
                 center: UnitPoint(x: 0.85, y: 0.30),
-                startRadius: 30, endRadius: 210
+                startRadius: 0, endRadius: 220
             )
             RadialGradient(
-                gradient: Gradient(colors: [DesignColors.accentSecondary.opacity(0.75), .clear]),
+                gradient: Gradient(colors: [DesignColors.accentSecondary.opacity(0.55), .clear]),
                 center: UnitPoint(x: 0.20, y: 0.70),
-                startRadius: 40, endRadius: 220
+                startRadius: 0, endRadius: 230
             )
             RadialGradient(
-                gradient: Gradient(colors: [DesignColors.warmBrown.opacity(0.55), .clear]),
-                center: UnitPoint(x: 0.60, y: 1.10),
-                startRadius: 20, endRadius: 200
+                gradient: Gradient(colors: [DesignColors.roseTaupeLight.opacity(0.70), .clear]),
+                center: UnitPoint(x: 0.60, y: 1.05),
+                startRadius: 0, endRadius: 210
             )
             RadialGradient(
-                gradient: Gradient(colors: [DesignColors.cardWarm.opacity(0.80), .clear]),
+                gradient: Gradient(colors: [DesignColors.cardWarm, .clear]),
                 center: UnitPoint(x: 1.00, y: 0.00),
-                startRadius: 20, endRadius: 170
+                startRadius: 0, endRadius: 190
             )
         }
 
@@ -101,24 +102,24 @@ private func glowAuroraLayers(_ tint: GlowCardTint) -> some View {
         // Sunset Glow: terracotta top-right, dusty rose bottom-right, blush left-center, cream sun.
         ZStack {
             RadialGradient(
-                gradient: Gradient(colors: [DesignColors.accentWarm.opacity(0.55), .clear]),
+                gradient: Gradient(colors: [DesignColors.accentWarm.opacity(0.50), .clear]),
                 center: UnitPoint(x: 0.78, y: 0.22),
-                startRadius: 30, endRadius: 190
+                startRadius: 0, endRadius: 200
             )
             RadialGradient(
-                gradient: Gradient(colors: [DesignColors.accentSecondary.opacity(0.65), .clear]),
+                gradient: Gradient(colors: [DesignColors.accentSecondary.opacity(0.60), .clear]),
                 center: UnitPoint(x: 0.95, y: 0.85),
-                startRadius: 40, endRadius: 220
+                startRadius: 0, endRadius: 230
             )
             RadialGradient(
-                gradient: Gradient(colors: [DesignColors.accent.opacity(0.75), .clear]),
+                gradient: Gradient(colors: [DesignColors.accent.opacity(0.78), .clear]),
                 center: UnitPoint(x: 0.18, y: 0.72),
-                startRadius: 30, endRadius: 220
+                startRadius: 0, endRadius: 230
             )
             RadialGradient(
                 gradient: Gradient(colors: [DesignColors.cardWarm, .clear]),
                 center: UnitPoint(x: 0.50, y: 0.05),
-                startRadius: 20, endRadius: 170
+                startRadius: 0, endRadius: 180
             )
         }
     }
@@ -147,13 +148,13 @@ public extension View {
                         .strokeBorder(
                             LinearGradient(
                                 colors: [
-                                    DesignColors.cardWarm.opacity(0.70),
-                                    DesignColors.accentWarm.opacity(0.25),
+                                    DesignColors.text.opacity(0.22),
+                                    DesignColors.accentWarm.opacity(0.38),
                                 ],
                                 startPoint: .topLeading,
                                 endPoint: .bottomTrailing
                             ),
-                            lineWidth: 0.8
+                            lineWidth: 1.2
                         )
                 }
         )

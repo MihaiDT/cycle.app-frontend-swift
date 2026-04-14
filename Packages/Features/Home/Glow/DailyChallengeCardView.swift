@@ -42,6 +42,7 @@ struct DailyChallengeCardView: View {
                 .lineSpacing(2)
                 .lineLimit(2)
                 .fixedSize(horizontal: false, vertical: true)
+                .shadow(color: DesignColors.background.opacity(0.75), radius: 4, x: 0, y: 0)
                 .accessibilityAddTraits(.isHeader)
 
             Text(challenge.challengeDescription)
@@ -50,6 +51,7 @@ struct DailyChallengeCardView: View {
                 .lineSpacing(3)
                 .lineLimit(3)
                 .fixedSize(horizontal: false, vertical: true)
+                .shadow(color: DesignColors.background.opacity(0.6), radius: 3, x: 0, y: 0)
 
             HStack(spacing: 6) {
                 tagPill(challenge.cyclePhase.capitalized)
@@ -81,6 +83,8 @@ struct DailyChallengeCardView: View {
                             RoundedRectangle(cornerRadius: 14, style: .continuous)
                                 .fill(DesignColors.accentWarm)
                         }
+                        .shadow(color: DesignColors.text.opacity(0.30), radius: 12, x: 0, y: 5)
+                        .shadow(color: DesignColors.text.opacity(0.14), radius: 3, x: 0, y: 1)
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel("Do challenge")

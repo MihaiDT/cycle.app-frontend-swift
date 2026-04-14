@@ -444,6 +444,7 @@ private struct DailyCardView: View {
                     .tracking(-0.4)
                     .foregroundStyle(DesignColors.text)
                     .lineSpacing(2)
+                    .shadow(color: DesignColors.background.opacity(0.75), radius: 4, x: 0, y: 0)
 
                 if !card.body.isEmpty {
                     Text(card.body)
@@ -451,6 +452,7 @@ private struct DailyCardView: View {
                         .foregroundStyle(DesignColors.textPrincipal)
                         .lineSpacing(3)
                         .lineLimit(3)
+                        .shadow(color: DesignColors.background.opacity(0.6), radius: 3, x: 0, y: 0)
                 }
 
                 Spacer().frame(height: 16)
@@ -460,7 +462,8 @@ private struct DailyCardView: View {
                          ? "\(day) days late"
                          : "Day \(day) · \(card.cyclePhase.displayName)")
                         .font(.custom("Raleway-Medium", size: 14, relativeTo: .caption))
-                        .foregroundStyle(DesignColors.accentWarm.opacity(0.7))
+                        .foregroundStyle(DesignColors.text.opacity(0.8))
+                        .shadow(color: DesignColors.background.opacity(0.5), radius: 3, x: 0, y: 0)
                 }
             }
             .padding(32)
@@ -508,6 +511,7 @@ private struct DailyCardView: View {
                     .tracking(-0.4)
                     .foregroundStyle(DesignColors.text)
                     .lineSpacing(2)
+                    .shadow(color: DesignColors.background.opacity(0.75), radius: 4, x: 0, y: 0)
 
                 if !card.body.isEmpty {
                     Text(card.body)
@@ -515,6 +519,7 @@ private struct DailyCardView: View {
                         .foregroundStyle(DesignColors.textPrincipal)
                         .lineSpacing(3)
                         .lineLimit(3)
+                        .shadow(color: DesignColors.background.opacity(0.6), radius: 3, x: 0, y: 0)
                 }
 
                 Spacer().frame(height: 16)
@@ -526,7 +531,8 @@ private struct DailyCardView: View {
                         onAction?()
                     } label: {
                         Text(action.label)
-                            .font(.custom("Raleway-SemiBold", size: 16, relativeTo: .body))
+                            .font(.custom("Raleway-Black", size: 16, relativeTo: .body))
+                            .tracking(-0.2)
                             .foregroundStyle(.white)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 16)
@@ -534,6 +540,8 @@ private struct DailyCardView: View {
                                 RoundedRectangle(cornerRadius: 16, style: .continuous)
                                     .fill(DesignColors.accentWarm)
                             }
+                            .shadow(color: DesignColors.text.opacity(0.28), radius: 10, x: 0, y: 4)
+                            .shadow(color: DesignColors.text.opacity(0.14), radius: 3, x: 0, y: 1)
                     }
                     .buttonStyle(.plain)
                 }
@@ -556,13 +564,15 @@ private struct DailyCardView: View {
                     .tracking(-0.4)
                     .foregroundStyle(DesignColors.text)
                     .lineSpacing(2)
+                    .shadow(color: DesignColors.background.opacity(0.75), radius: 4, x: 0, y: 0)
 
                 if !card.body.isEmpty {
                     Text(card.body)
                         .font(.custom("Raleway-Medium", size: 14, relativeTo: .body))
-                        .foregroundStyle(DesignColors.background.opacity(0.78))
+                        .foregroundStyle(DesignColors.textPrincipal)
                         .lineSpacing(3)
                         .lineLimit(2)
+                        .shadow(color: DesignColors.background.opacity(0.6), radius: 3, x: 0, y: 0)
                 }
 
                 Spacer().frame(height: 16)
@@ -573,9 +583,10 @@ private struct DailyCardView: View {
                 } label: {
                     HStack(spacing: 8) {
                         Text(card.action?.label ?? "Discover")
-                            .font(.custom("Raleway-SemiBold", size: 16, relativeTo: .body))
+                            .font(.custom("Raleway-Black", size: 16, relativeTo: .body))
+                            .tracking(-0.2)
                         Image(systemName: "arrow.right")
-                            .font(.system(size: 14, weight: .semibold))
+                            .font(.system(size: 14, weight: .bold))
                     }
                     .foregroundStyle(.white)
                     .padding(.horizontal, 24)
@@ -589,8 +600,9 @@ private struct DailyCardView: View {
                                     endPoint: .trailing
                                 )
                             )
-                            .shadow(color: DesignColors.accentWarm.opacity(0.3), radius: 8, x: 0, y: 4)
                     }
+                    .shadow(color: DesignColors.text.opacity(0.32), radius: 12, x: 0, y: 5)
+                    .shadow(color: DesignColors.text.opacity(0.16), radius: 3, x: 0, y: 1)
                 }
                 .buttonStyle(.plain)
             }
