@@ -1,0 +1,22 @@
+{
+  "iasi|romania": {
+    "latitude": 47.1585,
+    "longitude": 27.6014,
+    "timezone": "Europe/Bucharest"
+  },
+  "pascani|romania": {
+    "latitude": 47.2411,
+    "longitude": 26.7234,
+    "timezone": "Europe/Bucharest"
+  },
+  "bucharest|romania": {
+    "latitude": 44.4268,
+    "longitude": 26.1025,
+    "timezone": "Europe/Bucharest"
+  },
+  "cluj-napoca|romania": {
+    "latitude": 46.7712,
+    "longitude": 23.6236,
+    "timezone": "Europe/Bucharest"
+  }
+}

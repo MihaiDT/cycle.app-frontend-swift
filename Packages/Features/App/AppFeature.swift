@@ -427,13 +427,74 @@ public struct AppView: View {
     private var destinationView: some View {
         switch store.destination {
         case .splash:
-            SplashView()
+            ZStack(alignment: .bottom) {
+                SplashView()
+                Button {
+                    store.send(.showHome)
+                } label: {
+                    Text("Skip to Home")
+                        .font(.custom("Raleway-SemiBold", size: 14))
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 24)
+                        .padding(.vertical, 12)
+                        .background {
+                            Capsule()
+                                .fill(DesignColors.accentWarm)
+                        }
+                }
+                .padding(.bottom, 60)
+            }
 
         case .onboarding:
-            OnboardingView(
-                onBegin: { store.send(.onboardingBeginTapped) },
-                onLogin: { store.send(.onboardingBeginTapped) }
-            )
+            ZStack(alignment: .top) {
+                OnboardingView(
+                    onBegin: { store.send(.onboardingBeginTapped) },
+                    onLogin: { store.send(.onboardingBeginTapped) }
+                )
+                HStack {
+                    Spacer()
+                    Button {
+                        store.send(.showHome)
+                    } label: {
+                        HStack(spacing: 6) {
+                            Image(systemName: "sparkles")
+                                .font(.system(size: 12, weight: .medium))
+                            Text("Explore")
+                                .font(.custom("Raleway-SemiBold", size: 13))
+                            Image(systemName: "arrow.right")
+                                .font(.system(size: 10, weight: .semibold))
+                        }
+                        .foregroundStyle(
+                            LinearGradient(
+                                colors: [DesignColors.accentWarm, DesignColors.accentWarm.opacity(0.7)],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                        )
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 10)
+                        .background {
+                            Capsule()
+                                .fill(.ultraThinMaterial)
+                                .overlay {
+                                    Capsule()
+                                        .strokeBorder(
+                                            LinearGradient(
+                                                colors: [Color.white.opacity(0.3), Color.white.opacity(0.1)],
+                                                startPoint: .topLeading,
+                                                endPoint: .bottomTrailing
+                                            ),
+                                            lineWidth: 0.5
+                                        )
+                                }
+                                .shadow(color: .black.opacity(0.08), radius: 8, y: 4)
+                        }
+                    }
+                    .buttonStyle(.plain)
+                    .padding(.trailing, 20)
+                }
+                .padding(.top, 62)
+            }
 
         case .splineIntro:
             SplineIntroView {

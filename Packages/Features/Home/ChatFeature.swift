@@ -685,8 +685,10 @@ private struct TypingIndicatorView: View {
 
     private func startBounce() {
         Timer.scheduledTimer(withTimeInterval: 0.15, repeats: true) { timer in
-            withAnimation(.easeInOut(duration: 0.3)) {
-                phase = (phase + 1) % 4  // 0,1,2 bounce, 3 = all down
+            Task { @MainActor in
+                withAnimation(.easeInOut(duration: 0.3)) {
+                    phase = (phase + 1) % 4  // 0,1,2 bounce, 3 = all down
+                }
             }
         }
     }

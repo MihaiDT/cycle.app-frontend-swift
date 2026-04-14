@@ -50,6 +50,9 @@ packages:
   GoogleSignIn:
     url: https://github.com/google/GoogleSignIn-iOS
     from: "8.0.0"
+  SwissEphemeris:
+    url: https://github.com/vsmithers1087/SwissEphemeris
+    from: "0.0.99"
 
 targets:
   CycleApp:
@@ -74,6 +77,8 @@ targets:
     resources:
       - path: CycleApp/Resources/logo_animation.splineswift
       - path: CycleApp/Resources/glowing_orb.riv
+      - path: CycleApp/Resources/city_coordinates.json
+      - path: CycleApp/Resources/ephe
     dependencies:
       - package: ComposableArchitecture
       - package: Tagged
@@ -86,6 +91,7 @@ targets:
         product: FirebaseAuth
       - package: GoogleSignIn
       - package: RiveRuntime
+      - package: SwissEphemeris
       - sdk: HealthKit.framework
     entitlements:
       path: CycleApp/Resources/CycleApp.entitlements
