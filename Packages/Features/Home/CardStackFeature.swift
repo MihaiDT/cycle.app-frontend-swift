@@ -204,7 +204,7 @@ struct CardStackView: View {
                 .padding(.bottom, 4)
             }
             .padding(.horizontal, AppLayout.horizontalPadding)
-            .padding(.bottom, 2)
+            .padding(.bottom, 14)
 
             ZStack(alignment: .top) {
                 ForEach(Array(store.cards.enumerated()), id: \.element.id) { index, card in
@@ -248,7 +248,6 @@ struct CardStackView: View {
                         }
                 }
             }
-            .fixedSize(horizontal: false, vertical: true)
             .frame(maxWidth: .infinity)
         }
     }
@@ -501,7 +500,7 @@ private struct DailyCardView: View {
                     .font(.custom("Raleway-Medium", size: 14, relativeTo: .body))
                     .foregroundStyle(DesignColors.textPrincipal)
                     .lineSpacing(3)
-                    .lineLimit(4)
+                    .lineLimit(7)
                     .fixedSize(horizontal: false, vertical: true)
                     .shadow(color: DesignColors.background.opacity(0.6), radius: 3, x: 0, y: 0)
             }
@@ -518,6 +517,7 @@ private struct DailyCardView: View {
         }
         .padding(28)
         .frame(maxWidth: .infinity, alignment: .topLeading)
+        .frame(height: 340)
         .glowCardBackground(tint: .neutral)
     }
 
@@ -557,7 +557,6 @@ private struct DailyCardView: View {
                 .foregroundStyle(DesignColors.text)
                 .lineSpacing(2)
                 .lineLimit(2)
-                .fixedSize(horizontal: false, vertical: true)
                 .shadow(color: DesignColors.background.opacity(0.75), radius: 4, x: 0, y: 0)
 
             if !card.body.isEmpty {
@@ -566,7 +565,6 @@ private struct DailyCardView: View {
                     .foregroundStyle(DesignColors.textPrincipal)
                     .lineSpacing(3)
                     .lineLimit(4)
-                    .fixedSize(horizontal: false, vertical: true)
                     .shadow(color: DesignColors.background.opacity(0.6), radius: 3, x: 0, y: 0)
             }
 
@@ -594,6 +592,7 @@ private struct DailyCardView: View {
         }
         .padding(28)
         .frame(maxWidth: .infinity, alignment: .topLeading)
+        .frame(height: 340)
         .glowCardBackground(tint: .rose)
     }
 
@@ -607,7 +606,6 @@ private struct DailyCardView: View {
                 .foregroundStyle(DesignColors.text)
                 .lineSpacing(2)
                 .lineLimit(2)
-                .fixedSize(horizontal: false, vertical: true)
                 .shadow(color: DesignColors.background.opacity(0.75), radius: 4, x: 0, y: 0)
 
             if !card.body.isEmpty {
@@ -616,7 +614,6 @@ private struct DailyCardView: View {
                     .foregroundStyle(DesignColors.textPrincipal)
                     .lineSpacing(3)
                     .lineLimit(6)
-                    .fixedSize(horizontal: false, vertical: true)
                     .shadow(color: DesignColors.background.opacity(0.6), radius: 3, x: 0, y: 0)
             }
 
@@ -651,6 +648,7 @@ private struct DailyCardView: View {
         }
         .padding(28)
         .frame(maxWidth: .infinity, alignment: .topLeading)
+        .frame(height: 340)
         .glowCardBackground(tint: .taupe)
     }
 }

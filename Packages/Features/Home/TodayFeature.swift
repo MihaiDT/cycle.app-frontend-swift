@@ -1141,52 +1141,14 @@ private struct DailyGlowPresentations: ViewModifier {
             ) { acceptStore in
                 ChallengeAcceptView(store: acceptStore)
             }
-            // Daily Glow — photo review
+            // Daily Glow — challenge journey (full-screen)
             .fullScreenCover(
                 item: $store.scope(
-                    state: \.dailyChallengeState.photoReview,
-                    action: \.dailyChallenge.photoReview
+                    state: \.dailyChallengeState.journey,
+                    action: \.dailyChallenge.journey
                 )
-            ) { reviewStore in
-                PhotoReviewView(store: reviewStore)
-            }
-            // Daily Glow — validation result
-            .sheet(
-                item: $store.scope(
-                    state: \.dailyChallengeState.validation,
-                    action: \.dailyChallenge.validation
-                )
-            ) { validationStore in
-                ValidationResultView(store: validationStore)
-                    .presentationDetents([.medium, .large])
-                    .presentationDragIndicator(.visible)
-                    .presentationCornerRadius(AppLayout.cornerRadiusL)
-                    .presentationBackground(DesignColors.background)
-            }
-            // Daily Glow — camera
-            .fullScreenCover(isPresented: Binding(
-                get: { store.dailyChallengeState.isShowingCamera },
-                set: { newValue in
-                    if !newValue { store.send(.dailyChallenge(.photoCancelled)) }
-                }
-            )) {
-                CameraPickerRepresentable(
-                    onCapture: { data in store.send(.dailyChallenge(.photoCaptured(data))) },
-                    onCancel: { store.send(.dailyChallenge(.photoCancelled)) }
-                )
-                .ignoresSafeArea()
-            }
-            // Daily Glow — gallery
-            .fullScreenCover(isPresented: Binding(
-                get: { store.dailyChallengeState.isShowingGallery },
-                set: { newValue in
-                    if !newValue { store.send(.dailyChallenge(.photoCancelled)) }
-                }
-            )) {
-                GalleryPickerRepresentable(
-                    onPick: { data in store.send(.dailyChallenge(.photoCaptured(data))) },
-                    onCancel: { store.send(.dailyChallenge(.photoCancelled)) }
-                )
+            ) { journeyStore in
+                ChallengeJourneyView(store: journeyStore)
             }
             // Daily Glow — level up overlay
             .sheet(

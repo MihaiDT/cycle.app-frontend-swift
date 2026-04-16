@@ -14,10 +14,12 @@ public struct ChallengeAcceptFeature: Sendable {
     public enum Action: Sendable {
         case openCameraTapped
         case chooseFromGalleryTapped
+        case startChallengeTapped
         case delegate(Delegate)
         public enum Delegate: Sendable {
             case openCamera
             case openGallery
+            case startChallenge
         }
     }
 
@@ -30,6 +32,8 @@ public struct ChallengeAcceptFeature: Sendable {
                 return .send(.delegate(.openCamera))
             case .chooseFromGalleryTapped:
                 return .send(.delegate(.openGallery))
+            case .startChallengeTapped:
+                return .send(.delegate(.startChallenge))
             case .delegate:
                 return .none
             }
@@ -242,13 +246,13 @@ struct ChallengeAcceptView: View {
             VStack(spacing: 12) {
                 Button {
                     UIImpactFeedbackGenerator(style: .medium).impactOccurred()
-                    store.send(.openCameraTapped)
+                    store.send(.startChallengeTapped)
                 } label: {
                     Text("Start challenge")
                 }
                 .buttonStyle(GlowPrimaryButtonStyle())
                 .accessibilityLabel("Start challenge")
-                .accessibilityHint("Opens the camera to take a photo of your challenge")
+                .accessibilityHint("Start the challenge journey")
 
                 Button {
                     store.send(.chooseFromGalleryTapped)

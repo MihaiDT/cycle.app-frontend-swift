@@ -18,15 +18,10 @@ public struct DailyChallengeFeature: Sendable {
             case completed
         }
 
-        // Photo capture — simple flags, not @Presents (UIKit wrappers)
-        public var isShowingCamera: Bool = false
-        public var isShowingGallery: Bool = false
-
         // TCA child features
         @Presents public var acceptSheet: ChallengeAcceptFeature.State?
-        @Presents public var photoReview: PhotoReviewFeature.State?
-        @Presents public var validation: ValidationFeature.State?
         @Presents public var levelUp: LevelUpFeature.State?
+        @Presents public var journey: ChallengeJourneyFeature.State?
 
         public init() {}
     }
@@ -42,10 +37,6 @@ public struct DailyChallengeFeature: Sendable {
         case skipTapped
         case maybeLaterTapped
 
-        // Photo capture (from view layer)
-        case photoCaptured(Data)
-        case photoCancelled
-
         // Profile
         case profileLoaded(GlowProfileSnapshot)
 
@@ -54,9 +45,8 @@ public struct DailyChallengeFeature: Sendable {
 
         // Child feature presentations
         case acceptSheet(PresentationAction<ChallengeAcceptFeature.Action>)
-        case photoReview(PresentationAction<PhotoReviewFeature.Action>)
-        case validation(PresentationAction<ValidationFeature.Action>)
         case levelUp(PresentationAction<LevelUpFeature.Action>)
+        case journey(PresentationAction<ChallengeJourneyFeature.Action>)
 
         // Delegate to parent
         case delegate(Delegate)
@@ -181,102 +171,13 @@ public struct DailyChallengeFeature: Sendable {
 
             // MARK: - Accept Sheet Delegates
 
-            case .acceptSheet(.presented(.delegate(.openCamera))):
+            case .acceptSheet(.presented(.delegate(.startChallenge))):
                 state.acceptSheet = nil
-                state.isShowingCamera = true
-                return .none
-
-            case .acceptSheet(.presented(.delegate(.openGallery))):
-                state.acceptSheet = nil
-                state.isShowingGallery = true
+                guard let challenge = state.challenge else { return .none }
+                state.journey = ChallengeJourneyFeature.State(challenge: challenge)
                 return .none
 
             case .acceptSheet:
-                return .none
-
-            // MARK: - Photo Capture
-
-            case let .photoCaptured(data):
-                state.isShowingCamera = false
-                state.isShowingGallery = false
-                guard let processed = PhotoProcessor.process(data) else { return .none }
-                state.photoReview = PhotoReviewFeature.State(
-                    imageData: processed.fullSize,
-                    thumbnailData: processed.thumbnail
-                )
-                return .none
-
-            case .photoCancelled:
-                state.isShowingCamera = false
-                state.isShowingGallery = false
-                return .none
-
-            // MARK: - Photo Review Delegates
-
-            case let .photoReview(.presented(.delegate(.submit(fullSize, thumbnail)))):
-                state.photoReview = nil
-                guard let challenge = state.challenge else { return .none }
-                let totalXP = state.profile?.totalXP ?? 0
-                state.validation = ValidationFeature.State(
-                    challenge: challenge,
-                    photoData: fullSize,
-                    thumbnailData: thumbnail,
-                    profileTotalXP: totalXP
-                )
-                return .none
-
-            case .photoReview(.presented(.delegate(.retake))):
-                state.photoReview = nil
-                state.isShowingCamera = true
-                return .none
-
-            case .photoReview:
-                return .none
-
-            // MARK: - Validation Delegates
-
-            case let .validation(.presented(.delegate(.completed(photoData, thumbnailData, xpEarned, rating, feedback)))):
-                state.validation = nil
-                guard var challenge = state.challenge else { return .none }
-
-                challenge.status = .completed
-                challenge.completedAt = Date()
-                challenge.validationRating = rating
-                challenge.validationFeedback = feedback
-                challenge.xpEarned = xpEarned
-                challenge.photoThumbnail = thumbnailData
-                state.challenge = challenge
-                state.challengeState = .completed
-
-                let challengeId = challenge.id
-                return .run { [glowLocal] send in
-                    try await glowLocal.completeChallenge(
-                        challengeId, photoData, thumbnailData, rating, feedback, xpEarned
-                    )
-                    let (previous, current) = try await glowLocal.addXP(xpEarned, rating)
-
-                    if current.currentLevel > previous.currentLevel {
-                        let info = GlowConstants.levelFor(xp: current.totalXP)
-                        let unlock = GlowConstants.unlockDescriptions[current.currentLevel] ?? ""
-                        await send(.levelUpTriggered(
-                            level: info.level,
-                            title: info.title,
-                            emoji: info.emoji,
-                            unlock: unlock
-                        ))
-                    }
-                }
-
-            case .validation(.presented(.delegate(.tryAgain))):
-                state.validation = nil
-                state.isShowingCamera = true
-                return .none
-
-            case .validation(.presented(.delegate(.skipForToday))):
-                state.validation = nil
-                return .send(.skipTapped)
-
-            case .validation:
                 return .none
 
             // MARK: - Level Up
@@ -297,13 +198,50 @@ public struct DailyChallengeFeature: Sendable {
             case .levelUp:
                 return .none
 
+            // MARK: - Journey Delegates
+
+            case let .journey(.presented(.delegate(.completed(photoData, thumbnailData, xpEarned, rating, feedback)))):
+                state.journey = nil
+                guard var challenge = state.challenge else { return .none }
+                challenge.status = .completed
+                challenge.completedAt = Date()
+                challenge.validationRating = rating
+                challenge.validationFeedback = feedback
+                challenge.xpEarned = xpEarned
+                challenge.photoThumbnail = thumbnailData
+                state.challenge = challenge
+                state.challengeState = .completed
+                let challengeId = challenge.id
+                return .run { [glowLocal] send in
+                    try await glowLocal.completeChallenge(
+                        challengeId, photoData, thumbnailData, rating, feedback, xpEarned
+                    )
+                    let (previous, current) = try await glowLocal.addXP(xpEarned, rating)
+                    if current.currentLevel > previous.currentLevel {
+                        let info = GlowConstants.levelFor(xp: current.totalXP)
+                        let unlock = GlowConstants.unlockDescriptions[current.currentLevel] ?? ""
+                        await send(.levelUpTriggered(
+                            level: info.level,
+                            title: info.title,
+                            emoji: info.emoji,
+                            unlock: unlock
+                        ))
+                    }
+                }
+
+            case .journey(.presented(.delegate(.cancelled))):
+                state.journey = nil
+                return .none
+
+            case .journey:
+                return .none
+
             case .delegate:
                 return .none
             }
         }
         .ifLet(\.$acceptSheet, action: \.acceptSheet) { ChallengeAcceptFeature() }
-        .ifLet(\.$photoReview, action: \.photoReview) { PhotoReviewFeature() }
-        .ifLet(\.$validation, action: \.validation) { ValidationFeature() }
         .ifLet(\.$levelUp, action: \.levelUp) { LevelUpFeature() }
+        .ifLet(\.$journey, action: \.journey) { ChallengeJourneyFeature() }
     }
 }

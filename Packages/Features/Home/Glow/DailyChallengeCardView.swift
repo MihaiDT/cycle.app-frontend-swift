@@ -10,9 +10,8 @@ struct DailyChallengeCardView: View {
 
     var body: some View {
         switch challenge.status {
-        case .available: availableState
+        case .available, .skipped: availableState
         case .completed: completedState
-        case .skipped: skippedState
         }
     }
 
@@ -63,39 +62,30 @@ struct DailyChallengeCardView: View {
                 "\(challenge.effortDisplay)"
             )
 
-            HStack(spacing: 12) {
-                Button {
-                    UIImpactFeedbackGenerator(style: .light).impactOccurred()
-                    onDoIt()
-                } label: {
-                    Text("Do It")
-                        .font(.custom("Raleway-SemiBold", size: 16, relativeTo: .body))
-                        .foregroundStyle(.white)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 14)
-                        .background {
-                            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                                .fill(DesignColors.accentWarm)
-                        }
-                        .shadow(color: DesignColors.text.opacity(0.30), radius: 12, x: 0, y: 5)
-                        .shadow(color: DesignColors.text.opacity(0.14), radius: 3, x: 0, y: 1)
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Do challenge")
-                .accessibilityHint("Opens the challenge detail screen")
-
-                Button { onSkip() } label: {
-                    Text("Skip")
-                        .font(.custom("Raleway-Medium", size: 15, relativeTo: .callout))
-                        .foregroundStyle(DesignColors.textSecondary)
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Skip today's challenge")
+            Button {
+                UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                onDoIt()
+            } label: {
+                Text("I'm in")
+                    .font(.custom("Raleway-SemiBold", size: 16, relativeTo: .body))
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 14)
+                    .background {
+                        RoundedRectangle(cornerRadius: 14, style: .continuous)
+                            .fill(DesignColors.accentWarm)
+                    }
+                    .shadow(color: DesignColors.text.opacity(0.30), radius: 12, x: 0, y: 5)
+                    .shadow(color: DesignColors.text.opacity(0.14), radius: 3, x: 0, y: 1)
             }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Do challenge")
+            .accessibilityHint("Opens the challenge detail screen")
             .padding(.top, 4)
         }
         .padding(24)
         .frame(maxWidth: .infinity, alignment: .topLeading)
+        .frame(height: 340)
         .glowCardBackground(tint: .cocoa)
     }
 
@@ -142,36 +132,6 @@ struct DailyChallengeCardView: View {
         .padding(28)
         .frame(height: 340)
         .glowCardBackground(tint: .cocoa)
-    }
-
-    // MARK: - Skipped
-
-    private var skippedState: some View {
-        VStack {
-            Spacer()
-
-            Text("Your challenge is here whenever you're ready")
-                .font(.custom("Raleway-Medium", size: 17, relativeTo: .body))
-                .foregroundStyle(DesignColors.textSecondary)
-                .multilineTextAlignment(.center)
-                .lineSpacing(4)
-
-            Spacer().frame(height: 24)
-
-            Button { onMaybeLater() } label: {
-                Text("Maybe Later")
-                    .font(.custom("Raleway-Black", size: 15, relativeTo: .callout))
-                    .foregroundStyle(DesignColors.accentWarm)
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Maybe later")
-            .accessibilityHint("Keep today's challenge available for later")
-
-            Spacer()
-        }
-        .padding(28)
-        .frame(height: 340)
-        .glowCardBackground(tint: .neutral)
     }
 
     private func tagPill(_ text: String) -> some View {
