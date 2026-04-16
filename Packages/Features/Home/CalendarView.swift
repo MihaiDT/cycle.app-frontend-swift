@@ -15,7 +15,7 @@ public struct CalendarView: View {
     @State private var detailSheetDetent: PresentationDetent = .medium
     @State private var isShowingDayDetail: Bool = false
     @State private var viewMode: CalendarViewMode = .month
-    @State private var yearViewCreated: Bool = false
+
     @State private var scrollTarget: String?
     @State private var isCurrentMonthVisible: Bool = true
     @State private var scrollTrigger: Int = 0
@@ -47,28 +47,14 @@ public struct CalendarView: View {
 
     public var body: some View {
         ZStack {
-            DesignColors.background.ignoresSafeArea()
+            Color.white.ignoresSafeArea()
 
-            VStack(spacing: 0) {
-                FeedTopBar(store: store, viewMode: $viewMode, isCurrentMonthVisible: isCurrentMonthVisible, onTodayTapped: {
-                    var c = Calendar.current.dateComponents([.year, .month], from: Date())
-                    c.day = 1
-                    let today = Calendar.current.date(from: c) ?? Date()
-                    store.send(.binding(.set(\.displayedMonth, today)))
-                    scrollTrigger += 1
-                    if viewMode == .year {
-                        withAnimation(.spring(response: 0.5, dampingFraction: 0.88)) {
-                            viewMode = .month
-                        }
-                    }
-                })
-
+            ZStack(alignment: .top) {
                     ZStack {
                         // Month view — UIKit native scroll
                         VStack(spacing: 0) {
-                            WeekdayLabelsRow()
-                                .padding(.horizontal, 16)
-                                .padding(.vertical, 6)
+                            // Spacer for header + weekday row
+                            Color.clear.frame(height: 80)
 
                             CalendarTableView(
                                 months: Self.months,
@@ -100,13 +86,15 @@ public struct CalendarView: View {
                             )
                             .ignoresSafeArea(edges: .bottom)
                         }
-                        .background(DesignColors.background)
+                        .background(Color.white)
                         .opacity(viewMode == .month ? 1 : 0)
+                        .blur(radius: viewMode == .month ? 0 : 6)
                         .allowsHitTesting(viewMode == .month)
+                        .animation(.easeOut(duration: 0.3), value: viewMode)
 
-                        // Year view — deferred until first tap
-                        if yearViewCreated || viewMode == .year {
-                            YearOverviewView(
+                        // Year view — UICollectionView + CoreGraphics
+                        if viewMode == .year {
+                            CalendarYearCollectionView(
                                 periodDays: store.periodDays,
                                 predictedPeriodDays: store.predictedPeriodDays,
                                 fertileDays: store.fertileDays,
@@ -116,17 +104,22 @@ public struct CalendarView: View {
                                 onMonthTapped: { [self] month in
                                     store.send(.binding(.set(\.displayedMonth, month)))
                                     scrollTrigger += 1
-                                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.08) {
-                                        withAnimation(.spring(response: 0.5, dampingFraction: 0.88)) {
-                                            viewMode = .month
-                                        }
+                                },
+                                onZoomCompleted: { [self] in
+                                    withAnimation(.easeOut(duration: 0.3)) {
+                                        viewMode = .month
                                     }
                                 }
                             )
-                            .background(DesignColors.background)
-                            .opacity(viewMode == .year ? 1 : 0)
-                            .allowsHitTesting(viewMode == .year)
-                            .onAppear { yearViewCreated = true }
+                            .background(Color.white)
+                            .ignoresSafeArea(edges: .bottom)
+                            .transition(
+                                .opacity.combined(with: .modifier(
+                                    active: BlurModifier(radius: 6),
+                                    identity: BlurModifier(radius: 0)
+                                ))
+                                .animation(.easeOut(duration: 0.3))
+                            )
                         }
                     }
             }
@@ -146,6 +139,30 @@ public struct CalendarView: View {
                 .animation(.spring(response: 0.4, dampingFraction: 0.85), value: store.predictionsDone)
             }
 
+            // Header overlay — pinned to top, content scrolls behind blur
+            VStack(spacing: 0) {
+                FeedTopBar(store: store, viewMode: $viewMode, isCurrentMonthVisible: isCurrentMonthVisible, onTodayTapped: {
+                    var c = Calendar.current.dateComponents([.year, .month], from: Date())
+                    c.day = 1
+                    let today = Calendar.current.date(from: c) ?? Date()
+                    store.send(.binding(.set(\.displayedMonth, today)))
+                    scrollTrigger += 1
+                    if viewMode == .year {
+                        withAnimation(.easeOut(duration: 0.3)) {
+                            viewMode = .month
+                        }
+                    }
+                })
+
+                if viewMode == .month {
+                    WeekdayLabelsRow()
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 6)
+                }
+            }
+            .background(.ultraThinMaterial)
+            .frame(maxHeight: .infinity, alignment: .top)
+
             // Floating buttons
             VStack {
                 Spacer()
@@ -153,14 +170,14 @@ public struct CalendarView: View {
                 if viewMode == .month {
                     if store.isEditingPeriod && !store.isUpdatingPredictions && !store.predictionsDone {
                         editPeriodBottomBar
-                            .transition(.move(edge: .bottom).combined(with: .opacity))
+                            .transition(.opacity)
                     } else if !store.isEditingPeriod {
                         normalBottomBar
-                            .transition(.move(edge: .bottom).combined(with: .opacity))
+                            .transition(.opacity)
                     }
                 }
             }
-            .animation(.spring(response: 0.35, dampingFraction: 0.85), value: store.isEditingPeriod)
+            .animation(.easeInOut(duration: 0.25), value: store.isEditingPeriod)
         }
         .sheet(isPresented: $isShowingDayDetail) {
             DayDetailPanel(store: store)
@@ -182,7 +199,7 @@ public struct CalendarView: View {
                 .presentationDetents([.large])
                 .presentationDragIndicator(.visible)
                 .presentationCornerRadius(AppLayout.cornerRadiusXL)
-                .presentationBackground(DesignColors.background)
+                .presentationBackground(.white)
                 .presentationBackgroundInteraction(.disabled)
         }
         .sheet(isPresented: Binding(
@@ -212,23 +229,44 @@ public struct CalendarView: View {
             } label: {
                 HStack(spacing: 6) {
                     Image(systemName: "plus")
-                        .font(.system(size: 13, weight: .bold))
+                        .font(.system(size: 12, weight: .medium))
                     Text("Log Symptoms")
-                        .font(.custom("Raleway-SemiBold", size: 13))
+                        .font(.custom("Raleway-SemiBold", size: 15))
                 }
-                .foregroundStyle(DesignColors.accentWarm)
-                .padding(.horizontal, 18)
-                .padding(.vertical, 12)
+                .foregroundStyle(DesignColors.text)
+                .padding(.horizontal, 22)
+                .padding(.vertical, 10)
                 .background {
-                    Capsule()
-                        .fill(.ultraThinMaterial)
-                        .overlay {
-                            Capsule().strokeBorder(
-                                DesignColors.accentWarm.opacity(0.45),
+                    ZStack {
+                        Capsule()
+                            .fill(
+                                LinearGradient(
+                                    colors: [Color.white.opacity(0.95), Color.white.opacity(0.7)],
+                                    startPoint: .top,
+                                    endPoint: .bottom
+                                )
+                            )
+                        Capsule()
+                            .fill(
+                                LinearGradient(
+                                    colors: [Color.white.opacity(0.9), Color.clear],
+                                    startPoint: .top,
+                                    endPoint: .center
+                                )
+                            )
+                            .padding(2)
+                        Capsule()
+                            .strokeBorder(
+                                LinearGradient(
+                                    colors: [Color.white.opacity(0.8), DesignColors.accentWarm.opacity(0.3)],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                ),
                                 lineWidth: 1
                             )
-                        }
-                        .shadow(color: DesignColors.accentWarm.opacity(0.25), radius: 10, x: 0, y: 4)
+                    }
+                    .shadow(color: .black.opacity(0.08), radius: 4, x: 0, y: 2)
+                    .shadow(color: DesignColors.accentWarm.opacity(0.12), radius: 8, x: 0, y: 3)
                 }
             }
             .buttonStyle(.plain)
@@ -239,23 +277,33 @@ public struct CalendarView: View {
             } label: {
                 HStack(spacing: 6) {
                     Image(systemName: "drop.fill")
-                        .font(.system(size: 13, weight: .bold))
+                        .font(.system(size: 12, weight: .medium))
                     Text("Edit Period")
-                        .font(.custom("Raleway-SemiBold", size: 13))
+                        .font(.custom("Raleway-SemiBold", size: 15))
                 }
-                .foregroundStyle(CyclePhase.menstrual.orbitColor)
-                .padding(.horizontal, 18)
-                .padding(.vertical, 12)
+                .foregroundColor(.white)
+                .padding(.horizontal, 22)
+                .padding(.vertical, 10)
                 .background {
                     Capsule()
-                        .fill(.ultraThinMaterial)
-                        .overlay {
-                            Capsule().strokeBorder(
-                                CyclePhase.menstrual.orbitColor.opacity(0.4),
-                                lineWidth: 1
+                        .fill(
+                            LinearGradient(
+                                colors: [DesignColors.accentWarm, DesignColors.accentSecondary],
+                                startPoint: .leading,
+                                endPoint: .trailing
                             )
+                        )
+                        .overlay {
+                            Capsule()
+                                .fill(
+                                    LinearGradient(
+                                        colors: [Color.white.opacity(0.2), Color.clear],
+                                        startPoint: .top,
+                                        endPoint: .center
+                                    )
+                                )
                         }
-                        .shadow(color: CyclePhase.menstrual.orbitColor.opacity(0.2), radius: 10, x: 0, y: 4)
+                        .shadow(color: DesignColors.accentWarm.opacity(0.4), radius: 12, x: 0, y: 4)
                 }
             }
             .buttonStyle(.plain)
@@ -301,7 +349,7 @@ public struct CalendarView: View {
                         }
                 }
                 .buttonStyle(.plain)
-                .transition(.scale.combined(with: .opacity))
+                .transition(.opacity)
             }
 
             Button {
@@ -309,16 +357,30 @@ public struct CalendarView: View {
                 store.send(.editPeriodToggled, animation: .spring(response: 0.35, dampingFraction: 0.85))
             } label: {
                 Text(store.hasEditPeriodChanges ? "Cancel" : "Done")
-                    .font(.custom("Raleway-SemiBold", size: 14))
-                    .foregroundStyle(DesignColors.text)
-                    .padding(.horizontal, 20)
+                    .font(.custom("Raleway-SemiBold", size: 15))
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 22)
                     .padding(.vertical, 14)
                     .background {
                         Capsule()
-                            .fill(.ultraThinMaterial)
+                            .fill(
+                                LinearGradient(
+                                    colors: [DesignColors.accentWarm, DesignColors.accentSecondary],
+                                    startPoint: .leading,
+                                    endPoint: .trailing
+                                )
+                            )
                             .overlay {
-                                Capsule().strokeBorder(Color.white.opacity(0.25), lineWidth: 0.5)
+                                Capsule()
+                                    .fill(
+                                        LinearGradient(
+                                            colors: [Color.white.opacity(0.2), Color.clear],
+                                            startPoint: .top,
+                                            endPoint: .center
+                                        )
+                                    )
                             }
+                            .shadow(color: DesignColors.accentWarm.opacity(0.4), radius: 12, x: 0, y: 4)
                     }
             }
             .buttonStyle(.plain)
@@ -444,7 +506,7 @@ struct FeedTopBar: View {
     @Binding var viewMode: CalendarView.CalendarViewMode
     var isCurrentMonthVisible: Bool
     var onTodayTapped: () -> Void
-    @Namespace private var pillAnimation
+
 
     var body: some View {
         HStack(spacing: 0) {
@@ -458,14 +520,41 @@ struct FeedTopBar: View {
                 }
             } label: {
                 Image(systemName: store.isEditingPeriod ? "chevron.left" : "xmark")
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(.system(size: 16, weight: .semibold))
                     .foregroundStyle(DesignColors.text)
-                    .frame(width: 40, height: 40)
+                    .frame(width: 44, height: 44)
                     .background {
-                        Circle()
-                            .fill(.ultraThinMaterial)
-                            .overlay { Circle().strokeBorder(Color.white.opacity(0.35), lineWidth: 0.5) }
+                        ZStack {
+                            Circle()
+                                .fill(
+                                    LinearGradient(
+                                        colors: [Color.white.opacity(0.85), Color.white.opacity(0.5)],
+                                        startPoint: .top,
+                                        endPoint: .bottom
+                                    )
+                                )
+                            Circle()
+                                .fill(
+                                    LinearGradient(
+                                        colors: [Color.white.opacity(0.9), Color.clear],
+                                        startPoint: .top,
+                                        endPoint: .center
+                                    )
+                                )
+                                .padding(2)
+                                .offset(y: -2)
+                            Circle()
+                                .strokeBorder(
+                                    LinearGradient(
+                                        colors: [Color.white.opacity(0.8), DesignColors.accentWarm.opacity(0.3)],
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    ),
+                                    lineWidth: 0.5
+                                )
+                        }
                     }
+                    .shadow(color: .black.opacity(0.08), radius: 4, x: 0, y: 2)
             }
             .buttonStyle(.plain)
 
@@ -478,37 +567,21 @@ struct FeedTopBar: View {
                     .foregroundStyle(DesignColors.textSecondary)
                     .transition(.opacity)
             } else {
-                HStack(spacing: 0) {
-                    ForEach(CalendarView.CalendarViewMode.allCases, id: \.self) { mode in
-                        Button {
-                            UIImpactFeedbackGenerator(style: .light).impactOccurred()
-                            withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
-                                viewMode = mode
-                            }
-                        } label: {
-                            Text(mode.rawValue)
-                                .font(.custom("Raleway-SemiBold", size: 13))
-                                .foregroundStyle(viewMode == mode ? DesignColors.text : DesignColors.textSecondary.opacity(0.5))
-                                .padding(.horizontal, 18)
-                                .padding(.vertical, 8)
-                                .background {
-                                    if viewMode == mode {
-                                        Capsule()
-                                            .fill(Color.white.opacity(0.12))
-                                            .matchedGeometryEffect(id: "pill", in: pillAnimation)
-                                    }
-                                }
+                Picker("", selection: Binding(
+                    get: { viewMode },
+                    set: { newValue in
+                        withAnimation(.easeOut(duration: 0.3)) {
+                            viewMode = newValue
                         }
-                        .buttonStyle(.plain)
+                    }
+                )) {
+                    ForEach(CalendarView.CalendarViewMode.allCases, id: \.self) { mode in
+                        Text(mode.rawValue).tag(mode)
                     }
                 }
-                .padding(3)
-                .background {
-                    Capsule()
-                        .fill(.ultraThinMaterial)
-                        .overlay { Capsule().strokeBorder(Color.white.opacity(0.15), lineWidth: 0.5) }
-                }
-                .transition(.scale.combined(with: .opacity))
+                .pickerStyle(.segmented)
+                .frame(width: 160)
+                .transition(.opacity)
             }
 
             Spacer()
@@ -530,7 +603,7 @@ struct FeedTopBar: View {
         .padding(.horizontal, 20)
         .padding(.top, 20)
         .padding(.bottom, 8)
-        .animation(.spring(response: 0.35, dampingFraction: 0.85), value: store.isEditingPeriod)
+        .animation(.easeInOut(duration: 0.25), value: store.isEditingPeriod)
     }
 }
 
@@ -571,6 +644,15 @@ struct MonthSectionHeader: View {
     }
 }
 
+// MARK: - Blur Modifier
+
+struct BlurModifier: ViewModifier {
+    let radius: CGFloat
+    func body(content: Content) -> some View {
+        content.blur(radius: radius)
+    }
+}
+
 // MARK: - Weekday Labels
 
 struct WeekdayLabelsRow: View {
@@ -580,8 +662,8 @@ struct WeekdayLabelsRow: View {
         HStack(spacing: 0) {
             ForEach(labels, id: \.self) { label in
                 Text(label)
-                    .font(.custom("Raleway-Medium", size: 11))
-                    .foregroundStyle(DesignColors.textSecondary.opacity(0.45))
+                    .font(.custom("Raleway-Bold", size: 14))
+                    .foregroundStyle(DesignColors.textSecondary.opacity(0.6))
                     .frame(maxWidth: .infinity)
             }
         }

@@ -12,7 +12,6 @@ struct YearOverviewView: View {
     var onMonthTapped: (Date) -> Void
 
     private let cal = Calendar.current
-    private let gridColumns = Array(repeating: GridItem(.flexible(), spacing: 6), count: 3)
 
     private var periodIsLate: Bool {
         menstrualStatus?.nextPrediction?.isLate == true
@@ -60,7 +59,7 @@ struct YearOverviewView: View {
 
         ScrollViewReader { proxy in
             ScrollView(.vertical, showsIndicators: false) {
-                LazyVStack(spacing: 16) {
+                VStack(spacing: 16) {
                     ForEach(Self.allMonths, id: \.year) { yearData in
                         VStack(spacing: 8) {
                             Text(String(yearData.year))
@@ -69,22 +68,30 @@ struct YearOverviewView: View {
                                 .frame(maxWidth: .infinity, alignment: .center)
                                 .id("year-\(yearData.year)")
 
-                            LazyVGrid(columns: gridColumns, spacing: 6) {
-                                ForEach(yearData.months, id: \.self) { month in
-                                    Button {
-                                        onMonthTapped(month)
-                                    } label: {
-                                        MiniMonthCell(
-                                            month: month,
-                                            periodDays: periodDays,
-                                            predictedPeriodDays: predictedPeriodDays,
-                                            fertileDays: fertileDays,
-                                            ovulationDays: ovulationDays,
-                                            isLate: isLate,
-                                            lateWindowKeys: lateKeys
-                                        )
+                            VStack(spacing: 6) {
+                                ForEach(0..<4, id: \.self) { row in
+                                    HStack(spacing: 6) {
+                                        ForEach(0..<3, id: \.self) { col in
+                                            let idx = row * 3 + col
+                                            if idx < yearData.months.count {
+                                                let month = yearData.months[idx]
+                                                Button {
+                                                    onMonthTapped(month)
+                                                } label: {
+                                                    MiniMonthCell(
+                                                        month: month,
+                                                        periodDays: periodDays,
+                                                        predictedPeriodDays: predictedPeriodDays,
+                                                        fertileDays: fertileDays,
+                                                        ovulationDays: ovulationDays,
+                                                        isLate: isLate,
+                                                        lateWindowKeys: lateKeys
+                                                    )
+                                                }
+                                                .buttonStyle(.plain)
+                                            }
+                                        }
                                     }
-                                    .buttonStyle(.plain)
                                 }
                             }
                         }
@@ -143,8 +150,9 @@ struct MiniMonthCell: View {
 
     struct DaySlot: Sendable {
         let day: Int
-        let fill: Color
-        let dashColor: Color?
+        let baseColor: Color?    // nil = no circle
+        let fillOpacity: CGFloat
+        let dashed: Bool
         let textColor: Color
         let isBold: Bool
     }
@@ -223,33 +231,34 @@ struct MiniMonthCell: View {
                     let isToday = isCurrentMonth && d == today
                     let isPredictedPeriod = isPredicted && isPeriod && !isConfirmed
 
-                    let fertileColor = CyclePhase.ovulatory.orbitColor
+                    let periodCol = CyclePhase.menstrual.orbitColor
+                    let fertileCol = DesignColors.accentWarm
 
-                    let fill: Color
-                    if isConfirmed { fill = CyclePhase.menstrual.orbitColor }
-                    else if isPredictedPeriod { fill = CyclePhase.menstrual.orbitColor.opacity(0.4) }
-                    else if isOvulation { fill = fertileColor.opacity(0.6) }
-                    else if isFertile { fill = fertileColor.opacity(0.4) }
-                    else { fill = .clear }
+                    let baseColor: Color?
+                    let fillOpacity: CGFloat
+                    let dashed: Bool
+                    if isConfirmed {
+                        baseColor = periodCol; fillOpacity = 0.75; dashed = false
+                    } else if isPredictedPeriod {
+                        baseColor = periodCol; fillOpacity = 0.18; dashed = true
+                    } else if isOvulation {
+                        baseColor = fertileCol; fillOpacity = 0.45; dashed = false
+                    } else if isFertile {
+                        baseColor = fertileCol; fillOpacity = 0.35; dashed = false
+                    } else {
+                        baseColor = nil; fillOpacity = 0; dashed = false
+                    }
 
                     let textColor: Color
                     if isConfirmed { textColor = .white }
-                    else if isOvulation { textColor = .white.opacity(0.9) }
-                    else if isPredictedPeriod { textColor = CyclePhase.menstrual.orbitColor }
-                    else if isFertile { textColor = fertileColor.opacity(0.9) }
+                    else if isPredictedPeriod { textColor = periodCol }
+                    else if isOvulation || isFertile { textColor = .white }
                     else if isToday { textColor = DesignColors.accentWarm }
                     else { textColor = DesignColors.text.opacity(0.55) }
 
-                    let isDashed = isPredictedPeriod || (isFertile && !isOvulation)
-                    let dashColor: Color? = isDashed
-                        ? (isPredictedPeriod
-                            ? CyclePhase.menstrual.orbitColor.opacity(0.6)
-                            : fertileColor.opacity(0.6))
-                        : nil
-
                     week.append(DaySlot(
-                        day: d, fill: fill, dashColor: dashColor,
-                        textColor: textColor, isBold: isToday || isConfirmed
+                        day: d, baseColor: baseColor, fillOpacity: fillOpacity,
+                        dashed: dashed, textColor: textColor, isBold: isToday || isConfirmed
                     ))
                     day += 1
                 }
@@ -261,62 +270,85 @@ struct MiniMonthCell: View {
 
     // MARK: - Body
 
-    var body: some View {
-        VStack(spacing: 2) {
-            Text(monthName)
-                .font(.custom(isCurrentMonth ? "Raleway-Bold" : "Raleway-SemiBold", size: 14))
-                .foregroundStyle(isCurrentMonth ? DesignColors.accentWarm : DesignColors.text)
+    private var rowCount: Int {
+        cachedGrid.count
+    }
 
-            VStack(spacing: 2) {
-                ForEach(Array(cachedGrid.enumerated()), id: \.offset) { _, week in
-                    HStack(spacing: 1) {
-                        ForEach(0..<7, id: \.self) { col in
-                            if let slot = week[col] {
-                                Color.clear
-                                    .aspectRatio(1, contentMode: .fit)
-                                    .frame(maxWidth: .infinity)
-                                    .overlay {
-                                        ZStack {
-                                            if slot.fill != .clear {
-                                                Circle().fill(slot.fill)
-                                            }
-                                            if let dash = slot.dashColor {
-                                                Circle()
-                                                    .strokeBorder(style: StrokeStyle(lineWidth: 0.5, dash: [2, 2]))
-                                                    .foregroundStyle(dash)
-                                            }
-                                            Text("\(slot.day)")
-                                                .font(.system(size: 10, weight: slot.isBold ? .bold : .medium, design: .rounded))
-                                                .foregroundStyle(slot.textColor)
-                                                .lineLimit(1)
-                                                .minimumScaleFactor(0.5)
-                                        }
-                                    }
-                            } else {
-                                Color.clear
-                                    .aspectRatio(1, contentMode: .fit)
-                                    .frame(maxWidth: .infinity)
-                            }
-                        }
+    var body: some View {
+        let headerH: CGFloat = 20
+        let cellSize: CGFloat = 14
+        let spacing: CGFloat = 2
+        let gridH = CGFloat(rowCount) * (cellSize + spacing)
+        let totalH = headerH + gridH + 12
+
+        Canvas { ctx, size in
+            let padX: CGFloat = 4
+            let padY: CGFloat = 6
+            let availW = size.width - padX * 2
+            let colW = availW / 7
+
+            // Month name
+            let nameFont = UIFont(name: isCurrentMonth ? "Raleway-Bold" : "Raleway-SemiBold", size: 14)
+                ?? .systemFont(ofSize: 14, weight: isCurrentMonth ? .bold : .semibold)
+            let nameColor = isCurrentMonth ? UIColor(DesignColors.accentWarm) : UIColor(DesignColors.text)
+            let nameStr = NSAttributedString(string: monthName, attributes: [.font: nameFont, .foregroundColor: nameColor])
+            let nameSize = nameStr.size()
+            let nameX = (size.width - nameSize.width) / 2
+            ctx.draw(Text(monthName).font(.custom(isCurrentMonth ? "Raleway-Bold" : "Raleway-SemiBold", size: 14)).foregroundColor(isCurrentMonth ? DesignColors.accentWarm : DesignColors.text), at: CGPoint(x: size.width / 2, y: padY + 8), anchor: .center)
+
+            let gridTop = padY + headerH
+
+            // Draw grid
+            for (rowIdx, week) in cachedGrid.enumerated() {
+                for col in 0..<7 {
+                    guard let slot = week[col] else { continue }
+                    let cx = padX + CGFloat(col) * colW + colW / 2
+                    let cy = gridTop + CGFloat(rowIdx) * (cellSize + spacing) + cellSize / 2
+                    let r = cellSize / 2
+
+                    // Glass circle
+                    if let base = slot.baseColor {
+                        let rect = CGRect(x: cx - r, y: cy - r, width: cellSize, height: cellSize)
+
+                        // Gradient fill (lighter top → base bottom)
+                        let topColor = base.opacity(min(slot.fillOpacity + 0.15, 1))
+                        let botColor = base.opacity(slot.fillOpacity)
+                        ctx.fill(Path(ellipseIn: rect), with: .linearGradient(
+                            Gradient(colors: [topColor, botColor]),
+                            startPoint: CGPoint(x: cx, y: cy - r),
+                            endPoint: CGPoint(x: cx, y: cy + r)
+                        ))
+
+                        // Top shine
+                        let shineRect = rect.insetBy(dx: 2, dy: 2).offsetBy(dx: 0, dy: -1)
+                        ctx.fill(Path(ellipseIn: shineRect), with: .linearGradient(
+                            Gradient(colors: [Color.white.opacity(0.35), Color.white.opacity(0)]),
+                            startPoint: CGPoint(x: cx, y: shineRect.minY),
+                            endPoint: CGPoint(x: cx, y: shineRect.midY)
+                        ))
+
+                        // Border
+                        let borderStyle = slot.dashed
+                            ? StrokeStyle(lineWidth: 0.5, dash: [2, 2])
+                            : StrokeStyle(lineWidth: 0.5)
+                        ctx.stroke(Path(ellipseIn: rect.insetBy(dx: 0.25, dy: 0.25)),
+                                   with: .color(base.opacity(min(slot.fillOpacity + 0.2, 0.8))),
+                                   style: borderStyle)
                     }
+
+                    // Day number
+                    let font: Font = .system(size: 10, weight: slot.isBold ? .bold : .medium, design: .rounded)
+                    ctx.draw(Text("\(slot.day)").font(font).foregroundColor(slot.textColor), at: CGPoint(x: cx, y: cy), anchor: .center)
                 }
             }
+
+            // Border
+            let borderColor = isCurrentMonth ? DesignColors.accentWarm.opacity(0.3) : Color.white.opacity(0.08)
+            let borderWidth: CGFloat = isCurrentMonth ? 1 : 0.5
+            let borderRect = CGRect(origin: .zero, size: size)
+            let borderPath = Path(roundedRect: borderRect, cornerRadius: 12, style: .continuous)
+            ctx.stroke(borderPath, with: .color(borderColor), lineWidth: borderWidth)
         }
-        .padding(.horizontal, 4)
-        .padding(.vertical, 6)
-        .background {
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(Color.white.opacity(0.03))
-                .overlay {
-                    RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .strokeBorder(
-                            isCurrentMonth
-                                ? DesignColors.accentWarm.opacity(0.3)
-                                : Color.white.opacity(0.08),
-                            lineWidth: isCurrentMonth ? 1 : 0.5
-                        )
-                }
-        }
-        .drawingGroup()
+        .frame(height: totalH)
     }
 }

@@ -100,8 +100,9 @@ public struct ChallengeJourneyFeature: Sendable {
             switch action {
             case .appeared:
                 let title = state.challenge.challengeTitle
+                let category = state.challenge.challengeCategory
                 let phase = state.challenge.cyclePhase
-                let duration = State.durationMinutes(for: state.challenge.challengeCategory)
+                let duration = State.durationMinutes(for: category)
                 return .merge(
                     .run { send in
                         for await _ in self.clock.timer(interval: .seconds(1)) {
@@ -111,7 +112,8 @@ public struct ChallengeJourneyFeature: Sendable {
                     .cancellable(id: CancelID.timer),
                     .run { _ in
                         await ChallengeActivityBridge.start(
-                            title: title, phase: phase, durationMinutes: duration
+                            title: title, category: category,
+                            phase: phase, durationMinutes: duration
                         )
                     }
                 )

@@ -260,23 +260,9 @@ public struct CalendarFeature: Sendable {
 
             case .editPeriodToggled:
                 if state.isEditingPeriod {
-                    if state.hasEditPeriodChanges {
-                        let periodDays = state.editPeriodDays
-                        let originalPeriodDays = state.editOriginalPeriodDays
-                        let flowIntensity = state.editFlowIntensity
-                        let bleedingDays = state.bleedingDays
-                        state.isEditingPeriod = false
-                        state.periodDays = periodDays
-                        state.periodFlowIntensity = flowIntensity
-                        CalendarFeature.recomputeCycle(from: &state)
-                        return .send(.delegate(.periodDataNeedsSync(
-                            periodDays: periodDays,
-                            originalPeriodDays: originalPeriodDays,
-                            periodFlowIntensity: flowIntensity,
-                            bleedingDays: bleedingDays
-                        )))
-                    }
+                    // Cancel — discard changes, restore original state
                     state.isEditingPeriod = false
+                    state.editPeriodDays = state.editOriginalPeriodDays
                     return .none
                 } else {
                     let confirmedDays = state.periodDays.subtracting(state.predictedPeriodDays)
@@ -293,24 +279,29 @@ public struct CalendarFeature: Sendable {
                 let cal = Calendar.current
                 let key = CalendarFeature.dateKey(date)
                 if state.editPeriodDays.contains(key) {
-                    // Remove the entire consecutive block (backward + forward)
-                    state.editPeriodDays.remove(key)
-                    state.editFlowIntensity.removeValue(forKey: key)
-                    // Remove consecutive days forward
-                    for i in 1...30 {
-                        guard let d = cal.date(byAdding: .day, value: i, to: date) else { break }
-                        let k = CalendarFeature.dateKey(d)
-                        guard state.editPeriodDays.contains(k) else { break }
-                        state.editPeriodDays.remove(k)
-                        state.editFlowIntensity.removeValue(forKey: k)
-                    }
-                    // Remove consecutive days backward
+                    // Find the first day of this consecutive block
+                    var firstDate = date
                     for i in 1...30 {
                         guard let d = cal.date(byAdding: .day, value: -i, to: date) else { break }
-                        let k = CalendarFeature.dateKey(d)
-                        guard state.editPeriodDays.contains(k) else { break }
-                        state.editPeriodDays.remove(k)
-                        state.editFlowIntensity.removeValue(forKey: k)
+                        guard state.editPeriodDays.contains(CalendarFeature.dateKey(d)) else { break }
+                        firstDate = d
+                    }
+
+                    if cal.isDate(date, inSameDayAs: firstDate) {
+                        // First day — remove entire block
+                        state.editPeriodDays.remove(key)
+                        state.editFlowIntensity.removeValue(forKey: key)
+                        for i in 1...30 {
+                            guard let d = cal.date(byAdding: .day, value: i, to: date) else { break }
+                            let k = CalendarFeature.dateKey(d)
+                            guard state.editPeriodDays.contains(k) else { break }
+                            state.editPeriodDays.remove(k)
+                            state.editFlowIntensity.removeValue(forKey: k)
+                        }
+                    } else {
+                        // Any other day — remove just that one day
+                        state.editPeriodDays.remove(key)
+                        state.editFlowIntensity.removeValue(forKey: key)
                     }
                 } else {
                     let isAdjacent = (-1...1).contains(where: { offset in
@@ -321,9 +312,11 @@ public struct CalendarFeature: Sendable {
                     })
 
                     if isAdjacent {
+                        // Adjacent to existing block — add single day
                         state.editPeriodDays.insert(key)
                         state.editFlowIntensity[key] = .medium
                     } else {
+                        // Not adjacent — start new block with bleedingDays fill
                         let fillCount = max(state.bleedingDays, 3)
                         for i in 0..<fillCount {
                             guard let d = cal.date(byAdding: .day, value: i, to: date) else { break }

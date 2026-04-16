@@ -19,6 +19,7 @@ public struct CardStackFeature: Sendable {
         public var currentDay: Int?
         /// Active challenge for the Do card — passed from TodayFeature
         public var challengeSnapshot: ChallengeSnapshot?
+        public var challengeInProgress: Bool = false
 
         public init() {}
 
@@ -49,6 +50,7 @@ public struct CardStackFeature: Sendable {
             case openJournal(prompt: String)
             case openCheckIn
             case challengeDoItTapped
+            case challengeContinueTapped
             case challengeSkipTapped
             case challengeMaybeLaterTapped
         }
@@ -311,7 +313,9 @@ struct CardStackView: View {
         if card.cardType == .do, let challenge = store.challengeSnapshot {
             DailyChallengeCardView(
                 challenge: challenge,
+                isInProgress: store.challengeInProgress,
                 onDoIt: { store.send(.delegate(.challengeDoItTapped)) },
+                onContinue: { store.send(.delegate(.challengeContinueTapped)) },
                 onSkip: { store.send(.delegate(.challengeSkipTapped)) },
                 onMaybeLater: { store.send(.delegate(.challengeMaybeLaterTapped)) }
             )

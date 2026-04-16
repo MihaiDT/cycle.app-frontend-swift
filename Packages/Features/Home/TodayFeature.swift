@@ -645,6 +645,9 @@ public struct TodayFeature: Sendable {
             case .cardStack(.delegate(.challengeDoItTapped)):
                 return .send(.dailyChallenge(.doItTapped))
 
+            case .cardStack(.delegate(.challengeContinueTapped)):
+                return .send(.dailyChallenge(.continueTapped))
+
             case .cardStack(.delegate(.challengeSkipTapped)):
                 return .send(.dailyChallenge(.skipTapped))
 
@@ -653,9 +656,20 @@ public struct TodayFeature: Sendable {
 
             case let .dailyChallenge(.delegate(.challengeStateChanged(snapshot))):
                 state.cardStackState.challengeSnapshot = snapshot
+                if case .inProgress = state.dailyChallengeState.challengeState {
+                    state.cardStackState.challengeInProgress = true
+                } else {
+                    state.cardStackState.challengeInProgress = false
+                }
                 return .none
 
             case .dailyChallenge:
+                // Sync inProgress flag to card stack after any challenge action
+                if case .inProgress = state.dailyChallengeState.challengeState {
+                    state.cardStackState.challengeInProgress = true
+                } else {
+                    state.cardStackState.challengeInProgress = false
+                }
                 return .none
 
             case .cardStack:

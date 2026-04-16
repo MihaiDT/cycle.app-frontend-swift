@@ -14,6 +14,7 @@ public struct DailyChallengeFeature: Sendable {
         public enum ChallengeState: Equatable, Sendable {
             case idle
             case available
+            case inProgress(startedAt: Date)
             case skipped
             case completed
         }
@@ -34,6 +35,7 @@ public struct DailyChallengeFeature: Sendable {
         case challengeLoaded(ChallengeSnapshot?)
         case challengeSelected(ChallengeSnapshot)
         case doItTapped
+        case continueTapped
         case skipTapped
         case maybeLaterTapped
 
@@ -148,6 +150,18 @@ public struct DailyChallengeFeature: Sendable {
                 state.acceptSheet = ChallengeAcceptFeature.State(challenge: challenge)
                 return .none
 
+            case .continueTapped:
+                guard let challenge = state.challenge else { return .none }
+                var journeyState = ChallengeJourneyFeature.State(challenge: challenge)
+                // Resume with remaining time based on when challenge started
+                if case let .inProgress(startedAt) = state.challengeState {
+                    let elapsed = Int(Date().timeIntervalSince(startedAt))
+                    let remaining = max(0, journeyState.timerDurationTotal - elapsed)
+                    journeyState.timerSecondsRemaining = remaining
+                }
+                state.journey = journeyState
+                return .none
+
             case .skipTapped:
                 guard let challenge = state.challenge else { return .none }
                 state.challengeState = .skipped
@@ -174,6 +188,7 @@ public struct DailyChallengeFeature: Sendable {
             case .acceptSheet(.presented(.delegate(.startChallenge))):
                 state.acceptSheet = nil
                 guard let challenge = state.challenge else { return .none }
+                state.challengeState = .inProgress(startedAt: Date())
                 state.journey = ChallengeJourneyFeature.State(challenge: challenge)
                 return .none
 

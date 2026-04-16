@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 77;
+	objectVersion = 63;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -43,8 +43,10 @@
 		35B2D545B4CAF74233A118FF /* ProfileFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8AAA5EAA0B0713C6D0F9CAC /* ProfileFeature.swift */; };
 		395E6EB894714D5526249732 /* DesignColors.swift in Sources */ = {isa = PBXBuildFile; fileRef = 925024F96EEC4267179A9CA3 /* DesignColors.swift */; };
 		3A7E10218174F42D6CDCFFC4 /* PhotoCaptureRepresentables.swift in Sources */ = {isa = PBXBuildFile; fileRef = D19FDAF1BA885C51528488D2 /* PhotoCaptureRepresentables.swift */; };
+		3AE37A66CE7E9547A5BD43B0 /* ChallengeValidatingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F832AB588BD5BCE9B4A7C836 /* ChallengeValidatingView.swift */; };
 		3D4939F89A63F1F49930037A /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = CA84224FE7398C7FF08D5BB5 /* GoogleService-Info.plist */; };
 		3DD5F64D427F4ED1639CE319 /* Layout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BCD05B0769F861D03E644E9 /* Layout.swift */; };
+		3DE7AD69E953FC2FDA5B661D /* ChallengeJourneyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0578DA7720E315296621EE94 /* ChallengeJourneyView.swift */; };
 		3E1F5FF0EEF5191A00318AD6 /* WellnessClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD89C54D60036EA070AAEC26 /* WellnessClient.swift */; };
 		4162B806EEFAB072B473575F /* Raleway-Medium.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 8B25658F35072C37DA32E0E8 /* Raleway-Medium.ttf */; };
 		41C665D3E4005F434EB95174 /* ChatMessageRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2DF004A482E18829FD5B58F /* ChatMessageRecord.swift */; };
@@ -53,6 +55,7 @@
 		43871BC7610359114EBD9DF7 /* SplineIntroView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4674CEEA6B50FCAB809318E6 /* SplineIntroView.swift */; };
 		44E021EDE4D2D22854A7F140 /* HBICalculator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42B1B55C9A99AA93CDC456BD /* HBICalculator.swift */; };
 		4503C9892C51B0B891A5EEAC /* ValidationFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F309D01584F377D9838A851 /* ValidationFeature.swift */; };
+		496CB9CC2ABA3DB5441CB8B2 /* CycleAppLiveActivity.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 75D6127ECF3EBDD6447B1D46 /* CycleAppLiveActivity.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		497994E9A0C6F0E200D43FD9 /* GlowConstants.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A744F4748AE7AFCE59451A9 /* GlowConstants.swift */; };
 		49B07A298102453EC330BB35 /* RelationshipStatusView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9951D5FE998C1DD8DE8B9958 /* RelationshipStatusView.swift */; };
 		4AC9FED42E81A3B2D054901F /* DailyCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 05C1863ED7A02D2799907F02 /* DailyCard.swift */; };
@@ -87,6 +90,7 @@
 		7215422C36DCB684CF032594 /* CalendarYearView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8030F59AC5C6C3D0782DC89 /* CalendarYearView.swift */; };
 		72DE23DE50FC30C04B0730B2 /* ChallengeSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 506A05DCABFD9B74071A4DF0 /* ChallengeSnapshot.swift */; };
 		73751010818B10B59916451D /* ChallengeSnapshotTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F7823769E6FBFCECBCB6CAE /* ChallengeSnapshotTests.swift */; };
+		7383369A457AB363A279E1A5 /* ChallengeActivityBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 102EB4D9FDE5E4C52BAE8510 /* ChallengeActivityBridge.swift */; };
 		768753B77A0E07A705B892F9 /* ProfessionalContextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0B6FD470F322B5A59DD7E00 /* ProfessionalContextView.swift */; };
 		7C13CC4BABF0121CDDA43C94 /* SplashView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 94278F98041D7E509F99939B /* SplashView.swift */; };
 		7D383F183C5E202BD1376605 /* Raleway-ExtraLightItalic.ttf in Resources */ = {isa = PBXBuildFile; fileRef = BB56C4D402DE76F749F5763C /* Raleway-ExtraLightItalic.ttf */; };
@@ -98,6 +102,7 @@
 		87ED257C99FAA875969FEBE5 /* KeychainClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 226DF4A873C9600CC4F0B40D /* KeychainClient.swift */; };
 		884846A0471306F8D8063293 /* CalendarDayDetail.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67C8B598D2EF4F1218DF3C1C /* CalendarDayDetail.swift */; };
 		8886C73FA1452FEEA91322D0 /* PlacesClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C380CB9877F9EFBE8833FE6 /* PlacesClient.swift */; };
+		88F56516FA5D7757A52B730A /* ChallengeActivityBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 102EB4D9FDE5E4C52BAE8510 /* ChallengeActivityBridge.swift */; };
 		8B066E6992294CE37D004E7F /* CalendarFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F6B49711D3438DDFA91BAC5 /* CalendarFeature.swift */; };
 		8B258C02527F961E9F92D674 /* DailySelfReport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D235D9C76A26B122F55AFC7 /* DailySelfReport.swift */; };
 		8C3CDFD3F89927B69C2370B5 /* ChatFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E943F4688D7290A2D03A26C /* ChatFeature.swift */; };
@@ -107,6 +112,7 @@
 		98B01DAE93DEFD8A8771464C /* CycleJourneyFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84F05DBD3274CDC65812AA44 /* CycleJourneyFeature.swift */; };
 		98C48FC656F4CA682EAE0D1D /* AriaRecapStories.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8401A3E28A02E96486B3F394 /* AriaRecapStories.swift */; };
 		997031E520EBD700B61BCB14 /* Raleway-SemiBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = BA263FB218AF9228CF648E42 /* Raleway-SemiBold.ttf */; };
+		9998D9E572E259CF136E9166 /* ChallengeActivityLiveActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4DA66632816E4919ADB4D982 /* ChallengeActivityLiveActivity.swift */; };
 		999CF4AFDCC8015DFDBB5439 /* CardStackFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA3DA29117E0B7B54191D57F /* CardStackFeature.swift */; };
 		9ADDE8EC93ED1B7A5DAFE612 /* NotificationPermissionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4D7237BEF2EC278AF39D03A /* NotificationPermissionView.swift */; };
 		9E88760071823F0C18E612B9 /* DailyChallengeCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 17E7EF949EF91E4ADFB45166 /* DailyChallengeCardView.swift */; };
@@ -125,6 +131,7 @@
 		A71309027B1FFC7844AB60CD /* CycleEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F1A4A6CC1D5B26BCF74322D /* CycleEngineTests.swift */; };
 		A9B037232E0B8D4D362582A3 /* ChallengeSelector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3DF25DA65BAB201183A4C862 /* ChallengeSelector.swift */; };
 		AD06679CABC285F3E63E9BC1 /* MenstrualLocalClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0A5D544979E59D9EEF6F45A /* MenstrualLocalClient.swift */; };
+		AF0CC9C02FBC233B4099DE17 /* ChallengeTimerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CFE91BE8435B6E9F0715DD2 /* ChallengeTimerView.swift */; };
 		AF5B9E7CE72C64BD80503E85 /* FirebaseCore in Frameworks */ = {isa = PBXBuildFile; productRef = 5E8E21D90A3FDA1726F30A93 /* FirebaseCore */; };
 		B0EE90F774BC99BB010198D3 /* PlacesAutocompleteTextField.swift in Sources */ = {isa = PBXBuildFile; fileRef = C204165EA2C9AECC39428586 /* PlacesAutocompleteTextField.swift */; };
 		B13F6E8CA76E6FA3755D9677 /* Raleway-ThinItalic.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 2F0D454B86650384C3709981 /* Raleway-ThinItalic.ttf */; };
@@ -153,7 +160,9 @@
 		C31DA902B29C34AA3067ED18 /* OnboardingProgressBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5D3B77B6EF5F17F3E47EB83 /* OnboardingProgressBar.swift */; };
 		C477A9BD12160F9413526673 /* ChallengeTemplatePool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E02FB6CD7C744A1401C9090 /* ChallengeTemplatePool.swift */; };
 		C7329B926A9B9FD03A252A18 /* EditPeriodFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 811FF511C8D318DF36018D2F /* EditPeriodFeature.swift */; };
+		C7E241782DE4CAD922EE740D /* ChallengeActivityBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE52A2B56E6BB19B367CADCA /* ChallengeActivityBundle.swift */; };
 		CAA90AEE5AB137DC40A4EE40 /* challenge_templates.json in Resources */ = {isa = PBXBuildFile; fileRef = D15ECC4BC47E7CE3641BD838 /* challenge_templates.json */; };
+		CB304B3517BEF562A918D037 /* ChallengeProofView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A12688104C0DC01B34A91BBB /* ChallengeProofView.swift */; };
 		CB72D85BADD89C68383AA4D3 /* CycleHeroView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81871A937E68353940DAD1C1 /* CycleHeroView.swift */; };
 		CE9E648A7DA44A10262A06B3 /* InsightCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = C42B971D9DFEDD03E5242413 /* InsightCard.swift */; };
 		CF1CB9340AFD0ED31976A084 /* HBILocalClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = D9BEB4E6B19D12267D302E1E /* HBILocalClient.swift */; };
@@ -173,6 +182,7 @@
 		E626009E624BF0FA7B197C94 /* ChallengeEndpoints.swift in Sources */ = {isa = PBXBuildFile; fileRef = 44920808504C222952DDC963 /* ChallengeEndpoints.swift */; };
 		E6BF09B7234590FB170F524C /* CyclePhaseBanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6BFE864C0E5835D700F0162D /* CyclePhaseBanner.swift */; };
 		EC48873774AE0069D16F2105 /* CycleModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E46C1A98E8B3B20BE1C7EAB /* CycleModels.swift */; };
+		EC5B100B2E1166322FB51934 /* ChallengeJourneyFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB1E81DB471408D776445BAC /* ChallengeJourneyFeature.swift */; };
 		EC91D63796C6BC8E191FA247 /* ValidationResultView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5792C2677714BC50285F74A /* ValidationResultView.swift */; };
 		ECC8AA5475D076155BEE281F /* DailyChallengeFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDDE03554E177D8CB7758368 /* DailyChallengeFeature.swift */; };
 		ED42279453648574D6FA7228 /* WellnessPillarCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = E911916B959EE91C14269049 /* WellnessPillarCard.swift */; };
@@ -186,12 +196,20 @@
 		F6EE431810A1618291C3FF85 /* CycleInsightsFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA3B9C4C5B8CCFEC092F2EEE /* CycleInsightsFeature.swift */; };
 		F796B28C6F0B4EDD0F77BCA7 /* CalendarAriaInsight.swift in Sources */ = {isa = PBXBuildFile; fileRef = E234B15081BB567827B75E0E /* CalendarAriaInsight.swift */; };
 		F87DFD52B294C919139429EA /* AuthenticationFeatureTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A6E83503725369D0FB426A7 /* AuthenticationFeatureTests.swift */; };
+		F908604A58466C73C7E4F88A /* ChallengeCelebrationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90013BFB17E4809CA21AFF24 /* ChallengeCelebrationView.swift */; };
 		FD106B325B0DCD2350FCE058 /* Raleway-Black.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 4DAC1FA0A5CD5600CE6E4376 /* Raleway-Black.ttf */; };
 		FDA70E485455D6E26478316E /* FirebaseAuthClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14C000015325FD70E13B1A80 /* FirebaseAuthClient.swift */; };
 		FE0B55CA6AD817CF227B166A /* Async+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AD75AABB9CE6FF41B8116AE /* Async+Extensions.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
+		A59AF6ED6BCD3C1BACA19736 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = ACDB7FD791CC3F5370BFE83A /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 33B4328E48065706E8505390;
+			remoteInfo = CycleAppLiveActivity;
+		};
 		AFCD116C01D69C7C3F73B16B /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = ACDB7FD791CC3F5370BFE83A /* Project object */;
@@ -201,11 +219,27 @@
 		};
 /* End PBXContainerItemProxy section */
 
+/* Begin PBXCopyFilesBuildPhase section */
+		444ADD58852AD2AC716E5020 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				496CB9CC2ABA3DB5441CB8B2 /* CycleAppLiveActivity.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
 		0132B1F82A5F0287717FAF61 /* PrivacyConsentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivacyConsentView.swift; sourceTree = "<group>"; };
 		01D3B37256BD926AA7EFCBC2 /* Logger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Logger.swift; sourceTree = "<group>"; };
 		0359E62B86A73F05ADE7FFF1 /* AnonymousIDClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnonymousIDClient.swift; sourceTree = "<group>"; };
+		03ACA4C0ED30010E12CCE993 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		047CCAFD0E4BADAC49BE42AB /* CycleRingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CycleRingView.swift; sourceTree = "<group>"; };
+		0578DA7720E315296621EE94 /* ChallengeJourneyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChallengeJourneyView.swift; sourceTree = "<group>"; };
 		05C1863ED7A02D2799907F02 /* DailyCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyCard.swift; sourceTree = "<group>"; };
 		07E99F716BD6967D5C05C8A5 /* CycleApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CycleApp.swift; sourceTree = "<group>"; };
 		07F1D2E8D0B49CA5E71909AF /* UserProfileLocalClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserProfileLocalClient.swift; sourceTree = "<group>"; };
@@ -218,6 +252,7 @@
 		0E943F4688D7290A2D03A26C /* ChatFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatFeature.swift; sourceTree = "<group>"; };
 		0EB841E9BFF1D5FBABBEB2D7 /* AuthChoiceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthChoiceView.swift; sourceTree = "<group>"; };
 		0F9FDEC082E3A2268BC94D7E /* CycleAppTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = CycleAppTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		102EB4D9FDE5E4C52BAE8510 /* ChallengeActivityBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChallengeActivityBridge.swift; sourceTree = "<group>"; };
 		107471505AD1ADFF34997E8D /* UserDefaultsClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserDefaultsClient.swift; sourceTree = "<group>"; };
 		10C561340E6F4415F02AF26F /* JourneyComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JourneyComponents.swift; sourceTree = "<group>"; };
 		14C000015325FD70E13B1A80 /* FirebaseAuthClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirebaseAuthClient.swift; sourceTree = "<group>"; };
@@ -239,7 +274,7 @@
 		3320F62F7E1DCDF6F15FBB3F /* GlowProfileSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlowProfileSnapshot.swift; sourceTree = "<group>"; };
 		34A6F94AAF7182E46C4F885F /* Raleway-SemiBoldItalic.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Raleway-SemiBoldItalic.ttf"; sourceTree = "<group>"; };
 		3C380CB9877F9EFBE8833FE6 /* PlacesClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlacesClient.swift; sourceTree = "<group>"; };
-		3D613DF8875F1A90F07C4F34 /* CycleApp.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = CycleApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		3D613DF8875F1A90F07C4F34 /* CycleApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CycleApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		3DDC9D70B5525DF08A314BD7 /* PatternInsightsSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PatternInsightsSheet.swift; sourceTree = "<group>"; };
 		3DF25DA65BAB201183A4C862 /* ChallengeSelector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChallengeSelector.swift; sourceTree = "<group>"; };
 		3FC0F0AFF2877CD41AB19497 /* SessionClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionClient.swift; sourceTree = "<group>"; };
@@ -252,6 +287,8 @@
 		4BCA28BDD1FB0A4D497A5CAA /* CycleRecapRecord.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CycleRecapRecord.swift; sourceTree = "<group>"; };
 		4BCD05B0769F861D03E644E9 /* Layout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Layout.swift; sourceTree = "<group>"; };
 		4C77124333395856EB581A13 /* LocalNotificationClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalNotificationClient.swift; sourceTree = "<group>"; };
+		4CFE91BE8435B6E9F0715DD2 /* ChallengeTimerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChallengeTimerView.swift; sourceTree = "<group>"; };
+		4DA66632816E4919ADB4D982 /* ChallengeActivityLiveActivity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChallengeActivityLiveActivity.swift; sourceTree = "<group>"; };
 		4DAC1FA0A5CD5600CE6E4376 /* Raleway-Black.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Raleway-Black.ttf"; sourceTree = "<group>"; };
 		4F9C55BFC287E7193D934779 /* HomeFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeFeature.swift; sourceTree = "<group>"; };
 		506A05DCABFD9B74071A4DF0 /* ChallengeSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChallengeSnapshot.swift; sourceTree = "<group>"; };
@@ -261,7 +298,7 @@
 		5886220E666CF879F28AA495 /* CalendarSymptomSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarSymptomSheet.swift; sourceTree = "<group>"; };
 		5A599EEAB5931BAEBC4207E9 /* Raleway-MediumItalic.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Raleway-MediumItalic.ttf"; sourceTree = "<group>"; };
 		5EC4B5B5DEB0E25A730E4507 /* HealthKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = HealthKit.framework; path = System/Library/Frameworks/HealthKit.framework; sourceTree = SDKROOT; };
-		5ED03F559F4A2F374AF86A5C /* glowing_orb.riv */ = {isa = PBXFileReference; path = glowing_orb.riv; sourceTree = "<group>"; };
+		5ED03F559F4A2F374AF86A5C /* glowing_orb.riv */ = {isa = PBXFileReference; lastKnownFileType = file; path = glowing_orb.riv; sourceTree = "<group>"; };
 		5F90D69A90239DFEC866C703 /* CycleApp.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = CycleApp.entitlements; sourceTree = "<group>"; };
 		60A69777B121E02CCD9ED6FD /* ModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelTests.swift; sourceTree = "<group>"; };
 		60DA695074FF83065EB0E7D5 /* AriaContextProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AriaContextProvider.swift; sourceTree = "<group>"; };
@@ -279,6 +316,7 @@
 		6E46C1A98E8B3B20BE1C7EAB /* CycleModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CycleModels.swift; sourceTree = "<group>"; };
 		6F1A4A6CC1D5B26BCF74322D /* CycleEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CycleEngineTests.swift; sourceTree = "<group>"; };
 		71EF173A08EFFAA9EAF10A56 /* APIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIClient.swift; sourceTree = "<group>"; };
+		75D6127ECF3EBDD6447B1D46 /* CycleAppLiveActivity.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = CycleAppLiveActivity.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		768AB686BAC4D9AE276C0E0F /* GlassDatePicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassDatePicker.swift; sourceTree = "<group>"; };
 		79A0533D66600EF003BDFC79 /* Raleway-Thin.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Raleway-Thin.ttf"; sourceTree = "<group>"; };
 		7F309D01584F377D9838A851 /* ValidationFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ValidationFeature.swift; sourceTree = "<group>"; };
@@ -299,6 +337,7 @@
 		8B25658F35072C37DA32E0E8 /* Raleway-Medium.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Raleway-Medium.ttf"; sourceTree = "<group>"; };
 		8E8FBBDC5F3C40247FE20177 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		8EC87831D85087D66D6D3BB0 /* Raleway-ExtraBoldItalic.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Raleway-ExtraBoldItalic.ttf"; sourceTree = "<group>"; };
+		90013BFB17E4809CA21AFF24 /* ChallengeCelebrationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChallengeCelebrationView.swift; sourceTree = "<group>"; };
 		91D49DDC5F4C3DAE7EF32645 /* CelestialCycleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CelestialCycleView.swift; sourceTree = "<group>"; };
 		925024F96EEC4267179A9CA3 /* DesignColors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesignColors.swift; sourceTree = "<group>"; };
 		929A3B534A8BCD8044EA93C4 /* ConsentPrivacy.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = ConsentPrivacy.json; sourceTree = "<group>"; };
@@ -309,6 +348,7 @@
 		9A852877FCDF6428BEA443B6 /* GlowProfileRecord.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlowProfileRecord.swift; sourceTree = "<group>"; };
 		9A9F95C44B71EFC08D5BAAAD /* NameGreetingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NameGreetingView.swift; sourceTree = "<group>"; };
 		9C912EA0509634526A9D7F08 /* Raleway-Bold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Raleway-Bold.ttf"; sourceTree = "<group>"; };
+		A12688104C0DC01B34A91BBB /* ChallengeProofView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChallengeProofView.swift; sourceTree = "<group>"; };
 		A1FF005FF3F61A0F82E81BE7 /* Raleway-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Raleway-Regular.ttf"; sourceTree = "<group>"; };
 		A4B9BDE9625B0CEF82790B09 /* ChallengeAcceptFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChallengeAcceptFeature.swift; sourceTree = "<group>"; };
 		A4E7E9A068ECB15A84A721A7 /* GradientBackground.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GradientBackground.swift; sourceTree = "<group>"; };
@@ -317,6 +357,7 @@
 		AA1D8BDCDF2263B793576D8E /* DailyCheckInFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyCheckInFeature.swift; sourceTree = "<group>"; };
 		AA3DA29117E0B7B54191D57F /* CardStackFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardStackFeature.swift; sourceTree = "<group>"; };
 		AAE2E54DEE19A7F71CEE3E72 /* Raleway-Italic.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Raleway-Italic.ttf"; sourceTree = "<group>"; };
+		AB1E81DB471408D776445BAC /* ChallengeJourneyFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChallengeJourneyFeature.swift; sourceTree = "<group>"; };
 		AC21FE2951F51FFA372CB45A /* LifestyleRhythmView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LifestyleRhythmView.swift; sourceTree = "<group>"; };
 		AC5090DAA591F27C640D9D4A /* CalendarYearCollectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarYearCollectionView.swift; sourceTree = "<group>"; };
 		ACA20E6BDC2387B8AB381B71 /* MenstrualLocalClient+Journey.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MenstrualLocalClient+Journey.swift"; sourceTree = "<group>"; };
@@ -358,7 +399,7 @@
 		E3FD2B1629CCE01C8D0887F3 /* GlowPrimaryButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlowPrimaryButton.swift; sourceTree = "<group>"; };
 		E438E6CA574859596F3B8702 /* CycleContext.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CycleContext.swift; sourceTree = "<group>"; };
 		E6443B1A872FD8D9CA385C44 /* GlassTextField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassTextField.swift; sourceTree = "<group>"; };
-		E687F11BA153A2DF683BD9B0 /* logo_animation.splineswift */ = {isa = PBXFileReference; path = logo_animation.splineswift; sourceTree = "<group>"; };
+		E687F11BA153A2DF683BD9B0 /* logo_animation.splineswift */ = {isa = PBXFileReference; lastKnownFileType = file; path = logo_animation.splineswift; sourceTree = "<group>"; };
 		E911916B959EE91C14269049 /* WellnessPillarCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WellnessPillarCard.swift; sourceTree = "<group>"; };
 		EA867F396B072ED863219115 /* APIError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIError.swift; sourceTree = "<group>"; };
 		EEDC94436897365CDB098DFB /* PhotoReviewFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoReviewFeature.swift; sourceTree = "<group>"; };
@@ -370,6 +411,7 @@
 		F2DF4BFD7D70E092655588F9 /* User.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = User.swift; sourceTree = "<group>"; };
 		F7090C01E475E70BB3540924 /* ConsentCheckbox.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConsentCheckbox.swift; sourceTree = "<group>"; };
 		F78183272EA1538F9B855ED3 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		F832AB588BD5BCE9B4A7C836 /* ChallengeValidatingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChallengeValidatingView.swift; sourceTree = "<group>"; };
 		F837406D8C9EE075142E8207 /* LevelUpFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LevelUpFeature.swift; sourceTree = "<group>"; };
 		F8AAA5EAA0B0713C6D0F9CAC /* ProfileFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileFeature.swift; sourceTree = "<group>"; };
 		F8E62ACB6092862D952F78FB /* GlassSelectionCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassSelectionCard.swift; sourceTree = "<group>"; };
@@ -379,6 +421,7 @@
 		FC414B9F62AE355B653A88EB /* HealthRecords.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthRecords.swift; sourceTree = "<group>"; };
 		FCE9EEEE1356254E0537A9D8 /* Raleway-BlackItalic.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Raleway-BlackItalic.ttf"; sourceTree = "<group>"; };
 		FDC7FC7B5C4F41A2ADC7EC1C /* Collection+Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Collection+Extensions.swift"; sourceTree = "<group>"; };
+		FE52A2B56E6BB19B367CADCA /* ChallengeActivityBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChallengeActivityBundle.swift; sourceTree = "<group>"; };
 		FFD79DF9CED358A6F2B17C43 /* Validation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Validation.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -413,6 +456,16 @@
 			path = Utilities;
 			sourceTree = "<group>";
 		};
+		1F46FA007C2E7F4BA6DE99D5 /* CycleAppLiveActivity */ = {
+			isa = PBXGroup;
+			children = (
+				FE52A2B56E6BB19B367CADCA /* ChallengeActivityBundle.swift */,
+				4DA66632816E4919ADB4D982 /* ChallengeActivityLiveActivity.swift */,
+				03ACA4C0ED30010E12CCE993 /* Info.plist */,
+			);
+			path = CycleAppLiveActivity;
+			sourceTree = "<group>";
+		};
 		23513488D58008E419A10627 = {
 			isa = PBXGroup;
 			children = (
@@ -428,6 +481,13 @@
 			isa = PBXGroup;
 			children = (
 				A4B9BDE9625B0CEF82790B09 /* ChallengeAcceptFeature.swift */,
+				102EB4D9FDE5E4C52BAE8510 /* ChallengeActivityBridge.swift */,
+				90013BFB17E4809CA21AFF24 /* ChallengeCelebrationView.swift */,
+				AB1E81DB471408D776445BAC /* ChallengeJourneyFeature.swift */,
+				0578DA7720E315296621EE94 /* ChallengeJourneyView.swift */,
+				A12688104C0DC01B34A91BBB /* ChallengeProofView.swift */,
+				4CFE91BE8435B6E9F0715DD2 /* ChallengeTimerView.swift */,
+				F832AB588BD5BCE9B4A7C836 /* ChallengeValidatingView.swift */,
 				17E7EF949EF91E4ADFB45166 /* DailyChallengeCardView.swift */,
 				DDDE03554E177D8CB7758368 /* DailyChallengeFeature.swift */,
 				6A744F4748AE7AFCE59451A9 /* GlowConstants.swift */,
@@ -556,6 +616,7 @@
 			isa = PBXGroup;
 			children = (
 				3D613DF8875F1A90F07C4F34 /* CycleApp.app */,
+				75D6127ECF3EBDD6447B1D46 /* CycleAppLiveActivity.appex */,
 				0F9FDEC082E3A2268BC94D7E /* CycleAppTests.xctest */,
 			);
 			name = Products;
@@ -639,6 +700,7 @@
 			isa = PBXGroup;
 			children = (
 				F10698BE7AA62EF97DE6DB64 /* App */,
+				1F46FA007C2E7F4BA6DE99D5 /* CycleAppLiveActivity */,
 				72F156D41F11BD62244AA07B /* Resources */,
 			);
 			path = CycleApp;
@@ -798,6 +860,23 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		33B4328E48065706E8505390 /* CycleAppLiveActivity */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = E4B1B97117BE9AC04B351FAA /* Build configuration list for PBXNativeTarget "CycleAppLiveActivity" */;
+			buildPhases = (
+				30A1888E1F4C09B0B739888D /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = CycleAppLiveActivity;
+			packageProductDependencies = (
+			);
+			productName = CycleAppLiveActivity;
+			productReference = 75D6127ECF3EBDD6447B1D46 /* CycleAppLiveActivity.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 		5E84FDEA1128624637A87F48 /* CycleApp */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = F41CE88D4DFAF67F57420D21 /* Build configuration list for PBXNativeTarget "CycleApp" */;
@@ -805,10 +884,12 @@
 				6C4047BB7E490FA3E0EACE0A /* Sources */,
 				4BC9BB81B751FC29F577DCEC /* Resources */,
 				8B68F7B6A8077B073CB24218 /* Frameworks */,
+				444ADD58852AD2AC716E5020 /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				FCEC56AF8BABB18D37EF47D3 /* PBXTargetDependency */,
 			);
 			name = CycleApp;
 			packageProductDependencies = (
@@ -873,11 +954,11 @@
 				AEF383D9F05536120F2B291B /* XCRemoteSwiftPackageReference "spline-ios" */,
 				FDE4EA748176C63BCCDC26BB /* XCRemoteSwiftPackageReference "swift-tagged" */,
 			);
-			preferredProjectObjectVersion = 77;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
 				5E84FDEA1128624637A87F48 /* CycleApp */,
+				33B4328E48065706E8505390 /* CycleAppLiveActivity */,
 				CDF251D8C076400726885154 /* CycleAppTests */,
 			);
 		};
@@ -919,6 +1000,16 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		30A1888E1F4C09B0B739888D /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				7383369A457AB363A279E1A5 /* ChallengeActivityBridge.swift in Sources */,
+				C7E241782DE4CAD922EE740D /* ChallengeActivityBundle.swift in Sources */,
+				9998D9E572E259CF136E9166 /* ChallengeActivityLiveActivity.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		6C4047BB7E490FA3E0EACE0A /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -945,11 +1036,18 @@
 				999CF4AFDCC8015DFDBB5439 /* CardStackFeature.swift in Sources */,
 				F5EA81C29EE997219835D532 /* CelestialCycleView.swift in Sources */,
 				BEB9B6BA7D668BBF014DF188 /* ChallengeAcceptFeature.swift in Sources */,
+				88F56516FA5D7757A52B730A /* ChallengeActivityBridge.swift in Sources */,
+				F908604A58466C73C7E4F88A /* ChallengeCelebrationView.swift in Sources */,
 				E626009E624BF0FA7B197C94 /* ChallengeEndpoints.swift in Sources */,
+				EC5B100B2E1166322FB51934 /* ChallengeJourneyFeature.swift in Sources */,
+				3DE7AD69E953FC2FDA5B661D /* ChallengeJourneyView.swift in Sources */,
+				CB304B3517BEF562A918D037 /* ChallengeProofView.swift in Sources */,
 				0BFF2F93D69070237D916443 /* ChallengeRecord.swift in Sources */,
 				A9B037232E0B8D4D362582A3 /* ChallengeSelector.swift in Sources */,
 				72DE23DE50FC30C04B0730B2 /* ChallengeSnapshot.swift in Sources */,
 				C477A9BD12160F9413526673 /* ChallengeTemplatePool.swift in Sources */,
+				AF0CC9C02FBC233B4099DE17 /* ChallengeTimerView.swift in Sources */,
+				3AE37A66CE7E9547A5BD43B0 /* ChallengeValidatingView.swift in Sources */,
 				8C3CDFD3F89927B69C2370B5 /* ChatFeature.swift in Sources */,
 				41C665D3E4005F434EB95174 /* ChatMessageRecord.swift in Sources */,
 				A5C69FB1F58AF2B763AF934F /* Collection+Extensions.swift in Sources */,
@@ -1088,6 +1186,11 @@
 			target = 5E84FDEA1128624637A87F48 /* CycleApp */;
 			targetProxy = AFCD116C01D69C7C3F73B16B /* PBXContainerItemProxy */;
 		};
+		FCEC56AF8BABB18D37EF47D3 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 33B4328E48065706E8505390 /* CycleAppLiveActivity */;
+			targetProxy = A59AF6ED6BCD3C1BACA19736 /* PBXContainerItemProxy */;
+		};
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
@@ -1100,6 +1203,7 @@
 				CODE_SIGN_ENTITLEMENTS = CycleApp/Resources/CycleApp.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = AT2NH7U6W7;
 				INFOPLIST_FILE = CycleApp/Resources/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -1129,6 +1233,25 @@
 			};
 			name = Debug;
 		};
+		A1B6F231D9BF176ABFA95F9B /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				DEVELOPMENT_TEAM = AT2NH7U6W7;
+				INFOPLIST_FILE = CycleApp/CycleAppLiveActivity/Info.plist;
+				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "app.cycle.ios.live-activity";
+				SDKROOT = iphoneos;
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
 		A64E1B4F48C36D93DBE6B73B /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -1138,6 +1261,7 @@
 				CODE_SIGN_ENTITLEMENTS = CycleApp/Resources/CycleApp.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = AT2NH7U6W7;
 				INFOPLIST_FILE = CycleApp/Resources/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -1147,6 +1271,25 @@
 				PRODUCT_BUNDLE_IDENTIFIER = app.cycle.ios;
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		AD0709A19DC959CAB2AA4391 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				DEVELOPMENT_TEAM = AT2NH7U6W7;
+				INFOPLIST_FILE = CycleApp/CycleAppLiveActivity/Info.plist;
+				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "app.cycle.ios.live-activity";
+				SDKROOT = iphoneos;
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Debug;
 		};
@@ -1304,6 +1447,15 @@
 			buildConfigurations = (
 				C5B66DFE4F4F5C9D1DAB8C57 /* Debug */,
 				E09677A44DEF60D42AC89C91 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		E4B1B97117BE9AC04B351FAA /* Build configuration list for PBXNativeTarget "CycleAppLiveActivity" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AD0709A19DC959CAB2AA4391 /* Debug */,
+				A1B6F231D9BF176ABFA95F9B /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;

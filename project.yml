@@ -56,7 +56,9 @@ targets:
     type: application
     platform: iOS
     sources:
-      - CycleApp
+      - path: CycleApp
+        excludes:
+          - "CycleAppLiveActivity"
       - path: Packages/Core
         excludes:
           - "Package.swift"
@@ -88,6 +90,7 @@ targets:
       - package: GoogleSignIn
       - package: RiveRuntime
       - sdk: HealthKit.framework
+      - target: CycleAppLiveActivity
     entitlements:
       path: CycleApp/Resources/CycleApp.entitlements
       properties:
@@ -110,6 +113,25 @@ targets:
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
 
+  CycleAppLiveActivity:
+    type: app-extension
+    platform: iOS
+    sources:
+      - path: CycleApp/CycleAppLiveActivity
+      - path: Packages/Features/Home/Glow/ChallengeActivityBridge.swift
+    info:
+      path: CycleApp/CycleAppLiveActivity/Info.plist
+      properties:
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.widgetkit-extension
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: app.cycle.ios.live-activity
+        INFOPLIST_KEY_NSSupportsLiveActivities: true
+        TARGETED_DEVICE_FAMILY: "1"
+        SWIFT_STRICT_CONCURRENCY: complete
+        SWIFT_VERSION: "6.0"
+
   CycleAppTests:
     type: bundle.unit-test
     platform: iOS
@@ -126,6 +148,7 @@ schemes:
     build:
       targets:
         CycleApp: all
+        CycleAppLiveActivity: all
     run:
       config: Debug
     test:

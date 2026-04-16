@@ -398,6 +398,7 @@ extension MenstrualLocalClient {
                 for record in try context.fetch(FetchDescriptor<MenstrualProfileRecord>()) { context.delete(record) }
                 for record in try context.fetch(FetchDescriptor<DailyCardRecord>()) { context.delete(record) }
                 for record in try context.fetch(FetchDescriptor<CycleRecapRecord>()) { context.delete(record) }
+                for record in try context.fetch(FetchDescriptor<WellnessMessageRecord>()) { context.delete(record) }
                 try context.save()
                 UserDefaults.standard.removeObject(forKey: "ViewedRecapCycleKeys")
                 UserDefaults.standard.set(Date(), forKey: "CycleDataResetDate")

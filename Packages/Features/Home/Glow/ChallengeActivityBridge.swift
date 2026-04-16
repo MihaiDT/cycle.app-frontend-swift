@@ -7,6 +7,7 @@ struct ChallengeActivityAttributes: ActivityAttributes {
     }
 
     let challengeTitle: String
+    let challengeCategory: String
     let cyclePhase: String
     let durationMinutes: Int
 }
@@ -16,13 +17,22 @@ enum ChallengeActivityBridge {
     @MainActor
     static func start(
         title: String,
+        category: String,
         phase: String,
         durationMinutes: Int
-    ) {
-        guard ActivityAuthorizationInfo().areActivitiesEnabled else { return }
+    ) async {
+        let authInfo = ActivityAuthorizationInfo()
+        guard authInfo.areActivitiesEnabled else { return }
+
+        // End any existing activities first
+        for activity in Activity<ChallengeActivityAttributes>.activities {
+            let final = ChallengeActivityAttributes.ContentState(timerEnd: .now)
+            await activity.end(.init(state: final, staleDate: nil), dismissalPolicy: .immediate)
+        }
 
         let attributes = ChallengeActivityAttributes(
             challengeTitle: title,
+            challengeCategory: category,
             cyclePhase: phase,
             durationMinutes: durationMinutes
         )
@@ -37,7 +47,7 @@ enum ChallengeActivityBridge {
                 pushType: nil
             )
         } catch {
-            // Silently fail — Live Activity is enhancement, not critical path
+            // Live Activity is enhancement, not critical path
         }
     }
 

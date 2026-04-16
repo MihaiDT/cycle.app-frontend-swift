@@ -219,12 +219,6 @@ public struct MiniCycleCalendar: View {
                         .foregroundColor(phaseColor(.menstrual).opacity(0.4))
                         .frame(width: 36, height: 36)
                 }
-                // Selected
-                else if isSelected {
-                    Circle()
-                        .fill(phaseColor(phase).opacity(0.15))
-                        .frame(width: 36, height: 36)
-                }
                 // Today — glass liquid highlight
                 else if isToday {
                     ZStack {
@@ -275,12 +269,22 @@ public struct MiniCycleCalendar: View {
                     .shadow(color: DesignColors.accentWarm.opacity(0.2), radius: 8, x: 0, y: 3)
                 }
 
+                // Selection highlight — always on top of any state
+                if isSelected {
+                    Circle()
+                        .fill(DesignColors.accentWarm.opacity(0.15))
+                        .frame(width: 36, height: 36)
+                    Circle()
+                        .strokeBorder(DesignColors.accentWarm.opacity(0.6), lineWidth: 2)
+                        .frame(width: 36, height: 36)
+                }
+
                 Text("\(dayNumber)")
                     .font(.custom(isToday || isSelected ? "Raleway-Bold" : "Raleway-Medium", size: 15))
                     .foregroundColor(
                         isPeriod && !isPredicted && !isLatePred ? phaseColor(.menstrual) :
                             isLatePred ? phaseColor(.menstrual).opacity(0.45) :
-                            isSelected ? phaseColor(phase) :
+                            isSelected ? DesignColors.text :
                             isToday ? DesignColors.text :
                             DesignColors.textSecondary
                     )

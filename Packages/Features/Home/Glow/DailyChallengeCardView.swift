@@ -4,7 +4,9 @@ import SwiftUI
 
 struct DailyChallengeCardView: View {
     let challenge: ChallengeSnapshot
+    var isInProgress: Bool = false
     let onDoIt: () -> Void
+    let onContinue: () -> Void
     let onSkip: () -> Void
     let onMaybeLater: () -> Void
 
@@ -64,9 +66,13 @@ struct DailyChallengeCardView: View {
 
             Button {
                 UIImpactFeedbackGenerator(style: .light).impactOccurred()
-                onDoIt()
+                if isInProgress {
+                    onContinue()
+                } else {
+                    onDoIt()
+                }
             } label: {
-                Text("I'm in")
+                Text(isInProgress ? "Continue" : "I'm in")
                     .font(.custom("Raleway-SemiBold", size: 16, relativeTo: .body))
                     .foregroundStyle(.white)
                     .frame(maxWidth: .infinity)
@@ -79,7 +85,7 @@ struct DailyChallengeCardView: View {
                     .shadow(color: DesignColors.text.opacity(0.14), radius: 3, x: 0, y: 1)
             }
             .buttonStyle(.plain)
-            .accessibilityLabel("Do challenge")
+            .accessibilityLabel(isInProgress ? "Continue challenge" : "Do challenge")
             .accessibilityHint("Opens the challenge detail screen")
             .padding(.top, 4)
         }

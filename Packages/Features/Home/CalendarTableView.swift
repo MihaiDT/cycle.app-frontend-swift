@@ -31,7 +31,7 @@ struct CalendarTableView: UIViewRepresentable {
         tv.dataSource = context.coordinator
         tv.delegate = context.coordinator
         tv.separatorStyle = .none
-        tv.backgroundColor = UIColor(DesignColors.background)
+        tv.backgroundColor = .white
         tv.showsVerticalScrollIndicator = false
         tv.contentInsetAdjustmentBehavior = .never
         tv.contentInset = .zero
@@ -65,8 +65,10 @@ struct CalendarTableView: UIViewRepresentable {
 
         // Reload when data changes
         if old.isEditingPeriod != isEditingPeriod {
-            // Full reload on edit toggle — ensures all cells update
-            tv.reloadData()
+            // Crossfade reload on edit toggle
+            UIView.transition(with: tv, duration: 0.25, options: .transitionCrossDissolve) {
+                tv.reloadData()
+            }
         } else if old.periodDays != periodDays || old.predictedPeriodDays != predictedPeriodDays
             || old.editPeriodDays != editPeriodDays
             || old.fertileDays != fertileDays || old.selectedDate != selectedDate {
@@ -197,9 +199,46 @@ private final class MonthGridDrawView: UIView {
 
     private let cal = Calendar.current
     private let periodColor = UIColor(red: 0.79, green: 0.25, blue: 0.38, alpha: 1)
-    private let fertileColor = UIColor(red: 0.91, green: 0.66, blue: 0.22, alpha: 1)
+    private let fertileColor = UIColor(red: 0.757, green: 0.561, blue: 0.490, alpha: 1)
     private let textColor = UIColor(red: 0.36, green: 0.29, blue: 0.23, alpha: 0.55)
     private let todayColor = UIColor(red: 0.76, green: 0.56, blue: 0.49, alpha: 1)
+
+    /// Draws a glass liquid circle with a gradient body, top shine, and border
+    private func drawGlassCircle(_ ctx: CGContext, rect: CGRect, color: UIColor, fillOpacity: CGFloat, borderOpacity: CGFloat, dashed: Bool = false) {
+        ctx.saveGState()
+
+        // 1. Body gradient fill (lighter at top → base color at bottom)
+        let path = CGPath(ellipseIn: rect, transform: nil)
+        ctx.addPath(path)
+        ctx.clip()
+
+        var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
+        color.getRed(&r, green: &g, blue: &b, alpha: &a)
+
+        let colorSpace = CGColorSpaceCreateDeviceRGB()
+        let topColor = UIColor(red: min(r + 0.15, 1), green: min(g + 0.15, 1), blue: min(b + 0.15, 1), alpha: fillOpacity).cgColor
+        let bottomColor = UIColor(red: r, green: g, blue: b, alpha: fillOpacity).cgColor
+        if let gradient = CGGradient(colorsSpace: colorSpace, colors: [topColor, bottomColor] as CFArray, locations: [0, 1]) {
+            ctx.drawLinearGradient(gradient, start: CGPoint(x: rect.midX, y: rect.minY), end: CGPoint(x: rect.midX, y: rect.maxY), options: [])
+        }
+
+        // 2. Top shine highlight
+        let shineRect = rect.insetBy(dx: 3, dy: 3).offsetBy(dx: 0, dy: -2)
+        let shineTop = UIColor.white.withAlphaComponent(0.45).cgColor
+        let shineBot = UIColor.white.withAlphaComponent(0.0).cgColor
+        if let shine = CGGradient(colorsSpace: colorSpace, colors: [shineTop, shineBot] as CFArray, locations: [0, 1]) {
+            ctx.drawLinearGradient(shine, start: CGPoint(x: shineRect.midX, y: shineRect.minY), end: CGPoint(x: shineRect.midX, y: shineRect.midY), options: [])
+        }
+
+        ctx.restoreGState()
+
+        // 3. Border stroke
+        ctx.setStrokeColor(UIColor(red: min(r + 0.1, 1), green: min(g + 0.1, 1), blue: min(b + 0.1, 1), alpha: borderOpacity).cgColor)
+        ctx.setLineWidth(1)
+        if dashed { ctx.setLineDash(phase: 0, lengths: [3, 3]) }
+        ctx.strokeEllipse(in: rect.insetBy(dx: 0.5, dy: 0.5))
+        if dashed { ctx.setLineDash(phase: 0, lengths: []) }
+    }
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -258,26 +297,14 @@ private final class MonthGridDrawView: UIView {
 
             // Fill — hide predictions/fertile in edit mode
             if isConfirmed {
-                ctx.setFillColor(periodColor.withAlphaComponent(0.75).cgColor)
-                ctx.fillEllipse(in: circleRect)
+                drawGlassCircle(ctx, rect: circleRect, color: periodColor, fillOpacity: 0.75, borderOpacity: 0.5)
             } else if !isEditingPeriod {
                 if isPredicted {
-                    ctx.setFillColor(periodColor.withAlphaComponent(0.18).cgColor)
-                    ctx.fillEllipse(in: circleRect)
-                    ctx.setStrokeColor(periodColor.withAlphaComponent(0.4).cgColor)
-                    ctx.setLineWidth(0.75); ctx.setLineDash(phase: 0, lengths: [3, 3])
-                    ctx.strokeEllipse(in: circleRect); ctx.setLineDash(phase: 0, lengths: [])
+                    drawGlassCircle(ctx, rect: circleRect, color: periodColor, fillOpacity: 0.18, borderOpacity: 0.4, dashed: true)
                 } else if isOvulation {
-                    ctx.setFillColor(fertileColor.withAlphaComponent(0.45).cgColor)
-                    ctx.fillEllipse(in: circleRect)
-                    ctx.setStrokeColor(fertileColor.withAlphaComponent(0.7).cgColor)
-                    ctx.setLineWidth(1.5); ctx.strokeEllipse(in: circleRect)
+                    drawGlassCircle(ctx, rect: circleRect, color: fertileColor, fillOpacity: 0.45, borderOpacity: 0.7)
                 } else if isFertile {
-                    ctx.setFillColor(fertileColor.withAlphaComponent(0.35).cgColor)
-                    ctx.fillEllipse(in: circleRect)
-                    ctx.setStrokeColor(fertileColor.withAlphaComponent(0.5).cgColor)
-                    ctx.setLineWidth(1); ctx.setLineDash(phase: 0, lengths: [3, 3])
-                    ctx.strokeEllipse(in: circleRect); ctx.setLineDash(phase: 0, lengths: [])
+                    drawGlassCircle(ctx, rect: circleRect, color: fertileColor, fillOpacity: 0.35, borderOpacity: 0.5, dashed: d > today)
                 }
             }
 
@@ -295,7 +322,8 @@ private final class MonthGridDrawView: UIView {
             str.draw(at: CGPoint(x: cx - sz.width / 2, y: cy - sz.height / 2))
 
             // Edit mode: checkbox indicator
-            if isEditingPeriod && d <= today {
+            let editCutoff = cal.date(byAdding: .day, value: 7, to: today) ?? today
+            if isEditingPeriod && d <= editCutoff {
                 let isEditDay = editPeriodDays.contains(key)
                 let checkY = cy + r + 9
                 let checkR: CGFloat = 8
@@ -348,8 +376,16 @@ private final class MonthGridDrawView: UIView {
         guard day >= 1, day <= info.daysInMonth else { return }
         guard let date = cal.date(byAdding: .day, value: day - 1, to: info.firstOfMonth) else { return }
         let d = cal.startOfDay(for: date)
-        guard d <= cal.startOfDay(for: Date()) else { return }
-        if isEditingPeriod { onEditDayTapped?(date) } else { onDaySelected?(date) }
+        let today = cal.startOfDay(for: Date())
+        if isEditingPeriod {
+            // Allow tapping up to 7 days in future for edit mode
+            let cutoff = cal.date(byAdding: .day, value: 7, to: today) ?? today
+            guard d <= cutoff else { return }
+            onEditDayTapped?(date)
+        } else {
+            guard d <= today else { return }
+            onDaySelected?(date)
+        }
     }
 }
 

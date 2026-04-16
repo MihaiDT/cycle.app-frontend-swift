@@ -18,7 +18,7 @@ enum SymptomCategory: String, CaseIterable {
         case .energy: "bolt.circle"
         case .sleep: "moon.zzz"
         case .digestive: "fork.knife"
-        case .skin: "sparkles"
+        case .skin: "hands.and.sparkles.fill"
         }
     }
 
@@ -78,6 +78,7 @@ struct SymptomLoggingSheet: View {
     @State private var activeCategory: SymptomCategory = .physical
     @Namespace private var categoryNamespace
 
+
     private var selectedSymptoms: Set<String> {
         let key = CalendarFeature.dateKey(store.selectedDate)
         return Set(store.loggedDays[key]?.symptoms ?? [])
@@ -104,13 +105,8 @@ struct SymptomLoggingSheet: View {
 
     var body: some View {
         ZStack(alignment: .bottom) {
-            LinearGradient(
-                colors: activeCategory.backgroundGradient,
-                startPoint: .top,
-                endPoint: .bottom
-            )
-            .ignoresSafeArea()
-            .animation(.easeInOut(duration: 0.5), value: activeCategory)
+            Color.white
+                .ignoresSafeArea()
 
             VStack(spacing: 0) {
                 sheetHeader
@@ -144,27 +140,51 @@ struct SymptomLoggingSheet: View {
         VStack(spacing: 0) {
             Spacer().frame(height: 24)
 
-            HStack(alignment: .top) {
-                VStack(alignment: .leading, spacing: 5) {
-                    Text("How are you feeling?")
-                        .font(.custom("Raleway-Bold", size: 24))
-                        .foregroundStyle(DesignColors.text)
-                    Text(formattedDate)
-                        .font(.custom("Raleway-Medium", size: 14))
-                        .foregroundStyle(DesignColors.textSecondary)
-                }
+            HStack(alignment: .center) {
+                Text("How are you feeling?")
+                    .font(.custom("Raleway-Bold", size: 24))
+                    .foregroundStyle(DesignColors.text)
                 Spacer()
                 Button {
                     UIImpactFeedbackGenerator(style: .soft).impactOccurred()
                     store.send(.symptomSheetDismissed, animation: .spring(response: 0.35, dampingFraction: 0.9))
                 } label: {
                     Image(systemName: "xmark")
-                        .font(.system(size: 13, weight: .semibold))
+                        .font(.system(size: 16, weight: .semibold))
                         .foregroundStyle(DesignColors.text)
-                        .frame(width: 40, height: 40)
+                        .frame(width: 44, height: 44)
                         .background {
-                            Circle().fill(DesignColors.structure.opacity(0.18))
+                            ZStack {
+                                Circle()
+                                    .fill(
+                                        LinearGradient(
+                                            colors: [Color.white.opacity(0.85), Color.white.opacity(0.5)],
+                                            startPoint: .top,
+                                            endPoint: .bottom
+                                        )
+                                    )
+                                Circle()
+                                    .fill(
+                                        LinearGradient(
+                                            colors: [Color.white.opacity(0.9), Color.clear],
+                                            startPoint: .top,
+                                            endPoint: .center
+                                        )
+                                    )
+                                    .padding(2)
+                                    .offset(y: -2)
+                                Circle()
+                                    .strokeBorder(
+                                        LinearGradient(
+                                            colors: [Color.white.opacity(0.8), DesignColors.accentWarm.opacity(0.3)],
+                                            startPoint: .topLeading,
+                                            endPoint: .bottomTrailing
+                                        ),
+                                        lineWidth: 0.5
+                                    )
+                            }
                         }
+                        .shadow(color: .black.opacity(0.08), radius: 4, x: 0, y: 2)
                 }
                 .buttonStyle(.plain)
             }
@@ -205,7 +225,7 @@ struct SymptomLoggingSheet: View {
     private var categoryTabs: some View {
         ScrollViewReader { proxy in
             ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 6) {
+                HStack(spacing: 4) {
                     ForEach(SymptomCategory.allCases, id: \.rawValue) { category in
                         SymptomCategoryTab(
                             category: category,
@@ -225,6 +245,29 @@ struct SymptomLoggingSheet: View {
                         .id(category.rawValue)
                     }
                 }
+                .padding(4)
+                .background {
+                    Capsule()
+                        .fill(
+                            LinearGradient(
+                                colors: [Color.white.opacity(0.65), Color.white.opacity(0.35)],
+                                startPoint: .top,
+                                endPoint: .bottom
+                            )
+                        )
+                        .overlay {
+                            Capsule()
+                                .strokeBorder(
+                                    LinearGradient(
+                                        colors: [Color.white.opacity(0.8), DesignColors.accentWarm.opacity(0.2)],
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    ),
+                                    lineWidth: 0.5
+                                )
+                        }
+                        .shadow(color: .black.opacity(0.06), radius: 3, x: 0, y: 1)
+                }
                 .padding(.horizontal, 24)
             }
         }
@@ -234,23 +277,17 @@ struct SymptomLoggingSheet: View {
     // MARK: - Symptom Carousel
 
     private var symptomCarousel: some View {
-        TabView(selection: $activeCategory) {
-            ForEach(SymptomCategory.allCases, id: \.rawValue) { category in
-                SymptomCategoryPage(
-                    category: category,
-                    selectedSymptoms: selectedSymptoms,
-                    onToggle: { symptom in
-                        UIImpactFeedbackGenerator(style: .light).impactOccurred()
-                        store.send(
-                            .symptomToggled(symptom),
-                            animation: .spring(response: 0.3, dampingFraction: 0.8)
-                        )
-                    }
+        SymptomCategoryPage(
+            category: activeCategory,
+            selectedSymptoms: selectedSymptoms,
+            onToggle: { symptom in
+                UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                store.send(
+                    .symptomToggled(symptom),
+                    animation: .spring(response: 0.3, dampingFraction: 0.8)
                 )
-                .tag(category)
             }
-        }
-        .tabViewStyle(.page(indexDisplayMode: .never))
+        )
     }
 }
 
@@ -318,40 +355,57 @@ struct SymptomCategoryTab: View {
         Button(action: onTap) {
             HStack(spacing: 6) {
                 Image(systemName: category.icon)
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(.system(size: 15, weight: .semibold))
 
                 Text(category.rawValue)
-                    .font(.custom("Raleway-SemiBold", size: 13))
+                    .font(.custom("Raleway-SemiBold", size: 15))
                     .lineLimit(1)
 
                 if selectedCount > 0 {
                     Text("\(selectedCount)")
-                        .font(.custom("Raleway-Bold", size: 10))
+                        .font(.custom("Raleway-Bold", size: 11))
                         .foregroundStyle(isActive ? category.tintColor : .white)
-                        .frame(width: 18, height: 18)
+                        .frame(width: 20, height: 20)
                         .background {
                             Circle().fill(isActive ? Color.white : category.tintColor)
                         }
                 }
             }
-            .foregroundStyle(isActive ? .white : DesignColors.text.opacity(0.7))
-            .padding(.horizontal, 14)
-            .padding(.vertical, 10)
+            .foregroundStyle(isActive ? DesignColors.text : DesignColors.textSecondary.opacity(0.5))
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
             .background {
                 if isActive {
-                    Capsule()
-                        .fill(
-                            LinearGradient(
-                                colors: [category.tintColor, category.tintColor.opacity(0.8)],
-                                startPoint: .leading,
-                                endPoint: .trailing
+                    ZStack {
+                        Capsule()
+                            .fill(
+                                LinearGradient(
+                                    colors: [Color.white.opacity(0.95), Color.white.opacity(0.7)],
+                                    startPoint: .top,
+                                    endPoint: .bottom
+                                )
                             )
-                        )
-                        .matchedGeometryEffect(id: "activeTab", in: namespace)
-                        .shadow(color: category.tintColor.opacity(0.25), radius: 8, x: 0, y: 3)
-                } else {
-                    Capsule()
-                        .fill(DesignColors.structure.opacity(0.12))
+                        Capsule()
+                            .fill(
+                                LinearGradient(
+                                    colors: [Color.white.opacity(0.9), Color.clear],
+                                    startPoint: .top,
+                                    endPoint: .center
+                                )
+                            )
+                            .padding(2)
+                        Capsule()
+                            .strokeBorder(
+                                LinearGradient(
+                                    colors: [Color.white.opacity(0.8), category.tintColor.opacity(0.3)],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                ),
+                                lineWidth: 0.5
+                            )
+                    }
+                    .matchedGeometryEffect(id: "activeTab", in: namespace)
+                    .shadow(color: .black.opacity(0.08), radius: 4, x: 0, y: 2)
                 }
             }
         }
@@ -375,13 +429,12 @@ struct SymptomCategoryPage: View {
     var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
             LazyVGrid(columns: columns, spacing: 20) {
-                ForEach(Array(category.symptoms.enumerated()), id: \.element.rawValue) { index, symptom in
+                ForEach(category.symptoms, id: \.rawValue) { symptom in
                     let isSelected = selectedSymptoms.contains(symptom.rawValue)
                     SymptomIconCard(
                         symptom: symptom,
                         isSelected: isSelected,
                         tintColor: category.tintColor,
-                        staggerIndex: index,
                         onTap: { onToggle(symptom) }
                     )
                 }
@@ -453,10 +506,7 @@ struct SymptomIconCard: View {
     let symptom: SymptomType
     let isSelected: Bool
     let tintColor: Color
-    let staggerIndex: Int
     let onTap: () -> Void
-
-    @State private var appeared = false
 
     var body: some View {
         Button(action: onTap) {
@@ -464,34 +514,26 @@ struct SymptomIconCard: View {
                 ZStack {
                     Circle()
                         .fill(
-                            isSelected
-                                ? LinearGradient(
-                                    colors: [tintColor, tintColor.opacity(0.75)],
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                )
-                                : LinearGradient(
-                                    colors: [tintColor.opacity(0.12), tintColor.opacity(0.06)],
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                )
+                            LinearGradient(
+                                colors: isSelected
+                                    ? [tintColor.opacity(0.8), tintColor.opacity(0.55)]
+                                    : [DesignColors.structure.opacity(0.1), DesignColors.structure.opacity(0.05)],
+                                startPoint: .top,
+                                endPoint: .bottom
+                            )
                         )
-                        .frame(width: 64, height: 64)
+                        .frame(width: 72, height: 72)
                         .overlay {
-                            if !isSelected {
-                                Circle()
-                                    .strokeBorder(tintColor.opacity(0.15), lineWidth: 1)
-                            }
+                            Circle()
+                                .strokeBorder(
+                                    isSelected ? Color.white.opacity(0.4) : DesignColors.structure.opacity(0.15),
+                                    lineWidth: isSelected ? 1 : 0.5
+                                )
                         }
-                        .shadow(
-                            color: isSelected ? tintColor.opacity(0.3) : .clear,
-                            radius: 10,
-                            x: 0,
-                            y: 4
-                        )
+                        .animation(.none, value: isSelected)
 
                     symptomIcon(for: symptom, size: 28)
-                        .foregroundStyle(isSelected ? .white : tintColor)
+                        .foregroundStyle(isSelected ? .white : DesignColors.accentWarm)
 
                     if isSelected {
                         Image(systemName: "checkmark.circle.fill")
@@ -508,7 +550,7 @@ struct SymptomIconCard: View {
                 }
 
                 Text(symptom.displayName)
-                    .font(.custom("Raleway-Medium", size: 12))
+                    .font(.custom("Raleway-SemiBold", size: 14))
                     .foregroundStyle(isSelected ? DesignColors.text : DesignColors.textSecondary)
                     .lineLimit(2)
                     .multilineTextAlignment(.center)
@@ -516,19 +558,9 @@ struct SymptomIconCard: View {
                     .frame(height: 30)
             }
             .frame(maxWidth: .infinity)
-            .scaleEffect(isSelected ? 1.05 : 1.0)
-            .opacity(appeared ? 1 : 0)
-            .offset(y: appeared ? 0 : 12)
+            .scaleEffect(isSelected ? 1.08 : 1.0)
         }
         .buttonStyle(.plain)
-        .animation(.spring(response: 0.25, dampingFraction: 0.7), value: isSelected)
-        .onAppear {
-            let row = staggerIndex / 3
-            let col = staggerIndex % 3
-            let delay = Double(row + col) * 0.03
-            withAnimation(.easeOut(duration: 0.35).delay(delay)) {
-                appeared = true
-            }
-        }
+        .animation(.spring(response: 0.35, dampingFraction: 0.65), value: isSelected)
     }
 }
