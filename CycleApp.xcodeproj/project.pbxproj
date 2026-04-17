@@ -105,6 +105,7 @@
 		814DE68D6BDA1378A8D0E58C /* GlassDateButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6C462B9D1B01812BDB61714 /* GlassDateButton.swift */; };
 		826BEB12143C0751CD9B015F /* ShieldCheckIcon.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA6B79551465ACB3BDCA4C84 /* ShieldCheckIcon.swift */; };
 		85F006AB2A855EE48ABFF504 /* JourneyCycleCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 856108BA4F305DD08416A0B8 /* JourneyCycleCard.swift */; };
+		86238D33356C2AD45D27C382 /* Calendar+Helpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = EC9D7B9E60FCE14DEE802BAA /* Calendar+Helpers.swift */; };
 		8786333510EA0A03E8AB0801 /* JourneyHomeViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 638B1046E9803CBA8CF06B74 /* JourneyHomeViews.swift */; };
 		87ED257C99FAA875969FEBE5 /* KeychainClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 226DF4A873C9600CC4F0B40D /* KeychainClient.swift */; };
 		884846A0471306F8D8063293 /* CalendarDayDetail.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67C8B598D2EF4F1218DF3C1C /* CalendarDayDetail.swift */; };
@@ -425,6 +426,7 @@
 		E687F11BA153A2DF683BD9B0 /* logo_animation.splineswift */ = {isa = PBXFileReference; path = logo_animation.splineswift; sourceTree = "<group>"; };
 		E911916B959EE91C14269049 /* WellnessPillarCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WellnessPillarCard.swift; sourceTree = "<group>"; };
 		EA867F396B072ED863219115 /* APIError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIError.swift; sourceTree = "<group>"; };
+		EC9D7B9E60FCE14DEE802BAA /* Calendar+Helpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Calendar+Helpers.swift"; sourceTree = "<group>"; };
 		EEDC94436897365CDB098DFB /* PhotoReviewFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoReviewFeature.swift; sourceTree = "<group>"; };
 		EF157AE3348A0F8EB3226FF6 /* CelestialMiniBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CelestialMiniBar.swift; sourceTree = "<group>"; };
 		F00316DAE6809EF9B087B33C /* PersonalGoalsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersonalGoalsView.swift; sourceTree = "<group>"; };
@@ -655,6 +657,7 @@
 			isa = PBXGroup;
 			children = (
 				0AD75AABB9CE6FF41B8116AE /* Async+Extensions.swift */,
+				EC9D7B9E60FCE14DEE802BAA /* Calendar+Helpers.swift */,
 				FDC7FC7B5C4F41A2ADC7EC1C /* Collection+Extensions.swift */,
 				823B14CA893AB18E490B49AD /* Date+Extensions.swift */,
 				999638979C702A3C682B497C /* DateFormatter+Cycle.swift */,
@@ -1056,6 +1059,7 @@
 				98C48FC656F4CA682EAE0D1D /* AriaRecapStories.swift in Sources */,
 				FE0B55CA6AD817CF227B166A /* Async+Extensions.swift in Sources */,
 				04FCF9C17DCAE18F21511B08 /* BirthDataView.swift in Sources */,
+				86238D33356C2AD45D27C382 /* Calendar+Helpers.swift in Sources */,
 				F796B28C6F0B4EDD0F77BCA7 /* CalendarAriaInsight.swift in Sources */,
 				884846A0471306F8D8063293 /* CalendarDayDetail.swift in Sources */,
 				8B066E6992294CE37D004E7F /* CalendarFeature.swift in Sources */,

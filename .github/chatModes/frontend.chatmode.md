@@ -33,13 +33,12 @@ Lucrezi pe proiectul **CycleApp** — o aplicatie iOS de wellness si tracking al
 Packages/
 ├── Core/                          # Shared frameworks
 │   ├── Models/                    # User, Session, APIResponse — Tagged IDs
-│   ├── Networking/                # APIClient, Endpoint, FirebaseAuthClient, OnboardingClient, PlacesClient
+│   ├── Networking/                # APIClient, Endpoint, OnboardingClient, PlacesClient
 │   ├── Persistence/               # SessionClient, KeychainClient, UserDefaultsClient
 │   ├── DesignSystem/              # DesignColors, AppLayout, Components/ (Glass*, etc.)
 │   └── Utilities/                 # Validation, Logger, Extensions/
 ├── Features/                      # Ecrane si fluxuri
 │   ├── App/                       # AppFeature — root reducer, navigare
-│   ├── Authentication/            # AuthenticationFeature — login, register, forgot password
 │   ├── Home/                      # HomeFeature — tab bar principal
 │   └── Onboarding/                # OnboardingFeature — 17+ ecrane de onboarding
 ```

@@ -150,9 +150,7 @@ struct MonthGridView: View, Equatable {
     }
 
     private func mondayStartOfGrid(for month: Date) -> Date {
-        var comps = cal.dateComponents([.year, .month], from: month)
-        comps.day = 1
-        let firstOfMonth = cal.date(from: comps) ?? month
+        let firstOfMonth = cal.startOfMonth(for: month)
         let weekday = cal.component(.weekday, from: firstOfMonth)
         let daysBack: Int
         switch weekday {

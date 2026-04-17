@@ -24,7 +24,6 @@ Proiectul: **CycleApp / DTH** — aplicatie de wellness si tracking al ciclului 
 |----|-------------------|---------------|
 | Modele | `Packages/Core/Models/` | `internal/models/` |
 | Endpoints | `Packages/Core/Networking/Endpoint.swift` | `internal/api/` + `internal/handler/` |
-| Auth | `Packages/Core/Networking/FirebaseAuthClient.swift` | `internal/firebase/` + `internal/middleware/` |
 | Onboarding | `Packages/Core/Networking/OnboardingClient.swift` | `internal/api/onboarding_handler.go` |
 
 # JSON Contract

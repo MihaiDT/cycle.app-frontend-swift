@@ -193,7 +193,6 @@ public struct CelestialCycleView: View {
     // MARK: - Collapse
 
     var hideProgress: Double { min(1, max(0, collapseProgress * 2.5)) }
-    private var numberHideProgress: Double { min(1, max(0, (collapseProgress - 0.6) / 0.3)) }
 
     // MARK: - Center Text
 

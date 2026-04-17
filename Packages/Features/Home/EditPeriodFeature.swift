@@ -38,9 +38,7 @@ public struct EditPeriodFeature: Sendable {
             focusDate: Date? = nil
         ) {
             let target = focusDate ?? Date()
-            var comps = Calendar.current.dateComponents([.year, .month], from: target)
-            comps.day = 1
-            self.initialMonth = Calendar.current.date(from: comps) ?? target
+            self.initialMonth = Calendar.current.startOfMonth(for: target)
             self.periodDays = periodDays
             self.periodFlowIntensity = periodFlowIntensity
             self.originalPeriodDays = periodDays
@@ -343,10 +341,7 @@ public struct EditPeriodView: View {
     // 12 months back → 1 month forward (computed once)
     private static let allMonthsCache: [Date] = {
         let cal = Calendar.current
-        let today = cal.startOfDay(for: Date())
-        var comps = cal.dateComponents([.year, .month], from: today)
-        comps.day = 1
-        let thisMonth = cal.date(from: comps) ?? today
+        let thisMonth = cal.startOfMonth(for: Date())
         return (-12...1).compactMap { cal.date(byAdding: .month, value: $0, to: thisMonth) }
     }()
 
@@ -717,9 +712,7 @@ public struct EditPeriodView: View {
     }
 
     private func mondayStartOfGrid(for month: Date) -> Date {
-        var comps = cal.dateComponents([.year, .month], from: month)
-        comps.day = 1
-        let firstOfMonth = cal.date(from: comps) ?? month
+        let firstOfMonth = cal.startOfMonth(for: month)
         let weekday = cal.component(.weekday, from: firstOfMonth)
         let daysBack: Int
         switch weekday {

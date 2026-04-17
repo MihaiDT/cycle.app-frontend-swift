@@ -109,12 +109,11 @@ DO NOT modify files in `dth-backend/` unless explicitly asked.
 
 ```
 Packages/Core/Models/          — User, Session, APIResponse (Tagged IDs)
-Packages/Core/Networking/      — APIClient, Endpoint, FirebaseAuthClient, OnboardingClient
+Packages/Core/Networking/      — APIClient, Endpoint, OnboardingClient
 Packages/Core/Persistence/     — SessionClient, KeychainClient, UserDefaultsClient
 Packages/Core/DesignSystem/    — DesignColors, AppLayout, Components/ (Glass*)
 Packages/Core/Utilities/       — Validation, Logger, Extensions/
 Packages/Features/App/         — AppFeature (root reducer, navigation)
-Packages/Features/Authentication/ — AuthenticationFeature
 Packages/Features/Home/        — HomeFeature (tab bar)
 Packages/Features/Onboarding/  — OnboardingFeature (17+ screens)
 ```

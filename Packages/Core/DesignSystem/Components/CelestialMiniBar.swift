@@ -26,26 +26,6 @@ extension CyclePhase {
     var gradientColors: [Color] {
         [orbitColor, glowColor]
     }
-
-    fileprivate var uiColor: UIColor {
-        switch self {
-        case .menstrual: UIColor(red: 0.79, green: 0.25, blue: 0.38, alpha: 1)
-        case .follicular: UIColor(red: 0.36, green: 0.72, blue: 0.65, alpha: 1)
-        case .ovulatory: UIColor(red: 0.91, green: 0.66, blue: 0.22, alpha: 1)
-        case .luteal: UIColor(red: 0.55, green: 0.49, blue: 0.78, alpha: 1)
-        case .late: UIColor(red: 0.65, green: 0.62, blue: 0.60, alpha: 1)
-        }
-    }
-
-    fileprivate var uiGlowColor: UIColor {
-        switch self {
-        case .menstrual: UIColor(red: 0.66, green: 0.19, blue: 0.31, alpha: 1)
-        case .follicular: UIColor(red: 0.24, green: 0.60, blue: 0.53, alpha: 1)
-        case .ovulatory: UIColor(red: 0.80, green: 0.55, blue: 0.13, alpha: 1)
-        case .luteal: UIColor(red: 0.43, green: 0.38, blue: 0.69, alpha: 1)
-        case .late: UIColor(red: 0.55, green: 0.52, blue: 0.50, alpha: 1)
-        }
-    }
 }
 
 // MARK: - Celestial Mini Bar

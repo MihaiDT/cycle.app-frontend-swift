@@ -26,7 +26,6 @@ Proiectul este **CycleApp / DTH** — o aplicatie de wellness si tracking al cic
 | --------------- | --------------------------------------------------- | ----------------------------------------------------------------------------- |
 | **Modele**      | `Packages/Core/Models/`                             | `internal/models/` + `internal/menstrual/models.go`                           |
 | **Endpoints**   | `Packages/Core/Networking/Endpoint.swift`           | `internal/api/` + `internal/handler/`                                         |
-| **Auth**        | `Packages/Core/Networking/FirebaseAuthClient.swift` | `internal/firebase/` + `internal/middleware/`                                 |
 | **Onboarding**  | `Packages/Core/Networking/OnboardingClient.swift`   | `internal/api/onboarding_handler.go`                                          |
 | **HBI**         | (TBD feature)                                       | `internal/handler/hbi_handler.go` + `internal/service/hbi_calculator.go`      |
 | **Menstrual**   | (TBD feature)                                       | `internal/menstrual/` (self-contained domain)                                 |
