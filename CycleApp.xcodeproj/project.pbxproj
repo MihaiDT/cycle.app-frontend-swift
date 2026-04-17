@@ -13,6 +13,7 @@
 		0985C631CF3EC7089E779C31 /* HealthPermissionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 89AB632DD5D233D065ACF184 /* HealthPermissionView.swift */; };
 		0BFF2F93D69070237D916443 /* ChallengeRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = F15706D9828787C96870B18D /* ChallengeRecord.swift */; };
 		0E0F7B51A51595D17FEAFCEF /* CycleInsightsComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2B0B1673FABC27A43A6B02D /* CycleInsightsComponents.swift */; };
+		0E967C256200C3E623AFD4EB /* TodayFeaturePresentations.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE958ED638662F939FCEFBC2 /* TodayFeaturePresentations.swift */; };
 		103674BDFBF3E3412696BF5A /* HomeFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F9C55BFC287E7193D934779 /* HomeFeature.swift */; };
 		128EB6710703E9BA653C0ABB /* TodayFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C384BB38218230424E77203 /* TodayFeature.swift */; };
 		14ADF9898AA0738A9FA1478E /* MiniCycleCalendar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8192A637D07F3E16EAD1DB59 /* MiniCycleCalendar.swift */; };
@@ -190,6 +191,7 @@
 		ED42279453648574D6FA7228 /* WellnessPillarCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = E911916B959EE91C14269049 /* WellnessPillarCard.swift */; };
 		EF4128F62175DF892C0122E9 /* Raleway-ExtraBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 897DB2589F5482F282AC30FD /* Raleway-ExtraBold.ttf */; };
 		F111ECFB1ABCC7C05131215B /* Endpoints.swift in Sources */ = {isa = PBXBuildFile; fileRef = C37CC78C0030CB6EEA71B9C7 /* Endpoints.swift */; };
+		F31FC48F8DC0CE9E05C34843 /* TodayFeatureView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6FFD8A28ED9C34496E287969 /* TodayFeatureView.swift */; };
 		F38C3DB0B0EB1DE32EE83688 /* Raleway-BoldItalic.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 0DDA4D46AFEF6322A76391AA /* Raleway-BoldItalic.ttf */; };
 		F553D5D7D1563E6D5DC62F51 /* ConsentPrivacy.json in Resources */ = {isa = PBXBuildFile; fileRef = 929A3B534A8BCD8044EA93C4 /* ConsentPrivacy.json */; };
 		F5791588230E37ECC470FD77 /* GlowPrimaryButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3FD2B1629CCE01C8D0887F3 /* GlowPrimaryButton.swift */; };
@@ -315,6 +317,7 @@
 		6E02FB6CD7C744A1401C9090 /* ChallengeTemplatePool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChallengeTemplatePool.swift; sourceTree = "<group>"; };
 		6E46C1A98E8B3B20BE1C7EAB /* CycleModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CycleModels.swift; sourceTree = "<group>"; };
 		6F1A4A6CC1D5B26BCF74322D /* CycleEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CycleEngineTests.swift; sourceTree = "<group>"; };
+		6FFD8A28ED9C34496E287969 /* TodayFeatureView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayFeatureView.swift; sourceTree = "<group>"; };
 		71EF173A08EFFAA9EAF10A56 /* APIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIClient.swift; sourceTree = "<group>"; };
 		75D6127ECF3EBDD6447B1D46 /* CycleAppLiveActivity.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = CycleAppLiveActivity.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		768AB686BAC4D9AE276C0E0F /* GlassDatePicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassDatePicker.swift; sourceTree = "<group>"; };
@@ -397,6 +400,7 @@
 		D6C462B9D1B01812BDB61714 /* GlassDateButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassDateButton.swift; sourceTree = "<group>"; };
 		D9BEB4E6B19D12267D302E1E /* HBILocalClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HBILocalClient.swift; sourceTree = "<group>"; };
 		DDDE03554E177D8CB7758368 /* DailyChallengeFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyChallengeFeature.swift; sourceTree = "<group>"; };
+		DE958ED638662F939FCEFBC2 /* TodayFeaturePresentations.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayFeaturePresentations.swift; sourceTree = "<group>"; };
 		DFB5C69AF9E8C6B3B5A8F50C /* CycleJourneyEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CycleJourneyEngine.swift; sourceTree = "<group>"; };
 		E1D75A3020910AA2ED96FB84 /* CycleDataComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CycleDataComponents.swift; sourceTree = "<group>"; };
 		E234B15081BB567827B75E0E /* CalendarAriaInsight.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarAriaInsight.swift; sourceTree = "<group>"; };
@@ -804,6 +808,8 @@
 				3DDC9D70B5525DF08A314BD7 /* PatternInsightsSheet.swift */,
 				F8AAA5EAA0B0713C6D0F9CAC /* ProfileFeature.swift */,
 				2C384BB38218230424E77203 /* TodayFeature.swift */,
+				DE958ED638662F939FCEFBC2 /* TodayFeaturePresentations.swift */,
+				6FFD8A28ED9C34496E287969 /* TodayFeatureView.swift */,
 			);
 			path = Home;
 			sourceTree = "<group>";
@@ -1157,6 +1163,8 @@
 				43871BC7610359114EBD9DF7 /* SplineIntroView.swift in Sources */,
 				28CB5F282CFC523F42F68FA7 /* String+Extensions.swift in Sources */,
 				128EB6710703E9BA653C0ABB /* TodayFeature.swift in Sources */,
+				0E967C256200C3E623AFD4EB /* TodayFeaturePresentations.swift in Sources */,
+				F31FC48F8DC0CE9E05C34843 /* TodayFeatureView.swift in Sources */,
 				79336A90E553B790F6CCF604 /* UIFont+Raleway.swift in Sources */,
 				D1CF7852379A9A2B365FCE80 /* User.swift in Sources */,
 				32F595C93C135A5FE8FE9717 /* UserDefaultsClient.swift in Sources */,
