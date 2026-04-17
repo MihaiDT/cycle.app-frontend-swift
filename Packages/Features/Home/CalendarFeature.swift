@@ -27,16 +27,36 @@ public struct CalendarFeature: Sendable {
         public var cycleLength: Int
         public var bleedingDays: Int
 
+        /// Unified cycle-derived calendar data — single source of truth.
+        /// `periodDays` / `predictedPeriodDays` / `periodFlowIntensity` /
+        /// `fertileDays` / `ovulationDays` are computed passthroughs into this.
+        public var snapshot: CycleSnapshot = .empty
+
         // User-marked period days (keys: "yyyy-MM-dd") — confirmed + predicted from server
-        public var periodDays: Set<String> = []
+        public var periodDays: Set<String> {
+            get { snapshot.periodDays }
+            set { snapshot.periodDays = newValue }
+        }
         // Server-predicted period days (subset of periodDays) — for dashed/lighter styling
-        public var predictedPeriodDays: Set<String> = []
+        public var predictedPeriodDays: Set<String> {
+            get { snapshot.predictedDays }
+            set { snapshot.predictedDays = newValue }
+        }
         // Flow intensity per period day (keys: "yyyy-MM-dd")
-        public var periodFlowIntensity: [String: FlowIntensity] = [:]
+        public var periodFlowIntensity: [String: FlowIntensity] {
+            get { snapshot.flowIntensity }
+            set { snapshot.flowIntensity = newValue }
+        }
         // Fertile days with their level (keys: "yyyy-MM-dd")
-        public var fertileDays: [String: FertilityLevel] = [:]
+        public var fertileDays: [String: FertilityLevel] {
+            get { snapshot.fertileDays }
+            set { snapshot.fertileDays = newValue }
+        }
         // Ovulation days (keys: "yyyy-MM-dd")
-        public var ovulationDays: Set<String> = []
+        public var ovulationDays: Set<String> {
+            get { snapshot.ovulationDays }
+            set { snapshot.ovulationDays = newValue }
+        }
 
         // Inline edit period mode
         public var isEditingPeriod: Bool = false
@@ -82,11 +102,14 @@ public struct CalendarFeature: Sendable {
             self.cycleLength = menstrualStatus?.profile.avgCycleLength ?? 28
             self.bleedingDays = menstrualStatus?.currentCycle.bleedingDays ?? 5
 
-            // Pre-populate with already-loaded data for instant display
-            self.periodDays = periodDays
-            self.predictedPeriodDays = predictedPeriodDays
-            self.fertileDays = fertileDays
-            self.ovulationDays = ovulationDays
+            // Pre-populate with already-loaded data for instant display.
+            // Writing into the unified snapshot (computed accessors proxy into it).
+            self.snapshot = CycleSnapshot(
+                periodDays: periodDays,
+                predictedDays: predictedPeriodDays,
+                fertileDays: fertileDays,
+                ovulationDays: ovulationDays
+            )
         }
     }
 
@@ -336,8 +359,8 @@ public struct CalendarFeature: Sendable {
                 let periodGroups = EditPeriodFeature.groupConsecutivePeriods(periodDays)
                 let removedDays = originalPeriodDays.subtracting(periodDays)
 
-                state.periodDays = periodDays
-                state.periodFlowIntensity = flowIntensity
+                state.snapshot.periodDays = periodDays
+                state.snapshot.flowIntensity = flowIntensity
                 if periodDays.isEmpty {
                     let today = Calendar.current.startOfDay(for: Date())
                     state.cycleStartDate =
@@ -491,10 +514,10 @@ public struct CalendarFeature: Sendable {
             }
         }
 
-        state.periodDays = serverPeriodDays
-        state.predictedPeriodDays = serverPredictedDays
-        state.fertileDays = serverFertileDays
-        state.ovulationDays = serverOvulationDays
+        state.snapshot.periodDays = serverPeriodDays
+        state.snapshot.predictedDays = serverPredictedDays
+        state.snapshot.fertileDays = serverFertileDays
+        state.snapshot.ovulationDays = serverOvulationDays
     }
 
     static func ariaMessage(symptoms: [String], phase: CyclePhase?) -> String {

@@ -9,15 +9,31 @@ public struct EditPeriodFeature: Sendable {
     @ObservableState
     public struct State: Equatable, Sendable {
         public var initialMonth: Date
-        public var periodDays: Set<String>
-        public var periodFlowIntensity: [String: FlowIntensity]
+
+        /// Unified cycle-derived calendar data — single source of truth.
+        /// `periodDays` / `periodFlowIntensity` / `predictedPeriodDays` are
+        /// computed passthroughs into this.
+        public var snapshot: CycleSnapshot = .empty
+
+        public var periodDays: Set<String> {
+            get { snapshot.periodDays }
+            set { snapshot.periodDays = newValue }
+        }
+        public var periodFlowIntensity: [String: FlowIntensity] {
+            get { snapshot.flowIntensity }
+            set { snapshot.flowIntensity = newValue }
+        }
+        /// Predicted period days from server (read-only, shown with dashed style)
+        public var predictedPeriodDays: Set<String> {
+            get { snapshot.predictedDays }
+            set { snapshot.predictedDays = newValue }
+        }
+
         public var selectedPeriodDay: String?
         public var isUpdatingPredictions: Bool = false
         public var predictionsDone: Bool = false
         public var originalPeriodDays: Set<String> = []
         public var originalFlowIntensity: [String: FlowIntensity] = [:]
-        /// Predicted period days from server (read-only, shown with dashed style)
-        public var predictedPeriodDays: Set<String> = []
 
         public var hasChanges: Bool {
             periodDays != originalPeriodDays || periodFlowIntensity != originalFlowIntensity
@@ -39,11 +55,13 @@ public struct EditPeriodFeature: Sendable {
         ) {
             let target = focusDate ?? Date()
             self.initialMonth = Calendar.current.startOfMonth(for: target)
-            self.periodDays = periodDays
-            self.periodFlowIntensity = periodFlowIntensity
+            self.snapshot = CycleSnapshot(
+                periodDays: periodDays,
+                predictedDays: predictedPeriodDays,
+                flowIntensity: periodFlowIntensity
+            )
             self.originalPeriodDays = periodDays
             self.originalFlowIntensity = periodFlowIntensity
-            self.predictedPeriodDays = predictedPeriodDays
             self.selectedPeriodDay = nil
             self.cycleStartDate = cycleStartDate
             self.cycleLength = cycleLength
@@ -121,9 +139,9 @@ public struct EditPeriodFeature: Sendable {
                     }
                 }
                 // Always use server as source of truth (even if empty)
-                state.periodDays = serverDays
+                state.snapshot.periodDays = serverDays
                 state.originalPeriodDays = serverDays
-                state.predictedPeriodDays = predicted
+                state.snapshot.predictedDays = predicted
                 print(
                     "[EditPeriod] calendarLoaded: periodDays=\(serverDays.sorted()), predictedDays=\(predicted.sorted())"
                 )
@@ -135,19 +153,19 @@ public struct EditPeriodFeature: Sendable {
             case .dayTapped(let date):
                 let cal = Calendar.current
                 let key = Self.dateKey(date)
-                if state.periodDays.contains(key) {
+                if state.snapshot.periodDays.contains(key) {
                     let today = cal.startOfDay(for: Date())
                     // Remove this day + all future period days after it
-                    state.periodDays.remove(key)
-                    state.periodFlowIntensity.removeValue(forKey: key)
+                    state.snapshot.periodDays.remove(key)
+                    state.snapshot.flowIntensity.removeValue(forKey: key)
                     for i in 1...30 {
                         guard let d = cal.date(byAdding: .day, value: i, to: date),
                             cal.startOfDay(for: d) >= today
                         else { continue }
                         let k = Self.dateKey(d)
-                        if state.periodDays.contains(k) {
-                            state.periodDays.remove(k)
-                            state.periodFlowIntensity.removeValue(forKey: k)
+                        if state.snapshot.periodDays.contains(k) {
+                            state.snapshot.periodDays.remove(k)
+                            state.snapshot.flowIntensity.removeValue(forKey: k)
                         } else {
                             break
                         }
@@ -158,12 +176,12 @@ public struct EditPeriodFeature: Sendable {
                         guard offset != 0,
                             let neighbor = cal.date(byAdding: .day, value: offset, to: date)
                         else { return false }
-                        return state.periodDays.contains(Self.dateKey(neighbor))
+                        return state.snapshot.periodDays.contains(Self.dateKey(neighbor))
                     })
 
                     if isAdjacent {
-                        state.periodDays.insert(key)
-                        state.periodFlowIntensity[key] = .medium
+                        state.snapshot.periodDays.insert(key)
+                        state.snapshot.flowIntensity[key] = .medium
                     } else {
                         // Auto-fill using user's average bleeding days
                         let fillCount = max(state.bleedingDays, 3)
@@ -171,8 +189,8 @@ public struct EditPeriodFeature: Sendable {
                             guard let d = cal.date(byAdding: .day, value: i, to: date)
                             else { break }
                             let k = Self.dateKey(d)
-                            state.periodDays.insert(k)
-                            state.periodFlowIntensity[k] = .medium
+                            state.snapshot.periodDays.insert(k)
+                            state.snapshot.flowIntensity[k] = .medium
                         }
                     }
                 }

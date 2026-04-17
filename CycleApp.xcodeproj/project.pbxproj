@@ -63,6 +63,7 @@
 		49B07A298102453EC330BB35 /* RelationshipStatusView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9951D5FE998C1DD8DE8B9958 /* RelationshipStatusView.swift */; };
 		4AC9FED42E81A3B2D054901F /* DailyCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 05C1863ED7A02D2799907F02 /* DailyCard.swift */; };
 		4D063F2BD8A56D021D957A5D /* GlassButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F1FB9070681EFDD7982FF5C /* GlassButton.swift */; };
+		4D2BE56E939A8525C7E1F104 /* CycleSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3AF820DEA7E37EE74A2C049 /* CycleSnapshot.swift */; };
 		4F4452D7D81A585BA930DDE4 /* NameGreetingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A9F95C44B71EFC08D5BAAAD /* NameGreetingView.swift */; };
 		5183F12DDE66A90DA3DBFBA7 /* APIError.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA867F396B072ED863219115 /* APIError.swift */; };
 		51F71B48CBEB89F28CD13E3F /* DailyCheckInFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1D8BDCDF2263B793576D8E /* DailyCheckInFeature.swift */; };
@@ -386,6 +387,7 @@
 		B2940CF932F7370E57C35B79 /* HBIScore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HBIScore.swift; sourceTree = "<group>"; };
 		B2B0B1673FABC27A43A6B02D /* CycleInsightsComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CycleInsightsComponents.swift; sourceTree = "<group>"; };
 		B38AB06E18B5A4632AE2761A /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		B3AF820DEA7E37EE74A2C049 /* CycleSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CycleSnapshot.swift; sourceTree = "<group>"; };
 		B4D7237BEF2EC278AF39D03A /* NotificationPermissionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationPermissionView.swift; sourceTree = "<group>"; };
 		B5D3B77B6EF5F17F3E47EB83 /* OnboardingProgressBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingProgressBar.swift; sourceTree = "<group>"; };
 		B5D52170A5CA66317D773334 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
@@ -587,6 +589,7 @@
 		6C479D02C36C6316EB877FC0 /* Models */ = {
 			isa = PBXGroup;
 			children = (
+				B3AF820DEA7E37EE74A2C049 /* CycleSnapshot.swift */,
 				05C1863ED7A02D2799907F02 /* DailyCard.swift */,
 				0D235D9C76A26B122F55AFC7 /* DailySelfReport.swift */,
 				7F9895D88CABF51577D545ED /* HBIDashboard.swift */,
@@ -1113,6 +1116,7 @@
 				2AC8CDE5872CFC912A3F7B00 /* CycleRecapRecord.swift in Sources */,
 				C14A64317E611C4790213551 /* CycleRingView.swift in Sources */,
 				B88E58916279AE19E01D97C0 /* CycleSelectionSheets.swift in Sources */,
+				4D2BE56E939A8525C7E1F104 /* CycleSnapshot.swift in Sources */,
 				34AEFFA09DCDFD576A966433 /* CycleStoryView.swift in Sources */,
 				4AC9FED42E81A3B2D054901F /* DailyCard.swift in Sources */,
 				B2FD46D0C139524080026C3D /* DailyCardRecord.swift in Sources */,

@@ -14,14 +14,12 @@ public struct TodayFeature: Sendable {
 
         public var menstrualStatus: MenstrualStatusResponse?
         public var isLoadingMenstrual: Bool = false
-        /// Period day keys from server calendar entries
-        public var serverPeriodDays: Set<String> = []
-        /// Predicted period day keys (subset of serverPeriodDays)
-        public var serverPredictedDays: Set<String> = []
-        /// Fertile days with their level from server calendar (keys: "yyyy-MM-dd")
-        public var serverFertileDays: [String: FertilityLevel] = [:]
-        /// Ovulation day keys from server calendar (keys: "yyyy-MM-dd")
-        public var serverOvulationDays: Set<String> = []
+
+        /// Unified cycle-derived calendar data — single source of truth for
+        /// `periodDays` / `predictedDays` / `fertileDays` / `ovulationDays` /
+        /// `flowIntensity`. Propagated to `calendarState.snapshot` on every
+        /// server load so Calendar/EditPeriod read from the same source.
+        public var snapshot: CycleSnapshot = .empty
 
         @Presents var checkIn: DailyCheckInFeature.State?
         @Presents var moodArc: MoodArcFeature.State?
@@ -33,15 +31,6 @@ public struct TodayFeature: Sendable {
         /// True while reloading cycle data after an edit (shows loading on hero)
         public var isRefreshingCycleData: Bool = false
         public var hasCompletedCalendarLoad: Bool = false
-
-        /// Pending calendar data — held until refresh animation finishes
-        public var pendingCalendarData: PendingCalendarData?
-        public struct PendingCalendarData: Equatable, Sendable {
-            public var periodDays: Set<String>
-            public var predictedDays: Set<String>
-            public var fertileDays: [String: FertilityLevel]
-            public var ovulationDays: Set<String>
-        }
 
         /// Sync status for the toast on Home
         public enum SyncStatus: Equatable, Sendable {
@@ -57,10 +46,10 @@ public struct TodayFeature: Sendable {
             guard let status = menstrualStatus else { return nil }
             return CycleContext.from(
                 status: status,
-                periodDays: serverPeriodDays,
-                predictedDays: serverPredictedDays,
-                fertileDays: serverFertileDays,
-                ovulationDays: serverOvulationDays
+                periodDays: snapshot.periodDays,
+                predictedDays: snapshot.predictedDays,
+                fertileDays: snapshot.fertileDays,
+                ovulationDays: snapshot.ovulationDays
             )
         }
 
@@ -344,17 +333,18 @@ public struct TodayFeature: Sendable {
                 if wasSyncing {
                     state.syncStatus = .synced
                 }
-                // Always sync to calendar state for instant open
-                state.calendarState.periodDays = days
-                state.calendarState.predictedPeriodDays = predicted
-                state.calendarState.fertileDays = fertile
-                state.calendarState.ovulationDays = ovulation
-
-                // Always update server state immediately so cycle context is available
-                state.serverPeriodDays = days
-                state.serverPredictedDays = predicted
-                state.serverFertileDays = fertile
-                state.serverOvulationDays = ovulation
+                // Unified single-source update: build one snapshot and propagate
+                // to both TodayFeature (cycle context) and CalendarFeature (views).
+                // Flow intensity is preserved — only server-derived fields are replaced.
+                let refreshedSnapshot = CycleSnapshot(
+                    periodDays: days,
+                    predictedDays: predicted,
+                    fertileDays: fertile,
+                    ovulationDays: ovulation,
+                    flowIntensity: state.snapshot.flowIntensity
+                )
+                state.snapshot = refreshedSnapshot
+                state.calendarState.snapshot = refreshedSnapshot
 
                 let cardEffect = Self.syncPhaseEffect(state: state)
                 // Broadcast enriched cycle context (now includes calendar-derived
@@ -363,7 +353,6 @@ public struct TodayFeature: Sendable {
 
                 if state.isRefreshingCycleData {
                     // Keep wave active for 2.5s minimum — premium processing feel
-                    state.pendingCalendarData = nil
                     return .merge(
                         .run { send in
                             try? await Task.sleep(nanoseconds: 2_500_000_000)
@@ -448,7 +437,6 @@ public struct TodayFeature: Sendable {
             case .calendarDismissed:
                 state.isCalendarVisible = false
                 state.isRefreshingCycleData = false
-                state.pendingCalendarData = nil
                 state.syncStatus = .idle
                 return .send(.loadDashboard)
 
@@ -503,7 +491,7 @@ public struct TodayFeature: Sendable {
                 // Open calendar in edit period mode with date pre-selected
                 state.isCalendarVisible = true
                 // Existing confirmed days
-                let confirmedDays = state.calendarState.periodDays.subtracting(state.calendarState.predictedPeriodDays)
+                let confirmedDays = state.snapshot.periodDays.subtracting(state.snapshot.predictedDays)
                 // Pre-fill new days from selected date + bleeding length
                 let bleedingDays = state.cycle?.bleedingDays ?? 5
                 let cal = Calendar.current
@@ -551,15 +539,9 @@ public struct TodayFeature: Sendable {
                 return .send(.generateMissingRecaps)
 
             case .finishRefreshAnimation:
+                // Snapshot is updated immediately when calendar loads now, so
+                // this hook just clears the refresh flag.
                 state.isRefreshingCycleData = false
-                // Apply held calendar data in sync with animation end
-                if let pending = state.pendingCalendarData {
-                    state.serverPeriodDays = pending.periodDays
-                    state.serverPredictedDays = pending.predictedDays
-                    state.serverFertileDays = pending.fertileDays
-                    state.serverOvulationDays = pending.ovulationDays
-                    state.pendingCalendarData = nil
-                }
                 return .none
 
             // MARK: — Phase broadcast hub
