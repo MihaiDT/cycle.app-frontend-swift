@@ -154,6 +154,7 @@
 		BE5E6946B760793F39895910 /* UserProfileRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = B95AF5455648FC76034154C6 /* UserProfileRecord.swift */; };
 		BF2C740D0AB78C44011546CE /* ConsentCheckbox.swift in Sources */ = {isa = PBXBuildFile; fileRef = F7090C01E475E70BB3540924 /* ConsentCheckbox.swift */; };
 		BF602821C3DD5329C2021A75 /* JourneyComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10C561340E6F4415F02AF26F /* JourneyComponents.swift */; };
+		C0782C03847813880CC0B137 /* CycleCalendarInlineMonth.swift in Sources */ = {isa = PBXBuildFile; fileRef = 169002EB535917CF4C7641AA /* CycleCalendarInlineMonth.swift */; };
 		C108129BF646802352F8B8E6 /* Logger.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01D3B37256BD926AA7EFCBC2 /* Logger.swift */; };
 		C14A64317E611C4790213551 /* CycleRingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 047CCAFD0E4BADAC49BE42AB /* CycleRingView.swift */; };
 		C14D38E7246D896515FCACF5 /* Raleway-BlackItalic.ttf in Resources */ = {isa = PBXBuildFile; fileRef = FCE9EEEE1356254E0537A9D8 /* Raleway-BlackItalic.ttf */; };
@@ -255,6 +256,7 @@
 		107471505AD1ADFF34997E8D /* UserDefaultsClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserDefaultsClient.swift; sourceTree = "<group>"; };
 		10C561340E6F4415F02AF26F /* JourneyComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JourneyComponents.swift; sourceTree = "<group>"; };
 		15E5BBC3280206FB17B4DB65 /* AppFeatureTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppFeatureTests.swift; sourceTree = "<group>"; };
+		169002EB535917CF4C7641AA /* CycleCalendarInlineMonth.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CycleCalendarInlineMonth.swift; sourceTree = "<group>"; };
 		17E7EF949EF91E4ADFB45166 /* DailyChallengeCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyChallengeCardView.swift; sourceTree = "<group>"; };
 		1E11CC02F06A23385C8E3602 /* CalendarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarView.swift; sourceTree = "<group>"; };
 		1F7823769E6FBFCECBCB6CAE /* ChallengeSnapshotTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChallengeSnapshotTests.swift; sourceTree = "<group>"; };
@@ -810,6 +812,7 @@
 			isa = PBXGroup;
 			children = (
 				4826ABD18C16E30DACC2F4B6 /* BirthDataView.swift */,
+				169002EB535917CF4C7641AA /* CycleCalendarInlineMonth.swift */,
 				4322D31D6B828275DD65FC35 /* CycleCalendarViews.swift */,
 				E1D75A3020910AA2ED96FB84 /* CycleDataComponents.swift */,
 				B25F0848D5EE9FBB722FBAD6 /* CycleDataView.swift */,
@@ -1053,6 +1056,7 @@
 				A5C69FB1F58AF2B763AF934F /* Collection+Extensions.swift in Sources */,
 				BF2C740D0AB78C44011546CE /* ConsentCheckbox.swift in Sources */,
 				A6BC497E837963A03368AD0D /* CycleApp.swift in Sources */,
+				C0782C03847813880CC0B137 /* CycleCalendarInlineMonth.swift in Sources */,
 				649BEAA6D724578FB0AEE918 /* CycleCalendarViews.swift in Sources */,
 				54524DDB714E01B0A7CF3A8F /* CycleContext.swift in Sources */,
 				A596B878E800DB62DEB87F52 /* CycleDataComponents.swift in Sources */,
