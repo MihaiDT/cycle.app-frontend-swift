@@ -129,7 +129,7 @@ public struct CycleDataView: View {
                                     regularity: regularity,
                                     isSelected: cycleRegularity == regularity
                                 ) {
-                                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                                    withAnimation(.appBalanced) {
                                         cycleRegularity = regularity
                                     }
                                 }

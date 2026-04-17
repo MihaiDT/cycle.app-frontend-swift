@@ -369,7 +369,7 @@ public struct CelestialCycleView: View {
             contextPills
                 .opacity(1 - hideProgress)
                 .padding(.top, 16)
-                .animation(reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 0.85), value: displayDay)
+                .animation(reduceMotion ? nil : .appBalanced, value: displayDay)
         }
         .padding(.vertical, 8)
         .padding(.horizontal, 8)

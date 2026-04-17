@@ -10,6 +10,41 @@ struct ChallengeCelebrationView: View {
     @State private var showCard = false
     @State private var showButton = false
 
+    // MARK: - Projected Streak + Weekly Progress
+    //
+    // The celebration view fires BEFORE this challenge has been persisted
+    // (completion runs on "Back to my day" tap). So we read the stored profile
+    // and project the post-completion values using the same rule the
+    // GlowLocalClient.addXP uses: if last completion was yesterday → streak+1,
+    // else → streak = 1. Weekly progress uses min(streak, 7).
+    //
+    // If the profile hasn't loaded yet (brief race window after validation
+    // succeeds) we fall back to the baseline values the profile empty state
+    // provides — so visually the bar simply reflects "this is your first one".
+
+    private var projectedStreak: Int {
+        guard let profile = store.glowProfile else { return 1 }
+        if let last = profile.lastCompletedDate,
+           Calendar.current.isDateInYesterday(last)
+        {
+            return profile.currentConsistencyDays + 1
+        }
+        // Completing today after a gap (or first completion ever) → streak of 1
+        return 1
+    }
+
+    private var weeklyCompleted: Int {
+        // "X of 7" represents how far along the 7-day consistency bonus cycle
+        // the user is. The consistency counter resets past 7 days of activity
+        // during the next completion that happens after a break; until then we
+        // simply clamp to 7 for display.
+        min(projectedStreak, 7)
+    }
+
+    private var weeklyProgress: Double {
+        Double(weeklyCompleted) / 7.0
+    }
+
     var body: some View {
         VStack(spacing: 0) {
             Spacer()
@@ -98,16 +133,20 @@ struct ChallengeCelebrationView: View {
     }
 
     private var gamificationPlaceholder: some View {
-        VStack(spacing: 12) {
+        let completed = weeklyCompleted
+        let streak = projectedStreak
+        let streakNoun = streak == 1 ? "day" : "days"
+        return VStack(spacing: 12) {
             VStack(alignment: .leading, spacing: 4) {
                 HStack {
                     Text("Progress")
                         .font(.custom("Raleway-Bold", size: 11, relativeTo: .caption))
                         .foregroundStyle(DesignColors.accentWarm)
                     Spacer()
-                    Text("4 of 7")
+                    Text("\(completed) of 7")
                         .font(.custom("Raleway-Medium", size: 11, relativeTo: .caption))
                         .foregroundStyle(DesignColors.textPlaceholder)
+                        .contentTransition(.numericText())
                 }
 
                 GeometryReader { geo in
@@ -122,16 +161,16 @@ struct ChallengeCelebrationView: View {
                                     endPoint: .trailing
                                 )
                             )
-                            .frame(width: geo.size.width * 0.57)
+                            .frame(width: geo.size.width * CGFloat(weeklyProgress))
                     }
                 }
                 .frame(height: 5)
             }
             .accessibilityElement(children: .ignore)
             .accessibilityLabel("Weekly progress")
-            .accessibilityValue("4 of 7 challenges complete")
+            .accessibilityValue("\(completed) of 7 challenges complete")
 
-            Text("4 day streak")
+            Text("\(streak) \(streakNoun) streak")
                 .font(.custom("Raleway-Bold", size: 12, relativeTo: .caption))
                 .foregroundStyle(DesignColors.accentWarm)
                 .padding(.horizontal, 14)
@@ -144,7 +183,7 @@ struct ChallengeCelebrationView: View {
                                 .strokeBorder(DesignColors.accentWarm.opacity(0.15), lineWidth: 1)
                         )
                 )
-                .accessibilityLabel("Current streak: 4 days")
+                .accessibilityLabel("Current streak: \(streak) \(streakNoun)")
         }
     }
 }

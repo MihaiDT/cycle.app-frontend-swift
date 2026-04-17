@@ -23,14 +23,28 @@ public enum DesignColors {
     // MARK: - Text Colors
     public static let text = Color(hex: 0x5C4A3B)  // Cocoa Dark - text important
     public static let textPrincipal = Color(hex: 0x7A5F50)  // Deep Cocoa - text principal/contrast
-    public static let textSecondary = Color(hex: 0x6E6A68)  // Soft Charcoal - text secundar
-    public static let textPlaceholder = Color(hex: 0xA69F98)  // Warm Grey - placeholder
+    public static let textSecondary = Color(hex: 0x6E6A68)  // Soft Charcoal - text secundar (≈5.2:1 on ivory, AA)
+    /// Warm mid-grey used for placeholder copy, small counters, and muted labels.
+    /// Darkened from `#A69F98` → `#777069` to reach WCAG AA (≈4.77:1) on the ivory
+    /// background and warm card surfaces. Still reads as "soft", not black.
+    public static let textPlaceholder = Color(hex: 0x777069)  // Warm Grey - placeholder (AA on ivory)
+    /// Purely decorative soft grey preserved for non-text usages (strokes, fills,
+    /// skeletons). Do not use as standalone text on light backgrounds — fails AA.
+    public static let textPlaceholderMuted = Color(hex: 0xA69F98)
     public static let textCard = Color(hex: 0xB49B87)  // Rose Taupe - text secundar/card-uri
 
     // MARK: - Accent Colors
     public static let accent = Color(hex: 0xEBCFC3)  // Soft Blush - primary accent butoane principale
     public static let accentSecondary = Color(hex: 0xD6A59A)  // Dusty Rose - accent secundar, hover, active
+    /// Decorative terracotta — used for fills, borders, glows, ambient tints.
+    /// At `#C18F7D` this is ≈2.7:1 on the ivory background (fails AA/AA Large
+    /// as text). Use `accentWarmText` when rendering small copy in this hue.
     public static let accentWarm = Color(hex: 0xC18F7D)  // Terracotta Warm - alert/highlight bland
+    /// Text-safe terracotta variant — darkened from `#C18F7D` → `#8E6052` so
+    /// small labels rendered in the warm accent hue (e.g. "TODAY", "Today"
+    /// jump button, micro pills) hit WCAG AA (≈5.17:1 on ivory). Preserves
+    /// the terracotta family so the brand doesn't shift.
+    public static let accentWarmText = Color(hex: 0x8E6052)
 
     // MARK: - Structure Colors
     public static let structure = Color(hex: 0xDECBC1)  // Warm Sandstone - structura vizuala

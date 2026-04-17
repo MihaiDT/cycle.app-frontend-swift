@@ -281,7 +281,7 @@ struct OnboardingCTAButton: View {
                                     action()
                                 }
                             } else {
-                                withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
+                                withAnimation(.appBalanced) {
                                     dragOffset = 0
                                 }
                             }

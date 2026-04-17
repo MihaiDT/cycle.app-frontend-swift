@@ -218,7 +218,7 @@ public struct CalendarFeature: Sendable {
                 state.ariaPromptMessage = Self.ariaMessage(symptoms: symptoms, phase: phase)
                 return .run { send in
                     try? await Task.sleep(nanoseconds: 800_000_000)
-                    await send(.symptomSheetDismissed, animation: .spring(response: 0.4, dampingFraction: 0.85))
+                    await send(.symptomSheetDismissed, animation: .appBalanced)
                 }
 
             case .symptomSheetDismissed:
@@ -230,7 +230,7 @@ public struct CalendarFeature: Sendable {
                     // Delay to let symptom sheet fully dismiss before presenting Aria sheet
                     return .run { send in
                         try? await Task.sleep(nanoseconds: 500_000_000)
-                        await send(.binding(.set(\.showAriaPrompt, true)), animation: .spring(response: 0.4, dampingFraction: 0.85))
+                        await send(.binding(.set(\.showAriaPrompt, true)), animation: .appBalanced)
                     }
                 }
                 return .none

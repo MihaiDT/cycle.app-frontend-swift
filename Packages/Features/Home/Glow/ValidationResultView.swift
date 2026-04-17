@@ -185,7 +185,7 @@ private struct StaggeredSuccessView: View {
                 withAnimation(.easeOut(duration: 0.5).delay(0.9)) {
                     showFeedback = true
                 }
-                withAnimation(.spring(response: 0.4, dampingFraction: 0.8).delay(1.5)) {
+                withAnimation(.appBalanced.delay(1.5)) {
                     showXP = true
                 }
                 withAnimation(.easeOut(duration: 0.4).delay(2.2)) {
@@ -206,12 +206,16 @@ private struct ValidationPulsingCircle: View {
     @State private var isPulsing = false
 
     var body: some View {
+        // Reduce motion: render a fully-expanded, intentional-looking "active" state
+        // (outer ring at 1.0 + a solid inner disc at 0.6 — the peak of the animated
+        // pulse). Reads as a deliberate, finished visual rather than a frozen frame.
+        // Motion on: animate between 0.8→1.0 outer / 0.3→0.6 inner.
         Circle()
             .fill(DesignColors.accentWarm.opacity(0.2))
             .overlay {
                 Circle()
                     .fill(DesignColors.accentWarm.opacity(0.4))
-                    .scaleEffect(reduceMotion ? 0.45 : (isPulsing ? 0.6 : 0.3))
+                    .scaleEffect(reduceMotion ? 0.6 : (isPulsing ? 0.6 : 0.3))
             }
             .scaleEffect(reduceMotion ? 1.0 : (isPulsing ? 1.0 : 0.8))
             .animation(

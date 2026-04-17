@@ -310,7 +310,7 @@ public struct GlassWeekCalendar: View {
                 return
             }
 
-            withAnimation(reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 0.75)) {
+            withAnimation(reduceMotion ? nil : .appBalanced) {
                 userHasInteracted = true
                 highlightSlot = slotIndex
                 selectedDate = tappedDate

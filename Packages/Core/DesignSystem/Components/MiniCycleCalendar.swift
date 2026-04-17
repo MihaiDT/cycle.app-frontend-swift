@@ -88,14 +88,14 @@ public struct MiniCycleCalendar: View {
                 HStack {
                     Spacer()
                     Button {
-                        withAnimation(reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 0.8)) {
+                        withAnimation(reduceMotion ? nil : .appBalanced) {
                             currentWeekOffset = 0
                             selectedDate = nil
                         }
                     } label: {
                         Text("Today")
                             .font(.raleway("SemiBold", size: 12, relativeTo: .caption))
-                            .foregroundColor(DesignColors.accentWarm)
+                            .foregroundColor(DesignColors.accentWarmText)
                     }
                     .accessibilityHint("Jumps back to the current week")
                 }
@@ -175,7 +175,7 @@ public struct MiniCycleCalendar: View {
             if isToday {
                 Text("TODAY")
                     .font(.raleway("Bold", size: 9, relativeTo: .caption2))
-                    .foregroundColor(DesignColors.accentWarm)
+                    .foregroundColor(DesignColors.accentWarmText)
                     .frame(height: 14)
             } else {
                 Text(weekdaySymbol)

@@ -64,7 +64,7 @@ struct CycleStoryView: View {
                             Capsule()
                                 .fill(i <= currentStep ? DesignColors.accentSecondary : DesignColors.structure.opacity(0.15))
                                 .frame(width: i == currentStep ? 20 : 8, height: 4)
-                                .animation(.spring(response: 0.35, dampingFraction: 0.8), value: currentStep)
+                                .animation(.appBalanced, value: currentStep)
                         }
                     }
 
@@ -118,7 +118,7 @@ struct CycleStoryView: View {
                     .buttonStyle(.plain)
                     .padding(.horizontal, 28)
                     .transition(.move(edge: .bottom).combined(with: .opacity))
-                    .animation(.spring(response: 0.4, dampingFraction: 0.85), value: currentStep)
+                    .animation(.appBalanced, value: currentStep)
                 }
 
                 Spacer().frame(height: 40)
@@ -193,7 +193,7 @@ struct CycleStoryView: View {
         withAnimation(.spring(response: 0.5, dampingFraction: 0.82).delay(0.1)) {
             stepVisible = true
         }
-        withAnimation(.spring(response: 0.45, dampingFraction: 0.8).delay(0.6)) {
+        withAnimation(Animation.appBalanced.delay(0.6)) {
             tooltipVisible = true
         }
 

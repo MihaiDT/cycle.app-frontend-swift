@@ -254,7 +254,7 @@ private struct AppleStyleArcSelector: View {
                         if let type = selectedType {
                             let impact = UIImpactFeedbackGenerator(style: .medium)
                             impact.impactOccurred()
-                            withAnimation(.spring(response: 0.35, dampingFraction: 0.7)) {
+                            withAnimation(.appBalanced) {
                                 dragAngle = type.angle
                             }
                         }

@@ -24,6 +24,12 @@ public struct ChallengeJourneyFeature: Sendable {
         var celebrationRating: String = ""
         var celebrationXP: Int = 0
 
+        /// Loaded once validation succeeds so the celebration view can show
+        /// the user's real streak + weekly progress. Reflects the state BEFORE
+        /// this challenge has been persisted (persist happens on "Back to my day").
+        /// The celebration projects the post-completion values from these fields.
+        var glowProfile: GlowProfileSnapshot?
+
         enum Step: Equatable, Sendable {
             case accept
             case timer
@@ -79,6 +85,7 @@ public struct ChallengeJourneyFeature: Sendable {
         case retakeTapped
         case submitPhotoTapped
         case validationResponse(Result<ChallengeValidationResponse, Error>)
+        case profileLoaded(GlowProfileSnapshot)
         case tryAgainTapped
         case backToMyDayTapped
         case closeTapped
@@ -99,6 +106,7 @@ public struct ChallengeJourneyFeature: Sendable {
     @Dependency(\.continuousClock) var clock
     @Dependency(\.apiClient) var apiClient
     @Dependency(\.anonymousID) var anonymousID
+    @Dependency(\.glowLocal) var glowLocal
 
     public var body: some ReducerOf<Self> {
         Reduce { state, action in
@@ -215,9 +223,19 @@ public struct ChallengeJourneyFeature: Sendable {
                     state.celebrationRating = response.rating
                     state.celebrationXP = xp
                     state.step = .celebration
+                    // Load the current glow profile so celebration can render
+                    // real streak + weekly progress instead of placeholders.
+                    return .run { [glowLocal] send in
+                        let profile = try await glowLocal.getProfile()
+                        await send(.profileLoaded(profile))
+                    }
                 } else {
                     state.validationState = .failure(response.feedback)
                 }
+                return .none
+
+            case let .profileLoaded(profile):
+                state.glowProfile = profile
                 return .none
 
             case .validationResponse(.failure):

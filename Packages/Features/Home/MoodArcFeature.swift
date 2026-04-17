@@ -259,7 +259,7 @@ private struct MoodArcDial: View {
                 let tSelected = CGFloat(selectedIndex) / CGFloat(moods.count - 1)
                 BezierArc(p0: sp0, pc: spc, p1: sp1, tStart: -trackExtend, tEnd: tSelected)
                     .stroke(DesignColors.accentWarm, style: StrokeStyle(lineWidth: 8, lineCap: .round))
-                    .animation(.spring(response: 0.45, dampingFraction: 0.8), value: selectedIndex)
+                    .animation(.appBalanced, value: selectedIndex)
 
                 // --- Emoji markers ---
                 ForEach(0..<moods.count, id: \.self) { i in

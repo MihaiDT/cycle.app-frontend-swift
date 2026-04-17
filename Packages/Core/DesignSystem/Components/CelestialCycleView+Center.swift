@@ -145,7 +145,7 @@ extension CelestialCycleView {
                         }
                         .onEnded { _ in
                             lastDragAngle = nil
-                            withAnimation(reduceMotion ? nil : .spring(response: 0.4, dampingFraction: 0.75)) {
+                            withAnimation(reduceMotion ? nil : .appBalanced) {
                                 isDragging = false
                                 if exploringDay == todayCycleDay { exploringDay = nil }
                             }
@@ -163,7 +163,7 @@ extension CelestialCycleView {
 
         guard dist > radius * 0.6 && dist < radius * 1.45 else {
             if isDragging {
-                withAnimation(reduceMotion ? nil : .spring(response: 0.4, dampingFraction: 0.75)) {
+                withAnimation(reduceMotion ? nil : .appBalanced) {
                     isDragging = false
                     lastDragAngle = nil
                 }
@@ -263,8 +263,8 @@ extension CelestialCycleView {
                 }
             }
         }
-        .animation(reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 0.8), value: isExploring)
-        .animation(reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 0.8), value: isDragging)
+        .animation(reduceMotion ? nil : .appBalanced, value: isExploring)
+        .animation(reduceMotion ? nil : .appBalanced, value: isDragging)
     }
 
     // MARK: - Helpers

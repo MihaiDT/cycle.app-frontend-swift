@@ -78,7 +78,7 @@ struct ChallengeJourneyView: View {
             }
         }
         .animation(
-            reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 0.7),
+            reduceMotion ? nil : .appBalanced,
             value: store.step
         )
         .accessibilityElement(children: .ignore)

@@ -114,7 +114,7 @@ struct InlinePeriodCalendarPage: View {
     private func confirmCurrentPeriod() {
         guard let start = currentStart, let end = currentEnd else { return }
 
-        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+        withAnimation(.appBalanced) {
             periods.append(Period(start: start, end: end))
             currentStart = nil
             currentEnd = nil
@@ -144,7 +144,7 @@ struct InlinePeriodCalendarPage: View {
             }
             return false
         }) {
-            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+            withAnimation(.appBalanced) {
                 periods.remove(at: periodIndex)
             }
             let generator = UIImpactFeedbackGenerator(style: .medium)
@@ -152,7 +152,7 @@ struct InlinePeriodCalendarPage: View {
             return
         }
 
-        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+        withAnimation(.appBalanced) {
             switch tutorialStep {
             case .selectStart:
                 currentStart = tappedDate
@@ -356,7 +356,7 @@ struct InlinePeriodCalendarPage: View {
                 Color.black.opacity(0.001)  // Invisible tap target
                     .ignoresSafeArea()
                     .onTapGesture {
-                        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                        withAnimation(.appBalanced) {
                             showTutorialPopup = false
                         }
                     }
@@ -415,7 +415,7 @@ struct InlinePeriodCalendarPage: View {
                             .accessibilityHidden(true)
 
                         Button {
-                            withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                            withAnimation(.appBalanced) {
                                 showTutorialPopup = false
                             }
                         } label: {
@@ -449,7 +449,7 @@ struct InlinePeriodCalendarPage: View {
                 Color.black.opacity(0.001)  // Invisible tap target
                     .ignoresSafeArea()
                     .onTapGesture {
-                        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                        withAnimation(.appBalanced) {
                             showTutorialPopup = false
                         }
                     }

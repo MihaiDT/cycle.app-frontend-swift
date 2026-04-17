@@ -70,7 +70,7 @@ extension CycleInsightsView {
                     let tint = detailTint(tab.0)
 
                     Button {
-                        withAnimation(Animation.spring(response: 0.35, dampingFraction: 0.85)) {
+                        withAnimation(.appBalanced) {
                             _ = store.send(.openDetail(tab.0))
                         }
                     } label: {

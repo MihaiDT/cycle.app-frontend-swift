@@ -53,12 +53,20 @@ public struct OnboardingLayout<Content: View>: View {
 
                     Spacer()
 
-                    // Footer
-                    GlassButton(nextButtonTitle, showArrow: false, action: onNext)
-                        .opacity(nextButtonEnabled ? 1 : 0.5)
-                        .disabled(!nextButtonEnabled)
-                        .animation(reduceMotion ? nil : .easeInOut(duration: 0.35), value: nextButtonEnabled)
-                        .padding(.bottom, geometry.safeAreaInsets.bottom + AppLayout.bottomOffset)
+                    // Footer — 260×56 baseline; grows via minWidth/minHeight
+                    // so Dynamic Type labels don't clip. Button itself caps
+                    // at AX3 (see GlassButton).
+                    GlassButton(
+                        nextButtonTitle,
+                        showArrow: false,
+                        minWidth: 260,
+                        minHeight: 56,
+                        action: onNext
+                    )
+                    .opacity(nextButtonEnabled ? 1 : 0.5)
+                    .disabled(!nextButtonEnabled)
+                    .animation(reduceMotion ? nil : .easeInOut(duration: 0.35), value: nextButtonEnabled)
+                    .padding(.bottom, geometry.safeAreaInsets.bottom + AppLayout.bottomOffset)
                 }
             }
             .ignoresSafeArea()

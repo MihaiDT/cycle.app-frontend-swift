@@ -5,23 +5,25 @@ import SwiftUI
 public struct GlassButton: View {
     public let title: String
     public let showArrow: Bool
-    public let width: CGFloat
-    public let height: CGFloat
+    /// Minimum width — the button grows beyond this to accommodate Dynamic Type.
+    public let minWidth: CGFloat
+    /// Minimum height — the button grows beyond this to accommodate Dynamic Type.
+    public let minHeight: CGFloat
     public let accessibilityLabelOverride: String?
     public let action: () -> Void
 
     public init(
         _ title: String,
         showArrow: Bool = false,
-        width: CGFloat = 203,
-        height: CGFloat = 55,
+        minWidth: CGFloat = 203,
+        minHeight: CGFloat = 55,
         accessibilityLabel: String? = nil,
         action: @escaping () -> Void
     ) {
         self.title = title
         self.showArrow = showArrow
-        self.width = width
-        self.height = height
+        self.minWidth = minWidth
+        self.minHeight = minHeight
         self.accessibilityLabelOverride = accessibilityLabel
         self.action = action
     }
@@ -32,6 +34,11 @@ public struct GlassButton: View {
                 Text(title)
                     .font(.system(size: 20, weight: .semibold))
                     .foregroundStyle(DesignColors.text)
+                    .lineLimit(2)
+                    .multilineTextAlignment(.center)
+                    // Allow vertical growth so extra-large titles don't clip
+                    // but keep horizontal behaviour driven by minWidth.
+                    .fixedSize(horizontal: false, vertical: true)
 
                 if showArrow {
                     Image(systemName: "arrow.right")
@@ -40,12 +47,17 @@ public struct GlassButton: View {
                         .accessibilityHidden(true)
                 }
             }
-            .frame(minWidth: width, minHeight: height)
+            .padding(.horizontal, 20)
+            .padding(.vertical, 12)
+            .frame(minWidth: minWidth, minHeight: minHeight)
             .glassEffectCapsule()
             .shadow(color: .black.opacity(0.1), radius: 2, x: 0, y: 0)
             .shadow(color: .black.opacity(0.1), radius: 8, x: 0, y: 1)
         }
         .buttonStyle(.plain)
+        // Cap at AX3 — above AX3 the pill+arrow layout starts to dominate the
+        // screen. Growth up to AX3 is handled by minWidth/minHeight + wrap.
+        .dynamicTypeSize(...DynamicTypeSize.accessibility3)
         .accessibilityLabel(accessibilityLabelOverride ?? title)
     }
 }

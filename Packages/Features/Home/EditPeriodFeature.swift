@@ -425,7 +425,7 @@ public struct EditPeriodView: View {
             }
         }
         .scaleEffect(appeared ? 1 : 0.96)
-        .animation(.spring(response: 0.15, dampingFraction: 0.6, blendDuration: 0), value: appeared)
+        .animation(.appSnappy, value: appeared)
         .onAppear {
             store.send(.appeared)
             appeared = true

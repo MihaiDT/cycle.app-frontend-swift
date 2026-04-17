@@ -37,7 +37,7 @@ public struct SplineIntroView: View {
                     Spacer()
 
                     if showContinueButton {
-                        GlassButton("Continue", width: 200) {
+                        GlassButton("Continue", minWidth: 200) {
                             onContinue()
                         }
                         .padding(.bottom, geometry.safeAreaInsets.bottom + 60)

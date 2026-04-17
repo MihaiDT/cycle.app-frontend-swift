@@ -124,7 +124,7 @@ public struct PersonalGoalsView: View {
             generator.impactOccurred()
         #endif
 
-        withAnimation(reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 0.7)) {
+        withAnimation(reduceMotion ? nil : .appBalanced) {
             if selectedGoals.contains(goal) {
                 selectedGoals.remove(goal)
             } else {

@@ -170,7 +170,7 @@ struct DurationStepper: View {
                         .font(.raleway("Bold", size: 48, relativeTo: .largeTitle))
                         .foregroundColor(DesignColors.text)
                         .contentTransition(.numericText(countsDown: !isIncrementing))
-                        .animation(.spring(response: 0.3, dampingFraction: 0.8), value: value)
+                        .animation(.appBalanced, value: value)
                     Text(unit)
                         .font(.raleway("Regular", size: 14, relativeTo: .body))
                         .foregroundColor(DesignColors.text.opacity(0.6))
@@ -447,7 +447,7 @@ struct InlineSymptomsSelector: View {
                                     symptom: symptom,
                                     isSelected: selectedSymptoms.contains(symptom)
                                 ) {
-                                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                                    withAnimation(.appBalanced) {
                                         if selectedSymptoms.contains(symptom) {
                                             selectedSymptoms.remove(symptom)
                                         } else {
@@ -476,7 +476,7 @@ struct InlineContraceptionSelector: View {
             FlowLayout(spacing: 10) {
                 // None option
                 Button(action: {
-                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                    withAnimation(.appBalanced) {
                         usesContraception = false
                         contraceptionType = nil
                     }
@@ -506,7 +506,7 @@ struct InlineContraceptionSelector: View {
                 // Contraception types
                 ForEach(ContraceptionType.allCases) { type in
                     Button(action: {
-                        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                        withAnimation(.appBalanced) {
                             usesContraception = true
                             contraceptionType = type
                         }
@@ -684,7 +684,7 @@ struct FlowIntensitySelector: View {
             HStack(spacing: 12) {
                 ForEach(1...5, id: \.self) { level in
                     Button(action: {
-                        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                        withAnimation(.appBalanced) {
                             intensity = level
                         }
                         let generator = UIImpactFeedbackGenerator(style: .light)

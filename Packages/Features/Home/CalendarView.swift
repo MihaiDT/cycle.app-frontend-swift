@@ -135,8 +135,8 @@ public struct CalendarView: View {
                     .padding(.top, 80)
                     Spacer()
                 }
-                .animation(.spring(response: 0.4, dampingFraction: 0.85), value: store.isUpdatingPredictions)
-                .animation(.spring(response: 0.4, dampingFraction: 0.85), value: store.predictionsDone)
+                .animation(.appBalanced, value: store.isUpdatingPredictions)
+                .animation(.appBalanced, value: store.predictionsDone)
             }
 
             // Calendar loading indicators.
@@ -187,7 +187,7 @@ public struct CalendarView: View {
             {
                 CalendarEmptyStateCard(onLogTapped: {
                     UIImpactFeedbackGenerator(style: .light).impactOccurred()
-                    store.send(.editPeriodToggled, animation: .spring(response: 0.35, dampingFraction: 0.85))
+                    store.send(.editPeriodToggled, animation: .appBalanced)
                 })
                 .transition(.opacity.combined(with: .move(edge: .bottom)))
                 .allowsHitTesting(true)
@@ -356,7 +356,7 @@ public struct CalendarView: View {
 
             Button {
                 UIImpactFeedbackGenerator(style: .light).impactOccurred()
-                store.send(.editPeriodToggled, animation: .spring(response: 0.35, dampingFraction: 0.85))
+                store.send(.editPeriodToggled, animation: .appBalanced)
             } label: {
                 HStack(spacing: 6) {
                     Image(systemName: "drop.fill")
@@ -437,7 +437,7 @@ public struct CalendarView: View {
 
             Button {
                 UIImpactFeedbackGenerator(style: .light).impactOccurred()
-                store.send(.editPeriodToggled, animation: .spring(response: 0.35, dampingFraction: 0.85))
+                store.send(.editPeriodToggled, animation: .appBalanced)
             } label: {
                 Text(store.hasEditPeriodChanges ? "Cancel" : "Done")
                     .font(.raleway("SemiBold", size: 15, relativeTo: .body))
@@ -597,7 +597,7 @@ struct FeedTopBar: View {
             Button {
                 UIImpactFeedbackGenerator(style: .light).impactOccurred()
                 if store.isEditingPeriod {
-                    store.send(.editPeriodToggled, animation: .spring(response: 0.35, dampingFraction: 0.85))
+                    store.send(.editPeriodToggled, animation: .appBalanced)
                 } else {
                     store.send(.dismissTapped)
                 }

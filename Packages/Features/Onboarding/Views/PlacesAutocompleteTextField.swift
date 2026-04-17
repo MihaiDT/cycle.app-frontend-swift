@@ -140,8 +140,8 @@ public struct PlacesAutocompleteTextField: View {
 
             // Results dropdown
             if isShowingResults && !searchResults.isEmpty {
-                VStack(spacing: 0) {
-                    ForEach(searchResults) { result in
+                LazyVStack(spacing: 0) {
+                    ForEach(Array(searchResults.enumerated()), id: \.element.id) { index, result in
                         Button(action: {
                             selectPlace(result)
                         }) {
@@ -174,7 +174,8 @@ public struct PlacesAutocompleteTextField: View {
                         }
                         .buttonStyle(.plain)
                         .accessibilityElement(children: .combine)
-                        .accessibilityLabel("\(result.mainText), \(result.secondaryText)")
+                        .accessibilityLabel(accessibilityLabel(for: result))
+                        .accessibilityHint("Result \(index + 1) of \(searchResults.count). Double tap to select.")
                         .accessibilityAddTraits(.isButton)
 
                         if result.id != searchResults.last?.id {
@@ -192,9 +193,24 @@ public struct PlacesAutocompleteTextField: View {
                 }
                 .padding(.top, 8)
                 .transition(.opacity)
+                // Container-level semantics so VoiceOver users hear the total
+                // number of suggestions before stepping through them. The rows
+                // themselves stay individually focusable (children: .contain).
+                .accessibilityElement(children: .contain)
+                .accessibilityLabel(searchResults.count == 1
+                    ? "1 suggestion"
+                    : "\(searchResults.count) suggestions")
             }
         }
         .animation(.easeInOut(duration: 0.2), value: isShowingResults)
+    }
+
+    /// VoiceOver label for a result row. Drops the separator when there's no
+    /// secondary text so the user doesn't hear an awkward trailing comma.
+    private func accessibilityLabel(for result: PlaceResult) -> String {
+        result.secondaryText.isEmpty
+            ? result.mainText
+            : "\(result.mainText), \(result.secondaryText)"
     }
 
     private func handleTextChange(_ newValue: String) {

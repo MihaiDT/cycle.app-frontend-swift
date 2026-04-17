@@ -234,7 +234,7 @@ struct SymptomLoggingSheet: View {
                             namespace: categoryNamespace,
                             onTap: {
                                 UIImpactFeedbackGenerator(style: .soft).impactOccurred()
-                                withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
+                                withAnimation(.appBalanced) {
                                     activeCategory = category
                                 }
                                 withAnimation {

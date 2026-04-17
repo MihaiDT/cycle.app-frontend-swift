@@ -70,7 +70,7 @@ struct RegularityPickerSheet: View {
                 VStack(spacing: 12) {
                     ForEach(CycleRegularity.allCases) { regularity in
                         Button(action: {
-                            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                            withAnimation(.appBalanced) {
                                 selectedRegularity = regularity
                             }
                             let generator = UIImpactFeedbackGenerator(style: .light)
@@ -205,7 +205,7 @@ struct SymptomsSelectionSheet: View {
                         symptom: symptom,
                         isSelected: selectedSymptoms.contains(symptom),
                         action: {
-                            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                            withAnimation(.appBalanced) {
                                 if selectedSymptoms.contains(symptom) {
                                     selectedSymptoms.remove(symptom)
                                 } else {
@@ -287,7 +287,7 @@ struct ContraceptionPickerSheet: View {
                 FlowLayout(spacing: 10) {
                     // None option
                     Button(action: {
-                        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                        withAnimation(.appBalanced) {
                             usesContraception = false
                             contraceptionType = nil
                         }
@@ -324,7 +324,7 @@ struct ContraceptionPickerSheet: View {
                     // Contraception types
                     ForEach(ContraceptionType.allCases) { type in
                         Button(action: {
-                            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                            withAnimation(.appBalanced) {
                                 usesContraception = true
                                 contraceptionType = type
                             }
