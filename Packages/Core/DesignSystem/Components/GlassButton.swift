@@ -57,6 +57,9 @@ public struct GlassButton: View {
         .buttonStyle(.plain)
         // Cap at AX3 — above AX3 the pill+arrow layout starts to dominate the
         // screen. Growth up to AX3 is handled by minWidth/minHeight + wrap.
+        // PM decision (Sprint 6): accept the cap rather than redesign the CTA
+        // for AX4/AX5. To remove, delete the line below — layout will keep
+        // wrapping but may eat significant screen real estate.
         .dynamicTypeSize(...DynamicTypeSize.accessibility3)
         .accessibilityLabel(accessibilityLabelOverride ?? title)
     }

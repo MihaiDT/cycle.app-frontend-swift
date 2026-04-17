@@ -190,7 +190,7 @@ struct CycleStoryView: View {
         numberValue = 0
         dotsRevealed = 0
 
-        withAnimation(.spring(response: 0.5, dampingFraction: 0.82).delay(0.1)) {
+        withAnimation(.appReveal.delay(0.1)) {
             stepVisible = true
         }
         withAnimation(Animation.appBalanced.delay(0.6)) {

@@ -85,7 +85,7 @@ struct ChallengeCelebrationView: View {
                 showCard = true
                 showButton = true
             } else {
-                withAnimation(.spring(response: 0.5, dampingFraction: 0.8).delay(0.2)) {
+                withAnimation(.appReveal.delay(0.2)) {
                     showCard = true
                 }
                 withAnimation(.easeOut(duration: 0.4).delay(1.2)) {

@@ -39,11 +39,19 @@ public enum DesignColors {
     /// Decorative terracotta — used for fills, borders, glows, ambient tints.
     /// At `#C18F7D` this is ≈2.7:1 on the ivory background (fails AA/AA Large
     /// as text). Use `accentWarmText` when rendering small copy in this hue.
+    ///
+    /// **Icons:** Standalone decorative icons in this hue (permission hero
+    /// glyphs, onboarding chrome, checkmarks) are acceptable at 2.7:1 per WCAG
+    /// 1.4.11 **paired-with-text exception** — every such icon in the app is
+    /// adjacent to a compliant text label that conveys the same information.
+    /// If you need a strict-compliance (≥3:1) icon rendering in the warm hue,
+    /// use `accentWarmText` instead.
     public static let accentWarm = Color(hex: 0xC18F7D)  // Terracotta Warm - alert/highlight bland
     /// Text-safe terracotta variant — darkened from `#C18F7D` → `#8E6052` so
     /// small labels rendered in the warm accent hue (e.g. "TODAY", "Today"
     /// jump button, micro pills) hit WCAG AA (≈5.17:1 on ivory). Preserves
-    /// the terracotta family so the brand doesn't shift.
+    /// the terracotta family so the brand doesn't shift. Also safe for
+    /// standalone icons that require strict WCAG 1.4.11 compliance.
     public static let accentWarmText = Color(hex: 0x8E6052)
 
     // MARK: - Structure Colors

@@ -76,7 +76,7 @@ public struct ProfessionalContextView: View {
                             totalCount: ProfessionalContext.allCases.count,
                             hasAppeared: hasAppeared
                         ) {
-                            withAnimation(.spring(response: 0.5, dampingFraction: 0.8)) {
+                            withAnimation(.appReveal) {
                                 selectedContext = context
                             }
                         }
@@ -254,7 +254,7 @@ private struct ProfessionalCard: View {
             .spring(response: 0.6, dampingFraction: 0.75).delay(Double(index) * 0.08),
             value: hasAppeared
         )
-        .animation(.spring(response: 0.5, dampingFraction: 0.8), value: hasSelection)
+        .animation(.appReveal, value: hasSelection)
         .animation(.appBalanced, value: isSelected)
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(context.rawValue). \(context.subtitle)")

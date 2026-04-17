@@ -308,7 +308,7 @@ public struct CalendarView: View {
     private var normalBottomBar: some View {
         HStack(spacing: 12) {
             Button {
-                store.send(.logSymptomsTapped, animation: .spring(response: 0.4, dampingFraction: 0.88))
+                store.send(.logSymptomsTapped, animation: .appBalanced)
             } label: {
                 HStack(spacing: 6) {
                     Image(systemName: "plus")

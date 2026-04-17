@@ -73,7 +73,7 @@ public struct RelationshipStatusView: View {
                             index: index,
                             totalCount: RelationshipStatus.allCases.count
                         ) {
-                            withAnimation(.spring(response: 0.5, dampingFraction: 0.8)) {
+                            withAnimation(.appReveal) {
                                 selectedStatus = status
                             }
                         }
@@ -218,7 +218,7 @@ private struct LuxuryStatusCard: View {
         .rotation3DEffect(.degrees(rotation), axis: (x: 0, y: 0, z: 1))
         .scaleEffect(cardScale)
         .zIndex(isSelected ? 100 : Double(totalCount - index))
-        .animation(.spring(response: 0.5, dampingFraction: 0.8), value: hasSelection)
+        .animation(.appReveal, value: hasSelection)
         .animation(.appBalanced, value: isSelected)
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(status.rawValue). \(status.subtitle)")
