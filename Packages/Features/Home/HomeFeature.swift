@@ -201,8 +201,6 @@ public struct HomeFeature: Sendable {
             case .today(.delegate(.openCycleInsights)):
                 // Hydrate insights state with already-loaded data for instant render
                 state.cycleInsightsState.cycleContext = state.todayState.cycle
-                state.cycleInsightsState.menstrualStatus = state.todayState.menstrualStatus
-                state.cycleInsightsState.hbiDashboard = state.todayState.dashboard
                 state.isCycleInsightsVisible = true
                 return .none
 
@@ -245,13 +243,20 @@ public struct HomeFeature: Sendable {
 
             case .today(.menstrualStatusLoaded(.success(let status))):
                 state.profileState.menstrualStatus = status
-                state.cycleInsightsState.menstrualStatus = status
                 return .none
 
             case .today(.dashboardLoaded(.success(let dashboard))):
                 state.profileState.hbiDashboard = dashboard
-                state.cycleInsightsState.hbiDashboard = dashboard
                 return .none
+
+            // Fan out cycle-data broadcast from TodayFeature (the data owner)
+            // to sibling features so they refresh without requiring a tab/sheet
+            // re-entry. Fires after menstrualStatusLoaded and calendarEntriesLoaded.
+            case .today(.delegate(.cycleDataUpdated(let cycle))):
+                return .merge(
+                    .send(.cycleInsights(.cycleDataChanged(cycle))),
+                    .send(.cycleJourney(.cycleDataChanged(cycle)))
+                )
 
             case .profile(.delegate(.didLogout)):
                 return .send(.logoutTapped)

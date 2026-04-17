@@ -37,6 +37,9 @@ public struct CycleJourneyFeature: Sendable {
         case recapPageChanged(Int)
         case recapDismissed
         case askAriaAboutCycle(JourneyCycleSummary)
+        /// Broadcast from TodayFeature via HomeFeature — keeps `cycleContext`
+        /// fresh when the user edits period data without requiring a re-entry.
+        case cycleDataChanged(CycleContext?)
         case delegate(Delegate)
 
         public enum Delegate: Sendable, Equatable {
@@ -168,6 +171,13 @@ public struct CycleJourneyFeature: Sendable {
                     context += " My average energy was \(String(format: "%.1f", energy))/5."
                 }
                 return .send(.delegate(.openAriaChat(context: context)))
+
+            case let .cycleDataChanged(newCycle):
+                // Refresh cached cycle context so current-cycle card and
+                // summaries reflect the latest edit. Derived state (summaries,
+                // insight, predictions) rebuilds on the next `.refresh` / `.onAppear`.
+                state.cycleContext = newCycle
+                return .none
 
             case .delegate:
                 return .none

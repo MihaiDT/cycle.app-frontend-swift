@@ -154,6 +154,12 @@ public struct TodayFeature: Sendable {
             case openAriaChat(context: String)
             case openCycleInsights
             case openCycleJourney
+            /// Broadcast that the underlying cycle data has changed — siblings
+            /// (CycleInsights, CycleJourney) should refresh their cached context.
+            /// Fires after `menstrualStatusLoaded` and `calendarEntriesLoaded`.
+            /// A `nil` payload signals unavailable / errored data so subscribers
+            /// can surface empty / error state instead of stale data.
+            case cycleDataUpdated(CycleContext?)
         }
     }
 
@@ -210,6 +216,16 @@ public struct TodayFeature: Sendable {
             .send(.cardStack(.hbiUpdated(score))),
             .send(.dailyChallenge(.hbiUpdated(score)))
         )
+    }
+
+    /// Broadcast the latest CycleContext to downstream sibling features
+    /// (CycleInsights, CycleJourney) so they refresh without a tab switch.
+    /// Called from `menstrualStatusLoaded` and `calendarEntriesLoaded` — both
+    /// success and failure handlers. `nil` signals unavailable data so
+    /// subscribers can show empty/error state instead of stale data.
+    /// HomeFeature handles the delegate and forwards to siblings.
+    private static func broadcastCycleDataEffect(_ cycle: CycleContext?) -> Effect<Action> {
+        .send(.delegate(.cycleDataUpdated(cycle)))
     }
 
     public var body: some ReducerOf<Self> {
@@ -281,11 +297,15 @@ public struct TodayFeature: Sendable {
                 if hasCycleData && state.wellnessMessage == nil {
                     effects.append(.send(.loadWellnessMessage))
                 }
+                // Broadcast refreshed cycle context to sibling features
+                // (CycleInsights, CycleJourney) via HomeFeature delegate.
+                effects.append(Self.broadcastCycleDataEffect(state.cycle))
                 return effects.isEmpty ? .none : .merge(effects)
 
             case .menstrualStatusLoaded(.failure):
                 state.isLoadingMenstrual = false
-                return .none
+                // Broadcast nil so siblings drop stale data and can show error state.
+                return Self.broadcastCycleDataEffect(nil)
 
             case .calendarEntriesLoaded(.success(let response)):
                 var days: Set<String> = []
@@ -338,6 +358,9 @@ public struct TodayFeature: Sendable {
                 state.serverOvulationDays = ovulation
 
                 let cardEffect = Self.syncPhaseEffect(state: state)
+                // Broadcast enriched cycle context (now includes calendar-derived
+                // period/fertile/ovulation days) to sibling features.
+                let cycleBroadcast = Self.broadcastCycleDataEffect(state.cycle)
 
                 if state.isRefreshingCycleData {
                     // Keep wave active for 2.5s minimum — premium processing feel
@@ -347,7 +370,8 @@ public struct TodayFeature: Sendable {
                             try? await Task.sleep(nanoseconds: 2_500_000_000)
                             await send(.hideSyncStatus, animation: .easeOut(duration: 0.3))
                         },
-                        cardEffect
+                        cardEffect,
+                        cycleBroadcast
                     )
                 } else if wasSyncing {
                     return .merge(
@@ -355,16 +379,20 @@ public struct TodayFeature: Sendable {
                             try? await Task.sleep(nanoseconds: 1_000_000_000)
                             await send(.hideSyncStatus, animation: .easeOut(duration: 0.3))
                         },
-                        cardEffect
+                        cardEffect,
+                        cycleBroadcast
                     )
                 }
-                return .merge(cardEffect, .send(.generateMissingRecaps))
+                return .merge(cardEffect, .send(.generateMissingRecaps), cycleBroadcast)
 
             case .calendarEntriesLoaded(.failure):
                 state.hasCompletedCalendarLoad = true
                 state.isRefreshingCycleData = false
                 state.syncStatus = .idle
-                return .none
+                // Broadcast whatever context is currently resolvable from
+                // menstrualStatus alone (may be nil) so siblings can reflect
+                // the partial/failed state.
+                return Self.broadcastCycleDataEffect(state.cycle)
 
             case .dashboardLoaded(.success(let dashboard)):
                 state.isLoadingDashboard = false
