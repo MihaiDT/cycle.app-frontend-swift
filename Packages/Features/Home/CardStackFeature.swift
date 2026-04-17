@@ -20,6 +20,11 @@ public struct CardStackFeature: Sendable {
         /// Active challenge for the Do card — passed from TodayFeature
         public var challengeSnapshot: ChallengeSnapshot?
         public var challengeInProgress: Bool = false
+        /// Latest HBI score — broadcast from TodayFeature after dashboard loads
+        /// (e.g. after a daily check-in). Kept here as a scalable hook: future
+        /// card re-weighting / prompt personalization can read this directly
+        /// instead of drilling through the parent.
+        public var currentHBI: HBIScore?
 
         public init() {}
 
@@ -42,6 +47,10 @@ public struct CardStackFeature: Sendable {
         case advance(by: Int)
         case cardTapped(DailyCard)
         case actionTapped(DailyCard)
+        /// Broadcast from TodayFeature after each dashboard reload. Subscribers
+        /// store the fresh score so downstream re-weighting is keyed off truth,
+        /// not stale state from the initial load.
+        case hbiUpdated(HBIScore)
         case delegate(Delegate)
 
         public enum Delegate: Sendable, Equatable {
@@ -138,6 +147,14 @@ public struct CardStackFeature: Sendable {
                 case .quickCheck, .challenge:
                     return .none
                 }
+
+            case let .hbiUpdated(score):
+                // Store latest score. Cards are not regenerated here — the AI
+                // fetch keys off `(date, phase)` and HBI flows into the prompt
+                // via `fetchAICards` reading the latest SwiftData record. We
+                // simply expose the score for future re-weighting hooks.
+                state.currentHBI = score
+                return .none
 
             case .delegate:
                 return .none
@@ -243,7 +260,7 @@ struct CardStackView: View {
                         .opacity(depthOpacity(for: depth))
                         .zIndex(Double(10 - depth))
                         .allowsHitTesting(isFront)
-                        .animation(.spring(response: 0.45, dampingFraction: 0.92), value: store.frontIndex)
+                        .animation(.appBouncy, value: store.frontIndex)
                         .simultaneousGesture(isFront ? cardDragGesture : nil)
                         .onTapGesture {
                             store.send(.cardTapped(card))
@@ -377,7 +394,7 @@ struct CardStackView: View {
                 // middle card slides forward to depth 0 (new front), back card
                 // slides to depth 1. All three moves happen via the same spring
                 // driven by frontIndex — nothing teleports, nothing lags.
-                withAnimation(.spring(response: 0.45, dampingFraction: 0.92)) {
+                withAnimation(.appBouncy) {
                     dragOffset = 0
                     store.send(.advance(by: direction))
                 }
@@ -388,6 +405,7 @@ struct CardStackView: View {
 // MARK: - Card Skeleton (Shimmer Loading)
 
 private struct CardSkeletonView: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var shimmerOffset: CGFloat = -1
 
     var body: some View {
@@ -417,7 +435,11 @@ private struct CardSkeletonView: View {
             }
             .padding(.horizontal, AppLayout.horizontalPadding)
         }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Loading your day")
+        .accessibilityAddTraits(.updatesFrequently)
         .onAppear {
+            guard !reduceMotion else { return }
             withAnimation(.easeInOut(duration: 1.4).repeatForever(autoreverses: false)) {
                 shimmerOffset = 2
             }
@@ -426,7 +448,7 @@ private struct CardSkeletonView: View {
 
     private var skeletonCard: some View {
         RoundedRectangle(cornerRadius: AppLayout.cornerRadiusL, style: .continuous)
-            .fill(Color(red: 0.94, green: 0.93, blue: 0.91))
+            .fill(DesignColors.skeletonBackground)
             .frame(height: 340)
             .overlay(
                 RoundedRectangle(cornerRadius: AppLayout.cornerRadiusL, style: .continuous)
@@ -500,7 +522,7 @@ private struct DailyCardView: View {
                 .shadow(color: DesignColors.background.opacity(0.75), radius: 4, x: 0, y: 0)
 
             if !card.body.isEmpty {
-                Text(card.body)
+                Text(card.body.cleanedAIText)
                     .font(.custom("Raleway-Medium", size: 14, relativeTo: .body))
                     .foregroundStyle(DesignColors.textPrincipal)
                     .lineSpacing(3)
@@ -564,7 +586,7 @@ private struct DailyCardView: View {
                 .shadow(color: DesignColors.background.opacity(0.75), radius: 4, x: 0, y: 0)
 
             if !card.body.isEmpty {
-                Text(card.body)
+                Text(card.body.cleanedAIText)
                     .font(.custom("Raleway-Medium", size: 14, relativeTo: .body))
                     .foregroundStyle(DesignColors.textPrincipal)
                     .lineSpacing(3)
@@ -613,7 +635,7 @@ private struct DailyCardView: View {
                 .shadow(color: DesignColors.background.opacity(0.75), radius: 4, x: 0, y: 0)
 
             if !card.body.isEmpty {
-                Text(card.body)
+                Text(card.body.cleanedAIText)
                     .font(.custom("Raleway-Medium", size: 14, relativeTo: .body))
                     .foregroundStyle(DesignColors.textPrincipal)
                     .lineSpacing(3)
@@ -662,9 +684,7 @@ private struct DailyCardView: View {
 extension CardStackFeature {
 
     static func todayString() -> String {
-        let fmt = DateFormatter()
-        fmt.dateFormat = "yyyy-MM-dd"
-        return fmt.string(from: Date())
+        DateFormatter.dayKey.string(from: Date())
     }
 
     private static let cacheTTL: TimeInterval = 7 * 24 * 3600 // 7 days

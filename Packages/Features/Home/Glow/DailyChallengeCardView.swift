@@ -24,6 +24,7 @@ struct DailyChallengeCardView: View {
             HStack(spacing: 6) {
                 Image(systemName: "flag.fill")
                     .font(.system(size: 12, weight: .semibold))
+                    .accessibilityHidden(true)
                 Text("Challenge")
                     .font(.custom("Raleway-SemiBold", size: 12, relativeTo: .caption))
                     .tracking(0.2)
@@ -32,6 +33,7 @@ struct DailyChallengeCardView: View {
             .padding(.horizontal, 12)
             .padding(.vertical, 6)
             .background { Capsule().fill(DesignColors.accentWarm.opacity(0.12)) }
+            .accessibilityElement(children: .ignore)
             .accessibilityLabel("Challenge")
 
             Text(challenge.challengeTitle)
@@ -44,7 +46,7 @@ struct DailyChallengeCardView: View {
                 .shadow(color: DesignColors.background.opacity(0.75), radius: 4, x: 0, y: 0)
                 .accessibilityAddTraits(.isHeader)
 
-            Text(challenge.challengeDescription)
+            Text(challenge.challengeDescription.cleanedAIText)
                 .font(.custom("Raleway-Medium", size: 14, relativeTo: .body))
                 .foregroundStyle(DesignColors.textPrincipal)
                 .lineSpacing(3)
@@ -118,8 +120,10 @@ struct DailyChallengeCardView: View {
                     Text("+\(challenge.xpEarned) XP")
                         .font(.custom("Raleway-SemiBold", size: 14, relativeTo: .callout))
                         .foregroundStyle(DesignColors.accentWarm)
+                        .accessibilityLabel("Earned \(challenge.xpEarned) experience points")
                 }
             }
+            .accessibilityElement(children: .combine)
 
             Spacer()
 
@@ -138,6 +142,20 @@ struct DailyChallengeCardView: View {
         .padding(28)
         .frame(height: 340)
         .glowCardBackground(tint: .cocoa)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(completedAccessibilityLabel)
+    }
+
+    private var completedAccessibilityLabel: String {
+        var parts: [String] = ["Completed challenge: \(challenge.challengeTitle)"]
+        if let rating = challenge.validationRating {
+            parts.append("Rating: \(rating.capitalized)")
+        }
+        parts.append("Earned \(challenge.xpEarned) experience points")
+        if let feedback = challenge.validationFeedback {
+            parts.append(feedback)
+        }
+        return parts.joined(separator: ". ")
     }
 
     private func tagPill(_ text: String) -> some View {

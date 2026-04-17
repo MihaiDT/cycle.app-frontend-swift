@@ -24,14 +24,19 @@ struct ValidationResultView: View {
     private var loadingView: some View {
         VStack(spacing: 20) {
             Spacer()
-            ValidationPulsingCircle().frame(width: 60, height: 60)
+            ValidationPulsingCircle()
+                .frame(width: 60, height: 60)
+                .accessibilityHidden(true)
             Text("Aria is checking...")
-                .font(.custom("Raleway-Medium", size: 17))
+                .font(.raleway("Medium", size: 17, relativeTo: .body))
                 .foregroundStyle(DesignColors.textSecondary)
             Spacer()
         }
         .frame(maxWidth: .infinity)
         .padding(32)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Aria is checking your photo")
+        .accessibilityAddTraits(.updatesFrequently)
     }
 
     private func successView(result: ValidationFeature.ValidationResult) -> some View {
@@ -43,17 +48,18 @@ struct ValidationResultView: View {
             Spacer()
 
             Text(result.feedback)
-                .font(.custom("Raleway-Medium", size: 17))
+                .font(.raleway("Medium", size: 17, relativeTo: .body))
                 .foregroundStyle(DesignColors.textSecondary)
                 .multilineTextAlignment(.center)
                 .lineSpacing(4)
+                .accessibilityLabel("Validation failed: \(result.feedback)")
 
             VStack(spacing: 12) {
                 Button {
                     store.send(.tryAgainTapped)
                 } label: {
                     Text("Try Again")
-                        .font(.custom("Raleway-SemiBold", size: 16))
+                        .font(.raleway("SemiBold", size: 16, relativeTo: .headline))
                         .foregroundStyle(.white)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 16)
@@ -63,13 +69,17 @@ struct ValidationResultView: View {
                         }
                 }
                 .buttonStyle(.plain)
+                .accessibilityHint("Retake the photo and try again")
 
                 Button { store.send(.skipForTodayTapped) } label: {
                     Text("Skip for Today")
-                        .font(.custom("Raleway-Medium", size: 15))
+                        .font(.raleway("Medium", size: 15, relativeTo: .body))
                         .foregroundStyle(DesignColors.textSecondary)
+                        .frame(minWidth: 44, minHeight: 44)
+                        .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
+                .accessibilityHint("Dismiss this challenge until tomorrow")
             }
 
             Spacer()
@@ -83,6 +93,8 @@ struct ValidationResultView: View {
 private struct StaggeredSuccessView: View {
     let result: ValidationFeature.ValidationResult
     let store: StoreOf<ValidationFeature>
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     /// Total XP after adding this challenge's XP
     private var newTotalXP: Int {
@@ -102,34 +114,39 @@ private struct StaggeredSuccessView: View {
 
                 // 1. Rating badge — appears at 0.3s
                 RatingBadge(rating: result.rating, size: 48, animated: true)
-                    .opacity(showBadge ? 1 : 0)
-                    .scaleEffect(showBadge ? 1 : 0.5)
+                    .opacity(reduceMotion ? 1 : (showBadge ? 1 : 0))
+                    .scaleEffect(reduceMotion ? 1 : (showBadge ? 1 : 0.5))
 
                 // 2. Feedback — appears at 0.9s
                 Text(result.feedback)
-                    .font(.custom("Raleway-Medium", size: 17))
+                    .font(.raleway("Medium", size: 17, relativeTo: .body))
                     .foregroundStyle(DesignColors.text)
                     .multilineTextAlignment(.center)
                     .lineSpacing(4)
-                    .opacity(showFeedback ? 1 : 0)
-                    .offset(y: showFeedback ? 0 : 12)
+                    .opacity(reduceMotion ? 1 : (showFeedback ? 1 : 0))
+                    .offset(y: reduceMotion ? 0 : (showFeedback ? 0 : 12))
 
                 // 3. XP count-up + level — appears at 1.5s
                 VStack(spacing: 4) {
-                    ValidationXPCountUp(targetXP: result.xpEarned, startCounting: showXP)
+                    ValidationXPCountUp(
+                        targetXP: result.xpEarned,
+                        startCounting: showXP,
+                        reduceMotion: reduceMotion
+                    )
 
                     let level = GlowConstants.levelFor(xp: newTotalXP)
                     Text("\(level.emoji) \(level.title) · \(newTotalXP) XP total")
-                        .font(.custom("Raleway-Medium", size: 14))
+                        .font(.raleway("Medium", size: 14, relativeTo: .subheadline))
                         .foregroundStyle(DesignColors.textSecondary)
+                        .accessibilityLabel("Level \(level.level), \(level.title). Total \(newTotalXP) XP.")
                 }
-                .opacity(showXP ? 1 : 0)
-                .scaleEffect(showXP ? 1 : 0.8)
+                .opacity(reduceMotion ? 1 : (showXP ? 1 : 0))
+                .scaleEffect(reduceMotion ? 1 : (showXP ? 1 : 0.8))
 
                 // 4. Progress bar — appears at 2.2s (shows total XP with new challenge included)
                 XPProgressBar(currentXP: newTotalXP, animated: showProgress)
                     .padding(.horizontal, 8)
-                    .opacity(showProgress ? 1 : 0)
+                    .opacity(reduceMotion ? 1 : (showProgress ? 1 : 0))
 
                 // 5. Button — appears at 2.8s
                 Button {
@@ -137,7 +154,7 @@ private struct StaggeredSuccessView: View {
                     store.send(.dismissTapped)
                 } label: {
                     Text("Amazing!")
-                        .font(.custom("Raleway-SemiBold", size: 16))
+                        .font(.raleway("SemiBold", size: 16, relativeTo: .headline))
                         .foregroundStyle(.white)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 16)
@@ -147,26 +164,36 @@ private struct StaggeredSuccessView: View {
                         }
                 }
                 .buttonStyle(.plain)
-                .opacity(showButton ? 1 : 0)
-                .offset(y: showButton ? 0 : 16)
+                .opacity(reduceMotion ? 1 : (showButton ? 1 : 0))
+                .offset(y: reduceMotion ? 0 : (showButton ? 0 : 16))
+                .accessibilityLabel("Amazing, dismiss")
+                .accessibilityHint("Closes the celebration screen")
             }
             .padding(24)
         }
         .onAppear {
-            withAnimation(.spring(response: 0.5, dampingFraction: 0.7).delay(0.3)) {
+            if reduceMotion {
                 showBadge = true
-            }
-            withAnimation(.easeOut(duration: 0.5).delay(0.9)) {
                 showFeedback = true
-            }
-            withAnimation(.spring(response: 0.4, dampingFraction: 0.8).delay(1.5)) {
                 showXP = true
-            }
-            withAnimation(.easeOut(duration: 0.4).delay(2.2)) {
                 showProgress = true
-            }
-            withAnimation(.easeOut(duration: 0.4).delay(2.8)) {
                 showButton = true
+            } else {
+                withAnimation(.spring(response: 0.5, dampingFraction: 0.7).delay(0.3)) {
+                    showBadge = true
+                }
+                withAnimation(.easeOut(duration: 0.5).delay(0.9)) {
+                    showFeedback = true
+                }
+                withAnimation(.spring(response: 0.4, dampingFraction: 0.8).delay(1.5)) {
+                    showXP = true
+                }
+                withAnimation(.easeOut(duration: 0.4).delay(2.2)) {
+                    showProgress = true
+                }
+                withAnimation(.easeOut(duration: 0.4).delay(2.8)) {
+                    showButton = true
+                }
             }
         }
     }
@@ -175,6 +202,7 @@ private struct StaggeredSuccessView: View {
 // MARK: - Validation Pulsing Circle
 
 private struct ValidationPulsingCircle: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var isPulsing = false
 
     var body: some View {
@@ -183,11 +211,17 @@ private struct ValidationPulsingCircle: View {
             .overlay {
                 Circle()
                     .fill(DesignColors.accentWarm.opacity(0.4))
-                    .scaleEffect(isPulsing ? 0.6 : 0.3)
+                    .scaleEffect(reduceMotion ? 0.45 : (isPulsing ? 0.6 : 0.3))
             }
-            .scaleEffect(isPulsing ? 1.0 : 0.8)
-            .animation(.easeInOut(duration: 1.2).repeatForever(autoreverses: true), value: isPulsing)
-            .onAppear { isPulsing = true }
+            .scaleEffect(reduceMotion ? 1.0 : (isPulsing ? 1.0 : 0.8))
+            .animation(
+                reduceMotion ? nil : .easeInOut(duration: 1.2).repeatForever(autoreverses: true),
+                value: isPulsing
+            )
+            .onAppear {
+                guard !reduceMotion else { return }
+                isPulsing = true
+            }
     }
 }
 
@@ -196,16 +230,27 @@ private struct ValidationPulsingCircle: View {
 private struct ValidationXPCountUp: View {
     let targetXP: Int
     var startCounting: Bool = true
+    var reduceMotion: Bool = false
     @State private var displayXP: Int = 0
 
     var body: some View {
         Text("+\(displayXP) XP")
-            .font(.custom("Raleway-Bold", size: 32))
+            .font(.raleway("Bold", size: 32, relativeTo: .largeTitle))
             .foregroundStyle(DesignColors.accentWarm)
             .contentTransition(.numericText())
+            .accessibilityLabel("Earned \(targetXP) experience points")
             .onChange(of: startCounting) { _, counting in
                 guard counting else { return }
-                withAnimation(.easeOut(duration: 1.2)) {
+                if reduceMotion {
+                    displayXP = targetXP
+                } else {
+                    withAnimation(.easeOut(duration: 1.2)) {
+                        displayXP = targetXP
+                    }
+                }
+            }
+            .onAppear {
+                if reduceMotion, startCounting {
                     displayXP = targetXP
                 }
             }

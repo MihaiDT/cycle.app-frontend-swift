@@ -176,16 +176,16 @@ struct AriaInsightCard: View {
                         )
                     )
                 Text("Aria")
-                    .font(.custom("Raleway-Bold", size: 14))
+                    .font(.raleway("Bold", size: 14, relativeTo: .subheadline))
                     .foregroundStyle(DesignColors.text)
                 Spacer()
                 Text(isPredicted ? "AI Prediction" : "AI Insight")
-                    .font(.custom("Raleway-Regular", size: 11))
+                    .font(.raleway("Regular", size: 11, relativeTo: .caption2))
                     .foregroundStyle(DesignColors.textSecondary.opacity(0.5))
             }
 
             Text(displayedText.isEmpty ? " " : displayedText)
-                .font(.custom("Raleway-Regular", size: 14))
+                .font(.raleway("Regular", size: 14, relativeTo: .body))
                 .foregroundStyle(DesignColors.text.opacity(0.85))
                 .lineSpacing(4)
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -193,7 +193,7 @@ struct AriaInsightCard: View {
 
             if displayedText.count == fullInsight.count && !displayedText.isEmpty {
                 Text("Powered by Aria · Personalized AI")
-                    .font(.custom("Raleway-Regular", size: 11))
+                    .font(.raleway("Regular", size: 11, relativeTo: .caption2))
                     .foregroundStyle(DesignColors.textSecondary.opacity(0.45))
                     .transition(.opacity)
             }
@@ -285,10 +285,10 @@ struct AriaPromptOverlay: View {
 
                         VStack(alignment: .leading, spacing: 2) {
                             Text("Aria noticed something")
-                                .font(.custom("Raleway-Bold", size: 16))
+                                .font(.raleway("Bold", size: 16, relativeTo: .headline))
                                 .foregroundStyle(DesignColors.text)
                             Text("Your AI companion")
-                                .font(.custom("Raleway-Regular", size: 12))
+                                .font(.raleway("Regular", size: 12, relativeTo: .caption))
                                 .foregroundStyle(DesignColors.textSecondary)
                         }
 
@@ -310,7 +310,7 @@ struct AriaPromptOverlay: View {
 
                     // Typewriter message
                     Text(displayedText.isEmpty ? " " : displayedText)
-                        .font(.custom("Raleway-Regular", size: 15))
+                        .font(.raleway("Regular", size: 15, relativeTo: .body))
                         .foregroundStyle(DesignColors.text.opacity(0.9))
                         .lineSpacing(5)
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -326,7 +326,7 @@ struct AriaPromptOverlay: View {
                                     Image(systemName: "message.fill")
                                         .font(.system(size: 13, weight: .semibold))
                                     Text("Talk to Aria")
-                                        .font(.custom("Raleway-Bold", size: 15))
+                                        .font(.raleway("Bold", size: 15, relativeTo: .body))
                                 }
                                 .foregroundStyle(.white)
                                 .frame(maxWidth: .infinity)
@@ -349,7 +349,7 @@ struct AriaPromptOverlay: View {
                                 onDismiss()
                             } label: {
                                 Text("Maybe later")
-                                    .font(.custom("Raleway-Medium", size: 14))
+                                    .font(.raleway("Medium", size: 14, relativeTo: .body))
                                     .foregroundStyle(DesignColors.textSecondary)
                             }
                             .buttonStyle(.plain)
@@ -399,7 +399,7 @@ struct AriaPromptOverlay: View {
             }
             guard !Task.isCancelled else { return }
             try? await Task.sleep(nanoseconds: 300_000_000)
-            withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+            withAnimation(.appBalanced) {
                 showButtons = true
             }
         }

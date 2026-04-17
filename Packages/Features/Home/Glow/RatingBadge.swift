@@ -7,6 +7,7 @@ struct RatingBadge: View {
     var size: CGFloat = 32
     var animated: Bool = false
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var scale: CGFloat = 0
 
     private var emoji: String {
@@ -24,20 +25,26 @@ struct RatingBadge: View {
 
     private var badgeColor: Color {
         switch rating {
-        case "gold": Color(red: 1.0, green: 0.84, blue: 0.0)
-        case "silver": Color(red: 0.75, green: 0.75, blue: 0.78)
-        case "bronze": Color(red: 0.80, green: 0.50, blue: 0.20)
+        case "gold": DesignColors.ratingGold
+        case "silver": DesignColors.ratingSilver
+        case "bronze": DesignColors.ratingBronze
         default: DesignColors.accentWarm
         }
+    }
+
+    private var accessibilityDescription: String {
+        "Rating: \(label)"
     }
 
     var body: some View {
         HStack(spacing: 6) {
             Text(emoji)
                 .font(.system(size: size * 0.6))
+                .accessibilityHidden(true)
             Text(label)
-                .font(.custom("Raleway-SemiBold", size: size * 0.45))
+                .font(.raleway("SemiBold", size: size * 0.45, relativeTo: .body))
                 .foregroundStyle(DesignColors.text)
+                .accessibilityHidden(true)
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 6)
@@ -49,9 +56,14 @@ struct RatingBadge: View {
                         .strokeBorder(badgeColor.opacity(0.3), lineWidth: 1)
                 }
         }
-        .scaleEffect(animated ? scale : 1)
+        .scaleEffect(animated && !reduceMotion ? scale : 1)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(accessibilityDescription)
         .onAppear {
-            guard animated else { return }
+            guard animated, !reduceMotion else {
+                scale = 1
+                return
+            }
             withAnimation(.spring(response: 0.5, dampingFraction: 0.6)) {
                 scale = 1
             }

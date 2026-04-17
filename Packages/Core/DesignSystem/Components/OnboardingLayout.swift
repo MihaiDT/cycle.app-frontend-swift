@@ -11,6 +11,8 @@ public struct OnboardingLayout<Content: View>: View {
     public let nextButtonTitle: String
     public let content: Content
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
     public init(
         currentStep: Int,
         totalSteps: Int,
@@ -55,7 +57,7 @@ public struct OnboardingLayout<Content: View>: View {
                     GlassButton(nextButtonTitle, showArrow: false, action: onNext)
                         .opacity(nextButtonEnabled ? 1 : 0.5)
                         .disabled(!nextButtonEnabled)
-                        .animation(.easeInOut(duration: 0.35), value: nextButtonEnabled)
+                        .animation(reduceMotion ? nil : .easeInOut(duration: 0.35), value: nextButtonEnabled)
                         .padding(.bottom, geometry.safeAreaInsets.bottom + AppLayout.bottomOffset)
                 }
             }
@@ -76,7 +78,7 @@ public struct OnboardingLayout<Content: View>: View {
     ) {
         VStack(spacing: 24) {
             Text("Content goes here")
-                .font(.custom("Raleway-Bold", size: 24))
+                .font(.raleway("Bold", size: 24, relativeTo: .title2))
                 .foregroundColor(DesignColors.text)
         }
     }

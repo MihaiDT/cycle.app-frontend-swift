@@ -307,10 +307,10 @@ public struct CycleRingView: View {
             // Day number
             VStack(spacing: 0) {
                 Text("Day")
-                    .font(.custom("Raleway-Medium", size: 8))
+                    .font(.raleway("Medium", size: 8, relativeTo: .caption2))
                     .foregroundColor(DesignColors.textSecondary)
                 Text("\(displayDay)")
-                    .font(.custom("Raleway-Bold", size: 14))
+                    .font(.raleway("Bold", size: 14, relativeTo: .callout))
                     .foregroundColor(phaseColor(displayPhase))
             }
         }
@@ -328,32 +328,32 @@ public struct CycleRingView: View {
         VStack(spacing: 6) {
             // Date
             Text(selectedDay == nil ? "Today" : dateLabel(for: displayDate))
-                .font(.custom("Raleway-Medium", size: 13))
+                .font(.raleway("Medium", size: 13, relativeTo: .caption))
                 .foregroundColor(DesignColors.textSecondary)
             +
             Text(selectedDay == nil ? ", \(dateLabel(for: Date()))" : "")
-                .font(.custom("Raleway-Medium", size: 13))
+                .font(.raleway("Medium", size: 13, relativeTo: .caption))
                 .foregroundColor(DesignColors.textSecondary)
 
             // Days until period / status
             if cycle.isLate && selectedDay == nil {
                 Text("Period is\n\(cycle.daysLate) days late")
-                    .font(.custom("Raleway-Bold", size: 22))
+                    .font(.raleway("Bold", size: 22, relativeTo: .title2))
                     .foregroundColor(phaseColor(.menstrual))
                     .multilineTextAlignment(.center)
             } else if displayPhase == .menstrual {
                 Text("Period day \(currentPeriodBlockDay)")
-                    .font(.custom("Raleway-Bold", size: 22))
+                    .font(.raleway("Bold", size: 22, relativeTo: .title2))
                     .foregroundColor(DesignColors.text)
                     .multilineTextAlignment(.center)
             } else if daysUntilPeriod == 0 {
                 Text("Period expected\ntoday")
-                    .font(.custom("Raleway-Bold", size: 22))
+                    .font(.raleway("Bold", size: 22, relativeTo: .title2))
                     .foregroundColor(DesignColors.text)
                     .multilineTextAlignment(.center)
             } else {
                 Text("\(daysUntilPeriod) days until your\nnext period")
-                    .font(.custom("Raleway-Bold", size: 22))
+                    .font(.raleway("Bold", size: 22, relativeTo: .title2))
                     .foregroundColor(DesignColors.text)
                     .multilineTextAlignment(.center)
             }
@@ -362,15 +362,16 @@ public struct CycleRingView: View {
             if cycle.fertileWindowActive && selectedDay == nil {
                 HStack(spacing: 4) {
                     Text("Potential fertile day")
-                        .font(.custom("Raleway-Medium", size: 13))
+                        .font(.raleway("Medium", size: 13, relativeTo: .caption))
                         .foregroundColor(phaseColor(.ovulatory))
                     Image(systemName: "chevron.down")
                         .font(.system(size: 10, weight: .medium))
                         .foregroundColor(phaseColor(.ovulatory))
+                        .accessibilityHidden(true)
                 }
             } else {
                 Text(displayPhase.displayName)
-                    .font(.custom("Raleway-Medium", size: 13))
+                    .font(.raleway("Medium", size: 13, relativeTo: .caption))
                     .foregroundColor(phaseColor(displayPhase).opacity(0.8))
             }
         }

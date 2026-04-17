@@ -38,11 +38,11 @@ struct PatternInsightsSheet: View {
 
                 VStack(spacing: 6) {
                     Text("Your Pattern")
-                        .font(.custom("Raleway-Bold", size: 28))
+                        .font(.raleway("Bold", size: 28, relativeTo: .title))
                         .foregroundStyle(warmBrown)
 
                     Text("Based on \(completed.count) completed cycles")
-                        .font(.custom("Raleway-Regular", size: 14))
+                        .font(.raleway("Regular", size: 14, relativeTo: .body))
                         .foregroundStyle(DesignColors.textSecondary)
                 }
 
@@ -59,7 +59,7 @@ struct PatternInsightsSheet: View {
             }
             .padding(.horizontal, AppLayout.horizontalPadding)
         }
-        .background(Color(red: 0.97, green: 0.94, blue: 0.91))
+        .background(DesignColors.journeyBackground)
         .presentationDetents([.large])
         .presentationDragIndicator(.hidden)
     }
@@ -69,7 +69,7 @@ struct PatternInsightsSheet: View {
     private var cycleLengthChart: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Cycle Length")
-                .font(.custom("Raleway-SemiBold", size: 16))
+                .font(.raleway("SemiBold", size: 16, relativeTo: .headline))
                 .foregroundStyle(warmBrown)
 
             HStack(alignment: .bottom, spacing: 8) {
@@ -90,11 +90,11 @@ struct PatternInsightsSheet: View {
                             .frame(height: barH)
 
                         Text("\(summary.cycleLength)")
-                            .font(.custom("Raleway-Bold", size: 13))
+                            .font(.raleway("Bold", size: 13, relativeTo: .caption))
                             .foregroundStyle(warmBrown)
 
                         Text(Self.chartMonthFormatter.string(from: summary.startDate))
-                            .font(.custom("Raleway-Regular", size: 10))
+                            .font(.raleway("Regular", size: 10, relativeTo: .caption2))
                             .foregroundStyle(DesignColors.textSecondary)
                     }
                     .frame(maxWidth: .infinity)
@@ -107,7 +107,7 @@ struct PatternInsightsSheet: View {
                     .fill(DesignColors.accentWarm.opacity(0.5))
                     .frame(width: 16, height: 2)
                 Text("avg \(String(format: "%.0f", avgLength)) days")
-                    .font(.custom("Raleway-Medium", size: 11))
+                    .font(.raleway("Medium", size: 11, relativeTo: .caption2))
                     .foregroundStyle(DesignColors.textSecondary)
             }
         }
@@ -132,15 +132,15 @@ struct PatternInsightsSheet: View {
 
             HStack(alignment: .firstTextBaseline, spacing: 3) {
                 Text(value)
-                    .font(.custom("Raleway-Bold", size: 32))
+                    .font(.raleway("Bold", size: 32, relativeTo: .largeTitle))
                     .foregroundStyle(warmBrown)
                 Text(unit)
-                    .font(.custom("Raleway-Medium", size: 14))
+                    .font(.raleway("Medium", size: 14, relativeTo: .subheadline))
                     .foregroundStyle(DesignColors.textSecondary)
             }
 
             Text(label)
-                .font(.custom("Raleway-Regular", size: 12))
+                .font(.raleway("Regular", size: 12, relativeTo: .caption))
                 .foregroundStyle(DesignColors.textSecondary)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -157,7 +157,7 @@ struct PatternInsightsSheet: View {
                     .font(.system(size: 14, weight: .medium))
                     .foregroundStyle(DesignColors.accentWarm)
                 Text("Regularity")
-                    .font(.custom("Raleway-SemiBold", size: 16))
+                    .font(.raleway("SemiBold", size: 16, relativeTo: .headline))
                     .foregroundStyle(warmBrown)
             }
 
@@ -195,11 +195,11 @@ struct PatternInsightsSheet: View {
 
                 HStack {
                     Text("\(shortestCycle)d shortest")
-                        .font(.custom("Raleway-Regular", size: 11))
+                        .font(.raleway("Regular", size: 11, relativeTo: .caption2))
                         .foregroundStyle(DesignColors.textSecondary)
                     Spacer()
                     Text("\(longestCycle)d longest")
-                        .font(.custom("Raleway-Regular", size: 11))
+                        .font(.raleway("Regular", size: 11, relativeTo: .caption2))
                         .foregroundStyle(DesignColors.textSecondary)
                 }
             }
@@ -213,7 +213,7 @@ struct PatternInsightsSheet: View {
                 Image(systemName: trendIcon)
                     .font(.system(size: 11, weight: .medium))
                 Text("Your cycles are \(insight.trendDirection.rawValue)")
-                    .font(.custom("Raleway-Medium", size: 13))
+                    .font(.raleway("Medium", size: 13, relativeTo: .caption))
             }
             .foregroundStyle(DesignColors.textSecondary)
         }
@@ -226,7 +226,7 @@ struct PatternInsightsSheet: View {
     private var phasesCard: some View {
         VStack(alignment: .leading, spacing: 14) {
             Text("Your Phases")
-                .font(.custom("Raleway-SemiBold", size: 16))
+                .font(.raleway("SemiBold", size: 16, relativeTo: .headline))
                 .foregroundStyle(warmBrown)
 
             let totalDays = Int(avgLength.rounded())
@@ -249,13 +249,13 @@ struct PatternInsightsSheet: View {
                         .frame(width: 10, height: 10)
 
                     Text(phase.name)
-                        .font(.custom("Raleway-Medium", size: 14))
+                        .font(.raleway("Medium", size: 14, relativeTo: .body))
                         .foregroundStyle(DesignColors.text)
 
                     Spacer()
 
                     Text("~\(phase.days) days")
-                        .font(.custom("Raleway-Regular", size: 14))
+                        .font(.raleway("Regular", size: 14, relativeTo: .body))
                         .foregroundStyle(DesignColors.textSecondary)
 
                     let pct = CGFloat(phase.days) / CGFloat(max(1, totalDays))

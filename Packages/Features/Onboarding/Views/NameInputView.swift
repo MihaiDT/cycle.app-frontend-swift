@@ -34,7 +34,7 @@ public struct NameInputView: View {
             VStack(spacing: 0) {
                 // Subtitle
                 Text("a personal touch")
-                    .font(.custom("Raleway-Regular", size: 13))
+                    .font(.raleway("Regular", size: 13, relativeTo: .caption))
                     .tracking(3)
                     .textCase(.uppercase)
                     .foregroundColor(DesignColors.text.opacity(0.5))
@@ -43,8 +43,9 @@ public struct NameInputView: View {
 
                 // Title
                 Text("What should we call you?")
-                    .font(.custom("Raleway-Bold", size: 24))
+                    .font(.raleway("Bold", size: 24, relativeTo: .title2))
                     .foregroundColor(DesignColors.text)
+                    .accessibilityAddTraits(.isHeader)
 
                 Spacer().frame(height: 32)
 
@@ -59,7 +60,7 @@ public struct NameInputView: View {
 
                 // Description
                 Text("This will appear in your experience.\nChange it anytime.")
-                    .font(.custom("Raleway-Regular", size: 18))
+                    .font(.raleway("Regular", size: 18, relativeTo: .body))
                     .foregroundColor(DesignColors.text.opacity(0.7))
                     .multilineTextAlignment(.center)
             }
@@ -72,7 +73,7 @@ public struct NameInputView: View {
     NameInputView(
         name: .constant(""),
         onNext: {},
-        onBack: { print("Back tapped") }
+        onBack: { }
     )
 }
 
@@ -80,6 +81,6 @@ public struct NameInputView: View {
     NameInputView(
         name: .constant("Sarah"),
         onNext: {},
-        onBack: { print("Back tapped") }
+        onBack: { }
     )
 }

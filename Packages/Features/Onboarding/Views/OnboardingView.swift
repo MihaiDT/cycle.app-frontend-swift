@@ -5,6 +5,7 @@ import SwiftUI
 
 public struct OnboardingView: View {
     @ObserveInjection var inject
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     public let onBegin: () -> Void
     public let onLogin: () -> Void
 
@@ -29,7 +30,7 @@ public struct OnboardingView: View {
 
                     // Badge pill
                     Text("Built for Her")
-                        .font(.custom("Raleway-SemiBold", size: 13))
+                        .font(.raleway("SemiBold", size: 13, relativeTo: .caption))
                         .tracking(1)
                         .foregroundStyle(DesignColors.accentWarm)
                         .padding(.horizontal, 18)
@@ -42,7 +43,7 @@ public struct OnboardingView: View {
 
                     // Headline with gradient
                     Text("Your Cycle,\nYour Power.")
-                        .font(.custom("Raleway-Bold", size: 38))
+                        .font(.raleway("Bold", size: 38, relativeTo: .largeTitle))
                         .multilineTextAlignment(.center)
                         .lineSpacing(6)
                         .foregroundStyle(
@@ -58,6 +59,7 @@ public struct OnboardingView: View {
                         )
                         .opacity(showHeadline ? 1 : 0)
                         .offset(y: showHeadline ? 0 : 16)
+                        .accessibilityAddTraits(.isHeader)
 
                     VerticalSpace(14)
 
@@ -74,7 +76,7 @@ public struct OnboardingView: View {
                         .foregroundStyle(DesignColors.textSecondary)
                         + Text("real balance")
                         .foregroundStyle(DesignColors.textPrincipal))
-                        .font(.custom("Raleway-Regular", size: 16))
+                        .font(.raleway("Regular", size: 16, relativeTo: .body))
                         .multilineTextAlignment(.center)
                         .lineSpacing(4)
                         .opacity(showSubtitle ? 1 : 0)
@@ -118,6 +120,7 @@ public struct OnboardingView: View {
                         )
                     }
                     .opacity(showCarousel ? 1 : 0)
+                    .accessibilityHidden(true)
 
                     Spacer()
 
@@ -135,10 +138,11 @@ public struct OnboardingView: View {
                             + Text("Log in")
                             .foregroundStyle(DesignColors.accentWarm)
                             .fontWeight(.semibold))
-                            .font(.custom("Raleway-Regular", size: 14))
+                            .font(.raleway("Regular", size: 14, relativeTo: .body))
                     }
                     .buttonStyle(.plain)
                     .opacity(showButton ? 1 : 0)
+                    .accessibilityLabel("Already have an account? Log in")
 
                     Spacer().frame(height: geometry.safeAreaInsets.bottom + AppLayout.bottomOffset)
                 }
@@ -150,19 +154,19 @@ public struct OnboardingView: View {
     }
 
     private func startEntranceAnimation() {
-        withAnimation(.easeOut(duration: 0.6)) {
+        withAnimation(reduceMotion ? nil : .easeOut(duration: 0.6)) {
             showBadge = true
         }
-        withAnimation(.easeOut(duration: 0.7).delay(0.2)) {
+        withAnimation(reduceMotion ? nil : .easeOut(duration: 0.7).delay(0.2)) {
             showHeadline = true
         }
-        withAnimation(.easeOut(duration: 0.6).delay(0.4)) {
+        withAnimation(reduceMotion ? nil : .easeOut(duration: 0.6).delay(0.4)) {
             showSubtitle = true
         }
-        withAnimation(.easeOut(duration: 0.6).delay(0.6)) {
+        withAnimation(reduceMotion ? nil : .easeOut(duration: 0.6).delay(0.6)) {
             showCarousel = true
         }
-        withAnimation(.easeOut(duration: 0.7).delay(1.1)) {
+        withAnimation(reduceMotion ? nil : .easeOut(duration: 0.7).delay(1.1)) {
             showButton = true
         }
     }
@@ -243,7 +247,7 @@ struct OnboardingCTAButton: View {
 
             // Title
             Text(title)
-                .font(Font.custom("Raleway-SemiBold", size: 17))
+                .font(.raleway("SemiBold", size: 17, relativeTo: .body))
                 .foregroundStyle(DesignColors.text)
                 .frame(maxWidth: .infinity)
                 .padding(.leading, circleSize + inset)
@@ -257,6 +261,7 @@ struct OnboardingCTAButton: View {
                     Image(systemName: "arrow.right")
                         .font(.system(size: 16, weight: .semibold))
                         .foregroundStyle(.white)
+                        .accessibilityHidden(true)
                 }
                 .offset(x: circleX)
                 .gesture(
@@ -286,6 +291,15 @@ struct OnboardingCTAButton: View {
         .frame(width: buttonWidth, height: buttonHeight)
         .clipShape(Capsule())
         .contentShape(Capsule())
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(title)
+        .accessibilityAddTraits(.isButton)
+        .accessibilityHint("Double tap or swipe right to continue")
+        .accessibilityAction {
+            guard !completed else { return }
+            completed = true
+            action()
+        }
     }
 }
 
@@ -402,9 +416,10 @@ private struct FeatureChip: View {
             Image(systemName: icon)
                 .font(.system(size: 13, weight: .medium))
                 .foregroundStyle(DesignColors.accentWarm)
+                .accessibilityHidden(true)
 
             Text(text)
-                .font(.custom("Raleway-Medium", size: 13))
+                .font(.raleway("Medium", size: 13, relativeTo: .caption))
                 .foregroundStyle(DesignColors.text.opacity(0.85))
         }
         .padding(.horizontal, 14)

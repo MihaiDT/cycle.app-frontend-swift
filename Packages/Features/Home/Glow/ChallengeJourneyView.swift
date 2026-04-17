@@ -6,17 +6,27 @@ import SwiftUI
 struct ChallengeJourneyView: View {
     @Bindable var store: StoreOf<ChallengeJourneyFeature>
 
-    var body: some View {
-        VStack(spacing: 0) {
-            progressDots
-                .padding(.bottom, 14)
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-            stepContent
-                .animation(.spring(response: 0.45, dampingFraction: 0.9), value: store.step)
+    var body: some View {
+        ZStack {
+            if store.step == .accept {
+                ChallengeAcceptInlineView(
+                    challenge: store.challenge,
+                    onStart: { store.send(.startChallengeTapped) },
+                    onClose: { store.send(.closeTapped) }
+                )
+            } else {
+                VStack(spacing: 0) {
+                    progressDots
+                        .padding(.bottom, 14)
+                    timerAndBeyond
+                }
+                .padding(.horizontal, AppLayout.horizontalPadding)
+                .padding(.top, 8)
+                .padding(.bottom, 20)
+            }
         }
-        .padding(.horizontal, AppLayout.horizontalPadding)
-        .padding(.top, 8)
-        .padding(.bottom, 20)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(DesignColors.background.ignoresSafeArea())
         .onAppear { store.send(.appeared) }
@@ -46,9 +56,9 @@ struct ChallengeJourneyView: View {
     // MARK: - Progress Dots
 
     private var progressDots: some View {
-        HStack(spacing: 6) {
+        let stepIndex = stepToIndex(store.step)
+        return HStack(spacing: 6) {
             ForEach(0..<3, id: \.self) { index in
-                let stepIndex = stepToIndex(store.step)
                 if index < stepIndex {
                     // Done
                     Capsule()
@@ -67,42 +77,69 @@ struct ChallengeJourneyView: View {
                 }
             }
         }
-        .animation(.spring(response: 0.35, dampingFraction: 0.7), value: store.step)
+        .animation(
+            reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 0.7),
+            value: store.step
+        )
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Challenge progress")
+        .accessibilityValue(progressDotsValue(stepIndex: stepIndex))
+    }
+
+    private func progressDotsValue(stepIndex: Int) -> String {
+        guard stepIndex >= 0 else { return "Getting started" }
+        return "Step \(stepIndex + 1) of 3"
     }
 
     private func stepToIndex(_ step: ChallengeJourneyFeature.State.Step) -> Int {
         switch step {
+        case .accept: return -1 // no dots on accept
         case .timer: return 0
         case .proof: return 1
         case .validating, .celebration: return 2
         }
     }
 
-    // MARK: - Step Content
+    // MARK: - Step Content (timer and beyond)
 
     @ViewBuilder
-    private var stepContent: some View {
+    private var timerAndBeyond: some View {
         switch store.step {
+        case .accept:
+            EmptyView()
+
         case .timer:
             ChallengeTimerView(store: store)
-                .transition(.asymmetric(
-                    insertion: .opacity,
-                    removal: .move(edge: .leading).combined(with: .opacity)
-                ))
+                .transition(
+                    reduceMotion
+                        ? .opacity
+                        : .asymmetric(
+                            insertion: .move(edge: .trailing).combined(with: .opacity),
+                            removal: .move(edge: .leading).combined(with: .opacity)
+                        )
+                )
 
         case .proof:
             ChallengeProofView(store: store)
-                .transition(.asymmetric(
-                    insertion: .move(edge: .trailing).combined(with: .opacity),
-                    removal: .move(edge: .leading).combined(with: .opacity)
-                ))
+                .transition(
+                    reduceMotion
+                        ? .opacity
+                        : .asymmetric(
+                            insertion: .move(edge: .trailing).combined(with: .opacity),
+                            removal: .move(edge: .leading).combined(with: .opacity)
+                        )
+                )
 
         case .validating:
             ChallengeValidatingView(store: store)
-                .transition(.asymmetric(
-                    insertion: .move(edge: .trailing).combined(with: .opacity),
-                    removal: .opacity
-                ))
+                .transition(
+                    reduceMotion
+                        ? .opacity
+                        : .asymmetric(
+                            insertion: .move(edge: .trailing).combined(with: .opacity),
+                            removal: .opacity
+                        )
+                )
 
         case .celebration:
             ChallengeCelebrationView(store: store)

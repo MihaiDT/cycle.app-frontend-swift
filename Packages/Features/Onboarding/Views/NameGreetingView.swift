@@ -1,10 +1,12 @@
 import Inject
 import SwiftUI
+import UIKit
 
 // MARK: - Name Greeting View
 
 public struct NameGreetingView: View {
     @ObserveInjection var inject
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     public let name: String
     public let onContinue: () -> Void
 
@@ -32,8 +34,8 @@ public struct NameGreetingView: View {
                     .fill(
                         RadialGradient(
                             colors: [
-                                Color(hex: 0xE8D4CF).opacity(0.4),
-                                Color(hex: 0xDFC4BE).opacity(0.2),
+                                DesignColors.onboardingGlowOuterStart.opacity(0.4),
+                                DesignColors.onboardingGlowOuterEnd.opacity(0.2),
                                 Color.clear,
                             ],
                             center: .center,
@@ -51,8 +53,8 @@ public struct NameGreetingView: View {
                     .fill(
                         RadialGradient(
                             colors: [
-                                Color(hex: 0xF5E6E2).opacity(0.5),
-                                Color(hex: 0xEDD9D3).opacity(0.2),
+                                DesignColors.onboardingGlowInnerStart.opacity(0.5),
+                                DesignColors.onboardingGlowInnerEnd.opacity(0.2),
                                 Color.clear,
                             ],
                             center: .center,
@@ -65,12 +67,13 @@ public struct NameGreetingView: View {
                     .opacity(showGlow ? 1 : 0)
                     .scaleEffect(glowBreathing ? 0.98 : 1.0)
             }
+            .accessibilityHidden(true)
 
             // Content - centered
             VStack(spacing: 12) {
                 // Greeting text
                 Text("Nice to meet you,")
-                    .font(.custom("Raleway-Regular", size: 18))
+                    .font(.raleway("Regular", size: 18, relativeTo: .body))
                     .foregroundColor(DesignColors.text.opacity(0.7))
                     .opacity(showContent ? 1 : 0)
                     .blur(radius: showContent ? 0 : 8)
@@ -79,15 +82,16 @@ public struct NameGreetingView: View {
                 ZStack {
                     // Glass backdrop blur layer
                     Text(name)
-                        .font(.custom("Raleway-SemiBold", size: 40))
+                        .font(.raleway("SemiBold", size: 40, relativeTo: .largeTitle))
                         .foregroundColor(.white.opacity(0.3))
                         .blur(radius: glassReveal ? 0 : 20)
                         .scaleEffect(glassReveal ? 1 : 1.1)
                         .opacity(glassReveal ? 0 : 0.6)
+                        .accessibilityHidden(true)
 
                     // Glass highlight layer
                     Text(name)
-                        .font(.custom("Raleway-SemiBold", size: 40))
+                        .font(.raleway("SemiBold", size: 40, relativeTo: .largeTitle))
                         .foregroundStyle(
                             LinearGradient(
                                 colors: [
@@ -100,10 +104,11 @@ public struct NameGreetingView: View {
                         )
                         .blur(radius: glassReveal ? 0 : 15)
                         .opacity(glassReveal ? 0 : 0.4)
+                        .accessibilityHidden(true)
 
                     // Final text
                     Text(name)
-                        .font(.custom("Raleway-SemiBold", size: 40))
+                        .font(.raleway("SemiBold", size: 40, relativeTo: .largeTitle))
                         .foregroundStyle(
                             LinearGradient(
                                 colors: [
@@ -116,41 +121,51 @@ public struct NameGreetingView: View {
                         )
                         .opacity(glassReveal ? 1 : 0)
                         .blur(radius: glassReveal ? 0 : 4)
+                        .accessibilityAddTraits(.isHeader)
                 }
             }
         }
         .ignoresSafeArea()
+        .contentShape(Rectangle())
         .onTapGesture {
             onContinue()
         }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Nice to meet you, \(name)")
+        .accessibilityAddTraits(.isButton)
+        .accessibilityHint("Double tap to continue")
         .onAppear {
             // Greeting fades in first
-            withAnimation(.easeOut(duration: 0.6)) {
+            withAnimation(reduceMotion ? nil : .easeOut(duration: 0.6)) {
                 showContent = true
             }
 
             // Liquid glass reveal for name
-            withAnimation(.easeOut(duration: 1.0).delay(0.2)) {
+            withAnimation(reduceMotion ? nil : .easeOut(duration: 1.0).delay(0.2)) {
                 glassReveal = true
             }
 
             // Glow fades in
-            withAnimation(.easeOut(duration: 1.2).delay(0.4)) {
+            withAnimation(reduceMotion ? nil : .easeOut(duration: 1.2).delay(0.4)) {
                 showGlow = true
             }
 
-            // Start subtle breathing
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
-                withAnimation(
-                    .easeInOut(duration: 4.0)
-                        .repeatForever(autoreverses: true)
-                ) {
-                    glowBreathing = true
+            // Start subtle breathing - skip under reduceMotion
+            if !reduceMotion {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
+                    withAnimation(
+                        .easeInOut(duration: 4.0)
+                            .repeatForever(autoreverses: true)
+                    ) {
+                        glowBreathing = true
+                    }
                 }
             }
 
-            // Auto-continue
-            DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
+            // Auto-continue — extend delay for VoiceOver so users have time to
+            // hear the greeting and tap to continue on their own terms.
+            let delay: TimeInterval = UIAccessibility.isVoiceOverRunning ? 8.0 : 2.5
+            DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
                 onContinue()
             }
         }

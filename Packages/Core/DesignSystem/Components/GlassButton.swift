@@ -1,61 +1,5 @@
 import SwiftUI
 
-// MARK: - Arrow Icon (Custom SVG)
-
-private struct ArrowIcon: Shape {
-    func path(in rect: CGRect) -> Path {
-        let scaleX = rect.width / 22.0
-        let scaleY = rect.height / 8.0
-
-        var path = Path()
-
-        // Arrow head
-        path.move(to: CGPoint(x: 21.3536 * scaleX, y: 4.03568 * scaleY))
-        path.addCurve(
-            to: CGPoint(x: 21.3536 * scaleX, y: 3.32858 * scaleY),
-            control1: CGPoint(x: 21.5488 * scaleX, y: 3.84042 * scaleY),
-            control2: CGPoint(x: 21.5488 * scaleX, y: 3.52384 * scaleY)
-        )
-        path.addLine(to: CGPoint(x: 18.1716 * scaleX, y: 0.146595 * scaleY))
-        path.addCurve(
-            to: CGPoint(x: 17.4645 * scaleX, y: 0.146595 * scaleY),
-            control1: CGPoint(x: 17.9763 * scaleX, y: -0.0486672 * scaleY),
-            control2: CGPoint(x: 17.6597 * scaleX, y: -0.0486672 * scaleY)
-        )
-        path.addCurve(
-            to: CGPoint(x: 17.4645 * scaleX, y: 0.853702 * scaleY),
-            control1: CGPoint(x: 17.2692 * scaleX, y: 0.341857 * scaleY),
-            control2: CGPoint(x: 17.2692 * scaleX, y: 0.65844 * scaleY)
-        )
-        path.addLine(to: CGPoint(x: 20.2929 * scaleX, y: 3.68213 * scaleY))
-        path.addLine(to: CGPoint(x: 17.4645 * scaleX, y: 6.51056 * scaleY))
-        path.addCurve(
-            to: CGPoint(x: 17.4645 * scaleX, y: 7.21766 * scaleY),
-            control1: CGPoint(x: 17.2692 * scaleX, y: 6.70582 * scaleY),
-            control2: CGPoint(x: 17.2692 * scaleX, y: 7.0224 * scaleY)
-        )
-        path.addCurve(
-            to: CGPoint(x: 18.1716 * scaleX, y: 7.21766 * scaleY),
-            control1: CGPoint(x: 17.6597 * scaleX, y: 7.41293 * scaleY),
-            control2: CGPoint(x: 17.9763 * scaleX, y: 7.41293 * scaleY)
-        )
-        path.addLine(to: CGPoint(x: 21.3536 * scaleX, y: 4.03568 * scaleY))
-        path.closeSubpath()
-
-        // Line
-        path.move(to: CGPoint(x: 0, y: 3.68213 * scaleY))
-        path.addLine(to: CGPoint(x: 0, y: 4.18213 * scaleY))
-        path.addLine(to: CGPoint(x: 21 * scaleX, y: 4.18213 * scaleY))
-        path.addLine(to: CGPoint(x: 21 * scaleX, y: 3.68213 * scaleY))
-        path.addLine(to: CGPoint(x: 21 * scaleX, y: 3.18213 * scaleY))
-        path.addLine(to: CGPoint(x: 0, y: 3.18213 * scaleY))
-        path.addLine(to: CGPoint(x: 0, y: 3.68213 * scaleY))
-        path.closeSubpath()
-
-        return path
-    }
-}
-
 // MARK: - Glass Button (Reusable)
 
 public struct GlassButton: View {
@@ -63,6 +7,7 @@ public struct GlassButton: View {
     public let showArrow: Bool
     public let width: CGFloat
     public let height: CGFloat
+    public let accessibilityLabelOverride: String?
     public let action: () -> Void
 
     public init(
@@ -70,12 +15,14 @@ public struct GlassButton: View {
         showArrow: Bool = false,
         width: CGFloat = 203,
         height: CGFloat = 55,
+        accessibilityLabel: String? = nil,
         action: @escaping () -> Void
     ) {
         self.title = title
         self.showArrow = showArrow
         self.width = width
         self.height = height
+        self.accessibilityLabelOverride = accessibilityLabel
         self.action = action
     }
 
@@ -90,14 +37,16 @@ public struct GlassButton: View {
                     Image(systemName: "arrow.right")
                         .font(.system(size: 16, weight: .medium))
                         .foregroundStyle(DesignColors.text)
+                        .accessibilityHidden(true)
                 }
             }
-            .frame(width: width, height: height)
+            .frame(minWidth: width, minHeight: height)
             .glassEffectCapsule()
             .shadow(color: .black.opacity(0.1), radius: 2, x: 0, y: 0)
             .shadow(color: .black.opacity(0.1), radius: 8, x: 0, y: 1)
         }
         .buttonStyle(.plain)
+        .accessibilityLabel(accessibilityLabelOverride ?? title)
     }
 }
 
@@ -162,6 +111,8 @@ public struct GlassBackButton: View {
                 .shadow(color: .black.opacity(0.1), radius: 8, x: 0, y: 1)
         }
         .buttonStyle(.plain)
+        .accessibilityLabel("Back")
+        .accessibilityHint("Returns to the previous screen")
     }
 }
 

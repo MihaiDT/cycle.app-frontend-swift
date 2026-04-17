@@ -84,7 +84,7 @@ public struct BirthDataView: View {
             VStack(spacing: 0) {
                 // Subtitle
                 Text("almost there")
-                    .font(.custom("Raleway-Regular", size: 13))
+                    .font(.raleway("Regular", size: 13, relativeTo: .caption))
                     .tracking(3)
                     .textCase(.uppercase)
                     .foregroundColor(DesignColors.text.opacity(0.5))
@@ -93,8 +93,9 @@ public struct BirthDataView: View {
 
                 // Title
                 Text("When were you born?")
-                    .font(.custom("Raleway-Bold", size: 24))
+                    .font(.raleway("Bold", size: 24, relativeTo: .title2))
                     .foregroundColor(DesignColors.text)
+                    .accessibilityAddTraits(.isHeader)
 
                 Spacer().frame(height: 32)
 
@@ -126,7 +127,7 @@ public struct BirthDataView: View {
 
                 // Description
                 Text("This helps personalize your cycle predictions.")
-                    .font(.custom("Raleway-Regular", size: 17))
+                    .font(.raleway("Regular", size: 17, relativeTo: .body))
                     .foregroundColor(DesignColors.text.opacity(0.7))
                     .multilineTextAlignment(.center)
             }
@@ -180,23 +181,25 @@ private struct AgeRestrictionAlertView: View {
                 LottieView(animation: .named("ConsentAnimation", bundle: .main))
                     .playing(loopMode: .loop)
                     .frame(width: 120, height: 120)
+                    .accessibilityHidden(true)
 
                 // Title
                 Text("Not 13 yet?")
-                    .font(.custom("Raleway-Bold", size: 22))
+                    .font(.raleway("Bold", size: 22, relativeTo: .title2))
                     .foregroundColor(DesignColors.text)
+                    .accessibilityAddTraits(.isHeader)
 
                 // Message
                 VStack(spacing: 12) {
                     Text("You must be at least 13 years old to use this app.")
-                        .font(.custom("Raleway-Medium", size: 16))
+                        .font(.raleway("Medium", size: 16, relativeTo: .body))
                         .foregroundColor(DesignColors.text)
                         .multilineTextAlignment(.center)
 
                     Text(
                         "This requirement helps us comply with privacy laws designed to protect children, including COPPA and Apple's App Store Guidelines."
                     )
-                    .font(.custom("Raleway-Regular", size: 14))
+                    .font(.raleway("Regular", size: 14, relativeTo: .body))
                     .foregroundColor(DesignColors.textSecondary)
                     .multilineTextAlignment(.center)
                 }
@@ -206,7 +209,7 @@ private struct AgeRestrictionAlertView: View {
                     dismissAndNavigate()
                 }) {
                     Text("I Understand")
-                        .font(.custom("Raleway-SemiBold", size: 16))
+                        .font(.raleway("SemiBold", size: 16, relativeTo: .body))
                         .foregroundColor(DesignColors.text)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 14)
@@ -241,6 +244,6 @@ private struct AgeRestrictionAlertView: View {
         birthPlace: .constant(""),
         selectedBirthPlace: .constant(nil),
         onNext: {},
-        onBack: { print("Back tapped") }
+        onBack: { }
     )
 }

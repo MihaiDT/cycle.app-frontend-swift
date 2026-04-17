@@ -102,7 +102,7 @@ public struct DailyCheckInView: View {
                     // Title
                     VStack(spacing: 8) {
                         Text("How are you feeling?")
-                            .font(.custom("Raleway-Bold", size: 26))
+                            .font(.raleway("Bold", size: 26, relativeTo: .title))
                             .foregroundStyle(
                                 LinearGradient(
                                     colors: [DesignColors.text, DesignColors.textPrincipal],
@@ -112,7 +112,7 @@ public struct DailyCheckInView: View {
                             )
 
                         Text("Take a moment to check in with yourself")
-                            .font(.custom("Raleway-Regular", size: 14))
+                            .font(.raleway("Regular", size: 14, relativeTo: .body))
                             .foregroundColor(DesignColors.textSecondary)
                     }
                     .opacity(showContent ? 1 : 0)
@@ -154,11 +154,11 @@ public struct DailyCheckInView: View {
                     // Notes
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Notes (optional)")
-                            .font(.custom("Raleway-Medium", size: 13))
+                            .font(.raleway("Medium", size: 13, relativeTo: .caption))
                             .foregroundColor(DesignColors.textSecondary)
 
                         TextField("How's your day going?", text: $store.notes, axis: .vertical)
-                            .font(.custom("Raleway-Regular", size: 15))
+                            .font(.raleway("Regular", size: 15, relativeTo: .body))
                             .foregroundColor(DesignColors.text)
                             .lineLimit(3...5)
                             .padding(AppLayout.spacingM)
@@ -184,7 +184,7 @@ public struct DailyCheckInView: View {
                     // Error
                     if let error = store.error {
                         Text(error)
-                            .font(.custom("Raleway-Regular", size: 13))
+                            .font(.raleway("Regular", size: 13, relativeTo: .caption))
                             .foregroundColor(.red.opacity(0.8))
                     }
 
@@ -196,7 +196,7 @@ public struct DailyCheckInView: View {
                                     .tint(DesignColors.text)
                             }
                             Text(store.isSubmitting ? "Saving..." : "Save Check-in")
-                                .font(.custom("Raleway-SemiBold", size: 17))
+                                .font(.raleway("SemiBold", size: 17, relativeTo: .headline))
                                 .foregroundColor(DesignColors.text)
                         }
                         .frame(maxWidth: .infinity)
@@ -240,13 +240,13 @@ public struct DailyCheckInView: View {
                     .foregroundColor(DesignColors.accentWarm)
 
                 Text(label)
-                    .font(.custom("Raleway-SemiBold", size: 15))
+                    .font(.raleway("SemiBold", size: 15, relativeTo: .body))
                     .foregroundColor(DesignColors.text)
 
                 Spacer()
 
                 Text("\(Int(value.wrappedValue))/5")
-                    .font(.custom("Raleway-Bold", size: 15))
+                    .font(.raleway("Bold", size: 15, relativeTo: .body))
                     .foregroundColor(DesignColors.accentWarm)
             }
 
@@ -258,11 +258,11 @@ public struct DailyCheckInView: View {
 
             HStack {
                 Text(labels.first ?? "")
-                    .font(.custom("Raleway-Regular", size: 11))
+                    .font(.raleway("Regular", size: 11, relativeTo: .caption2))
                     .foregroundColor(DesignColors.textPlaceholder)
                 Spacer()
                 Text(labels.last ?? "")
-                    .font(.custom("Raleway-Regular", size: 11))
+                    .font(.raleway("Regular", size: 11, relativeTo: .caption2))
                     .foregroundColor(DesignColors.textPlaceholder)
             }
         }

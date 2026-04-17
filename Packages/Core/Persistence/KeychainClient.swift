@@ -37,16 +37,6 @@ extension KeychainClient {
     }
 }
 
-// MARK: - Keys
-
-extension KeychainClient {
-    public enum Keys {
-        public static let accessToken = "cycle.accessToken"
-        public static let refreshToken = "cycle.refreshToken"
-        public static let session = "cycle.session"
-    }
-}
-
 // MARK: - Dependency
 
 extension KeychainClient: DependencyKey {

@@ -15,11 +15,12 @@ struct DurationPickerSheet: View {
             VStack(spacing: 24) {
                 VStack(spacing: 8) {
                     Text(title)
-                        .font(.custom("Raleway-Bold", size: 22))
+                        .font(.raleway("Bold", size: 22, relativeTo: .title2))
                         .foregroundColor(DesignColors.text)
+                        .accessibilityAddTraits(.isHeader)
 
                     Text(subtitle)
-                        .font(.custom("Raleway-Regular", size: 15))
+                        .font(.raleway("Regular", size: 15, relativeTo: .body))
                         .foregroundColor(DesignColors.text.opacity(0.6))
                         .multilineTextAlignment(.center)
                 }
@@ -28,7 +29,7 @@ struct DurationPickerSheet: View {
                 Picker(title, selection: $value) {
                     ForEach(Array(range), id: \.self) { num in
                         Text("\(num) \(unit)")
-                            .font(.custom("Raleway-Medium", size: 20))
+                            .font(.raleway("Medium", size: 20, relativeTo: .title2))
                             .tag(num)
                     }
                 }
@@ -43,7 +44,7 @@ struct DurationPickerSheet: View {
                     Button("Done") {
                         isPresented = false
                     }
-                    .font(.custom("Raleway-SemiBold", size: 17))
+                    .font(.raleway("SemiBold", size: 17, relativeTo: .body))
                     .foregroundColor(DesignColors.link)
                 }
             }
@@ -61,9 +62,10 @@ struct RegularityPickerSheet: View {
         NavigationStack {
             VStack(spacing: 16) {
                 Text("How regular is your cycle?")
-                    .font(.custom("Raleway-Bold", size: 20))
+                    .font(.raleway("Bold", size: 20, relativeTo: .title2))
                     .foregroundColor(DesignColors.text)
                     .padding(.top, 8)
+                    .accessibilityAddTraits(.isHeader)
 
                 VStack(spacing: 12) {
                     ForEach(CycleRegularity.allCases) { regularity in
@@ -77,11 +79,11 @@ struct RegularityPickerSheet: View {
                             HStack {
                                 VStack(alignment: .leading, spacing: 2) {
                                     Text(regularity.displayName)
-                                        .font(.custom("Raleway-SemiBold", size: 16))
+                                        .font(.raleway("SemiBold", size: 16, relativeTo: .body))
                                         .foregroundColor(DesignColors.text)
 
                                     Text(regularity.description)
-                                        .font(.custom("Raleway-Regular", size: 13))
+                                        .font(.raleway("Regular", size: 13, relativeTo: .caption))
                                         .foregroundColor(DesignColors.text.opacity(0.6))
                                 }
 
@@ -89,6 +91,7 @@ struct RegularityPickerSheet: View {
 
                                 RegularityCheckboxIcon(isChecked: selectedRegularity == regularity)
                                     .frame(width: 24, height: 24)
+                                    .accessibilityHidden(true)
                             }
                             .padding(.horizontal, 20)
                             .padding(.vertical, 14)
@@ -108,6 +111,11 @@ struct RegularityPickerSheet: View {
                             }
                         }
                         .buttonStyle(.plain)
+                        .accessibilityElement(children: .combine)
+                        .accessibilityLabel("\(regularity.displayName). \(regularity.description)")
+                        .accessibilityAddTraits(
+                            selectedRegularity == regularity ? [.isSelected, .isButton] : [.isButton]
+                        )
                     }
                 }
                 .padding(.horizontal, 16)
@@ -119,7 +127,7 @@ struct RegularityPickerSheet: View {
                     Button("Done") {
                         isPresented = false
                     }
-                    .font(.custom("Raleway-SemiBold", size: 17))
+                    .font(.raleway("SemiBold", size: 17, relativeTo: .body))
                     .foregroundColor(DesignColors.link)
                 }
             }
@@ -167,15 +175,16 @@ struct SymptomsSelectionSheet: View {
             .toolbar {
                 ToolbarItem(placement: .principal) {
                     Text("Typical Symptoms")
-                        .font(.custom("Raleway-Bold", size: 18))
+                        .font(.raleway("Bold", size: 18, relativeTo: .headline))
                         .foregroundColor(DesignColors.text)
+                        .accessibilityAddTraits(.isHeader)
                 }
 
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done") {
                         isPresented = false
                     }
-                    .font(.custom("Raleway-SemiBold", size: 17))
+                    .font(.raleway("SemiBold", size: 17, relativeTo: .body))
                     .foregroundColor(DesignColors.link)
                 }
             }
@@ -186,8 +195,9 @@ struct SymptomsSelectionSheet: View {
     private func symptomSection(title: String, symptoms: [SymptomType]) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             Text(title)
-                .font(.custom("Raleway-SemiBold", size: 16))
+                .font(.raleway("SemiBold", size: 16, relativeTo: .body))
                 .foregroundColor(DesignColors.text)
+                .accessibilityAddTraits(.isHeader)
 
             FlowLayout(spacing: 10) {
                 ForEach(symptoms) { symptom in
@@ -228,12 +238,14 @@ struct SymptomChip: View {
                         .resizable()
                         .scaledToFit()
                         .frame(width: 32, height: 32)
+                        .accessibilityHidden(true)
                 } else {
                     Image(systemName: symptom.sfSymbol)
                         .font(.system(size: 20))
+                        .accessibilityHidden(true)
                 }
                 Text(symptom.displayName)
-                    .font(.custom("Raleway-Medium", size: 14))
+                    .font(.raleway("Medium", size: 14, relativeTo: .body))
             }
             .foregroundColor(isSelected ? DesignColors.text : DesignColors.text.opacity(0.7))
             .padding(.horizontal, 16)
@@ -251,6 +263,8 @@ struct SymptomChip: View {
             }
         }
         .buttonStyle(.plain)
+        .accessibilityLabel(symptom.displayName)
+        .accessibilityAddTraits(isSelected ? [.isSelected, .isButton] : [.isButton])
     }
 }
 
@@ -265,9 +279,10 @@ struct ContraceptionPickerSheet: View {
         NavigationStack {
             VStack(spacing: 20) {
                 Text("Contraception")
-                    .font(.custom("Raleway-Bold", size: 20))
+                    .font(.raleway("Bold", size: 20, relativeTo: .title2))
                     .foregroundColor(DesignColors.text)
                     .padding(.top, 8)
+                    .accessibilityAddTraits(.isHeader)
 
                 FlowLayout(spacing: 10) {
                     // None option
@@ -280,7 +295,7 @@ struct ContraceptionPickerSheet: View {
                         generator.impactOccurred()
                     }) {
                         Text("None")
-                            .font(.custom("Raleway-Medium", size: 14))
+                            .font(.raleway("Medium", size: 14, relativeTo: .body))
                             .foregroundColor(
                                 !usesContraception ? DesignColors.accent : .primary.opacity(0.7)
                             )
@@ -303,6 +318,8 @@ struct ContraceptionPickerSheet: View {
                             }
                     }
                     .buttonStyle(.plain)
+                    .accessibilityLabel("No contraception")
+                    .accessibilityAddTraits(!usesContraception ? [.isSelected, .isButton] : [.isButton])
 
                     // Contraception types
                     ForEach(ContraceptionType.allCases) { type in
@@ -315,7 +332,7 @@ struct ContraceptionPickerSheet: View {
                             generator.impactOccurred()
                         }) {
                             Text(type.displayName)
-                                .font(.custom("Raleway-Medium", size: 14))
+                                .font(.raleway("Medium", size: 14, relativeTo: .body))
                                 .foregroundColor(
                                     contraceptionType == type ? DesignColors.accent : .primary.opacity(0.7)
                                 )
@@ -338,6 +355,8 @@ struct ContraceptionPickerSheet: View {
                                 }
                         }
                         .buttonStyle(.plain)
+                        .accessibilityLabel(type.displayName)
+                        .accessibilityAddTraits(contraceptionType == type ? [.isSelected, .isButton] : [.isButton])
                     }
                 }
                 .padding(.horizontal, 16)
@@ -351,7 +370,7 @@ struct ContraceptionPickerSheet: View {
                     Button("Done") {
                         isPresented = false
                     }
-                    .font(.custom("Raleway-SemiBold", size: 17))
+                    .font(.raleway("SemiBold", size: 17, relativeTo: .body))
                     .foregroundColor(DesignColors.link)
                 }
             }

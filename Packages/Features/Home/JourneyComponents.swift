@@ -8,28 +8,28 @@ struct JourneyAnimatedBackground: View {
 
     var body: some View {
         ZStack {
-            Color(red: 0.97, green: 0.94, blue: 0.91)
+            DesignColors.journeyBackground
 
             Circle()
-                .fill(Color(red: 0.85, green: 0.55, blue: 0.52).opacity(0.3))
+                .fill(DesignColors.journeyBlobWarm.opacity(0.3))
                 .frame(width: 280, height: 280)
                 .blur(radius: 70)
                 .offset(x: animate ? -60 : -90, y: animate ? -80 : -40)
 
             Circle()
-                .fill(Color(red: 0.90, green: 0.72, blue: 0.55).opacity(0.25))
+                .fill(DesignColors.journeyBlobAmber.opacity(0.25))
                 .frame(width: 240, height: 240)
                 .blur(radius: 65)
                 .offset(x: animate ? 80 : 50, y: animate ? -20 : -60)
 
             Circle()
-                .fill(Color(red: 0.72, green: 0.60, blue: 0.78).opacity(0.2))
+                .fill(DesignColors.journeyBlobLavender.opacity(0.2))
                 .frame(width: 300, height: 300)
                 .blur(radius: 75)
                 .offset(x: animate ? 20 : -30, y: animate ? 120 : 180)
 
             Circle()
-                .fill(Color(red: 0.88, green: 0.68, blue: 0.40).opacity(0.2))
+                .fill(DesignColors.journeyBlobHoney.opacity(0.2))
                 .frame(width: 220, height: 220)
                 .blur(radius: 60)
                 .offset(x: animate ? 70 : 100, y: animate ? 300 : 250)
@@ -105,8 +105,8 @@ struct ConnectorLine: View {
                 : StrokeStyle(lineWidth: 2.5, lineCap: .round)
 
             let color = isDashed
-                ? Color(red: 0.60, green: 0.45, blue: 0.42).opacity(0.3)
-                : Color(red: 0.60, green: 0.42, blue: 0.38).opacity(0.5)
+                ? DesignColors.journeyConnectorDashed.opacity(0.3)
+                : DesignColors.journeyConnectorSolid.opacity(0.5)
 
             context.stroke(path, with: .color(color), style: style)
         }
@@ -117,7 +117,7 @@ struct ConnectorLine: View {
                 let x = fromLeft ? geo.size.width * 0.3 + cardInset : geo.size.width * 0.7 - cardInset
 
                 Circle()
-                    .fill(Color(red: 0.45, green: 0.33, blue: 0.28))
+                    .fill(DesignColors.journeyConnectorDot)
                     .frame(width: 10, height: 10)
                     .position(x: x, y: 0)
             }
@@ -153,21 +153,21 @@ struct AriaJourneyNudge: View {
                     )
                     .frame(width: 28, height: 28)
                 Text("A")
-                    .font(.custom("Raleway-Bold", size: 13))
+                    .font(.raleway("Bold", size: 13, relativeTo: .caption))
                     .foregroundStyle(.white)
             }
 
             Button(action: onLogTapped) {
                 VStack(alignment: .leading, spacing: 10) {
                     Text(message)
-                        .font(.custom("Raleway-Regular", size: 16))
+                        .font(.raleway("Regular", size: 16, relativeTo: .body))
                         .foregroundStyle(DesignColors.text)
                         .lineSpacing(4)
                         .multilineTextAlignment(.leading)
 
                     HStack(spacing: 6) {
                         Text("Log period")
-                            .font(.custom("Raleway-SemiBold", size: 15))
+                            .font(.raleway("SemiBold", size: 15, relativeTo: .body))
                         Image(systemName: "arrow.right")
                             .font(.system(size: 12, weight: .semibold))
                     }
@@ -199,7 +199,7 @@ struct MilestoneBadge: View {
             Image(systemName: icon)
                 .font(.system(size: 10, weight: .medium))
             Text(text)
-                .font(.custom("Raleway-SemiBold", size: 10))
+                .font(.raleway("SemiBold", size: 10, relativeTo: .caption2))
         }
         .foregroundStyle(DesignColors.accentWarm)
         .padding(.horizontal, 10)

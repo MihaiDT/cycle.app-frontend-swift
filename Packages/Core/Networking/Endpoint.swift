@@ -107,16 +107,4 @@ extension Endpoint {
     public static func delete(_ path: String) -> Endpoint {
         Endpoint(path: path, method: .delete)
     }
-
-    public func authenticated(with token: String) -> Endpoint {
-        var newHeaders = headers
-        newHeaders["Authorization"] = "Bearer \(token)"
-        return Endpoint(
-            path: path,
-            method: method,
-            headers: newHeaders,
-            queryItems: queryItems,
-            body: body
-        )
-    }
 }

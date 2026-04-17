@@ -95,17 +95,17 @@ struct PhaseBannerRow: View {
 
             VStack(alignment: .leading, spacing: 3) {
                 Text(dateString)
-                    .font(.custom("Raleway-SemiBold", size: 15))
+                    .font(.raleway("SemiBold", size: 15, relativeTo: .body))
                     .foregroundStyle(DesignColors.text)
 
                 if let phase, let day = cycleDay {
                     HStack(spacing: 6) {
                         Text("\(phase.displayName) · Day \(day)")
-                            .font(.custom("Raleway-Regular", size: 13))
+                            .font(.raleway("Regular", size: 13, relativeTo: .caption))
                             .foregroundStyle(phase.orbitColor)
                         if isPredicted {
                             Text("Predicted")
-                                .font(.custom("Raleway-Medium", size: 10))
+                                .font(.raleway("Medium", size: 10, relativeTo: .caption2))
                                 .foregroundStyle(phase.orbitColor.opacity(0.8))
                                 .padding(.horizontal, 6)
                                 .padding(.vertical, 2)
@@ -120,13 +120,13 @@ struct PhaseBannerRow: View {
                     }
                     // Medical hormone context
                     Text(phase.medicalDescription)
-                        .font(.custom("Raleway-Regular", size: 11.5))
+                        .font(.raleway("Regular", size: 11.5, relativeTo: .caption2))
                         .foregroundStyle(DesignColors.textSecondary.opacity(0.65))
                         .fixedSize(horizontal: false, vertical: true)
                         .lineSpacing(2)
                 } else {
                     Text("Outside current cycle")
-                        .font(.custom("Raleway-Regular", size: 13))
+                        .font(.raleway("Regular", size: 13, relativeTo: .caption))
                         .foregroundStyle(DesignColors.textSecondary.opacity(0.6))
                 }
             }
@@ -135,7 +135,7 @@ struct PhaseBannerRow: View {
 
             if let phase {
                 Text(phase.description)
-                    .font(.custom("Raleway-Medium", size: 11))
+                    .font(.raleway("Medium", size: 11, relativeTo: .caption2))
                     .foregroundStyle(phase.orbitColor)
                     .padding(.horizontal, 10)
                     .padding(.vertical, 5)
@@ -171,10 +171,10 @@ struct FertilityInfoCard: View {
             VStack(alignment: .leading, spacing: 3) {
                 HStack(spacing: 6) {
                     Text(isOvulationDay ? "Peak Fertility" : "Fertile Window")
-                        .font(.custom("Raleway-SemiBold", size: 14))
+                        .font(.raleway("SemiBold", size: 14, relativeTo: .subheadline))
                         .foregroundStyle(DesignColors.text)
                     Text(level.displayName)
-                        .font(.custom("Raleway-Medium", size: 10))
+                        .font(.raleway("Medium", size: 10, relativeTo: .caption2))
                         .foregroundStyle(level.color)
                         .padding(.horizontal, 6)
                         .padding(.vertical, 2)
@@ -185,7 +185,7 @@ struct FertilityInfoCard: View {
                         }
                 }
                 Text(fertilityDescription)
-                    .font(.custom("Raleway-Regular", size: 11.5))
+                    .font(.raleway("Regular", size: 11.5, relativeTo: .caption2))
                     .foregroundStyle(DesignColors.textSecondary.opacity(0.7))
                     .fixedSize(horizontal: false, vertical: true)
                     .lineSpacing(2)
@@ -195,7 +195,7 @@ struct FertilityInfoCard: View {
 
             // Probability badge
             Text(level.probability)
-                .font(.custom("Raleway-Bold", size: 13))
+                .font(.raleway("Bold", size: 13, relativeTo: .caption))
                 .foregroundStyle(level.color)
         }
         .padding(12)
@@ -235,7 +235,7 @@ struct SymptomChipsRow: View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
                 Text("TODAY'S LOG")
-                    .font(.custom("Raleway-Regular", size: 11))
+                    .font(.raleway("Regular", size: 11, relativeTo: .caption2))
                     .foregroundStyle(DesignColors.textSecondary.opacity(0.55))
                     .tracking(2)
                 Spacer()
@@ -244,7 +244,7 @@ struct SymptomChipsRow: View {
                         Image(systemName: symptoms.isEmpty ? "plus" : "pencil")
                             .font(.system(size: 11, weight: .semibold))
                         Text(symptoms.isEmpty ? "Log" : "Edit")
-                            .font(.custom("Raleway-SemiBold", size: 12))
+                            .font(.raleway("SemiBold", size: 12, relativeTo: .caption))
                     }
                     .foregroundStyle(accentColor)
                     .padding(.horizontal, 12)
@@ -260,7 +260,7 @@ struct SymptomChipsRow: View {
 
             if symptoms.isEmpty {
                 Text("Nothing logged — tap Log to track how you feel.")
-                    .font(.custom("Raleway-Regular", size: 13))
+                    .font(.raleway("Regular", size: 13, relativeTo: .body))
                     .foregroundStyle(DesignColors.textSecondary.opacity(0.45))
                     .frame(maxWidth: .infinity, alignment: .leading)
             } else {
@@ -288,7 +288,7 @@ struct LoggedSymptomChip: View {
             Image(systemName: symptom.sfSymbol)
                 .font(.system(size: 11, weight: .medium))
             Text(symptom.displayName)
-                .font(.custom("Raleway-Medium", size: 12))
+                .font(.raleway("Medium", size: 12, relativeTo: .caption))
         }
         .foregroundStyle(accentColor)
         .padding(.horizontal, 12)
@@ -315,7 +315,7 @@ struct CycleLengthRow: View {
                 .foregroundStyle(DesignColors.textSecondary.opacity(0.55))
 
             Text("Cycle Length")
-                .font(.custom("Raleway-Regular", size: 13))
+                .font(.raleway("Regular", size: 13, relativeTo: .body))
                 .foregroundStyle(DesignColors.textSecondary.opacity(0.65))
 
             Spacer()
@@ -324,7 +324,7 @@ struct CycleLengthRow: View {
                 stepButton(icon: "minus", action: onDecrease)
 
                 Text("\(cycleLength)d")
-                    .font(.custom("Raleway-SemiBold", size: 14))
+                    .font(.raleway("SemiBold", size: 14, relativeTo: .body))
                     .foregroundStyle(DesignColors.text)
                     .frame(minWidth: 34, alignment: .center)
 

@@ -6,6 +6,7 @@ import SwiftUI
 struct ChallengeValidatingView: View {
     let store: StoreOf<ChallengeJourneyFeature>
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var isPulsing = false
 
     var body: some View {
@@ -37,15 +38,17 @@ struct ChallengeValidatingView: View {
                         )
                     )
                     .frame(width: 64, height: 64)
-                    .scaleEffect(isPulsing ? 1.12 : 1.0)
-                    .opacity(isPulsing ? 1.0 : 0.85)
+                    .scaleEffect(reduceMotion ? 1.0 : (isPulsing ? 1.12 : 1.0))
+                    .opacity(reduceMotion ? 1.0 : (isPulsing ? 1.0 : 0.85))
 
                 Circle()
                     .fill(DesignColors.accentWarm)
                     .frame(width: 24, height: 24)
             }
             .padding(.bottom, 14)
+            .accessibilityHidden(true)
             .onAppear {
+                guard !reduceMotion else { return }
                 withAnimation(.easeInOut(duration: 2.5).repeatForever(autoreverses: true)) {
                     isPulsing = true
                 }
@@ -63,6 +66,9 @@ struct ChallengeValidatingView: View {
 
             Spacer()
         }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Aria is checking. Matching your photo with the challenge.")
+        .accessibilityAddTraits(.updatesFrequently)
     }
 
     // MARK: - Failure
@@ -77,6 +83,7 @@ struct ChallengeValidatingView: View {
                 .multilineTextAlignment(.center)
                 .lineSpacing(4)
                 .padding(.horizontal, 16)
+                .accessibilityLabel("Validation failed: \(message)")
 
             VStack(spacing: 12) {
                 Button { store.send(.tryAgainTapped) } label: {
@@ -91,13 +98,17 @@ struct ChallengeValidatingView: View {
                         )
                 }
                 .buttonStyle(.plain)
+                .accessibilityHint("Retakes the photo")
 
                 Button { store.send(.closeTapped) } label: {
                     Text("Skip for today")
                         .font(.custom("Raleway-SemiBold", size: 14, relativeTo: .body))
                         .foregroundStyle(DesignColors.textPlaceholder)
+                        .frame(minWidth: 44, minHeight: 44)
+                        .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
+                .accessibilityHint("Dismisses the challenge until tomorrow")
             }
 
             Spacer()

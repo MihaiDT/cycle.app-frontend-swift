@@ -56,18 +56,18 @@ public struct CyclePhaseBanner: View {
             VStack(alignment: .leading, spacing: 4) {
                 HStack(spacing: 6) {
                     Text(phaseDisplayName)
-                        .font(.custom("Raleway-SemiBold", size: 16))
+                        .font(.raleway("SemiBold", size: 16, relativeTo: .headline))
                         .foregroundColor(DesignColors.text)
 
                     if let day {
                         Text("Day \(day)")
-                            .font(.custom("Raleway-Medium", size: 13))
+                            .font(.raleway("Medium", size: 13, relativeTo: .caption))
                             .foregroundColor(DesignColors.textSecondary)
                     }
                 }
 
                 Text(phaseInsight)
-                    .font(.custom("Raleway-Regular", size: 13))
+                    .font(.raleway("Regular", size: 13, relativeTo: .caption))
                     .foregroundColor(DesignColors.textSecondary)
                     .lineLimit(2)
             }

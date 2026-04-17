@@ -1,51 +1,11 @@
-import ComposableArchitecture
 import SwiftUI
 
-// MARK: - Challenge Accept Feature
-
-@Reducer
-public struct ChallengeAcceptFeature: Sendable {
-    @ObservableState
-    public struct State: Equatable, Sendable {
-        public let challenge: ChallengeSnapshot
-        public init(challenge: ChallengeSnapshot) { self.challenge = challenge }
-    }
-
-    public enum Action: Sendable {
-        case openCameraTapped
-        case chooseFromGalleryTapped
-        case startChallengeTapped
-        case delegate(Delegate)
-        public enum Delegate: Sendable {
-            case openCamera
-            case openGallery
-            case startChallenge
-        }
-    }
-
-    public init() {}
-
-    public var body: some ReducerOf<Self> {
-        Reduce { _, action in
-            switch action {
-            case .openCameraTapped:
-                return .send(.delegate(.openCamera))
-            case .chooseFromGalleryTapped:
-                return .send(.delegate(.openGallery))
-            case .startChallengeTapped:
-                return .send(.delegate(.startChallenge))
-            case .delegate:
-                return .none
-            }
-        }
-    }
-}
-
-// MARK: - Challenge Accept View
-
-struct ChallengeAcceptView: View {
-    let store: StoreOf<ChallengeAcceptFeature>
-    @Environment(\.dismiss) private var dismiss
+/// Inline version of the challenge accept screen — used as the first step
+/// of the ChallengeJourneyView. Driven by closures instead of a TCA store.
+struct ChallengeAcceptInlineView: View {
+    let challenge: ChallengeSnapshot
+    let onStart: () -> Void
+    let onClose: () -> Void
 
     var body: some View {
         ZStack(alignment: .bottom) {
@@ -60,7 +20,6 @@ struct ChallengeAcceptView: View {
                     Spacer(minLength: 170)
                 }
             }
-
             ctaCluster
         }
         .background(DesignColors.background.ignoresSafeArea())
@@ -72,16 +31,18 @@ struct ChallengeAcceptView: View {
         HStack {
             Spacer()
             Button {
-                dismiss()
+                onClose()
             } label: {
                 Image(systemName: "xmark")
                     .font(.system(size: 14, weight: .bold))
                     .foregroundStyle(DesignColors.text)
                     .frame(width: 38, height: 38)
                     .background(Circle().fill(DesignColors.text.opacity(0.08)))
+                    .frame(minWidth: 44, minHeight: 44)
+                    .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .accessibilityLabel("Close")
+            .accessibilityLabel("Close challenge")
         }
         .padding(.horizontal, 18)
         .padding(.top, 14)
@@ -91,7 +52,7 @@ struct ChallengeAcceptView: View {
     // MARK: - Phase anchor
 
     private var phaseAnchor: some View {
-        Text("Today · \(store.challenge.cyclePhase) phase")
+        Text("Today · \(challenge.cyclePhase) phase")
             .font(.custom("Raleway-Bold", size: 11, relativeTo: .caption2))
             .tracking(1.3)
             .textCase(.uppercase)
@@ -99,13 +60,13 @@ struct ChallengeAcceptView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, 22)
             .padding(.bottom, 14)
-            .accessibilityLabel("Today, \(store.challenge.cyclePhase) phase")
+            .accessibilityLabel("Today, \(challenge.cyclePhase) phase")
     }
 
-    // MARK: - Title block
+    // MARK: - Title
 
     private var titleBlock: some View {
-        Text(store.challenge.challengeTitle)
+        Text(challenge.challengeTitle)
             .font(.custom("Raleway-Black", size: 44, relativeTo: .largeTitle))
             .tracking(-0.9)
             .lineSpacing(-6)
@@ -117,10 +78,10 @@ struct ChallengeAcceptView: View {
             .accessibilityAddTraits(.isHeader)
     }
 
-    // MARK: - Why subtitle
+    // MARK: - Description
 
     private var whySubtitle: some View {
-        Text(store.challenge.challengeDescription)
+        Text(challenge.challengeDescription.cleanedAIText)
             .font(.custom("Raleway-Medium", size: 17, relativeTo: .body))
             .foregroundStyle(DesignColors.textPrincipal)
             .lineSpacing(3)
@@ -130,22 +91,16 @@ struct ChallengeAcceptView: View {
             .padding(.bottom, 26)
     }
 
-    // MARK: - Stat row
+    // MARK: - Stats
 
     private var statRow: some View {
         HStack(spacing: 10) {
-            statBox(value: store.challenge.durationDisplay, label: "Time")
-            statBox(value: store.challenge.effortDisplay, label: "Effort")
-            statBox(value: store.challenge.themeDisplay, label: "Theme")
+            statBox(value: challenge.durationDisplay, label: "Time")
+            statBox(value: challenge.effortDisplay, label: "Effort")
+            statBox(value: challenge.themeDisplay, label: "Theme")
         }
         .padding(.horizontal, 20)
         .padding(.bottom, 14)
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel(
-            "Takes \(store.challenge.durationDisplay), " +
-            "effort \(store.challenge.effortDisplay), " +
-            "theme \(store.challenge.themeDisplay)"
-        )
     }
 
     private func statBox(value: String, label: String) -> some View {
@@ -165,17 +120,12 @@ struct ChallengeAcceptView: View {
         .frame(maxWidth: .infinity)
         .padding(.vertical, 18)
         .padding(.horizontal, 10)
-        .background(
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .fill(DesignColors.cardWarm)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 20, style: .continuous)
-                        .stroke(DesignColors.text.opacity(DesignColors.borderOpacitySubtle), lineWidth: 1)
-                )
-        )
+        .glowCardBackground(tint: .neutral)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(label): \(value)")
     }
 
-    // MARK: - How card
+    // MARK: - How to
 
     private var howCard: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -185,22 +135,16 @@ struct ChallengeAcceptView: View {
                 .textCase(.uppercase)
                 .foregroundStyle(DesignColors.accentWarm)
                 .padding(.bottom, 14)
+                .accessibilityAddTraits(.isHeader)
 
-            ForEach(Array(store.challenge.tips.enumerated()), id: \.offset) { index, tip in
+            ForEach(Array(challenge.tips.enumerated()), id: \.offset) { index, tip in
                 tipRow(number: index + 1, text: tip, isFirst: index == 0)
             }
         }
         .padding(.vertical, 18)
         .padding(.horizontal, 22)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(
-            RoundedRectangle(cornerRadius: 24, style: .continuous)
-                .fill(DesignColors.cardWarm)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 24, style: .continuous)
-                        .stroke(DesignColors.text.opacity(DesignColors.borderOpacitySubtle), lineWidth: 1)
-                )
-        )
+        .glowCardBackground(tint: .rose)
         .padding(.horizontal, 20)
         .padding(.bottom, 20)
     }
@@ -211,6 +155,7 @@ struct ChallengeAcceptView: View {
                 Rectangle()
                     .fill(DesignColors.text.opacity(DesignColors.dividerOpacity))
                     .frame(height: 1)
+                    .accessibilityHidden(true)
             }
             HStack(alignment: .top, spacing: 14) {
                 Text("\(number)")
@@ -218,6 +163,7 @@ struct ChallengeAcceptView: View {
                     .foregroundStyle(DesignColors.background)
                     .frame(width: 24, height: 24)
                     .background(Circle().fill(DesignColors.text))
+                    .accessibilityHidden(true)
                 Text(text)
                     .font(.custom("Raleway-Medium", size: 15, relativeTo: .body))
                     .foregroundStyle(DesignColors.textPrincipal)
@@ -226,12 +172,12 @@ struct ChallengeAcceptView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
             .padding(.vertical, 12)
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel("Step \(number): \(text)")
         }
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel("Step \(number): \(text)")
     }
 
-    // MARK: - CTA cluster
+    // MARK: - CTA
 
     private var ctaCluster: some View {
         VStack(spacing: 0) {
@@ -242,36 +188,21 @@ struct ChallengeAcceptView: View {
             )
             .frame(height: 28)
             .allowsHitTesting(false)
+            .accessibilityHidden(true)
 
             VStack(spacing: 12) {
                 Button {
                     UIImpactFeedbackGenerator(style: .medium).impactOccurred()
-                    store.send(.startChallengeTapped)
+                    onStart()
                 } label: {
-                    Text("Start challenge")
+                    Text("Begin your moment")
                 }
                 .buttonStyle(GlowPrimaryButtonStyle())
-                .accessibilityLabel("Start challenge")
-                .accessibilityHint("Start the challenge journey")
-
-                Button {
-                    store.send(.chooseFromGalleryTapped)
-                } label: {
-                    Text("Or choose from gallery")
-                        .font(.custom("Raleway-SemiBold", size: 13, relativeTo: .footnote))
-                        .foregroundStyle(DesignColors.textSecondary)
-                }
-                .buttonStyle(.plain)
-                .accessibilityHint("Choose an existing photo instead of taking a new one")
-
-                Text("Earns 50–100 glow on completion")
-                    .font(.custom("Raleway-SemiBold", size: 11, relativeTo: .caption))
-                    .foregroundStyle(DesignColors.textSecondary)
-                    .padding(.top, 4)
-                    .accessibilityLabel("Earns 50 to 100 glow points on completion")
+                .accessibilityLabel("Begin your moment")
+                .accessibilityHint("Starts the challenge timer")
             }
-            .padding(.horizontal, 20)
-            .padding(.bottom, 18)
+            .padding(.horizontal, AppLayout.horizontalPadding)
+            .padding(.bottom, 34)
             .background(DesignColors.background)
         }
     }

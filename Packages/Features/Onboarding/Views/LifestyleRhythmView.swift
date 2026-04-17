@@ -75,14 +75,15 @@ public struct LifestyleRhythmView: View {
                 // Header
                 VStack(spacing: 6) {
                     Text("almost done")
-                        .font(.custom("Raleway-Regular", size: 13))
+                        .font(.raleway("Regular", size: 13, relativeTo: .caption))
                         .tracking(3)
                         .textCase(.uppercase)
                         .foregroundColor(DesignColors.text.opacity(0.5))
 
                     Text("Your Rhythm")
-                        .font(.custom("Raleway-Bold", size: 32))
+                        .font(.raleway("Bold", size: 32, relativeTo: .title))
                         .foregroundColor(DesignColors.text)
+                        .accessibilityAddTraits(.isHeader)
                 }
                 .padding(.bottom, 60)
 
@@ -90,7 +91,7 @@ public struct LifestyleRhythmView: View {
                 VStack(spacing: 20) {
                     // Title
                     Text(selectedType?.title ?? "Slide to select")
-                        .font(.custom("Raleway-SemiBold", size: 24))
+                        .font(.raleway("SemiBold", size: 24, relativeTo: .title2))
                         .foregroundColor(DesignColors.text)
                         .multilineTextAlignment(.center)
                         .contentTransition(.numericText())
@@ -98,7 +99,7 @@ public struct LifestyleRhythmView: View {
 
                     // Subtitle
                     Text(selectedType?.subtitle ?? "Find your natural rhythm")
-                        .font(.custom("Raleway-Regular", size: 17))
+                        .font(.raleway("Regular", size: 17, relativeTo: .body))
                         .foregroundColor(DesignColors.text.opacity(0.6))
                         .multilineTextAlignment(.center)
                         .contentTransition(.numericText())
@@ -107,6 +108,7 @@ public struct LifestyleRhythmView: View {
                 .frame(maxWidth: .infinity)
                 .frame(height: 80)
                 .padding(.horizontal, 32)
+                .accessibilityElement(children: .combine)
 
                 Spacer()
 
@@ -118,6 +120,21 @@ public struct LifestyleRhythmView: View {
                 )
                 .frame(height: 260)
                 .padding(.bottom, 80)
+                .accessibilityRepresentation {
+                    // Make the arc selector VoiceOver-accessible as an adjustable
+                    HStack {
+                        ForEach(LifestyleType.allCases, id: \.self) { type in
+                            Button {
+                                selectedType = type
+                                dragAngle = type.angle
+                            } label: {
+                                Text(type.title)
+                            }
+                            .accessibilityLabel("\(type.title). \(type.subtitle)")
+                            .accessibilityAddTraits(selectedType == type ? [.isSelected, .isButton] : [.isButton])
+                        }
+                    }
+                }
             }
         }
         .onAppear {
@@ -415,10 +432,11 @@ private struct TypeLabel: View {
 
     var body: some View {
         Text(shortLabel)
-            .font(.custom("Raleway-SemiBold", size: isSelected ? 15 : 13))
+            .font(.raleway("SemiBold", size: isSelected ? 15 : 13, relativeTo: .caption))
             .foregroundColor(isSelected ? DesignColors.text : DesignColors.text.opacity(0.5))
             .position(position)
             .animation(.easeOut(duration: 0.2), value: isSelected)
+            .accessibilityHidden(true)
     }
 }
 

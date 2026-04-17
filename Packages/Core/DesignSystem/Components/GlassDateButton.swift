@@ -21,17 +21,17 @@ public struct GlassDateButton: View {
         Button(action: action) {
             HStack {
                 Text(label)
-                    .font(.custom("Raleway-Medium", size: 16))
+                    .font(.raleway("Medium", size: 16, relativeTo: .body))
                     .foregroundColor(DesignColors.text.opacity(0.75))
 
                 Spacer()
 
                 Text(value)
-                    .font(.custom("Raleway-SemiBold", size: 16))
+                    .font(.raleway("SemiBold", size: 16, relativeTo: .body))
                     .foregroundColor(DesignColors.text)
             }
             .padding(.horizontal, 24)
-            .frame(height: 57)
+            .frame(minHeight: 57)
             .frame(maxWidth: .infinity)
             .background {
                 RoundedRectangle(cornerRadius: 24)
@@ -91,7 +91,7 @@ public struct DatePickerSheet: View {
             .toolbar {
                 ToolbarItem(placement: .principal) {
                     Text(title)
-                        .font(.custom("Raleway-SemiBold", size: 17))
+                        .font(.raleway("SemiBold", size: 17, relativeTo: .headline))
                         .foregroundColor(DesignColors.text)
                 }
                 ToolbarItem(placement: .confirmationAction) {
@@ -99,7 +99,7 @@ public struct DatePickerSheet: View {
                         isPresented = false
                     } label: {
                         Text("Done")
-                            .font(.custom("Raleway-SemiBold", size: 17))
+                            .font(.raleway("SemiBold", size: 17, relativeTo: .headline))
                             .foregroundColor(DesignColors.link)
                     }
                 }

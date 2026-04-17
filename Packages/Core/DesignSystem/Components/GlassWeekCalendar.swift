@@ -18,6 +18,8 @@ public struct GlassWeekCalendar: View {
     /// Track initial page setup
     @State private var didSetInitialPage: Bool = false
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
     private let cal = Calendar.current
     private let slotsPerPage = 7
 
@@ -104,7 +106,7 @@ public struct GlassWeekCalendar: View {
                 // Phase name header
                 HStack {
                     Text(phaseLabel)
-                        .font(.custom("Raleway-SemiBold", size: 13))
+                        .font(.raleway("SemiBold", size: 13, relativeTo: .caption))
                         .foregroundColor(DesignColors.textSecondary.opacity(0.7))
                     Spacer()
                 }
@@ -125,7 +127,7 @@ public struct GlassWeekCalendar: View {
             }
             .frame(height: isCompact ? 38 : 52)
         }
-        .animation(.spring(response: 0.3, dampingFraction: 0.85), value: isCompact)
+        .animation(reduceMotion ? nil : .spring(response: 0.3, dampingFraction: 0.85), value: isCompact)
         .onAppear {
             if !didSetInitialPage {
                 currentPage = todayPage
@@ -136,7 +138,7 @@ public struct GlassWeekCalendar: View {
         .onChange(of: selectedDate) { _, newDate in
             if newDate == nil {
                 userHasInteracted = false
-                withAnimation(.spring(response: 0.3, dampingFraction: 0.85)) {
+                withAnimation(reduceMotion ? nil : .spring(response: 0.3, dampingFraction: 0.85)) {
                     currentPage = todayPage
                     highlightSlot = todaySlotInPage
                 }
@@ -266,9 +268,10 @@ public struct GlassWeekCalendar: View {
                 // Calendar date number
                 Text("\(calendarDay)")
                     .font(
-                        .custom(
-                            periodDay || isToday ? "Raleway-Bold" : "Raleway-SemiBold",
-                            size: isCompact ? 14 : 16
+                        .raleway(
+                            periodDay || isToday ? "Bold" : "SemiBold",
+                            size: isCompact ? 14 : 16,
+                            relativeTo: .body
                         )
                     )
                     .foregroundColor(
@@ -307,7 +310,7 @@ public struct GlassWeekCalendar: View {
                 return
             }
 
-            withAnimation(.spring(response: 0.35, dampingFraction: 0.75)) {
+            withAnimation(reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 0.75)) {
                 userHasInteracted = true
                 highlightSlot = slotIndex
                 selectedDate = tappedDate

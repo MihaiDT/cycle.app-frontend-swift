@@ -2246,7 +2246,7 @@ private struct CycleStoryView: View {
                                 .frame(width: 14, height: 14)
                         }
                         Text("\(point.length)")
-                            .font(.custom("Raleway-Bold", size: 10))
+                            .font(.raleway("Bold", size: 10, relativeTo: .caption2))
                             .foregroundStyle(steady ? DesignColors.textSecondary : DesignColors.text)
                     }
                     .scaleEffect(i < dotsRevealed ? 1 : 0)

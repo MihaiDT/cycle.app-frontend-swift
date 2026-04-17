@@ -47,9 +47,6 @@ packages:
   Firebase:
     url: https://github.com/firebase/firebase-ios-sdk
     from: "11.0.0"
-  GoogleSignIn:
-    url: https://github.com/google/GoogleSignIn-iOS
-    from: "8.0.0"
 
 targets:
   CycleApp:
@@ -85,9 +82,6 @@ targets:
       - package: Inject
       - package: Firebase
         product: FirebaseCore
-      - package: Firebase
-        product: FirebaseAuth
-      - package: GoogleSignIn
       - package: RiveRuntime
       - sdk: HealthKit.framework
       - target: CycleAppLiveActivity

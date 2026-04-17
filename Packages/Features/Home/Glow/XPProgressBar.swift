@@ -6,6 +6,7 @@ struct XPProgressBar: View {
     let currentXP: Int
     let animated: Bool
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var displayProgress: Double = 0
 
     private var progress: Double {
@@ -20,22 +21,32 @@ struct XPProgressBar: View {
         GlowConstants.levelFor(xp: currentXP)
     }
 
+    private var accessibilityValueDescription: String {
+        if isMaxLevel {
+            return "Level \(levelInfo.level), \(levelInfo.title), max level reached, \(currentXP) XP total"
+        }
+        if let remaining = GlowConstants.xpForNextLevel(currentXP: currentXP) {
+            return "Level \(levelInfo.level), \(levelInfo.title), \(currentXP) XP total, \(remaining) XP to next level"
+        }
+        return "Level \(levelInfo.level), \(levelInfo.title), \(currentXP) XP total"
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack {
                 Text("\(levelInfo.emoji) \(levelInfo.title)")
-                    .font(.custom("Raleway-SemiBold", size: 14))
+                    .font(.raleway("SemiBold", size: 14, relativeTo: .subheadline))
                     .foregroundStyle(DesignColors.text)
 
                 Spacer()
 
                 if isMaxLevel {
                     Text("MAX LEVEL")
-                        .font(.custom("Raleway-Bold", size: 12))
+                        .font(.raleway("Bold", size: 12, relativeTo: .caption))
                         .foregroundStyle(DesignColors.accentWarm)
                 } else if let remaining = GlowConstants.xpForNextLevel(currentXP: currentXP) {
                     Text("\(remaining) XP to next level")
-                        .font(.custom("Raleway-Regular", size: 12))
+                        .font(.raleway("Regular", size: 12, relativeTo: .caption))
                         .foregroundStyle(DesignColors.textSecondary)
                 }
             }
@@ -58,8 +69,11 @@ struct XPProgressBar: View {
             }
             .frame(height: 8)
         }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Experience progress")
+        .accessibilityValue(accessibilityValueDescription)
         .onAppear {
-            if animated {
+            if animated, !reduceMotion {
                 withAnimation(.easeOut(duration: 0.8).delay(0.3)) {
                     displayProgress = progress
                 }

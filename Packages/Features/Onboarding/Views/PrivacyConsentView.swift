@@ -47,10 +47,11 @@ public struct PrivacyConsentView: View {
                     .playing(loopMode: .playOnce)
                     .frame(width: 240, height: 240)
                     .frame(maxWidth: .infinity)
+                    .accessibilityHidden(true)
 
                 // Subtitle
                 Text("your privacy matters")
-                    .font(.custom("Raleway-Regular", size: 13))
+                    .font(.raleway("Regular", size: 13, relativeTo: .caption))
                     .tracking(3)
                     .textCase(.uppercase)
                     .foregroundColor(DesignColors.text.opacity(0.5))
@@ -60,16 +61,17 @@ public struct PrivacyConsentView: View {
 
                 // Title (centered)
                 Text("For you. And only you.")
-                    .font(.custom("Raleway-Bold", size: 24))
+                    .font(.raleway("Bold", size: 24, relativeTo: .title2))
                     .foregroundColor(DesignColors.text)
                     .frame(maxWidth: .infinity)
+                    .accessibilityAddTraits(.isHeader)
 
                 // Gap to description
                 Spacer().frame(height: 24)
 
                 // Description (centered)
                 Text("Your health data is protected and kept private.\nReview, export, or delete it anytime.")
-                    .font(.custom("Raleway-Regular", size: 17))
+                    .font(.raleway("Regular", size: 17, relativeTo: .body))
                     .foregroundColor(DesignColors.text.opacity(0.7))
                     .multilineTextAlignment(.center)
                     .lineSpacing(6)
@@ -85,17 +87,17 @@ public struct PrivacyConsentView: View {
                         action: onToggleHealthData
                     ) {
                         (Text("I consent to the processing of my health data to enable core features in Cycle.\n")
-                            .font(.custom("Raleway-Regular", size: 17))
+                            .font(.raleway("Regular", size: 17, relativeTo: .body))
                             .foregroundColor(DesignColors.text.opacity(0.7))
                             + Text("Learn more in the ")
-                            .font(.custom("Raleway-Regular", size: 17))
+                            .font(.raleway("Regular", size: 17, relativeTo: .body))
                             .foregroundColor(DesignColors.text.opacity(0.7))
                             + Text("Privacy Policy")
-                            .font(.custom("Raleway-SemiBold", size: 17))
+                            .font(.raleway("SemiBold", size: 17, relativeTo: .body))
                             .foregroundColor(DesignColors.link)
                             .underline()
                             + Text(".")
-                            .font(.custom("Raleway-Regular", size: 17))
+                            .font(.raleway("Regular", size: 17, relativeTo: .body))
                             .foregroundColor(DesignColors.text.opacity(0.7)))
                             .lineSpacing(6)
                             .fixedSize(horizontal: false, vertical: true)
@@ -107,21 +109,21 @@ public struct PrivacyConsentView: View {
                         action: onToggleTerms
                     ) {
                         (Text("I agree to the ")
-                            .font(.custom("Raleway-Regular", size: 17))
+                            .font(.raleway("Regular", size: 17, relativeTo: .body))
                             .foregroundColor(DesignColors.text.opacity(0.7))
                             + Text("Privacy Policy")
-                            .font(.custom("Raleway-SemiBold", size: 17))
+                            .font(.raleway("SemiBold", size: 17, relativeTo: .body))
                             .foregroundColor(DesignColors.link)
                             .underline()
                             + Text(" and ")
-                            .font(.custom("Raleway-Regular", size: 17))
+                            .font(.raleway("Regular", size: 17, relativeTo: .body))
                             .foregroundColor(DesignColors.text.opacity(0.7))
                             + Text("Terms of Use")
-                            .font(.custom("Raleway-SemiBold", size: 17))
+                            .font(.raleway("SemiBold", size: 17, relativeTo: .body))
                             .foregroundColor(DesignColors.link)
                             .underline()
                             + Text(".")
-                            .font(.custom("Raleway-Regular", size: 17))
+                            .font(.raleway("Regular", size: 17, relativeTo: .body))
                             .foregroundColor(DesignColors.text.opacity(0.7)))
                             .lineSpacing(6)
                             .fixedSize(horizontal: false, vertical: true)
@@ -141,7 +143,7 @@ public struct PrivacyConsentView: View {
         onToggleHealthData: {},
         onToggleTerms: {},
         onBegin: {},
-        onBack: { print("Back tapped") }
+        onBack: { }
     )
 }
 
@@ -152,6 +154,6 @@ public struct PrivacyConsentView: View {
         onToggleHealthData: {},
         onToggleTerms: {},
         onBegin: {},
-        onBack: { print("Back tapped") }
+        onBack: { }
     )
 }

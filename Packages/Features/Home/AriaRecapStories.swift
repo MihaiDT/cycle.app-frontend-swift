@@ -8,18 +8,12 @@ struct AriaRecapStories: View {
     @State private var shimmerPhase = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    private static let monthFormatter: DateFormatter = {
-        let f = DateFormatter()
-        f.dateFormat = "MMMM yyyy"
-        return f
-    }()
-
     private let storyGradients: [[Color]] = [
-        [Color(red: 0.72, green: 0.36, blue: 0.40), Color(red: 0.82, green: 0.52, blue: 0.45)],
-        [Color(red: 0.78, green: 0.48, blue: 0.40), Color(red: 0.88, green: 0.65, blue: 0.50)],
-        [Color(red: 0.55, green: 0.42, blue: 0.65), Color(red: 0.70, green: 0.58, blue: 0.75)],
-        [Color(red: 0.75, green: 0.55, blue: 0.30), Color(red: 0.85, green: 0.70, blue: 0.42)],
-        [Color(red: 0.32, green: 0.23, blue: 0.20), Color(red: 0.50, green: 0.36, blue: 0.30)],
+        [DesignColors.recapMenstrualStart, DesignColors.recapMenstrualEnd],
+        [DesignColors.recapFollicularStart, DesignColors.recapFollicularEnd],
+        [DesignColors.recapOvulatoryStart, DesignColors.recapOvulatoryEnd],
+        [DesignColors.recapLutealStart, DesignColors.recapLutealEnd],
+        [DesignColors.recapAriaStart, DesignColors.recapAriaEnd],
     ]
 
     var body: some View {
@@ -38,8 +32,8 @@ struct AriaRecapStories: View {
                         storyProgressBars(currentPage: recap.currentPage)
 
                         HStack {
-                            Text(Self.monthFormatter.string(from: recap.summary.startDate))
-                                .font(.custom("Raleway-Medium", size: 13))
+                            Text(DateFormatter.monthYear.string(from: recap.summary.startDate))
+                                .font(.raleway("Medium", size: 13, relativeTo: .caption))
                                 .foregroundStyle(.white.opacity(0.7))
 
                             Spacer()
@@ -148,17 +142,17 @@ struct AriaRecapStories: View {
     private func storyOverviewPage(recap: RecapState) -> some View {
         VStack(spacing: 24) {
             Text(recap.cycleVibe.uppercased())
-                .font(.custom("Raleway-Bold", size: 52))
+                .font(.raleway("Bold", size: 52, relativeTo: .largeTitle))
                 .foregroundStyle(.white.opacity(0.10))
                 .tracking(8)
 
             Text(recap.headline)
-                .font(.custom("Raleway-Bold", size: 30))
+                .font(.raleway("Bold", size: 30, relativeTo: .title))
                 .foregroundStyle(.white)
                 .multilineTextAlignment(.center)
 
-            Text(recap.overviewText)
-                .font(.custom("Raleway-Regular", size: 18))
+            Text(recap.overviewText.cleanedAIText)
+                .font(.raleway("Regular", size: 18, relativeTo: .body))
                 .foregroundStyle(.white.opacity(0.9))
                 .lineSpacing(8)
                 .multilineTextAlignment(.center)
@@ -166,10 +160,10 @@ struct AriaRecapStories: View {
 
             HStack(spacing: 6) {
                 Text("Cycle \(recap.summary.cycleNumber)")
-                    .font(.custom("Raleway-Medium", size: 13))
+                    .font(.raleway("Medium", size: 13, relativeTo: .caption))
                 Text("\u{00B7}")
                 Text("\(recap.summary.cycleLength) days")
-                    .font(.custom("Raleway-Medium", size: 13))
+                    .font(.raleway("Medium", size: 13, relativeTo: .caption))
             }
             .foregroundStyle(.white.opacity(0.5))
         }
@@ -183,11 +177,11 @@ struct AriaRecapStories: View {
                 .foregroundStyle(.white.opacity(0.5))
 
             Text("Your Body")
-                .font(.custom("Raleway-Bold", size: 28))
+                .font(.raleway("Bold", size: 28, relativeTo: .title))
                 .foregroundStyle(.white)
 
-            Text(recap.bodyText)
-                .font(.custom("Raleway-Regular", size: 18))
+            Text(recap.bodyText.cleanedAIText)
+                .font(.raleway("Regular", size: 18, relativeTo: .body))
                 .foregroundStyle(.white.opacity(0.9))
                 .lineSpacing(8)
                 .multilineTextAlignment(.center)
@@ -211,11 +205,11 @@ struct AriaRecapStories: View {
                 .foregroundStyle(.white.opacity(0.5))
 
             Text("Your Mind")
-                .font(.custom("Raleway-Bold", size: 28))
+                .font(.raleway("Bold", size: 28, relativeTo: .title))
                 .foregroundStyle(.white)
 
-            Text(recap.mindText)
-                .font(.custom("Raleway-Regular", size: 18))
+            Text(recap.mindText.cleanedAIText)
+                .font(.raleway("Regular", size: 18, relativeTo: .body))
                 .foregroundStyle(.white.opacity(0.9))
                 .lineSpacing(8)
                 .multilineTextAlignment(.center)
@@ -238,11 +232,11 @@ struct AriaRecapStories: View {
                 .foregroundStyle(.white.opacity(0.5))
 
             Text("The Pattern")
-                .font(.custom("Raleway-Bold", size: 28))
+                .font(.raleway("Bold", size: 28, relativeTo: .title))
                 .foregroundStyle(.white)
 
-            Text(recap.patternText)
-                .font(.custom("Raleway-Regular", size: 18))
+            Text(recap.patternText.cleanedAIText)
+                .font(.raleway("Regular", size: 18, relativeTo: .body))
                 .foregroundStyle(.white.opacity(0.9))
                 .lineSpacing(8)
                 .multilineTextAlignment(.center)
@@ -253,7 +247,7 @@ struct AriaRecapStories: View {
                     Image(systemName: "target")
                         .font(.system(size: 14))
                     Text("Prediction: \(label)")
-                        .font(.custom("Raleway-Medium", size: 14))
+                        .font(.raleway("Medium", size: 14, relativeTo: .subheadline))
                 }
                 .foregroundStyle(.white.opacity(0.6))
                 .padding(.horizontal, 16)
@@ -271,8 +265,8 @@ struct AriaRecapStories: View {
                     .fill(
                         LinearGradient(
                             colors: [
-                                Color(red: 0.85, green: 0.55, blue: 0.48),
-                                Color(red: 0.72, green: 0.45, blue: 0.58),
+                                DesignColors.ariaBadgeStart,
+                                DesignColors.ariaBadgeEnd,
                             ],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
@@ -281,16 +275,16 @@ struct AriaRecapStories: View {
                     .frame(width: 64, height: 64)
 
                 Text("A")
-                    .font(.custom("Raleway-Bold", size: 28))
+                    .font(.raleway("Bold", size: 28, relativeTo: .title))
                     .foregroundStyle(.white)
             }
 
             Text("Something on your mind?")
-                .font(.custom("Raleway-Bold", size: 28))
+                .font(.raleway("Bold", size: 28, relativeTo: .title))
                 .foregroundStyle(.white)
 
             Text("Ask Aria anything about this cycle — why it felt different, what your mood patterns mean, or how to prepare for the next one.")
-                .font(.custom("Raleway-Regular", size: 17))
+                .font(.raleway("Regular", size: 17, relativeTo: .body))
                 .foregroundStyle(.white.opacity(0.8))
                 .lineSpacing(6)
                 .multilineTextAlignment(.center)
@@ -301,11 +295,11 @@ struct AriaRecapStories: View {
             } label: {
                 HStack(spacing: 10) {
                     Text("Talk with Aria")
-                        .font(.custom("Raleway-SemiBold", size: 17))
+                        .font(.raleway("SemiBold", size: 17, relativeTo: .headline))
                     Image(systemName: "arrow.right")
                         .font(.system(size: 14, weight: .semibold))
                 }
-                .foregroundStyle(Color(red: 0.35, green: 0.25, blue: 0.22))
+                .foregroundStyle(DesignColors.recapCTAText)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 18)
                 .background(Capsule().fill(.white))
@@ -346,7 +340,7 @@ struct AriaRecapStories: View {
                     HStack(spacing: 4) {
                         Circle().fill(phase.2.opacity(0.8)).frame(width: 6, height: 6)
                         Text("\(phase.1)d")
-                            .font(.custom("Raleway-Regular", size: 11))
+                            .font(.raleway("Regular", size: 11, relativeTo: .caption2))
                             .foregroundStyle(.white.opacity(0.6))
                     }
                 }
@@ -357,10 +351,10 @@ struct AriaRecapStories: View {
     private func storyMoodIndicator(label: String, value: Double) -> some View {
         VStack(spacing: 6) {
             Text(String(format: "%.1f", value))
-                .font(.custom("Raleway-Bold", size: 24))
+                .font(.raleway("Bold", size: 24, relativeTo: .title))
                 .foregroundStyle(.white)
             Text(label)
-                .font(.custom("Raleway-Medium", size: 12))
+                .font(.raleway("Medium", size: 12, relativeTo: .caption))
                 .foregroundStyle(.white.opacity(0.6))
         }
         .frame(width: 80)

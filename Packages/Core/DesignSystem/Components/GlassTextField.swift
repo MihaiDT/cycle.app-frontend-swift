@@ -16,14 +16,14 @@ public struct GlassTextField: View {
             "",
             text: $text,
             prompt: Text(placeholder)
-                .font(.custom("Raleway-SemiBold", size: 16))
+                .font(.raleway("SemiBold", size: 16, relativeTo: .body))
                 .foregroundColor(DesignColors.text.opacity(0.75))
         )
-        .font(.custom("Raleway-SemiBold", size: 16))
+        .font(.raleway("SemiBold", size: 16, relativeTo: .body))
         .foregroundColor(DesignColors.text)
         .multilineTextAlignment(.center)
         .padding(.horizontal, 24)
-        .frame(height: 57)
+        .frame(minHeight: 57)
         .frame(maxWidth: .infinity)
         .background {
             RoundedRectangle(cornerRadius: 24)
@@ -45,6 +45,7 @@ public struct GlassTextField: View {
         }
         .shadow(color: .black.opacity(0.1), radius: 2, x: 0, y: 0)
         .shadow(color: .black.opacity(0.1), radius: 8, x: 0, y: 1)
+        .accessibilityLabel(placeholder.isEmpty ? Text("Text field") : Text(placeholder))
     }
 }
 

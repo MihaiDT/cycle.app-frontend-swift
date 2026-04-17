@@ -23,7 +23,7 @@ public struct InsightCard: View {
                 .frame(width: 3)
 
             Text(text)
-                .font(.custom("Raleway-Regular", size: 14))
+                .font(.raleway("Regular", size: 14, relativeTo: .body))
                 .foregroundColor(DesignColors.text)
                 .fixedSize(horizontal: false, vertical: true)
         }

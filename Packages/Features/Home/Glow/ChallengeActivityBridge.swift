@@ -3,6 +3,7 @@ import Foundation
 
 struct ChallengeActivityAttributes: ActivityAttributes {
     struct ContentState: Codable, Hashable {
+        let timerStart: Date
         let timerEnd: Date
     }
 
@@ -19,16 +20,14 @@ enum ChallengeActivityBridge {
         title: String,
         category: String,
         phase: String,
-        durationMinutes: Int
+        durationMinutes: Int,
+        timerEnd: Date
     ) async {
         let authInfo = ActivityAuthorizationInfo()
         guard authInfo.areActivitiesEnabled else { return }
 
-        // End any existing activities first
-        for activity in Activity<ChallengeActivityAttributes>.activities {
-            let final = ChallengeActivityAttributes.ContentState(timerEnd: .now)
-            await activity.end(.init(state: final, staleDate: nil), dismissalPolicy: .immediate)
-        }
+        // Skip if activity already running (e.g. user tapped Continue)
+        guard Activity<ChallengeActivityAttributes>.activities.isEmpty else { return }
 
         let attributes = ChallengeActivityAttributes(
             challengeTitle: title,
@@ -37,8 +36,7 @@ enum ChallengeActivityBridge {
             durationMinutes: durationMinutes
         )
 
-        let timerEnd = Date().addingTimeInterval(TimeInterval(durationMinutes * 60))
-        let state = ChallengeActivityAttributes.ContentState(timerEnd: timerEnd)
+        let state = ChallengeActivityAttributes.ContentState(timerStart: Date(), timerEnd: timerEnd)
 
         do {
             _ = try Activity.request(
@@ -55,7 +53,7 @@ enum ChallengeActivityBridge {
     static func endAll() {
         Task {
             for activity in Activity<ChallengeActivityAttributes>.activities {
-                let finalState = ChallengeActivityAttributes.ContentState(timerEnd: .now)
+                let finalState = ChallengeActivityAttributes.ContentState(timerStart: .now, timerEnd: .now)
                 await activity.end(
                     .init(state: finalState, staleDate: nil),
                     dismissalPolicy: .immediate

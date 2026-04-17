@@ -115,7 +115,6 @@ Packages/
 │   └── Utilities/        # Validation, Logger, Extensions
 └── Features/
     ├── App/              # AppFeature (root reducer + navigation state machine)
-    ├── Authentication/   # AuthenticationFeature (login, register, Google sign-in, forgot password)
     ├── Home/             # HomeFeature, TodayFeature, CalendarFeature, EditPeriodFeature, DailyCheckInFeature
     └── Onboarding/       # 14-screen flow + CycleModels enums + Views/
 ```

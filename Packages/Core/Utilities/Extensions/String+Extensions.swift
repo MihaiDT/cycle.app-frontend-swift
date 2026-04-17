@@ -34,6 +34,15 @@ extension String {
     public func matches(regex: String) -> Bool {
         range(of: regex, options: .regularExpression) != nil
     }
+
+    /// Cleans AI-generated text: replaces double dashes with en-dash,
+    /// normalizes em-dashes, and trims extra whitespace around dashes.
+    public var cleanedAIText: String {
+        self.replacingOccurrences(of: "—", with: " – ")  // em-dash → spaced en-dash
+            .replacingOccurrences(of: "--", with: " – ")  // double hyphen → spaced en-dash
+            .replacingOccurrences(of: "  ", with: " ")    // clean double spaces
+            .trimmed
+    }
 }
 
 // MARK: - URL Initialization

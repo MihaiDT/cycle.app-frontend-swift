@@ -6,6 +6,7 @@ import SwiftUI
 struct ChallengeCelebrationView: View {
     let store: StoreOf<ChallengeJourneyFeature>
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var showCard = false
     @State private var showButton = false
 
@@ -14,8 +15,8 @@ struct ChallengeCelebrationView: View {
             Spacer()
 
             celebrationCard
-                .scaleEffect(showCard ? 1.0 : 0.9)
-                .opacity(showCard ? 1.0 : 0)
+                .scaleEffect(reduceMotion ? 1 : (showCard ? 1.0 : 0.9))
+                .opacity(reduceMotion ? 1 : (showCard ? 1.0 : 0))
 
             Spacer()
 
@@ -33,21 +34,28 @@ struct ChallengeCelebrationView: View {
                     .shadow(color: DesignColors.text.opacity(0.10), radius: 3, x: 0, y: 1)
             }
             .buttonStyle(.plain)
-            .opacity(showButton ? 1 : 0)
-            .offset(y: showButton ? 0 : 16)
+            .opacity(reduceMotion ? 1 : (showButton ? 1 : 0))
+            .offset(y: reduceMotion ? 0 : (showButton ? 0 : 16))
+            .accessibilityLabel("Back to my day")
+            .accessibilityHint("Returns to the home screen")
 
             Text("New challenge tomorrow")
                 .font(.custom("Raleway-Medium", size: 11, relativeTo: .caption))
                 .foregroundStyle(DesignColors.textPlaceholder)
                 .padding(.top, 8)
-                .opacity(showButton ? 1 : 0)
+                .opacity(reduceMotion ? 1 : (showButton ? 1 : 0))
         }
         .onAppear {
-            withAnimation(.spring(response: 0.5, dampingFraction: 0.8).delay(0.2)) {
+            if reduceMotion {
                 showCard = true
-            }
-            withAnimation(.easeOut(duration: 0.4).delay(1.2)) {
                 showButton = true
+            } else {
+                withAnimation(.spring(response: 0.5, dampingFraction: 0.8).delay(0.2)) {
+                    showCard = true
+                }
+                withAnimation(.easeOut(duration: 0.4).delay(1.2)) {
+                    showButton = true
+                }
             }
         }
     }
@@ -59,8 +67,9 @@ struct ChallengeCelebrationView: View {
             Text("Beautiful!")
                 .font(.custom("Raleway-Black", size: 24, relativeTo: .title))
                 .foregroundStyle(DesignColors.text)
+                .accessibilityAddTraits(.isHeader)
 
-            Text(store.celebrationFeedback)
+            Text(store.celebrationFeedback.cleanedAIText)
                 .font(.custom("Raleway-Medium", size: 13, relativeTo: .body))
                 .foregroundStyle(DesignColors.textPrincipal)
                 .multilineTextAlignment(.center)
@@ -82,6 +91,10 @@ struct ChallengeCelebrationView: View {
         .padding(24)
         .frame(maxWidth: .infinity)
         .glowCardBackground(tint: .rose)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(
+            "Challenge complete. \(store.celebrationFeedback.cleanedAIText)"
+        )
     }
 
     private var gamificationPlaceholder: some View {
@@ -114,6 +127,9 @@ struct ChallengeCelebrationView: View {
                 }
                 .frame(height: 5)
             }
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel("Weekly progress")
+            .accessibilityValue("4 of 7 challenges complete")
 
             Text("4 day streak")
                 .font(.custom("Raleway-Bold", size: 12, relativeTo: .caption))
@@ -128,6 +144,7 @@ struct ChallengeCelebrationView: View {
                                 .strokeBorder(DesignColors.accentWarm.opacity(0.15), lineWidth: 1)
                         )
                 )
+                .accessibilityLabel("Current streak: 4 days")
         }
     }
 }

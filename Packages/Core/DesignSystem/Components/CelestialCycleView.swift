@@ -284,7 +284,7 @@ public struct CelestialCycleView: View {
             }
             .onChange(of: collapseProgress) { _, newValue in
                 if newValue > 0.1 && (exploringDay != nil || calendarDate != nil) {
-                    withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                    withAnimation(reduceMotion ? nil : .spring(response: 0.3, dampingFraction: 0.8)) {
                         exploringDay = nil
                         calendarDate = nil
                         isDragging = false
@@ -324,7 +324,7 @@ public struct CelestialCycleView: View {
                     .blur(radius: 20)
                     .opacity(1 - hideProgress)
                     .allowsHitTesting(false)
-                    .animation(.easeInOut(duration: 0.6), value: displayPhase)
+                    .animation(reduceMotion ? nil : .easeInOut(duration: 0.6), value: displayPhase)
 
                 // Orbit ring
                 CelestialOrbitCanvas(
@@ -350,7 +350,7 @@ public struct CelestialCycleView: View {
                 // Center text + button
                 VStack(spacing: 12) {
                     centerContentView
-                        .animation(.spring(response: 0.3, dampingFraction: 0.8), value: displayDay)
+                        .animation(reduceMotion ? nil : .spring(response: 0.3, dampingFraction: 0.8), value: displayDay)
 
                     if let onLogPeriod, collapseProgress < 0.1 {
                         logPeriodButton(onLogPeriod)
@@ -365,11 +365,11 @@ public struct CelestialCycleView: View {
             contextPills
                 .opacity(1 - hideProgress)
                 .padding(.top, 16)
-                .animation(.spring(response: 0.35, dampingFraction: 0.85), value: displayDay)
+                .animation(reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 0.85), value: displayDay)
         }
         .padding(.vertical, 8)
         .padding(.horizontal, 8)
-        .animation(.easeInOut(duration: 0.4), value: displayPhase)
+        .animation(reduceMotion ? nil : .easeInOut(duration: 0.4), value: displayPhase)
     }
 
     // MARK: - Center Content
@@ -386,22 +386,22 @@ public struct CelestialCycleView: View {
                 contextualCenterView(collapse: collapse, counterScale: counterScale)
             }
         }
-        .animation(.spring(response: 0.3, dampingFraction: 0.8), value: isDragging)
+        .animation(reduceMotion ? nil : .spring(response: 0.3, dampingFraction: 0.8), value: isDragging)
     }
 
     private func dragCenterView(counterScale: CGFloat) -> some View {
         let dayNum = periodDayFromServer ?? displayDay
         return VStack(spacing: 0) {
             Text("Day")
-                .font(.custom("Raleway-Medium", size: 14))
+                .font(.raleway("Medium", size: 14, relativeTo: .callout))
                 .foregroundColor(DesignColors.textSecondary)
 
             Text("\(dayNum)")
-                .font(.custom("Raleway-Bold", size: 48))
+                .font(.raleway("Bold", size: 48, relativeTo: .largeTitle))
                 .foregroundStyle(phaseGradient(0.85, 0.75))
                 .overlay {
                     Text("\(dayNum)")
-                        .font(.custom("Raleway-Bold", size: 48))
+                        .font(.raleway("Bold", size: 48, relativeTo: .largeTitle))
                         .foregroundStyle(.ultraThinMaterial)
                         .blendMode(.overlay)
                 }
@@ -409,7 +409,7 @@ public struct CelestialCycleView: View {
                 .scaleEffect(1.08)
 
             Text(displayPhase.displayName)
-                .font(.custom("Raleway-SemiBold", size: 13))
+                .font(.raleway("SemiBold", size: 13, relativeTo: .caption))
                 .foregroundColor(displayPhase.orbitColor.opacity(0.8))
                 .contentTransition(.numericText())
         }
@@ -420,7 +420,7 @@ public struct CelestialCycleView: View {
     private func contextualCenterView(collapse: Double, counterScale: CGFloat) -> some View {
         // Title
         Text(centerTitle)
-            .font(.custom("Raleway-Bold", size: 22))
+            .font(.raleway("Bold", size: 22, relativeTo: .title2))
             .foregroundStyle(phaseGradient(0.9, 0.8))
             .multilineTextAlignment(.center)
             .contentTransition(.numericText())
@@ -428,11 +428,11 @@ public struct CelestialCycleView: View {
 
         // Subtitle
         Text(centerSubtitle)
-            .font(.custom("Raleway-Bold", size: 28))
+            .font(.raleway("Bold", size: 28, relativeTo: .title))
             .foregroundStyle(phaseGradient(0.85, 0.75))
             .overlay {
                 Text(centerSubtitle)
-                    .font(.custom("Raleway-Bold", size: 28))
+                    .font(.raleway("Bold", size: 28, relativeTo: .title))
                     .foregroundStyle(.ultraThinMaterial)
                     .blendMode(.overlay)
             }
@@ -445,13 +445,14 @@ public struct CelestialCycleView: View {
             let pillDay = periodDayFromServer ?? displayDay
             HStack(spacing: 6) {
                 Text("Day \(pillDay)")
-                    .font(.custom("Raleway-SemiBold", size: 11))
+                    .font(.raleway("SemiBold", size: 11, relativeTo: .caption2))
                     .foregroundColor(displayPhase.orbitColor.opacity(0.8))
                 Circle()
                     .fill(displayPhase.orbitColor.opacity(0.4))
                     .frame(width: 3, height: 3)
+                    .accessibilityHidden(true)
                 Text(displayPhase.displayName)
-                    .font(.custom("Raleway-Medium", size: 11))
+                    .font(.raleway("Medium", size: 11, relativeTo: .caption2))
                     .foregroundColor(DesignColors.textSecondary.opacity(0.7))
             }
             .opacity(1 - collapse)
@@ -470,8 +471,9 @@ public struct CelestialCycleView: View {
             HStack(spacing: 6) {
                 Image(systemName: isOnPeriod ? "pencil" : "drop.fill")
                     .font(.system(size: 11, weight: .semibold))
+                    .accessibilityHidden(true)
                 Text(isOnPeriod ? "Edit Period" : "Log Period")
-                    .font(.custom("Raleway-SemiBold", size: 13))
+                    .font(.raleway("SemiBold", size: 13, relativeTo: .caption))
             }
             .foregroundColor(CyclePhase.menstrual.orbitColor)
             .padding(.horizontal, 16)
@@ -507,7 +509,7 @@ public struct CelestialCycleView: View {
                         }
                         .onEnded { _ in
                             lastDragAngle = nil
-                            withAnimation(.spring(response: 0.4, dampingFraction: 0.75)) {
+                            withAnimation(reduceMotion ? nil : .spring(response: 0.4, dampingFraction: 0.75)) {
                                 isDragging = false
                                 if exploringDay == todayCycleDay { exploringDay = nil }
                             }
@@ -525,7 +527,7 @@ public struct CelestialCycleView: View {
 
         guard dist > radius * 0.6 && dist < radius * 1.45 else {
             if isDragging {
-                withAnimation(.spring(response: 0.4, dampingFraction: 0.75)) {
+                withAnimation(reduceMotion ? nil : .spring(response: 0.4, dampingFraction: 0.75)) {
                     isDragging = false
                     lastDragAngle = nil
                 }
@@ -625,8 +627,8 @@ public struct CelestialCycleView: View {
                 }
             }
         }
-        .animation(.spring(response: 0.35, dampingFraction: 0.8), value: isExploring)
-        .animation(.spring(response: 0.35, dampingFraction: 0.8), value: isDragging)
+        .animation(reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 0.8), value: isExploring)
+        .animation(reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 0.8), value: isDragging)
     }
 
     // MARK: - Helpers
@@ -634,9 +636,11 @@ public struct CelestialCycleView: View {
     private func pill(icon: String, text: String, color: Color) -> some View {
         HStack(spacing: 6) {
             if !icon.isEmpty {
-                Image(systemName: icon).font(.system(size: 11, weight: .medium))
+                Image(systemName: icon)
+                    .font(.system(size: 11, weight: .medium))
+                    .accessibilityHidden(true)
             }
-            Text(text).font(.custom("Raleway-Medium", size: 12)).lineLimit(1)
+            Text(text).font(.raleway("Medium", size: 12, relativeTo: .caption)).lineLimit(1)
         }
         .foregroundColor(color)
         .padding(.horizontal, 12)
@@ -659,7 +663,7 @@ public struct CelestialCycleView: View {
     }
 
     private func dismissSelection() {
-        withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
+        withAnimation(reduceMotion ? nil : .spring(response: 0.5, dampingFraction: 0.7)) {
             exploringDay = nil
             calendarDate = nil
             isDragging = false
@@ -1334,27 +1338,31 @@ public struct CelestialMiniBar: View {
             VStack(alignment: .leading, spacing: 2) {
                 HStack(spacing: 6) {
                     Circle().fill(currentPhase.orbitColor).frame(width: 6, height: 6)
+                        .accessibilityHidden(true)
                     Text("Day \(cycleDay)")
-                        .font(.custom("Raleway-Bold", size: 15))
+                        .font(.raleway("Bold", size: 15, relativeTo: .callout))
                         .foregroundColor(DesignColors.text)
                     Text("·").foregroundColor(DesignColors.textSecondary)
+                        .accessibilityHidden(true)
                     Text(currentPhase.displayName)
-                        .font(.custom("Raleway-Medium", size: 15))
+                        .font(.raleway("Medium", size: 15, relativeTo: .callout))
                         .foregroundColor(currentPhase.orbitColor)
                 }
                 if let n = nextPeriodIn, n > 0 {
                     Text("\(n)d until period")
-                        .font(.custom("Raleway-Regular", size: 12))
+                        .font(.raleway("Regular", size: 12, relativeTo: .caption))
                         .foregroundColor(DesignColors.textSecondary)
                 } else if fertileWindowActive {
                     HStack(spacing: 4) {
-                        Image(systemName: "sparkles").font(.system(size: 10))
-                        Text("Fertile window").font(.custom("Raleway-Regular", size: 12))
+                        Image(systemName: "sparkles")
+                            .font(.system(size: 10))
+                            .accessibilityHidden(true)
+                        Text("Fertile window").font(.raleway("Regular", size: 12, relativeTo: .caption))
                     }
                     .foregroundColor(CyclePhase.ovulatory.glowColor)
                 } else {
                     Text(currentPhase.insight)
-                        .font(.custom("Raleway-Regular", size: 12))
+                        .font(.raleway("Regular", size: 12, relativeTo: .caption))
                         .foregroundColor(DesignColors.textSecondary)
                         .lineLimit(1)
                 }
@@ -1397,7 +1405,7 @@ public struct CelestialMiniBar: View {
                 .shadow(color: currentPhase.glowColor.opacity(0.7), radius: 3)
                 .offset(x: cos(orbAngle) * 17, y: sin(orbAngle) * 17)
             Text("\(cycleDay)")
-                .font(.custom("Raleway-Bold", size: 13))
+                .font(.raleway("Bold", size: 13, relativeTo: .caption))
                 .foregroundStyle(
                     LinearGradient(
                         colors: [currentPhase.orbitColor.opacity(0.85), currentPhase.glowColor.opacity(0.7)],
@@ -1407,6 +1415,7 @@ public struct CelestialMiniBar: View {
                 )
         }
         .frame(width: 40, height: 40)
+        .accessibilityHidden(true)
     }
 }
 

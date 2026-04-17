@@ -12,6 +12,8 @@ public struct MiniCycleCalendar: View {
 
     @State private var currentWeekOffset: Int = 0
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
     private let cal = Calendar.current
     private let weekRange = -26...52
 
@@ -68,7 +70,7 @@ public struct MiniCycleCalendar: View {
                 }
                 .opacity(embedded ? 0 : 1)
         )
-        .animation(.spring(response: 0.3, dampingFraction: 0.85), value: currentWeekOffset)
+        .animation(reduceMotion ? nil : .spring(response: 0.3, dampingFraction: 0.85), value: currentWeekOffset)
     }
 
     // MARK: - Month Header
@@ -79,22 +81,23 @@ public struct MiniCycleCalendar: View {
 
         ZStack {
             Text(monthLabel(for: dates))
-                .font(.custom("Raleway-SemiBold", size: 13))
+                .font(.raleway("SemiBold", size: 13, relativeTo: .caption))
                 .foregroundColor(DesignColors.textSecondary)
 
             if currentWeekOffset != 0 {
                 HStack {
                     Spacer()
                     Button {
-                        withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                        withAnimation(reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 0.8)) {
                             currentWeekOffset = 0
                             selectedDate = nil
                         }
                     } label: {
                         Text("Today")
-                            .font(.custom("Raleway-SemiBold", size: 12))
+                            .font(.raleway("SemiBold", size: 12, relativeTo: .caption))
                             .foregroundColor(DesignColors.accentWarm)
                     }
+                    .accessibilityHint("Jumps back to the current week")
                 }
             }
         }
@@ -127,7 +130,7 @@ public struct MiniCycleCalendar: View {
                 let isSelected = selectedDate != nil && cal.isDate(selectedDate!, inSameDayAs: date)
 
                 Button {
-                    withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                    withAnimation(reduceMotion ? nil : .spring(response: 0.3, dampingFraction: 0.8)) {
                         if isSelected {
                             selectedDate = nil
                         } else {
@@ -171,12 +174,12 @@ public struct MiniCycleCalendar: View {
             // "TODAY" label or weekday initial
             if isToday {
                 Text("TODAY")
-                    .font(.custom("Raleway-Bold", size: 9))
+                    .font(.raleway("Bold", size: 9, relativeTo: .caption2))
                     .foregroundColor(DesignColors.accentWarm)
                     .frame(height: 14)
             } else {
                 Text(weekdaySymbol)
-                    .font(.custom("Raleway-Medium", size: 11))
+                    .font(.raleway("Medium", size: 11, relativeTo: .caption2))
                     .foregroundColor(DesignColors.textSecondary)
                     .frame(height: 14)
             }
@@ -280,7 +283,7 @@ public struct MiniCycleCalendar: View {
                 }
 
                 Text("\(dayNumber)")
-                    .font(.custom(isToday || isSelected ? "Raleway-Bold" : "Raleway-Medium", size: 15))
+                    .font(.raleway(isToday || isSelected ? "Bold" : "Medium", size: 15, relativeTo: .callout))
                     .foregroundColor(
                         isPeriod && !isPredicted && !isLatePred ? phaseColor(.menstrual) :
                             isLatePred ? phaseColor(.menstrual).opacity(0.45) :

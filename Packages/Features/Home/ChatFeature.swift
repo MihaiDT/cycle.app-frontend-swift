@@ -402,16 +402,34 @@ public struct ChatView: View {
             Spacer()
             HStack(spacing: 6) {
                 Text("Aria")
-                    .font(.custom("Raleway-SemiBold", size: 17))
+                    .font(.raleway("SemiBold", size: 17, relativeTo: .headline))
                     .foregroundColor(DesignColors.text)
-                Circle()
-                    .fill(store.isConnected ? Color.green : Color.gray)
-                    .frame(width: 7, height: 7)
+                // Streaming signal (while Aria types) takes priority over the plain connection dot.
+                if store.isStreaming {
+                    ProgressView()
+                        .progressViewStyle(.circular)
+                        .controlSize(.mini)
+                        .tint(DesignColors.accentWarm)
+                        .transition(.opacity)
+                } else {
+                    Circle()
+                        .fill(store.isConnected ? Color.green : Color.gray)
+                        .frame(width: 7, height: 7)
+                        .transition(.opacity)
+                }
             }
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel(
+                store.isStreaming
+                    ? "Aria is typing"
+                    : store.isConnected ? "Aria connected" : "Aria disconnected"
+            )
             Spacer()
         }
         .padding(.vertical, 10)
         .background(.ultraThinMaterial)
+        .animation(.easeInOut(duration: 0.2), value: store.isStreaming)
+        .animation(.easeInOut(duration: 0.2), value: store.isConnected)
     }
 
     // MARK: - Welcome Screen (Empty State)
@@ -450,18 +468,18 @@ public struct ChatView: View {
                         .frame(width: 64, height: 64)
 
                     Text("A")
-                        .font(.custom("Raleway-Bold", size: 28))
+                        .font(.raleway("Bold", size: 28, relativeTo: .title))
                         .foregroundColor(.white)
                 }
 
                 // Title
                 VStack(spacing: 6) {
                     Text("Hey, I'm Aria")
-                        .font(.custom("Raleway-Bold", size: 26))
+                        .font(.raleway("Bold", size: 26, relativeTo: .title))
                         .foregroundColor(DesignColors.text)
 
                     Text("What's on your mind?")
-                        .font(.custom("Raleway-Regular", size: 16))
+                        .font(.raleway("Regular", size: 16, relativeTo: .body))
                         .foregroundColor(DesignColors.textSecondary)
                 }
 
@@ -486,7 +504,7 @@ public struct ChatView: View {
             store.send(.sendMessage(text))
         } label: {
             Text(text)
-                .font(.custom("Raleway-Medium", size: 15))
+                .font(.raleway("Medium", size: 15, relativeTo: .body))
                 .foregroundColor(DesignColors.text)
                 .padding(.horizontal, 20)
                 .padding(.vertical, 12)
@@ -549,7 +567,7 @@ public struct ChatView: View {
             if message.role == .user { Spacer(minLength: 60) }
 
             Text(message.content)
-                .font(.custom("Raleway-Regular", size: 15))
+                .font(.raleway("Regular", size: 15, relativeTo: .body))
                 .foregroundColor(message.role == .user ? .white : DesignColors.text)
                 .padding(.horizontal, 14)
                 .padding(.vertical, 10)
@@ -587,7 +605,7 @@ public struct ChatView: View {
         HStack {
             if message.role == .user { Spacer() }
             Text(relativeTime(message.timestamp))
-                .font(.custom("Raleway-Regular", size: 11))
+                .font(.raleway("Regular", size: 11, relativeTo: .caption2))
                 .foregroundColor(DesignColors.textPlaceholder)
                 .padding(.horizontal, 6)
             if message.role == .assistant { Spacer() }
@@ -612,7 +630,7 @@ public struct ChatView: View {
     private var inputBar: some View {
         HStack(spacing: 10) {
             TextField("Message Aria...", text: $store.inputText, axis: .vertical)
-                .font(.custom("Raleway-Regular", size: 15))
+                .font(.raleway("Regular", size: 15, relativeTo: .body))
                 .foregroundColor(DesignColors.text)
                 .lineLimit(1...5)
                 .focused($isInputFocused)
@@ -656,6 +674,7 @@ public struct ChatView: View {
 // MARK: - Typing Indicator (Proper Bouncing Animation)
 
 private struct TypingIndicatorView: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var phase: Int = 0
     @State private var bounceTimer: Timer?
 
@@ -666,7 +685,7 @@ private struct TypingIndicatorView: View {
                     Circle()
                         .fill(DesignColors.textSecondary.opacity(0.5))
                         .frame(width: 7, height: 7)
-                        .offset(y: phase == index ? -5 : 0)
+                        .offset(y: (!reduceMotion && phase == index) ? -5 : 0)
                 }
             }
             .padding(.horizontal, 16)
@@ -681,7 +700,11 @@ private struct TypingIndicatorView: View {
             }
             Spacer()
         }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Aria is typing")
+        .accessibilityAddTraits(.updatesFrequently)
         .onAppear {
+            guard !reduceMotion else { return }
             bounceTimer = Timer.scheduledTimer(withTimeInterval: 0.15, repeats: true) { _ in
                 withAnimation(.easeInOut(duration: 0.3)) {
                     phase = (phase + 1) % 4

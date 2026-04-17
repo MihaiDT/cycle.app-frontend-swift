@@ -280,14 +280,8 @@ public struct EditPeriodFeature: Sendable {
         }
     }
 
-    static let dateKeyFormatter: DateFormatter = {
-        let fmt = DateFormatter()
-        fmt.dateFormat = "yyyy-MM-dd"
-        return fmt
-    }()
-
     static func dateKey(_ date: Date) -> String {
-        dateKeyFormatter.string(from: date)
+        DateFormatter.dayKey.string(from: date)
     }
 
     /// Converts a server date to local midnight for the same calendar day.
@@ -309,7 +303,7 @@ public struct EditPeriodFeature: Sendable {
 
     static func groupConsecutivePeriods(_ dayKeys: Set<String>) -> [PeriodGroup] {
         let cal = Calendar.current
-        let fmt = dateKeyFormatter
+        let fmt = DateFormatter.dayKey
         // dateKey() uses local timezone, so parse back with local timezone
         let dates =
             dayKeys
@@ -476,12 +470,12 @@ public struct EditPeriodView: View {
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(isDone ? "Predictions updated" : "Updating predictions")
-                    .font(.custom("Raleway-SemiBold", size: 14))
+                    .font(.raleway("SemiBold", size: 14, relativeTo: .subheadline))
                     .foregroundColor(DesignColors.text)
                     .contentTransition(.numericText())
 
                 Text(isDone ? "Your calendar is up to date" : "Analyzing your cycle patterns...")
-                    .font(.custom("Raleway-Regular", size: 12))
+                    .font(.raleway("Regular", size: 12, relativeTo: .caption))
                     .foregroundColor(DesignColors.textSecondary)
                     .contentTransition(.numericText())
             }
@@ -554,11 +548,11 @@ public struct EditPeriodView: View {
 
             VStack(alignment: .leading, spacing: 2) {
                 Text("Edit Period")
-                    .font(.custom("Raleway-Bold", size: 24))
+                    .font(.raleway("Bold", size: 24, relativeTo: .title))
                     .foregroundColor(DesignColors.text)
 
                 Text("Tap days to mark or remove")
-                    .font(.custom("Raleway-Regular", size: 13))
+                    .font(.raleway("Regular", size: 13, relativeTo: .caption))
                     .foregroundColor(DesignColors.textSecondary)
             }
 
@@ -575,7 +569,7 @@ public struct EditPeriodView: View {
         HStack(spacing: 0) {
             ForEach(["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"], id: \.self) { label in
                 Text(label)
-                    .font(.custom("Raleway-Medium", size: 11))
+                    .font(.raleway("Medium", size: 11, relativeTo: .caption2))
                     .foregroundColor(DesignColors.textSecondary.opacity(0.45))
                     .frame(maxWidth: .infinity)
             }
@@ -584,18 +578,12 @@ public struct EditPeriodView: View {
 
     // MARK: - Month Section
 
-    private static let monthHeaderFormatter: DateFormatter = {
-        let fmt = DateFormatter()
-        fmt.dateFormat = "MMMM yyyy"
-        return fmt
-    }()
-
     private func monthSectionHeader(_ month: Date) -> some View {
-        let title = Self.monthHeaderFormatter.string(from: month)
+        let title = DateFormatter.monthYear.string(from: month)
 
         return HStack {
             Text(title)
-                .font(.custom("Raleway-Bold", size: 16))
+                .font(.raleway("Bold", size: 16, relativeTo: .headline))
                 .foregroundColor(DesignColors.text)
             Spacer()
         }
@@ -680,7 +668,7 @@ public struct EditPeriodView: View {
                 store.send(.saveTapped, animation: .easeInOut(duration: 0.3))
             } label: {
                 Text("Save Period")
-                    .font(.custom("Raleway-Bold", size: 17))
+                    .font(.raleway("Bold", size: 17, relativeTo: .headline))
                     .foregroundColor(.white)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 16)
@@ -724,7 +712,7 @@ public struct EditPeriodView: View {
     }()
 
     private func dateLabel(for key: String) -> String {
-        guard let date = EditPeriodFeature.dateKeyFormatter.date(from: key) else { return key }
+        guard let date = DateFormatter.dayKey.date(from: key) else { return key }
         return Self.displayDateFormatter.string(from: date)
     }
 
@@ -795,9 +783,10 @@ private struct EditDayCellView: View {
 
                 Text("\(info.dayNumber)")
                     .font(
-                        .custom(
-                            info.isPeriodDay || info.isToday ? "Raleway-Bold" : "Raleway-SemiBold",
-                            size: 16
+                        .raleway(
+                            info.isPeriodDay || info.isToday ? "Bold" : "SemiBold",
+                            size: 16,
+                            relativeTo: .body
                         )
                     )
                     .foregroundColor(dayTextColor)
@@ -814,7 +803,7 @@ private struct EditDayCellView: View {
 
             if info.isToday && info.isCurrentMonth {
                 Text("Today")
-                    .font(.custom("Raleway-Bold", size: 8))
+                    .font(.raleway("Bold", size: 8, relativeTo: .caption2))
                     .foregroundColor(DesignColors.accentWarm)
                     .frame(height: 10)
             } else {

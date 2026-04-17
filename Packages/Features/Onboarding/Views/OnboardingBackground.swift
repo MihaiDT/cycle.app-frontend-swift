@@ -10,6 +10,7 @@ public struct OnboardingBackground: View {
             .resizable()
             .aspectRatio(contentMode: .fill)
             .ignoresSafeArea()
+            .accessibilityHidden(true)
     }
 }
 

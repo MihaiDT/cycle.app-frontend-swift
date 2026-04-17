@@ -10,7 +10,7 @@ public struct NotificationsPanel: View {
         VStack(alignment: .leading, spacing: 0) {
             // Header
             Text("Notifications")
-                .font(.custom("Raleway-Bold", size: 24))
+                .font(.raleway("Bold", size: 24, relativeTo: .title))
                 .foregroundStyle(DesignColors.text)
                 .padding(.horizontal, 24)
                 .padding(.top, 24)
@@ -38,28 +38,28 @@ public struct NotificationsPanel: View {
                                             )
                                             .frame(width: 40, height: 40)
                                         Text("A")
-                                            .font(.custom("Raleway-Bold", size: 17))
+                                            .font(.raleway("Bold", size: 17, relativeTo: .headline))
                                             .foregroundStyle(.white)
                                     }
 
                                     VStack(alignment: .leading, spacing: 4) {
                                         HStack {
                                             Text("Aria")
-                                                .font(.custom("Raleway-Bold", size: 15))
+                                                .font(.raleway("Bold", size: 15, relativeTo: .body))
                                                 .foregroundStyle(DesignColors.accentWarm)
                                             Spacer()
                                             Text("New")
-                                                .font(.custom("Raleway-SemiBold", size: 11))
+                                                .font(.raleway("SemiBold", size: 11, relativeTo: .caption2))
                                                 .foregroundStyle(.white)
                                                 .padding(.horizontal, 8)
                                                 .padding(.vertical, 3)
                                                 .background(DesignColors.accentWarm, in: Capsule())
                                         }
                                         Text("Your \(month) recap is ready")
-                                            .font(.custom("Raleway-Medium", size: 15))
+                                            .font(.raleway("Medium", size: 15, relativeTo: .body))
                                             .foregroundStyle(DesignColors.text)
                                         Text("Tap to see what I found about your cycle")
-                                            .font(.custom("Raleway-Regular", size: 13))
+                                            .font(.raleway("Regular", size: 13, relativeTo: .caption))
                                             .foregroundStyle(DesignColors.text.opacity(0.5))
                                     }
 
@@ -82,7 +82,7 @@ public struct NotificationsPanel: View {
                                     .font(.system(size: 32, weight: .light))
                                     .foregroundStyle(DesignColors.text.opacity(0.2))
                                 Text("No new notifications")
-                                    .font(.custom("Raleway-Medium", size: 16))
+                                    .font(.raleway("Medium", size: 16, relativeTo: .body))
                                     .foregroundStyle(DesignColors.text.opacity(0.4))
                             }
                             .frame(maxWidth: .infinity)
@@ -122,25 +122,25 @@ public struct RecapReadyBanner: View {
                                 )
                                 .frame(width: 32, height: 32)
                             Text("A")
-                                .font(.custom("Raleway-Bold", size: 14))
+                                .font(.raleway("Bold", size: 14, relativeTo: .subheadline))
                                 .foregroundStyle(.white)
                         }
                         .padding(.trailing, 10)
 
                         VStack(alignment: .leading, spacing: 6) {
                             Text("Aria")
-                                .font(.custom("Raleway-Bold", size: 12))
+                                .font(.raleway("Bold", size: 12, relativeTo: .caption))
                                 .foregroundStyle(DesignColors.accentWarm)
 
                             Text("Your \(month) recap is ready. Tap to see what I found about your cycle.")
-                                .font(.custom("Raleway-Regular", size: 15))
+                                .font(.raleway("Regular", size: 15, relativeTo: .body))
                                 .foregroundStyle(DesignColors.text)
                                 .lineSpacing(4)
                                 .fixedSize(horizontal: false, vertical: true)
 
                             HStack(spacing: 4) {
                                 Text("View Recap")
-                                    .font(.custom("Raleway-SemiBold", size: 13))
+                                    .font(.raleway("SemiBold", size: 13, relativeTo: .caption))
                                 Image(systemName: "chevron.right")
                                     .font(.system(size: 10, weight: .semibold))
                             }
@@ -208,11 +208,11 @@ public struct AriaRecapSheet: View {
                         )
                         .frame(width: 40, height: 40)
                     Text("A")
-                        .font(.custom("Raleway-Bold", size: 17))
+                        .font(.raleway("Bold", size: 17, relativeTo: .headline))
                         .foregroundStyle(.white)
                 }
                 Text("Aria")
-                    .font(.custom("Raleway-Bold", size: 20))
+                    .font(.raleway("Bold", size: 20, relativeTo: .title2))
                     .foregroundStyle(DesignColors.accentWarm)
                 Spacer()
             }
@@ -226,7 +226,7 @@ public struct AriaRecapSheet: View {
                     .accessibilityLabel("Aria is typing")
             } else {
                 Text(typedText)
-                    .font(.custom("Raleway-Medium", size: 18))
+                    .font(.raleway("Medium", size: 18, relativeTo: .body))
                     .foregroundStyle(DesignColors.text)
                     .lineSpacing(6)
                     .transition(.opacity)
@@ -238,7 +238,7 @@ public struct AriaRecapSheet: View {
                 Button(action: { (onAction ?? onViewRecap)?() }) {
                     HStack(spacing: 8) {
                         Text(buttonTitle)
-                            .font(.custom("Raleway-SemiBold", size: 17))
+                            .font(.raleway("SemiBold", size: 17, relativeTo: .headline))
                         Image(systemName: "chevron.right")
                             .font(.system(size: 12, weight: .semibold))
                     }
@@ -325,12 +325,12 @@ public struct JourneyPreviewSection: View {
             VStack(spacing: AppLayout.spacingM) {
                 HStack {
                     Text("Your Journey")
-                        .font(.custom("Raleway-SemiBold", size: 17))
+                        .font(.raleway("SemiBold", size: 17, relativeTo: .headline))
                         .foregroundStyle(DesignColors.text)
                     Spacer()
                     HStack(spacing: 4) {
                         Text("Cycle \(currentCycleNumber)")
-                            .font(.custom("Raleway-Medium", size: 13))
+                            .font(.raleway("Medium", size: 13, relativeTo: .caption))
                             .foregroundStyle(DesignColors.textSecondary)
                         Image(systemName: "chevron.right")
                             .font(.system(size: 11, weight: .semibold))
@@ -355,7 +355,7 @@ public struct JourneyPreviewSection: View {
                     }
                     if cycleCount > 12 {
                         Text("...")
-                            .font(.custom("Raleway-Medium", size: 12))
+                            .font(.raleway("Medium", size: 12, relativeTo: .caption))
                             .foregroundStyle(DesignColors.textPlaceholder)
                     }
                     Spacer()
@@ -363,17 +363,17 @@ public struct JourneyPreviewSection: View {
 
                 if let missed = missedMonth {
                     Text("\(missed.name) is missing — tap to complete your story")
-                        .font(.custom("Raleway-Regular", size: 12))
+                        .font(.raleway("Regular", size: 12, relativeTo: .caption))
                         .foregroundStyle(DesignColors.accentWarm)
                         .frame(maxWidth: .infinity, alignment: .leading)
                 } else if cycleCount < 3 {
                     Text("\(3 - cycleCount) more cycles until your Blueprint")
-                        .font(.custom("Raleway-Regular", size: 12))
+                        .font(.raleway("Regular", size: 12, relativeTo: .caption))
                         .foregroundStyle(DesignColors.textSecondary)
                         .frame(maxWidth: .infinity, alignment: .leading)
                 } else if cycleCount < 6 {
                     Text("\(6 - cycleCount) more cycles until Patterns")
-                        .font(.custom("Raleway-Regular", size: 12))
+                        .font(.raleway("Regular", size: 12, relativeTo: .caption))
                         .foregroundStyle(DesignColors.textSecondary)
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }
@@ -408,30 +408,17 @@ struct JourneyMandala: View {
         return ("Full Year", "sun.max.fill", completedCount)
     }
 
-    private let warmPalette: [Color] = [
-        Color(red: 0.79, green: 0.38, blue: 0.42),
-        Color(red: 0.82, green: 0.45, blue: 0.40),
-        Color(red: 0.84, green: 0.52, blue: 0.38),
-        Color(red: 0.86, green: 0.58, blue: 0.35),
-        Color(red: 0.87, green: 0.64, blue: 0.33),
-        Color(red: 0.88, green: 0.70, blue: 0.32),
-        Color(red: 0.85, green: 0.73, blue: 0.38),
-        Color(red: 0.80, green: 0.72, blue: 0.45),
-        Color(red: 0.72, green: 0.68, blue: 0.50),
-        Color(red: 0.65, green: 0.62, blue: 0.55),
-        Color(red: 0.60, green: 0.58, blue: 0.56),
-        Color(red: 0.55, green: 0.52, blue: 0.50),
-    ]
+    private let warmPalette: [Color] = DesignColors.journeyPalette
 
     var body: some View {
         HStack(alignment: .center, spacing: 0) {
             VStack(spacing: 2) {
                 Text("\(totalTracked)")
-                    .font(.custom("Raleway-Bold", size: 56))
+                    .font(.raleway("Bold", size: 56, relativeTo: .largeTitle))
                     .foregroundStyle(DesignColors.text)
 
                 Text(totalTracked == 1 ? "cycle" : "cycles")
-                    .font(.custom("Raleway-Medium", size: 13))
+                    .font(.raleway("Medium", size: 13, relativeTo: .caption))
                     .foregroundStyle(DesignColors.textSecondary)
             }
             .frame(maxWidth: .infinity)
@@ -448,7 +435,7 @@ struct JourneyMandala: View {
                     } label: {
                         HStack(spacing: 4) {
                             Text("Pattern Found")
-                                .font(.custom("Raleway-Bold", size: 18))
+                                .font(.raleway("Bold", size: 18, relativeTo: .headline))
                             Image(systemName: "chevron.right")
                                 .font(.system(size: 12, weight: .bold))
                         }
@@ -468,7 +455,7 @@ struct JourneyMandala: View {
                                     ? warmPalette[i % warmPalette.count]
                                     : isCurrent
                                         ? warmPalette[i % warmPalette.count].opacity(0.35)
-                                        : Color(red: 0.55, green: 0.45, blue: 0.42).opacity(0.15)
+                                        : DesignColors.journeyPaletteMuted.opacity(0.15)
                             )
                             .frame(width: 9, height: 9)
                     }
@@ -477,7 +464,7 @@ struct JourneyMandala: View {
                 let remaining = milestone.target - completedCount
                 if remaining > 0 {
                     Text("\(remaining) to \(milestone.name)")
-                        .font(.custom("Raleway-Medium", size: 13))
+                        .font(.raleway("Medium", size: 13, relativeTo: .caption))
                         .foregroundStyle(DesignColors.textSecondary)
                 }
             }

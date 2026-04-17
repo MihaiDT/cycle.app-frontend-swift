@@ -20,18 +20,21 @@ public struct GlassLogoCard: View {
                 .foregroundStyle(.white.opacity(0.9))
                 .aspectRatio(contentMode: .fit)
                 .frame(width: 72, height: 112)
+                .accessibilityHidden(true)
         }
         .frame(width: cardSize, height: cardSize)
         .glassEffect(cornerRadius: cornerRadius)
         .shadow(color: .black.opacity(0.1), radius: 8, x: 0, y: 1)
         .shadow(color: .black.opacity(0.1), radius: 2, x: 0, y: 0)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Cycle app logo")
     }
 }
 
 #Preview("Glass Card") {
     ZStack {
         LinearGradient(
-            colors: [.white, Color(red: 0.85, green: 0.75, blue: 0.72)],
+            colors: [.white, DesignColors.onboardingPreviewTint],
             startPoint: .topLeading,
             endPoint: .bottomTrailing
         )

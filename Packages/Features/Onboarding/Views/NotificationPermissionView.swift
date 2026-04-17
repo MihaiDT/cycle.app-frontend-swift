@@ -6,6 +6,7 @@ import UserNotifications
 
 public struct NotificationPermissionView: View {
     @ObserveInjection var inject
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     public let onEnable: (Int, Int) -> Void
     public let onSkip: () -> Void
     public let onBack: (() -> Void)?
@@ -50,19 +51,21 @@ public struct NotificationPermissionView: View {
                         .symbolRenderingMode(.hierarchical)
                         .scaleEffect(animateIn ? 1 : 0.8)
                         .opacity(animateIn ? 1 : 0)
+                        .accessibilityHidden(true)
 
                     Spacer().frame(height: 28)
 
                     // Title
                     Text("Daily Check-in")
-                        .font(.custom("Raleway-Bold", size: 28))
+                        .font(.raleway("Bold", size: 28, relativeTo: .title))
                         .foregroundColor(DesignColors.text)
                         .opacity(animateIn ? 1 : 0)
+                        .accessibilityAddTraits(.isHeader)
 
                     Spacer().frame(height: 12)
 
                     Text("A daily reminder to log how you feel,\nso your insights stay accurate.")
-                        .font(.custom("Raleway-Regular", size: 16))
+                        .font(.raleway("Regular", size: 16, relativeTo: .body))
                         .foregroundColor(DesignColors.textSecondary)
                         .multilineTextAlignment(.center)
                         .lineSpacing(4)
@@ -74,7 +77,7 @@ public struct NotificationPermissionView: View {
                     // Time picker — single clean row
                     HStack(spacing: 8) {
                         Text("Remind me at")
-                            .font(.custom("Raleway-Medium", size: 16))
+                            .font(.raleway("Medium", size: 16, relativeTo: .body))
                             .foregroundColor(DesignColors.text)
 
                         timePickerView
@@ -88,20 +91,23 @@ public struct NotificationPermissionView: View {
                         if isRequestingPermission {
                             ProgressView()
                                 .frame(height: 55)
+                                .accessibilityLabel("Requesting permission")
                         } else {
                             GlassButton("Enable Reminders", showArrow: false) {
                                 requestNotificationPermission()
                             }
+                            .accessibilityHint("Opens system permission prompt")
                         }
 
                         Button {
                             onSkip()
                         } label: {
                             Text("Not Now")
-                                .font(.custom("Raleway-Medium", size: 15))
+                                .font(.raleway("Medium", size: 15, relativeTo: .body))
                                 .foregroundColor(DesignColors.textSecondary)
                         }
                         .disabled(isRequestingPermission)
+                        .accessibilityLabel("Skip — set up later")
                     }
                     .frame(maxWidth: .infinity)
                     .padding(.bottom, geometry.safeAreaInsets.bottom + AppLayout.bottomOffset)
@@ -110,7 +116,7 @@ public struct NotificationPermissionView: View {
             .ignoresSafeArea()
         }
         .onAppear {
-            withAnimation(.easeOut(duration: 0.6)) {
+            withAnimation(reduceMotion ? nil : .easeOut(duration: 0.6)) {
                 animateIn = true
             }
         }
@@ -127,10 +133,12 @@ public struct NotificationPermissionView: View {
             }
             .pickerStyle(.menu)
             .tint(DesignColors.accentWarm)
+            .accessibilityLabel("Reminder hour")
 
             Text(":")
-                .font(.custom("Raleway-Bold", size: 18))
+                .font(.raleway("Bold", size: 18, relativeTo: .headline))
                 .foregroundColor(DesignColors.text)
+                .accessibilityHidden(true)
 
             Picker("Minute", selection: $selectedMinute) {
                 ForEach([0, 15, 30, 45], id: \.self) { minute in
@@ -139,6 +147,7 @@ public struct NotificationPermissionView: View {
             }
             .pickerStyle(.menu)
             .tint(DesignColors.accentWarm)
+            .accessibilityLabel("Reminder minute")
         }
     }
 
@@ -158,8 +167,8 @@ public struct NotificationPermissionView: View {
 
 #Preview("Notification Permission") {
     NotificationPermissionView(
-        onEnable: { hour, minute in print("Enable: \(hour):\(minute)") },
-        onSkip: { print("Skip tapped") },
-        onBack: { print("Back tapped") }
+        onEnable: { _, _ in },
+        onSkip: { },
+        onBack: { }
     )
 }

@@ -20,7 +20,7 @@ public struct GlassDatePicker: View {
     public var body: some View {
         HStack {
             Text(label)
-                .font(.custom("Raleway-Medium", size: 16))
+                .font(.raleway("Medium", size: 16, relativeTo: .body))
                 .foregroundColor(DesignColors.text.opacity(0.75))
 
             Spacer()
@@ -34,7 +34,7 @@ public struct GlassDatePicker: View {
             .tint(DesignColors.link)
         }
         .padding(.horizontal, 24)
-        .frame(height: 57)
+        .frame(minHeight: 57)
         .frame(maxWidth: .infinity)
         .background {
             RoundedRectangle(cornerRadius: 24)

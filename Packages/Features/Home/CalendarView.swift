@@ -139,6 +139,40 @@ public struct CalendarView: View {
                 .animation(.spring(response: 0.4, dampingFraction: 0.85), value: store.predictionsDone)
             }
 
+            // Calendar loading indicators.
+            // - Full-screen centered spinner only on the very first fetch (no data yet).
+            // - Subtle top pill for idempotent re-fetches so existing UI is preserved.
+            // - Skipped entirely during edit-period flow (dedicated banner already shown).
+            if store.isLoadingCalendar && !store.isEditingPeriod {
+                if store.periodDays.isEmpty && store.fertileDays.isEmpty && store.ovulationDays.isEmpty {
+                    ZStack {
+                        Color.white.opacity(0.6).ignoresSafeArea()
+                        VStack(spacing: 12) {
+                            ProgressView()
+                                .progressViewStyle(.circular)
+                                .tint(DesignColors.accentWarm)
+                                .scaleEffect(1.15)
+                            Text("Loading calendar…")
+                                .font(.raleway("Medium", size: 13, relativeTo: .caption))
+                                .foregroundStyle(DesignColors.textSecondary)
+                        }
+                    }
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityLabel("Loading calendar")
+                    .accessibilityAddTraits(.updatesFrequently)
+                    .transition(.opacity)
+                    .allowsHitTesting(false)
+                } else {
+                    VStack {
+                        calendarRefreshPill
+                            .padding(.top, 88)
+                            .transition(.opacity.combined(with: .move(edge: .top)))
+                        Spacer()
+                    }
+                    .allowsHitTesting(false)
+                }
+            }
+
             // Header overlay — pinned to top, content scrolls behind blur
             VStack(spacing: 0) {
                 FeedTopBar(store: store, viewMode: $viewMode, isCurrentMonthVisible: isCurrentMonthVisible, onTodayTapped: {
@@ -179,6 +213,7 @@ public struct CalendarView: View {
             }
             .animation(.easeInOut(duration: 0.25), value: store.isEditingPeriod)
         }
+        .animation(.easeInOut(duration: 0.25), value: store.isLoadingCalendar)
         .sheet(isPresented: $isShowingDayDetail) {
             DayDetailPanel(store: store)
                 .presentationDetents(
@@ -220,6 +255,34 @@ public struct CalendarView: View {
         .enableInjection()
     }
 
+    // MARK: - Calendar Refresh Pill (subtle top indicator for idempotent reloads)
+
+    private var calendarRefreshPill: some View {
+        HStack(spacing: 8) {
+            ProgressView()
+                .progressViewStyle(.circular)
+                .controlSize(.mini)
+                .tint(DesignColors.accentWarm)
+            Text("Refreshing calendar…")
+                .font(.raleway("Medium", size: 12, relativeTo: .caption))
+                .foregroundStyle(DesignColors.textSecondary)
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 7)
+        .background {
+            Capsule()
+                .fill(.ultraThinMaterial)
+                .overlay {
+                    Capsule()
+                        .strokeBorder(DesignColors.accentWarm.opacity(0.18), lineWidth: 0.5)
+                }
+                .shadow(color: .black.opacity(0.06), radius: 6, x: 0, y: 2)
+        }
+        .frame(maxWidth: .infinity)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Refreshing calendar")
+    }
+
     // MARK: - Normal Bottom Bar
 
     private var normalBottomBar: some View {
@@ -231,7 +294,7 @@ public struct CalendarView: View {
                     Image(systemName: "plus")
                         .font(.system(size: 12, weight: .medium))
                     Text("Log Symptoms")
-                        .font(.custom("Raleway-SemiBold", size: 15))
+                        .font(.raleway("SemiBold", size: 15, relativeTo: .body))
                 }
                 .foregroundStyle(DesignColors.text)
                 .padding(.horizontal, 22)
@@ -279,7 +342,7 @@ public struct CalendarView: View {
                     Image(systemName: "drop.fill")
                         .font(.system(size: 12, weight: .medium))
                     Text("Edit Period")
-                        .font(.custom("Raleway-SemiBold", size: 15))
+                        .font(.raleway("SemiBold", size: 15, relativeTo: .body))
                 }
                 .foregroundColor(.white)
                 .padding(.horizontal, 22)
@@ -322,7 +385,7 @@ public struct CalendarView: View {
                     store.send(.editPeriodSaveTapped, animation: .easeInOut(duration: 0.3))
                 } label: {
                     Text("Save Period")
-                        .font(.custom("Raleway-Bold", size: 15))
+                        .font(.raleway("Bold", size: 15, relativeTo: .body))
                         .foregroundStyle(.white)
                         .padding(.horizontal, 28)
                         .padding(.vertical, 14)
@@ -357,7 +420,7 @@ public struct CalendarView: View {
                 store.send(.editPeriodToggled, animation: .spring(response: 0.35, dampingFraction: 0.85))
             } label: {
                 Text(store.hasEditPeriodChanges ? "Cancel" : "Done")
-                    .font(.custom("Raleway-SemiBold", size: 15))
+                    .font(.raleway("SemiBold", size: 15, relativeTo: .body))
                     .foregroundColor(.white)
                     .padding(.horizontal, 22)
                     .padding(.vertical, 14)
@@ -441,12 +504,12 @@ struct EditPeriodPredictionBanner: View {
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(isDone ? "Predictions updated" : "Updating predictions")
-                    .font(.custom("Raleway-SemiBold", size: 14))
+                    .font(.raleway("SemiBold", size: 14, relativeTo: .subheadline))
                     .foregroundStyle(DesignColors.text)
                     .contentTransition(.numericText())
 
                 Text(isDone ? "Your calendar is up to date" : "Analyzing your cycle patterns...")
-                    .font(.custom("Raleway-Regular", size: 12))
+                    .font(.raleway("Regular", size: 12, relativeTo: .caption))
                     .foregroundStyle(DesignColors.textSecondary)
                     .contentTransition(.numericText())
             }
@@ -563,7 +626,7 @@ struct FeedTopBar: View {
             // Center: Month/Year toggle or edit hint
             if store.isEditingPeriod {
                 Text("Tap days to mark your period")
-                    .font(.custom("Raleway-Medium", size: 14))
+                    .font(.raleway("Medium", size: 14, relativeTo: .body))
                     .foregroundStyle(DesignColors.textSecondary)
                     .transition(.opacity)
             } else {
@@ -592,7 +655,7 @@ struct FeedTopBar: View {
                 onTodayTapped()
             } label: {
                 Text("Today")
-                    .font(.custom("Raleway-SemiBold", size: 13))
+                    .font(.raleway("SemiBold", size: 13, relativeTo: .caption))
                     .foregroundStyle(DesignColors.accentWarm)
             }
             .buttonStyle(.plain)
@@ -636,7 +699,7 @@ struct MonthSectionHeader: View {
                 .padding(.horizontal, 16)
 
             Text(isCurrentYear ? Self.monthOnly.string(from: date) : Self.monthYear.string(from: date))
-                .font(.custom("Raleway-Bold", size: 16))
+                .font(.raleway("Bold", size: 16, relativeTo: .headline))
                 .foregroundStyle(DesignColors.text)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 12)
@@ -662,7 +725,7 @@ struct WeekdayLabelsRow: View {
         HStack(spacing: 0) {
             ForEach(labels, id: \.self) { label in
                 Text(label)
-                    .font(.custom("Raleway-Bold", size: 14))
+                    .font(.raleway("Bold", size: 14, relativeTo: .subheadline))
                     .foregroundStyle(DesignColors.textSecondary.opacity(0.6))
                     .frame(maxWidth: .infinity)
             }

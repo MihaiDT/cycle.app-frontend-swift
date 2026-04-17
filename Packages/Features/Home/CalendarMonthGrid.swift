@@ -210,9 +210,10 @@ struct CalendarDayCell: View {
                 }
 
                 Text("\(info.dayNumber)")
-                    .font(.custom(
-                        info.isToday || info.isUserMarkedPeriod ? "Raleway-Bold" : "Raleway-SemiBold",
-                        size: 16
+                    .font(.raleway(
+                        info.isToday || info.isUserMarkedPeriod ? "Bold" : "SemiBold",
+                        size: 16,
+                        relativeTo: .body
                     ))
                     .foregroundStyle(textColor)
             }
@@ -309,7 +310,7 @@ struct CalendarDayCell: View {
                 }
 
                 Text("\(info.dayNumber)")
-                    .font(.custom(info.isSelected || info.isToday ? "Raleway-Bold" : "Raleway-SemiBold", size: 16))
+                    .font(.raleway(info.isSelected || info.isToday ? "Bold" : "SemiBold", size: 16, relativeTo: .body))
                     .foregroundStyle(textColor)
             }
             .frame(width: 46, height: 46)
@@ -317,12 +318,12 @@ struct CalendarDayCell: View {
             // Today / Fertile label / Symptom dot — always 10px height for consistent layout
             if info.isToday && info.isCurrentMonth {
                 Text("Today")
-                    .font(.custom("Raleway-Bold", size: 8))
+                    .font(.raleway("Bold", size: 8, relativeTo: .caption2))
                     .foregroundStyle(DesignColors.accentWarm)
                     .frame(height: 10)
             } else if info.isOvulationDay && !info.isPeriodDay && info.isCurrentMonth {
                 Text("Fertile")
-                    .font(.custom("Raleway-Bold", size: 8))
+                    .font(.raleway("Bold", size: 8, relativeTo: .caption2))
                     .foregroundStyle(CyclePhase.ovulatory.orbitColor)
                     .frame(height: 10)
             } else if info.hasLog && info.isCurrentMonth {

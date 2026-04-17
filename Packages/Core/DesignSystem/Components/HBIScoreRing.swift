@@ -9,6 +9,8 @@ public struct HBIScoreRing: View {
 
     @State private var isBreathing = false
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
     public init(score: Int, animationProgress: Double = 1.0, size: CGFloat = 180) {
         self.score = score
         self.animationProgress = animationProgress
@@ -79,7 +81,7 @@ public struct HBIScoreRing: View {
             // Score number + label
             VStack(spacing: 4) {
                 Text("\(displayScore)")
-                    .font(.custom("Raleway-Bold", size: 48))
+                    .font(.raleway("Bold", size: 48, relativeTo: .largeTitle))
                     .foregroundStyle(
                         LinearGradient(
                             colors: [DesignColors.text, DesignColors.accentWarm],
@@ -90,12 +92,16 @@ public struct HBIScoreRing: View {
                     .contentTransition(.numericText())
 
                 Text("HBI Score")
-                    .font(.custom("Raleway-Medium", size: 13))
+                    .font(.raleway("Medium", size: 13, relativeTo: .caption))
                     .foregroundColor(DesignColors.textSecondary)
                     .tracking(1)
             }
         }
         .onAppear {
+            guard !reduceMotion else {
+                isBreathing = false
+                return
+            }
             withAnimation(.easeInOut(duration: 2.0).repeatForever(autoreverses: true)) {
                 isBreathing = true
             }

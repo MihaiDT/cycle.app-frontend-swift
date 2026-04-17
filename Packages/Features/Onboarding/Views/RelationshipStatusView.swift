@@ -51,14 +51,15 @@ public struct RelationshipStatusView: View {
                 // Elegant header
                 VStack(spacing: 6) {
                     Text("almost there")
-                        .font(.custom("Raleway-Regular", size: 13))
+                        .font(.raleway("Regular", size: 13, relativeTo: .caption))
                         .tracking(3)
                         .textCase(.uppercase)
                         .foregroundColor(DesignColors.text.opacity(0.5))
 
                     Text("Your Story")
-                        .font(.custom("Raleway-Bold", size: 32))
+                        .font(.raleway("Bold", size: 32, relativeTo: .title))
                         .foregroundColor(DesignColors.text)
+                        .accessibilityAddTraits(.isHeader)
                 }
                 .padding(.bottom, 32)
 
@@ -155,12 +156,12 @@ private struct LuxuryStatusCard: View {
                 // Content
                 VStack(alignment: .leading, spacing: 2) {
                     Text(status.rawValue)
-                        .font(.custom("Raleway-SemiBold", size: 17))
+                        .font(.raleway("SemiBold", size: 17, relativeTo: .body))
                         .foregroundColor(DesignColors.text)
 
                     // Animated subtitle
                     Text(status.subtitle)
-                        .font(.custom("Raleway-Regular", size: 12))
+                        .font(.raleway("Regular", size: 12, relativeTo: .caption))
                         .foregroundColor(DesignColors.text.opacity(isSelected ? 0.6 : 0))
                         .frame(height: isSelected ? nil : 0, alignment: .top)
                         .clipped()
@@ -173,6 +174,7 @@ private struct LuxuryStatusCard: View {
                 SelectionCheckbox(isSelected: isSelected)
                     .frame(width: 24, height: 24)
                     .padding(.trailing, 20)
+                    .accessibilityHidden(true)
             }
             .padding(.leading, 20)
             .frame(height: isSelected ? 72 : 56)
@@ -217,7 +219,10 @@ private struct LuxuryStatusCard: View {
         .scaleEffect(cardScale)
         .zIndex(isSelected ? 100 : Double(totalCount - index))
         .animation(.spring(response: 0.5, dampingFraction: 0.8), value: hasSelection)
-        .animation(.spring(response: 0.4, dampingFraction: 0.75), value: isSelected)
+        .animation(.appBalanced, value: isSelected)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(status.rawValue). \(status.subtitle)")
+        .accessibilityAddTraits(isSelected ? [.isSelected, .isButton] : [.isButton])
     }
 }
 

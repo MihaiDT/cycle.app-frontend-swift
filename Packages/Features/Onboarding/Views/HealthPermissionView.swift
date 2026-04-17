@@ -6,6 +6,7 @@ import SwiftUI
 
 public struct HealthPermissionView: View {
     @ObserveInjection var inject
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     public let onConnect: () -> Void
     public let onSkip: () -> Void
     public let onBack: (() -> Void)?
@@ -50,6 +51,7 @@ public struct HealthPermissionView: View {
                             .shadow(color: DesignColors.roseTaupe.opacity(0.5), radius: 24, x: 0, y: 12)
                             .scaleEffect(animateIn ? 1 : 0.9)
                             .opacity(animateIn ? 1 : 0)
+                            .accessibilityHidden(true)
                     }
 
                     Spacer()
@@ -57,13 +59,14 @@ public struct HealthPermissionView: View {
                     // Title section
                     VStack(spacing: 16) {
                         Text("Connect Apple Health")
-                            .font(.custom("Raleway-Bold", size: 28))
+                            .font(.raleway("Bold", size: 28, relativeTo: .title))
                             .foregroundColor(DesignColors.text)
                             .multilineTextAlignment(.center)
                             .opacity(animateIn ? 1 : 0)
+                            .accessibilityAddTraits(.isHeader)
 
                         Text("Sync your cycle data for smarter predictions\nand personalized insights")
-                            .font(.custom("Raleway-Regular", size: 16))
+                            .font(.raleway("Regular", size: 16, relativeTo: .body))
                             .foregroundColor(DesignColors.textSecondary)
                             .multilineTextAlignment(.center)
                             .lineSpacing(4)
@@ -110,10 +113,12 @@ public struct HealthPermissionView: View {
                         if isRequestingPermission {
                             ProgressView()
                                 .frame(height: 55)
+                                .accessibilityLabel("Requesting permission")
                         } else {
                             GlassButton("Continue", showArrow: false) {
                                 requestHealthPermission()
                             }
+                            .accessibilityHint("Opens system permission prompt")
                         }
 
                         // Skip option
@@ -121,19 +126,22 @@ public struct HealthPermissionView: View {
                             onSkip()
                         } label: {
                             Text("Not Now")
-                                .font(.custom("Raleway-Medium", size: 15))
+                                .font(.raleway("Medium", size: 15, relativeTo: .body))
                                 .foregroundColor(DesignColors.text)
                         }
                         .disabled(isRequestingPermission)
+                        .accessibilityLabel("Skip — set up later")
 
                         // Privacy note
                         HStack(spacing: 6) {
                             Image(systemName: "lock.fill")
                                 .font(.system(size: 10))
+                                .accessibilityHidden(true)
                             Text("Your data stays on your device")
-                                .font(.custom("Raleway-Regular", size: 12))
+                                .font(.raleway("Regular", size: 12, relativeTo: .caption))
                         }
                         .foregroundColor(DesignColors.text)
+                        .accessibilityElement(children: .combine)
                     }
                     .frame(maxWidth: .infinity)
                     .padding(.bottom, geometry.safeAreaInsets.bottom + AppLayout.bottomOffset)
@@ -142,7 +150,7 @@ public struct HealthPermissionView: View {
             .ignoresSafeArea()
         }
         .onAppear {
-            withAnimation(.easeOut(duration: 0.6)) {
+            withAnimation(reduceMotion ? nil : .easeOut(duration: 0.6)) {
                 animateIn = true
             }
         }
@@ -262,20 +270,22 @@ private struct BenefitItem: View {
                     .foregroundColor(DesignColors.accentWarm)
             }
             .frame(width: 44, height: 44)
+            .accessibilityHidden(true)
 
             // Text
             VStack(alignment: .leading, spacing: 4) {
                 Text(title)
-                    .font(.custom("Raleway-SemiBold", size: 16))
+                    .font(.raleway("SemiBold", size: 16, relativeTo: .body))
                     .foregroundColor(DesignColors.text)
 
                 Text(description)
-                    .font(.custom("Raleway-Regular", size: 14))
+                    .font(.raleway("Regular", size: 14, relativeTo: .body))
                     .foregroundColor(DesignColors.textSecondary)
                     .lineSpacing(2)
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
+        .accessibilityElement(children: .combine)
     }
 }
 
@@ -283,8 +293,8 @@ private struct BenefitItem: View {
 
 #Preview("Health Permission") {
     HealthPermissionView(
-        onConnect: { print("Connect tapped") },
-        onSkip: { print("Skip tapped") },
-        onBack: { print("Back tapped") }
+        onConnect: { },
+        onSkip: { },
+        onBack: { }
     )
 }

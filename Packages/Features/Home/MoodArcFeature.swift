@@ -143,7 +143,7 @@ public struct MoodArcView: View {
 
             // Title — left aligned like Figma
             Text("How are you\nfeeling today?")
-                .font(.custom("Raleway-Bold", size: 30))
+                .font(.raleway("Bold", size: 30, relativeTo: .title))
                 .foregroundStyle(DesignColors.text)
                 .lineSpacing(4)
                 .frame(maxWidth: .infinity, alignment: .center)
@@ -156,7 +156,7 @@ public struct MoodArcView: View {
                 Image(systemName: "hand.draw.fill")
                     .font(.system(size: 13, weight: .medium))
                 Text("Drag to adjust")
-                    .font(.custom("Raleway-Medium", size: 14))
+                    .font(.raleway("Medium", size: 14, relativeTo: .subheadline))
             }
             .foregroundStyle(DesignColors.textPlaceholder)
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -177,7 +177,7 @@ public struct MoodArcView: View {
             // Error
             if let error = store.error {
                 Text(error)
-                    .font(.custom("Raleway-Regular", size: 13))
+                    .font(.raleway("Regular", size: 13, relativeTo: .caption))
                     .foregroundColor(.red.opacity(0.8))
                     .padding(.bottom, 8)
                     .padding(.horizontal, AppLayout.horizontalPadding)
@@ -191,7 +191,7 @@ public struct MoodArcView: View {
                             .tint(.white)
                     }
                     Text(store.isSubmitting ? "Saving..." : "Continue")
-                        .font(.custom("Raleway-SemiBold", size: 17))
+                        .font(.raleway("SemiBold", size: 17, relativeTo: .headline))
                     if !store.isSubmitting {
                         Image(systemName: "arrow.right")
                             .font(.system(size: 15, weight: .semibold))
@@ -273,11 +273,11 @@ private struct MoodArcDial: View {
                         Text(moods[i].emoji)
                             .font(.system(size: isCurrent ? 30 : 24))
                         Text(moods[i].label)
-                            .font(.custom("Raleway-Medium", size: isCurrent ? 13 : 11))
+                            .font(.raleway("Medium", size: isCurrent ? 13 : 11, relativeTo: .caption))
                             .foregroundStyle(isActive ? DesignColors.text : DesignColors.textPlaceholder)
                     }
                     .position(x: pos.x + normal.dx * 40, y: pos.y + normal.dy * 40)
-                    .animation(.spring(response: 0.35, dampingFraction: 0.75), value: selectedIndex)
+                    .animation(.appBalanced, value: selectedIndex)
                 }
 
                 // --- Draggable handle (rounded square, white border) ---
@@ -299,7 +299,7 @@ private struct MoodArcDial: View {
                     .shadow(color: DesignColors.accentWarm.opacity(0.35), radius: 16, x: 0, y: 6)
                     .scaleEffect(isDragging ? 1.08 : 1.0)
                     .position(x: handlePos.x, y: handlePos.y)
-                    .animation(.spring(response: 0.4, dampingFraction: 0.8), value: selectedIndex)
+                    .animation(.appBalanced, value: selectedIndex)
                     .animation(.spring(response: 0.3, dampingFraction: 0.75), value: isDragging)
                     .gesture(
                         DragGesture(minimumDistance: 5)
@@ -315,17 +315,17 @@ private struct MoodArcDial: View {
                 // --- Big number + label (bottom-right) ---
                 VStack(alignment: .trailing, spacing: 2) {
                     Text("\(selectedIndex + 1)")
-                        .font(.custom("Raleway-ExtraBold", size: 160))
+                        .font(.raleway("ExtraBold", size: 160, relativeTo: .title))
                         .minimumScaleFactor(0.6)
                         .foregroundStyle(DesignColors.text)
                         .contentTransition(.numericText())
-                        .animation(.spring(response: 0.4, dampingFraction: 0.8), value: selectedIndex)
+                        .animation(.appBalanced, value: selectedIndex)
 
                     Text(moods[selectedIndex].label)
-                        .font(.custom("Raleway-Bold", size: 30))
+                        .font(.raleway("Bold", size: 30, relativeTo: .title))
                         .foregroundStyle(DesignColors.textSecondary)
                         .contentTransition(.interpolate)
-                        .animation(.spring(response: 0.4, dampingFraction: 0.8), value: selectedIndex)
+                        .animation(.appBalanced, value: selectedIndex)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
                 .padding(.trailing, 20)

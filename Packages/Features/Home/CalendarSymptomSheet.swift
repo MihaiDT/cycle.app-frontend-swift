@@ -131,7 +131,7 @@ struct SymptomLoggingSheet: View {
             }
         }
         .frame(maxHeight: .infinity, alignment: .top)
-        .animation(.spring(response: 0.4, dampingFraction: 0.8), value: selectedSymptoms.isEmpty)
+        .animation(.appBalanced, value: selectedSymptoms.isEmpty)
     }
 
     // MARK: - Sheet Header
@@ -142,7 +142,7 @@ struct SymptomLoggingSheet: View {
 
             HStack(alignment: .center) {
                 Text("How are you feeling?")
-                    .font(.custom("Raleway-Bold", size: 24))
+                    .font(.raleway("Bold", size: 24, relativeTo: .title))
                     .foregroundStyle(DesignColors.text)
                 Spacer()
                 Button {
@@ -302,7 +302,7 @@ struct SymptomSummaryPill: View {
             symptomIcon(for: symptom, size: 14)
                 .foregroundStyle(.white)
             Text(symptom.displayName)
-                .font(.custom("Raleway-SemiBold", size: 13))
+                .font(.raleway("SemiBold", size: 13, relativeTo: .caption))
                 .lineLimit(1)
             Button(action: onRemove) {
                 Image(systemName: "xmark")
@@ -358,12 +358,12 @@ struct SymptomCategoryTab: View {
                     .font(.system(size: 15, weight: .semibold))
 
                 Text(category.rawValue)
-                    .font(.custom("Raleway-SemiBold", size: 15))
+                    .font(.raleway("SemiBold", size: 15, relativeTo: .body))
                     .lineLimit(1)
 
                 if selectedCount > 0 {
                     Text("\(selectedCount)")
-                        .font(.custom("Raleway-Bold", size: 11))
+                        .font(.raleway("Bold", size: 11, relativeTo: .caption2))
                         .foregroundStyle(isActive ? category.tintColor : .white)
                         .frame(width: 20, height: 20)
                         .background {
@@ -465,7 +465,7 @@ struct SymptomSaveButton: View {
                         .foregroundStyle(.white)
                 }
                 Text(buttonText)
-                    .font(.custom("Raleway-Bold", size: 17))
+                    .font(.raleway("Bold", size: 17, relativeTo: .headline))
                     .foregroundStyle(.white)
             }
             .frame(maxWidth: .infinity)
@@ -474,7 +474,7 @@ struct SymptomSaveButton: View {
                 RoundedRectangle(cornerRadius: 16, style: .continuous)
                     .fill(
                         isSaved
-                            ? AnyShapeStyle(Color(hex: 0x5BA36B))
+                            ? AnyShapeStyle(DesignColors.statusSuccess)
                             : AnyShapeStyle(LinearGradient(
                                 colors: [DesignColors.accentWarm, DesignColors.accentSecondary],
                                 startPoint: .leading,
@@ -482,7 +482,7 @@ struct SymptomSaveButton: View {
                             ))
                     )
                     .shadow(
-                        color: (isSaved ? Color(hex: 0x5BA36B) : DesignColors.accentWarm).opacity(0.35),
+                        color: (isSaved ? DesignColors.statusSuccess : DesignColors.accentWarm).opacity(0.35),
                         radius: 16, x: 0, y: 6
                     )
             }
@@ -550,7 +550,7 @@ struct SymptomIconCard: View {
                 }
 
                 Text(symptom.displayName)
-                    .font(.custom("Raleway-SemiBold", size: 14))
+                    .font(.raleway("SemiBold", size: 14, relativeTo: .subheadline))
                     .foregroundStyle(isSelected ? DesignColors.text : DesignColors.textSecondary)
                     .lineLimit(2)
                     .multilineTextAlignment(.center)

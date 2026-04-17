@@ -16,6 +16,7 @@ public struct SplashView: View {
                     .aspectRatio(contentMode: .fill)
                     .frame(width: geometry.size.width, height: geometry.size.height)
                     .clipped()
+                    .accessibilityHidden(true)
             }
             .ignoresSafeArea()
 

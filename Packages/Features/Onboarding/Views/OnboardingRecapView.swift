@@ -5,6 +5,7 @@ import SwiftUI
 
 public struct OnboardingRecapView: View {
     @ObserveInjection var inject
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     public let userName: String
     public let birthDate: Date
     public let relationshipStatus: RelationshipStatus?
@@ -104,9 +105,10 @@ public struct OnboardingRecapView: View {
                                 }
                                 .scaleEffect(showHeader ? 1 : 0.3)
                                 .opacity(showHeader ? 1 : 0)
+                                .accessibilityHidden(true)
 
                                 Text("You're all set,\n\(userName)!")
-                                    .font(.custom("Raleway-Bold", size: 32))
+                                    .font(.raleway("Bold", size: 32, relativeTo: .title))
                                     .multilineTextAlignment(.center)
                                     .lineSpacing(4)
                                     .foregroundStyle(
@@ -122,6 +124,7 @@ public struct OnboardingRecapView: View {
                                     )
                                     .opacity(showHeader ? 1 : 0)
                                     .offset(y: showHeader ? 0 : 12)
+                                    .accessibilityAddTraits(.isHeader)
                             }
 
                             Spacer().frame(height: 28)
@@ -160,8 +163,9 @@ public struct OnboardingRecapView: View {
                                             Image(systemName: chip.0)
                                                 .font(.system(size: 13))
                                                 .foregroundColor(DesignColors.accentWarm)
+                                                .accessibilityHidden(true)
                                             Text(chip.1)
-                                                .font(.custom("Raleway-Medium", size: 14))
+                                                .font(.raleway("Medium", size: 14, relativeTo: .body))
                                                 .foregroundColor(DesignColors.text)
                                         }
                                         .padding(.horizontal, 16)
@@ -184,6 +188,7 @@ public struct OnboardingRecapView: View {
                                                         )
                                                 }
                                         }
+                                        .accessibilityElement(children: .combine)
                                     }
                                 }
                                 .padding(.horizontal, 32)
@@ -197,9 +202,10 @@ public struct OnboardingRecapView: View {
                             if !personalGoals.isEmpty {
                                 VStack(spacing: 14) {
                                     Text("Your Focus")
-                                        .font(.custom("Raleway-SemiBold", size: 15))
+                                        .font(.raleway("SemiBold", size: 15, relativeTo: .body))
                                         .tracking(1)
                                         .foregroundColor(DesignColors.text.opacity(0.5))
+                                        .accessibilityAddTraits(.isHeader)
 
                                     VStack(spacing: 10) {
                                         ForEach(Array(personalGoals.sorted(by: { $0.title < $1.title })), id: \.self) {
@@ -209,13 +215,14 @@ public struct OnboardingRecapView: View {
                                                     .font(.system(size: 18))
                                                     .foregroundColor(DesignColors.accentWarm)
                                                     .frame(width: 28)
+                                                    .accessibilityHidden(true)
 
                                                 VStack(alignment: .leading, spacing: 2) {
                                                     Text(goal.title)
-                                                        .font(.custom("Raleway-SemiBold", size: 15))
+                                                        .font(.raleway("SemiBold", size: 15, relativeTo: .body))
                                                         .foregroundColor(DesignColors.text)
                                                     Text(goal.subtitle)
-                                                        .font(.custom("Raleway-Regular", size: 12))
+                                                        .font(.raleway("Regular", size: 12, relativeTo: .caption))
                                                         .foregroundColor(DesignColors.textSecondary)
                                                 }
 
@@ -224,6 +231,7 @@ public struct OnboardingRecapView: View {
                                                 Image(systemName: "checkmark.circle.fill")
                                                     .font(.system(size: 18))
                                                     .foregroundColor(DesignColors.accentWarm.opacity(0.7))
+                                                    .accessibilityHidden(true)
                                             }
                                             .padding(.horizontal, 18)
                                             .padding(.vertical, 14)
@@ -245,6 +253,7 @@ public struct OnboardingRecapView: View {
                                                             )
                                                     }
                                             }
+                                            .accessibilityElement(children: .combine)
                                         }
                                     }
                                 }
@@ -257,7 +266,7 @@ public struct OnboardingRecapView: View {
 
                             // Motivational tagline
                             Text("Your journey to self-awareness starts now")
-                                .font(.custom("Raleway-Regular", size: 14))
+                                .font(.raleway("Regular", size: 14, relativeTo: .body))
                                 .foregroundColor(DesignColors.textSecondary.opacity(0.7))
                                 .multilineTextAlignment(.center)
                                 .opacity(showButton ? 1 : 0)
@@ -278,13 +287,13 @@ public struct OnboardingRecapView: View {
             .ignoresSafeArea()
         }
         .onAppear {
-            withAnimation(.spring(response: 0.6, dampingFraction: 0.7).delay(0.1)) {
+            withAnimation(reduceMotion ? nil : .spring(response: 0.6, dampingFraction: 0.7).delay(0.1)) {
                 showHeader = true
             }
-            withAnimation(.easeOut(duration: 0.5).delay(0.4)) {
+            withAnimation(reduceMotion ? nil : .easeOut(duration: 0.5).delay(0.4)) {
                 showCards = true
             }
-            withAnimation(.easeOut(duration: 0.5).delay(0.7)) {
+            withAnimation(reduceMotion ? nil : .easeOut(duration: 0.5).delay(0.7)) {
                 showButton = true
             }
 
@@ -320,13 +329,14 @@ private struct StatPill: View {
             Image(systemName: icon)
                 .font(.system(size: 22))
                 .foregroundColor(DesignColors.accentWarm)
+                .accessibilityHidden(true)
 
             Text(value)
-                .font(.custom("Raleway-Bold", size: 24))
+                .font(.raleway("Bold", size: 24, relativeTo: .title2))
                 .foregroundColor(DesignColors.text)
 
             Text(label)
-                .font(.custom("Raleway-Regular", size: 11))
+                .font(.raleway("Regular", size: 11, relativeTo: .caption2))
                 .foregroundColor(DesignColors.textSecondary)
         }
         .frame(maxWidth: .infinity)
@@ -349,6 +359,8 @@ private struct StatPill: View {
                         )
                 }
         }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(value) \(label)")
     }
 }
 
@@ -410,7 +422,7 @@ private struct RecapFlowLayout: Layout {
         cycleDuration: 28,
         periodDuration: 5,
         personalGoals: [.emotionalBalance, .energyClarity],
-        onFinish: { print("Finish tapped") },
-        onBack: { print("Back tapped") }
+        onFinish: { },
+        onBack: { }
     )
 }

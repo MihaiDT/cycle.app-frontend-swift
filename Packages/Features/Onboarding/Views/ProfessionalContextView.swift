@@ -53,14 +53,15 @@ public struct ProfessionalContextView: View {
                 // Elegant header
                 VStack(spacing: 6) {
                     Text("one more thing")
-                        .font(.custom("Raleway-Regular", size: 13))
+                        .font(.raleway("Regular", size: 13, relativeTo: .caption))
                         .tracking(3)
                         .textCase(.uppercase)
                         .foregroundColor(DesignColors.text.opacity(0.5))
 
                     Text("Your Lifestyle")
-                        .font(.custom("Raleway-Bold", size: 32))
+                        .font(.raleway("Bold", size: 32, relativeTo: .title))
                         .foregroundColor(DesignColors.text)
+                        .accessibilityAddTraits(.isHeader)
                 }
                 .padding(.bottom, 32)
 
@@ -87,12 +88,14 @@ public struct ProfessionalContextView: View {
         }
         .onAppear {
             // Staggered entrance animation
-            withAnimation(.spring(response: 0.8, dampingFraction: 0.75).delay(0.2)) {
+            withAnimation(reduceMotion ? nil : .spring(response: 0.8, dampingFraction: 0.75).delay(0.2)) {
                 hasAppeared = true
             }
         }
         .enableInjection()
     }
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 }
 
 // MARK: - Professional Card
@@ -184,12 +187,12 @@ private struct ProfessionalCard: View {
                 // Content
                 VStack(alignment: .leading, spacing: 2) {
                     Text(context.rawValue)
-                        .font(.custom("Raleway-SemiBold", size: 17))
+                        .font(.raleway("SemiBold", size: 17, relativeTo: .body))
                         .foregroundColor(DesignColors.text)
 
                     // Animated subtitle
                     Text(context.subtitle)
-                        .font(.custom("Raleway-Regular", size: 12))
+                        .font(.raleway("Regular", size: 12, relativeTo: .caption))
                         .foregroundColor(DesignColors.text.opacity(isSelected ? 0.6 : 0))
                         .frame(height: isSelected ? nil : 0, alignment: .top)
                         .clipped()
@@ -202,6 +205,7 @@ private struct ProfessionalCard: View {
                 ProfessionalCheckbox(isSelected: isSelected)
                     .frame(width: 24, height: 24)
                     .padding(.trailing, 20)
+                    .accessibilityHidden(true)
             }
             .padding(.leading, 20)
             .frame(height: isSelected ? 72 : 56)
@@ -251,7 +255,10 @@ private struct ProfessionalCard: View {
             value: hasAppeared
         )
         .animation(.spring(response: 0.5, dampingFraction: 0.8), value: hasSelection)
-        .animation(.spring(response: 0.4, dampingFraction: 0.75), value: isSelected)
+        .animation(.appBalanced, value: isSelected)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(context.rawValue). \(context.subtitle)")
+        .accessibilityAddTraits(isSelected ? [.isSelected, .isButton] : [.isButton])
     }
 }
 

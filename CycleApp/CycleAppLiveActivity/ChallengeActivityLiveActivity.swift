@@ -5,7 +5,6 @@ import WidgetKit
 private let accentWarm = Color(red: 193 / 255, green: 143 / 255, blue: 125 / 255)
 private let textCocoa = Color(red: 92 / 255, green: 74 / 255, blue: 59 / 255)
 private let textPrincipal = Color(red: 122 / 255, green: 95 / 255, blue: 80 / 255)
-private let bgWarm = Color(red: 242 / 255, green: 235 / 255, blue: 220 / 255)
 
 private func categoryIcon(_ category: String) -> String {
     switch category.lowercased() {
@@ -22,10 +21,15 @@ private func categoryIcon(_ category: String) -> String {
 struct ChallengeActivityLiveActivity: Widget {
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: ChallengeActivityAttributes.self) { context in
+            let interval = context.state.timerStart...context.state.timerEnd
             // Lock Screen
             VStack(spacing: 8) {
-                // Top: icon + title + timer
                 HStack(spacing: 8) {
+                    Text(context.state.timerEnd, style: .timer)
+                        .font(.system(size: 24, weight: .black, design: .rounded))
+                        .foregroundStyle(.white)
+                        .monospacedDigit()
+                    Spacer()
                     Image(systemName: categoryIcon(context.attributes.challengeCategory))
                         .font(.system(size: 14, weight: .semibold))
                         .foregroundStyle(.white)
@@ -40,21 +44,11 @@ struct ChallengeActivityLiveActivity: Widget {
                             .foregroundStyle(.white.opacity(0.7))
                             .lineLimit(1)
                     }
-                    Spacer()
-                    Text(timerInterval: Date.now...max(context.state.timerEnd, Date.now.addingTimeInterval(1)), countsDown: true, showsHours: false)
-                        .font(.system(size: 32, weight: .black, design: .rounded))
-                        .foregroundStyle(.white)
-                        .monospacedDigit()
-                        .monospacedDigit()
                 }
-                // Progress + CTA
-                ProgressView(
-                    timerInterval: Date()...context.state.timerEnd,
-                    countsDown: true
-                )
-                .progressViewStyle(.linear)
-                .tint(accentWarm)
-                .labelsHidden()
+                ProgressView(timerInterval: interval, countsDown: true)
+                    .progressViewStyle(.linear)
+                    .tint(accentWarm)
+                    .labelsHidden()
                 Link(destination: URL(string: "cycle://challenge/done")!) {
                     Text("I'm done")
                         .font(.system(size: 13, weight: .bold))
@@ -69,7 +63,6 @@ struct ChallengeActivityLiveActivity: Widget {
             .activityBackgroundTint(textCocoa.opacity(0.85))
         } dynamicIsland: { context in
             DynamicIsland {
-                // Expanded — same warm style as lock screen
                 DynamicIslandExpandedRegion(.leading) {
                     VStack(alignment: .leading, spacing: 3) {
                         Text(context.attributes.challengeTitle)
@@ -82,26 +75,23 @@ struct ChallengeActivityLiveActivity: Widget {
                     }
                 }
                 DynamicIslandExpandedRegion(.trailing) {
-                    Text(timerInterval: Date.now...max(context.state.timerEnd, Date.now.addingTimeInterval(1)), countsDown: true, showsHours: false)
+                    Text(timerInterval: context.state.timerStart...context.state.timerEnd, countsDown: true, showsHours: false)
                         .font(.system(size: 28, weight: .black))
                         .foregroundStyle(accentWarm)
                         .monospacedDigit()
                 }
                 DynamicIslandExpandedRegion(.bottom) {
-                    ProgressView(
-                        timerInterval: Date()...context.state.timerEnd,
-                        countsDown: true
-                    )
-                    .progressViewStyle(.linear)
-                    .tint(accentWarm)
-                    .labelsHidden()
+                    ProgressView(timerInterval: context.state.timerStart...context.state.timerEnd, countsDown: true)
+                        .progressViewStyle(.linear)
+                        .tint(accentWarm)
+                        .labelsHidden()
                 }
             } compactLeading: {
                 Image(systemName: categoryIcon(context.attributes.challengeCategory))
                     .font(.caption2)
                     .foregroundStyle(accentWarm)
             } compactTrailing: {
-                Text(timerInterval: Date.now...max(context.state.timerEnd, Date.now.addingTimeInterval(1)), countsDown: true, showsHours: false)
+                Text(timerInterval: context.state.timerStart...context.state.timerEnd, countsDown: true, showsHours: false)
                     .font(.caption2.bold())
                     .foregroundStyle(.white)
                     .monospacedDigit()

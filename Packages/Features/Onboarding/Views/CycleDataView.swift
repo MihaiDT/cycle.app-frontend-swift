@@ -5,6 +5,7 @@ import SwiftUI
 
 public struct CycleDataView: View {
     @ObserveInjection var inject
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     // Required fields (matching backend API)
     @Binding public var lastPeriodDate: Date?
     @Binding public var cycleDuration: Int  // avgCycleLength (21-40)
@@ -63,7 +64,7 @@ public struct CycleDataView: View {
             totalSteps: 8,
             onBack: {
                 if currentPage > 0 {
-                    withAnimation(.easeInOut(duration: 0.3)) {
+                    withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.3)) {
                         currentPage -= 1
                     }
                 } else {
@@ -72,7 +73,7 @@ public struct CycleDataView: View {
             },
             onNext: {
                 if currentPage < totalPages - 1 {
-                    withAnimation(.easeInOut(duration: 0.3)) {
+                    withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.3)) {
                         currentPage += 1
                     }
                 } else {
@@ -191,6 +192,6 @@ public struct CycleDataView: View {
         usesContraception: .constant(false),
         contraceptionType: .constant(nil),
         onNext: {},
-        onBack: { print("Back tapped") }
+        onBack: { }
     )
 }

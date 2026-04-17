@@ -49,11 +49,11 @@ public struct WellnessPillarCard: View {
             }
 
             Text("\(score)")
-                .font(.custom("Raleway-Bold", size: 28))
+                .font(.raleway("Bold", size: 28, relativeTo: .title))
                 .foregroundColor(DesignColors.text)
 
             Text(name)
-                .font(.custom("Raleway-Medium", size: 13))
+                .font(.raleway("Medium", size: 13, relativeTo: .caption))
                 .foregroundColor(DesignColors.textSecondary)
         }
         .padding(AppLayout.spacingM)

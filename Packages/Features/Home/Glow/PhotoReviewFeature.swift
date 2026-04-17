@@ -64,7 +64,7 @@ struct PhotoReviewView: View {
 
                 VStack(spacing: 16) {
                     Text("Aria will check if it matches")
-                        .font(.custom("Raleway-Medium", size: 15))
+                        .font(.raleway("Medium", size: 15, relativeTo: .body))
                         .foregroundStyle(.white.opacity(0.7))
 
                     HStack(spacing: 16) {
@@ -72,7 +72,7 @@ struct PhotoReviewView: View {
                             store.send(.retakeTapped)
                         } label: {
                             Text("Retake")
-                                .font(.custom("Raleway-Medium", size: 16))
+                                .font(.raleway("Medium", size: 16, relativeTo: .body))
                                 .foregroundStyle(.white.opacity(0.7))
                                 .frame(maxWidth: .infinity)
                                 .padding(.vertical, 16)
@@ -88,7 +88,7 @@ struct PhotoReviewView: View {
                             store.send(.submitTapped)
                         } label: {
                             Text("Submit")
-                                .font(.custom("Raleway-SemiBold", size: 16))
+                                .font(.raleway("SemiBold", size: 16, relativeTo: .headline))
                                 .foregroundStyle(.white)
                                 .frame(maxWidth: .infinity)
                                 .padding(.vertical, 16)

@@ -270,7 +270,7 @@ public struct CycleJourneyView: View {
             }
 
             Text("Your Journey")
-                .font(.custom("Raleway-Bold", size: 17))
+                .font(.raleway("Bold", size: 17, relativeTo: .headline))
                 .foregroundStyle(DesignColors.text)
 
             Spacer()
@@ -290,11 +290,11 @@ public struct CycleJourneyView: View {
 
             VStack(spacing: 8) {
                 Text("Every cycle tells a story")
-                    .font(.custom("Raleway-Bold", size: 20))
+                    .font(.raleway("Bold", size: 20, relativeTo: .title2))
                     .foregroundStyle(DesignColors.text)
 
                 Text("Log your first period and Aria will start building your personal rhythm insights.")
-                    .font(.custom("Raleway-Regular", size: 15))
+                    .font(.raleway("Regular", size: 15, relativeTo: .body))
                     .foregroundStyle(DesignColors.textSecondary)
                     .multilineTextAlignment(.center)
                     .lineSpacing(4)

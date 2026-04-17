@@ -164,17 +164,10 @@ private final class MonthCell: UITableViewCell {
 
     required init?(coder: NSCoder) { fatalError() }
 
-    private static let monthFmt: DateFormatter = {
-        let f = DateFormatter(); f.dateFormat = "MMMM"; return f
-    }()
-    private static let monthYearFmt: DateFormatter = {
-        let f = DateFormatter(); f.dateFormat = "MMMM yyyy"; return f
-    }()
-
     func configure(month: Date, parent: CalendarTableView) {
         let isCurrentYear = Calendar.current.component(.year, from: month) == Calendar.current.component(.year, from: Date())
-        headerLabel.text = isCurrentYear ? Self.monthFmt.string(from: month) : Self.monthYearFmt.string(from: month)
-        headerLabel.font = UIFont(name: "Raleway-Bold", size: 16) ?? .boldSystemFont(ofSize: 16)
+        headerLabel.text = isCurrentYear ? DateFormatter.monthName.string(from: month) : DateFormatter.monthYear.string(from: month)
+        headerLabel.font = UIFont.raleway("Bold", size: 16, textStyle: .headline)
         gridView.configure(month: month, parent: parent)
     }
 }
@@ -198,10 +191,10 @@ private final class MonthGridDrawView: UIView {
     private var onEditDayTapped: ((Date) -> Void)?
 
     private let cal = Calendar.current
-    private let periodColor = UIColor(red: 0.79, green: 0.25, blue: 0.38, alpha: 1)
-    private let fertileColor = UIColor(red: 0.757, green: 0.561, blue: 0.490, alpha: 1)
-    private let textColor = UIColor(red: 0.36, green: 0.29, blue: 0.23, alpha: 0.55)
-    private let todayColor = UIColor(red: 0.76, green: 0.56, blue: 0.49, alpha: 1)
+    private let periodColor = UIColor(DesignColors.calendarPeriodGlyph)
+    private let fertileColor = UIColor(DesignColors.calendarFertileGlyph)
+    private let textColor = UIColor(DesignColors.calendarDayText).withAlphaComponent(0.55)
+    private let todayColor = UIColor(DesignColors.calendarTodayRing)
 
     /// Draws a glass liquid circle with a gradient body, top shine, and border
     private func drawGlassCircle(_ ctx: CGContext, rect: CGRect, color: UIColor, fillOpacity: CGFloat, borderOpacity: CGFloat, dashed: Bool = false) {
@@ -316,7 +309,7 @@ private final class MonthGridDrawView: UIView {
 
             // Text
             let tColor: UIColor = isConfirmed ? .white : (isToday ? todayColor : textColor)
-            let font = UIFont(name: isToday || isConfirmed ? "Raleway-Bold" : "Raleway-SemiBold", size: 16) ?? .systemFont(ofSize: 16)
+            let font = UIFont.raleway(isToday || isConfirmed ? "Bold" : "SemiBold", size: 16, textStyle: .body)
             let str = NSAttributedString(string: "\(day)", attributes: [.font: font, .foregroundColor: tColor])
             let sz = str.size()
             str.draw(at: CGPoint(x: cx - sz.width / 2, y: cy - sz.height / 2))
@@ -348,14 +341,14 @@ private final class MonthGridDrawView: UIView {
             // Normal mode: symptom dot / Today / Fertile label
             else if isToday {
                 let label = NSAttributedString(string: "Today", attributes: [
-                    .font: UIFont(name: "Raleway-Bold", size: 8) ?? .systemFont(ofSize: 8),
+                    .font: UIFont.raleway("Bold", size: 8, textStyle: .caption2),
                     .foregroundColor: todayColor
                 ])
                 let ls = label.size()
                 label.draw(at: CGPoint(x: cx - ls.width / 2, y: cy + r + 1))
             } else if isOvulation && !isEditingPeriod {
                 let label = NSAttributedString(string: "Fertile", attributes: [
-                    .font: UIFont(name: "Raleway-Bold", size: 8) ?? .systemFont(ofSize: 8),
+                    .font: UIFont.raleway("Bold", size: 8, textStyle: .caption2),
                     .foregroundColor: fertileColor
                 ])
                 let ls = label.size()

@@ -63,7 +63,7 @@ struct YearOverviewView: View {
                     ForEach(Self.allMonths, id: \.year) { yearData in
                         VStack(spacing: 8) {
                             Text(String(yearData.year))
-                                .font(.custom("Raleway-Bold", size: 22))
+                                .font(.raleway("Bold", size: 22, relativeTo: .title2))
                                 .foregroundStyle(DesignColors.text)
                                 .frame(maxWidth: .infinity, alignment: .center)
                                 .id("year-\(yearData.year)")
@@ -126,14 +126,8 @@ struct MiniMonthCell: View {
 
     private let cal = Calendar.current
 
-    private static let monthNameFormatter: DateFormatter = {
-        let fmt = DateFormatter()
-        fmt.dateFormat = "MMM"
-        return fmt
-    }()
-
     private var monthName: String {
-        Self.monthNameFormatter.string(from: month)
+        DateFormatter.shortMonth.string(from: month)
     }
 
     private var isCurrentMonth: Bool {
@@ -288,13 +282,12 @@ struct MiniMonthCell: View {
             let colW = availW / 7
 
             // Month name
-            let nameFont = UIFont(name: isCurrentMonth ? "Raleway-Bold" : "Raleway-SemiBold", size: 14)
-                ?? .systemFont(ofSize: 14, weight: isCurrentMonth ? .bold : .semibold)
+            let nameFont = UIFont.raleway(isCurrentMonth ? "Bold" : "SemiBold", size: 14, textStyle: .subheadline)
             let nameColor = isCurrentMonth ? UIColor(DesignColors.accentWarm) : UIColor(DesignColors.text)
             let nameStr = NSAttributedString(string: monthName, attributes: [.font: nameFont, .foregroundColor: nameColor])
             let nameSize = nameStr.size()
             let nameX = (size.width - nameSize.width) / 2
-            ctx.draw(Text(monthName).font(.custom(isCurrentMonth ? "Raleway-Bold" : "Raleway-SemiBold", size: 14)).foregroundColor(isCurrentMonth ? DesignColors.accentWarm : DesignColors.text), at: CGPoint(x: size.width / 2, y: padY + 8), anchor: .center)
+            ctx.draw(Text(monthName).font(.raleway(isCurrentMonth ? "Bold" : "SemiBold", size: 14, relativeTo: .subheadline)).foregroundColor(isCurrentMonth ? DesignColors.accentWarm : DesignColors.text), at: CGPoint(x: size.width / 2, y: padY + 8), anchor: .center)
 
             let gridTop = padY + headerH
 

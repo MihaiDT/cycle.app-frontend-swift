@@ -26,6 +26,7 @@ public final class SelfReportRecord {
     @Attribute(.allowsCloudEncryption)
     public var notes: String?
 
+    @Attribute(.allowsCloudEncryption)
     public var createdAt: Date = Date.now
 
     public init(
@@ -88,19 +89,26 @@ public final class HBIScoreRecord {
     public var cyclePhase: String?
     @Attribute(.allowsCloudEncryption)
     public var cycleDay: Int?
+    @Attribute(.allowsCloudEncryption)
     public var phaseMultiplier: Double?
 
     // Trend
 
+    @Attribute(.allowsCloudEncryption)
     public var trendVsBaseline: Double?
+    @Attribute(.allowsCloudEncryption)
     public var trendDirection: String?
 
     // Data completeness
 
+    @Attribute(.allowsCloudEncryption)
     public var hasHealthKitData: Bool = false
+    @Attribute(.allowsCloudEncryption)
     public var hasSelfReport: Bool = true
+    @Attribute(.allowsCloudEncryption)
     public var completenessScore: Double = 50
 
+    @Attribute(.allowsCloudEncryption)
     public var createdAt: Date = Date.now
 
     public init(

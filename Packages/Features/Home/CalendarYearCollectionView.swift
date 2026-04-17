@@ -195,7 +195,7 @@ private final class YearHeaderView: UICollectionReusableView {
 
     override init(frame: CGRect) {
         super.init(frame: frame)
-        label.font = UIFont(name: "Raleway-Bold", size: 22) ?? .boldSystemFont(ofSize: 22)
+        label.font = UIFont.raleway("Bold", size: 22, textStyle: .title2)
         label.textColor = UIColor(DesignColors.text)
         label.textAlignment = .center
         addSubview(label)
@@ -246,11 +246,10 @@ private final class MiniMonthDrawView: UIView {
     private var isCurrent = false
 
     private let cal = Calendar.current
-    private static let monthFmt: DateFormatter = { let f = DateFormatter(); f.dateFormat = "MMM"; return f }()
 
-    private let periodColor = UIColor(red: 0.79, green: 0.25, blue: 0.38, alpha: 1)
-    private let fertileColor = UIColor(red: 0.757, green: 0.561, blue: 0.490, alpha: 1)
-    private let textColor = UIColor(red: 0.36, green: 0.29, blue: 0.23, alpha: 0.55)
+    private let periodColor = UIColor(DesignColors.calendarPeriodGlyph)
+    private let fertileColor = UIColor(DesignColors.calendarFertileGlyph)
+    private let textColor = UIColor(DesignColors.calendarDayText).withAlphaComponent(0.55)
     private let accentWarm = UIColor(DesignColors.accentWarm)
     private let textMain = UIColor(DesignColors.text)
 
@@ -264,7 +263,7 @@ private final class MiniMonthDrawView: UIView {
 
     func configure(month: Date, periodDays: Set<String>, predictedPeriodDays: Set<String>, fertileDays: [String: FertilityLevel], ovulationDays: Set<String>, lateWindowKeys: Set<String>) {
         self.month = month
-        self.monthName = Self.monthFmt.string(from: month)
+        self.monthName = DateFormatter.shortMonth.string(from: month)
         let now = Date()
         self.isCurrent = cal.component(.month, from: month) == cal.component(.month, from: now) && cal.component(.year, from: month) == cal.component(.year, from: now)
         self.grid = Self.buildGrid(month: month, periodDays: periodDays, predictedPeriodDays: predictedPeriodDays, fertileDays: fertileDays, ovulationDays: ovulationDays, lateWindowKeys: lateWindowKeys, periodColor: periodColor, fertileColor: fertileColor, textColor: textColor, accentWarm: accentWarm, textMain: textMain, isCurrent: isCurrent)
@@ -341,7 +340,7 @@ private final class MiniMonthDrawView: UIView {
         let cellSize = min(rowH - 2, colW - 2)
 
         // Month name
-        let nameFont = UIFont(name: isCurrent ? "Raleway-Bold" : "Raleway-SemiBold", size: 15) ?? .systemFont(ofSize: 15, weight: isCurrent ? .bold : .semibold)
+        let nameFont = UIFont.raleway(isCurrent ? "Bold" : "SemiBold", size: 15, textStyle: .subheadline)
         let nameColor = isCurrent ? accentWarm : textMain
         let nameStr = NSAttributedString(string: monthName, attributes: [.font: nameFont, .foregroundColor: nameColor])
         let nameSize = nameStr.size()
@@ -392,7 +391,7 @@ private final class MiniMonthDrawView: UIView {
                 }
 
                 // Day number
-                let font = UIFont(name: slot.isBold ? "Raleway-Bold" : "Raleway-Medium", size: 13) ?? .systemFont(ofSize: 13, weight: slot.isBold ? .bold : .medium)
+                let font = UIFont.raleway(slot.isBold ? "Bold" : "Medium", size: 13, textStyle: .caption1)
                 let str = NSAttributedString(string: "\(slot.day)", attributes: [.font: font, .foregroundColor: slot.textColor])
                 let sz = str.size()
                 str.draw(at: CGPoint(x: cx - sz.width / 2, y: cy - sz.height / 2))

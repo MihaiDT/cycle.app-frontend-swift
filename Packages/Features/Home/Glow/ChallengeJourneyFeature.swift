@@ -7,10 +7,11 @@ public struct ChallengeJourneyFeature: Sendable {
     @ObservableState
     public struct State: Equatable, Sendable {
         let challenge: ChallengeSnapshot
-        var step: Step = .timer
+        var step: Step = .accept
 
         var timerSecondsRemaining: Int
         let timerDurationTotal: Int
+        var timerEndDate: Date
 
         var capturedFullSize: Data?
         var capturedThumbnail: Data?
@@ -24,6 +25,7 @@ public struct ChallengeJourneyFeature: Sendable {
         var celebrationXP: Int = 0
 
         enum Step: Equatable, Sendable {
+            case accept
             case timer
             case proof
             case validating
@@ -42,6 +44,7 @@ public struct ChallengeJourneyFeature: Sendable {
             let minutes = Self.durationMinutes(for: challenge.challengeCategory)
             self.timerDurationTotal = minutes * 60
             self.timerSecondsRemaining = minutes * 60
+            self.timerEndDate = Date().addingTimeInterval(TimeInterval(minutes * 60))
         }
 
         static func durationMinutes(for category: String) -> Int {
@@ -66,6 +69,7 @@ public struct ChallengeJourneyFeature: Sendable {
 
     public enum Action: Sendable {
         case appeared
+        case startChallengeTapped
         case timerTick
         case imDoneTapped
         case openCameraTapped
@@ -81,6 +85,7 @@ public struct ChallengeJourneyFeature: Sendable {
         case delegate(Delegate)
 
         public enum Delegate: Sendable, Equatable {
+            case challengeStarted(timerEndDate: Date)
             case completed(
                 photoData: Data, thumbnailData: Data,
                 xpEarned: Int, rating: String, feedback: String
@@ -99,11 +104,29 @@ public struct ChallengeJourneyFeature: Sendable {
         Reduce { state, action in
             switch action {
             case .appeared:
+                // If resuming (Continue tapped), start timer immediately
+                if state.step == .timer {
+                    return .run { send in
+                        for await _ in self.clock.timer(interval: .seconds(1)) {
+                            await send(.timerTick)
+                        }
+                    }
+                    .cancellable(id: CancelID.timer)
+                }
+                return .none
+
+            case .startChallengeTapped:
+                state.step = .timer
+                // Recalculate timerEndDate now (user may have spent time on accept screen)
+                let minutes = State.durationMinutes(for: state.challenge.challengeCategory)
+                state.timerEndDate = Date().addingTimeInterval(TimeInterval(minutes * 60))
+                state.timerSecondsRemaining = minutes * 60
                 let title = state.challenge.challengeTitle
                 let category = state.challenge.challengeCategory
                 let phase = state.challenge.cyclePhase
-                let duration = State.durationMinutes(for: category)
+                let endDate = state.timerEndDate
                 return .merge(
+                    .send(.delegate(.challengeStarted(timerEndDate: endDate))),
                     .run { send in
                         for await _ in self.clock.timer(interval: .seconds(1)) {
                             await send(.timerTick)
@@ -113,14 +136,16 @@ public struct ChallengeJourneyFeature: Sendable {
                     .run { _ in
                         await ChallengeActivityBridge.start(
                             title: title, category: category,
-                            phase: phase, durationMinutes: duration
+                            phase: phase, durationMinutes: minutes,
+                            timerEnd: endDate
                         )
                     }
                 )
 
             case .timerTick:
-                guard state.step == .timer, state.timerSecondsRemaining > 0 else { return .none }
-                state.timerSecondsRemaining -= 1
+                guard state.step == .timer else { return .none }
+                let remaining = Int(state.timerEndDate.timeIntervalSinceNow)
+                state.timerSecondsRemaining = max(0, remaining)
                 return .none
 
             case .imDoneTapped:
@@ -218,10 +243,7 @@ public struct ChallengeJourneyFeature: Sendable {
                 )))
 
             case .closeTapped:
-                return .merge(
-                    .run { _ in await ChallengeActivityBridge.endAll() },
-                    .send(.delegate(.cancelled))
-                )
+                return .send(.delegate(.cancelled))
 
             case .delegate:
                 return .none

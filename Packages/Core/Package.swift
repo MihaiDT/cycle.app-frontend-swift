@@ -35,7 +35,6 @@ let package = Package(
             dependencies: [
                 "Models",
                 .product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
-                .product(name: "FirebaseAuth", package: "firebase-ios-sdk"),
             ],
             path: "Networking"
         ),
@@ -46,7 +45,6 @@ let package = Package(
                 "Utilities",
                 "CycleEngine",
                 .product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
-                .product(name: "FirebaseAuth", package: "firebase-ios-sdk"),
             ],
             path: "Persistence"
         ),

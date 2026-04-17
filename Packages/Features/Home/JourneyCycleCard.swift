@@ -58,7 +58,7 @@ struct JourneyCycleCard: View {
             HStack {
                 Spacer()
                 Text(monthWatermark)
-                    .font(.custom("Raleway-Bold", size: 80))
+                    .font(.raleway("Bold", size: 80, relativeTo: .largeTitle))
                     .foregroundStyle(DesignColors.structure.opacity(isFuture ? 0.06 : 0.10))
                     .offset(x: 8, y: -4)
             }
@@ -67,7 +67,7 @@ struct JourneyCycleCard: View {
                 HStack {
                     let warmBrown = DesignColors.warmBrown
                     Text(topLabel)
-                        .font(.custom("Raleway-SemiBold", size: 14))
+                        .font(.raleway("SemiBold", size: 14, relativeTo: .subheadline))
                         .foregroundStyle(.white)
                         .padding(.horizontal, 12)
                         .padding(.vertical, 6)
@@ -78,7 +78,7 @@ struct JourneyCycleCard: View {
                     if !isFuture && !summary.isCurrentCycle {
                         HStack(spacing: 4) {
                             Text("Your Recap")
-                                .font(.custom("Raleway-SemiBold", size: 14))
+                                .font(.raleway("SemiBold", size: 14, relativeTo: .subheadline))
                             Image(systemName: "chevron.right")
                                 .font(.system(size: 11, weight: .semibold))
                         }
@@ -89,10 +89,10 @@ struct JourneyCycleCard: View {
                                 Image(systemName: "lock.fill")
                                     .font(.system(size: 11))
                                 Text("Recap")
-                                    .font(.custom("Raleway-SemiBold", size: 14))
+                                    .font(.raleway("SemiBold", size: 14, relativeTo: .subheadline))
                             }
                             Text("When this cycle ends")
-                                .font(.custom("Raleway-Regular", size: 12))
+                                .font(.raleway("Regular", size: 12, relativeTo: .caption))
                         }
                         .foregroundStyle(DesignColors.textPlaceholder)
                     }
@@ -108,7 +108,7 @@ struct JourneyCycleCard: View {
 
                 if !subtitleText.isEmpty {
                     Text(subtitleText)
-                        .font(.custom("Raleway-Regular", size: 13))
+                        .font(.raleway("Regular", size: 13, relativeTo: .caption))
                         .foregroundStyle(DesignColors.textSecondary)
                         .padding(.top, 3)
                 }
@@ -117,7 +117,7 @@ struct JourneyCycleCard: View {
 
                 if !bottomLabel.isEmpty {
                     Text(bottomLabel)
-                        .font(.custom("Raleway-Medium", size: 13))
+                        .font(.raleway("Medium", size: 13, relativeTo: .caption))
                         .foregroundStyle(summary.isCurrentCycle ? phaseAccent.opacity(0.6) : DesignColors.textSecondary)
                 }
             }

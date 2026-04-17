@@ -97,6 +97,8 @@ private struct CheckboxCheckmark: Shape {
 private struct AnimatedCheckboxIcon: View {
     let isChecked: Bool
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
     private var checkmarkColor: Color {
         Color(red: 122 / 255, green: 95 / 255, blue: 80 / 255)  // #7A5F50
     }
@@ -124,9 +126,9 @@ private struct AnimatedCheckboxIcon: View {
             // Checkmark - animated
             CheckboxCheckmark(progress: isChecked ? 1 : 0)
                 .stroke(checkmarkColor, style: strokeStyle)
-                .animation(.easeOut(duration: 0.2), value: isChecked)
+                .animation(reduceMotion ? nil : .easeOut(duration: 0.2), value: isChecked)
         }
-        .animation(.easeOut(duration: 0.15), value: isChecked)
+        .animation(reduceMotion ? nil : .easeOut(duration: 0.15), value: isChecked)
     }
 }
 
@@ -153,6 +155,7 @@ public struct ConsentCheckbox<Content: View>: View {
                 AnimatedCheckboxIcon(isChecked: isChecked)
                     .frame(width: 24, height: 24)
                     .frame(width: 44, height: 44)
+                    .accessibilityHidden(true)
 
                 content()
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -160,6 +163,8 @@ public struct ConsentCheckbox<Content: View>: View {
         }
         .buttonStyle(.plain)
         .contentShape(Rectangle())
+        .accessibilityAddTraits(isChecked ? [.isButton, .isSelected] : .isButton)
+        .accessibilityHint(isChecked ? "Uncheck" : "Check")
     }
 }
 

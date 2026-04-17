@@ -108,14 +108,15 @@ struct CycleDataPage<Content: View>: View {
                 Spacer().frame(height: 20)
 
                 Text(title)
-                    .font(.custom("Raleway-Bold", size: 26))
+                    .font(.raleway("Bold", size: 26, relativeTo: .title2))
                     .foregroundColor(DesignColors.text)
                     .multilineTextAlignment(.center)
+                    .accessibilityAddTraits(.isHeader)
 
                 Spacer().frame(height: 8)
 
                 Text(subtitle)
-                    .font(.custom("Raleway-Regular", size: 15))
+                    .font(.raleway("Regular", size: 15, relativeTo: .body))
                     .foregroundColor(DesignColors.text.opacity(0.7))
                     .multilineTextAlignment(.center)
 
@@ -143,7 +144,7 @@ struct DurationStepper: View {
     var body: some View {
         VStack(spacing: 16) {
             Text(label)
-                .font(.custom("Raleway-SemiBold", size: 16))
+                .font(.raleway("SemiBold", size: 16, relativeTo: .body))
                 .foregroundColor(DesignColors.text.opacity(0.7))
 
             HStack(spacing: 24) {
@@ -162,18 +163,21 @@ struct DurationStepper: View {
                         )
                 }
                 .disabled(value <= range.lowerBound)
+                .accessibilityLabel("Decrease \(label)")
 
                 VStack(spacing: 4) {
                     Text("\(value)")
-                        .font(.custom("Raleway-Bold", size: 48))
+                        .font(.raleway("Bold", size: 48, relativeTo: .largeTitle))
                         .foregroundColor(DesignColors.text)
                         .contentTransition(.numericText(countsDown: !isIncrementing))
                         .animation(.spring(response: 0.3, dampingFraction: 0.8), value: value)
                     Text(unit)
-                        .font(.custom("Raleway-Regular", size: 14))
+                        .font(.raleway("Regular", size: 14, relativeTo: .body))
                         .foregroundColor(DesignColors.text.opacity(0.6))
                 }
                 .frame(width: 100)
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel("\(value) \(unit)")
 
                 Button(action: {
                     if value < range.upperBound {
@@ -190,6 +194,7 @@ struct DurationStepper: View {
                         )
                 }
                 .disabled(value >= range.upperBound)
+                .accessibilityLabel("Increase \(label)")
             }
         }
         .padding(.vertical, 24)
@@ -228,12 +233,12 @@ struct RegularityOptionButton: View {
                 // Content
                 VStack(alignment: .leading, spacing: 2) {
                     Text(regularity.displayName)
-                        .font(.custom("Raleway-SemiBold", size: 17))
+                        .font(.raleway("SemiBold", size: 17, relativeTo: .body))
                         .foregroundColor(DesignColors.text)
 
                     // Animated subtitle
                     Text(regularity.description)
-                        .font(.custom("Raleway-Regular", size: 12))
+                        .font(.raleway("Regular", size: 12, relativeTo: .caption))
                         .foregroundColor(DesignColors.text.opacity(isSelected ? 0.6 : 0))
                         .frame(height: isSelected ? nil : 0, alignment: .top)
                         .clipped()
@@ -246,6 +251,7 @@ struct RegularityOptionButton: View {
                 RegularityCheckbox(isSelected: isSelected)
                     .frame(width: 24, height: 24)
                     .padding(.trailing, 20)
+                    .accessibilityHidden(true)
             }
             .padding(.leading, 20)
             .frame(height: isSelected ? 72 : 56)
@@ -285,7 +291,10 @@ struct RegularityOptionButton: View {
             )
         }
         .buttonStyle(.plain)
-        .animation(.spring(response: 0.4, dampingFraction: 0.75), value: isSelected)
+        .animation(.appBalanced, value: isSelected)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(regularity.displayName). \(regularity.description)")
+        .accessibilityAddTraits(isSelected ? [.isSelected, .isButton] : [.isButton])
     }
 }
 
@@ -427,9 +436,10 @@ struct InlineSymptomsSelector: View {
                 ForEach(categories, id: \.0) { category, symptoms in
                     VStack(alignment: .leading, spacing: 12) {
                         Text(category)
-                            .font(.custom("Raleway-SemiBold", size: 14))
+                            .font(.raleway("SemiBold", size: 14, relativeTo: .body))
                             .foregroundColor(DesignColors.text.opacity(0.6))
                             .padding(.horizontal, 32)
+                            .accessibilityAddTraits(.isHeader)
 
                         FlowLayout(spacing: 10) {
                             ForEach(symptoms) { symptom in
@@ -474,7 +484,7 @@ struct InlineContraceptionSelector: View {
                     generator.impactOccurred()
                 }) {
                     Text("None")
-                        .font(.custom("Raleway-Medium", size: 14))
+                        .font(.raleway("Medium", size: 14, relativeTo: .body))
                         .foregroundColor(!usesContraception ? DesignColors.text : DesignColors.text.opacity(0.7))
                         .padding(.horizontal, 16)
                         .padding(.vertical, 12)
@@ -490,6 +500,8 @@ struct InlineContraceptionSelector: View {
                         }
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel("No contraception")
+                .accessibilityAddTraits(!usesContraception ? [.isSelected, .isButton] : [.isButton])
 
                 // Contraception types
                 ForEach(ContraceptionType.allCases) { type in
@@ -502,7 +514,7 @@ struct InlineContraceptionSelector: View {
                         generator.impactOccurred()
                     }) {
                         Text(type.displayName)
-                            .font(.custom("Raleway-Medium", size: 14))
+                            .font(.raleway("Medium", size: 14, relativeTo: .body))
                             .foregroundColor(contraceptionType == type ? DesignColors.text : DesignColors.text.opacity(0.7))
                             .padding(.horizontal, 16)
                             .padding(.vertical, 12)
@@ -520,6 +532,8 @@ struct InlineContraceptionSelector: View {
                             }
                     }
                     .buttonStyle(.plain)
+                    .accessibilityLabel(type.displayName)
+                    .accessibilityAddTraits(contraceptionType == type ? [.isSelected, .isButton] : [.isButton])
                 }
             }
         }
@@ -539,16 +553,16 @@ private struct GlassDurationButton: View {
         Button(action: action) {
             VStack(spacing: 6) {
                 Text(label)
-                    .font(.custom("Raleway-Medium", size: 13))
+                    .font(.raleway("Medium", size: 13, relativeTo: .caption))
                     .foregroundColor(DesignColors.text.opacity(0.6))
 
                 HStack(spacing: 4) {
                     Text(value)
-                        .font(.custom("Raleway-Bold", size: 24))
+                        .font(.raleway("Bold", size: 24, relativeTo: .title2))
                         .foregroundColor(accentColor)
 
                     Text(unit)
-                        .font(.custom("Raleway-Regular", size: 14))
+                        .font(.raleway("Regular", size: 14, relativeTo: .body))
                         .foregroundColor(DesignColors.text.opacity(0.6))
                 }
             }
@@ -590,11 +604,11 @@ private struct GlassSelectionButton: View {
             HStack {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(label)
-                        .font(.custom("Raleway-Medium", size: 13))
+                        .font(.raleway("Medium", size: 13, relativeTo: .caption))
                         .foregroundColor(DesignColors.text.opacity(0.6))
 
                     Text(value)
-                        .font(.custom("Raleway-SemiBold", size: 16))
+                        .font(.raleway("SemiBold", size: 16, relativeTo: .body))
                         .foregroundColor(DesignColors.text)
                 }
 
@@ -603,6 +617,7 @@ private struct GlassSelectionButton: View {
                 Image(systemName: "chevron.right")
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundColor(DesignColors.text.opacity(0.4))
+                    .accessibilityHidden(true)
             }
             .padding(.horizontal, 24)
             .frame(height: 64)
@@ -652,13 +667,15 @@ struct FlowIntensitySelector: View {
             HStack {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Flow intensity")
-                        .font(.custom("Raleway-Medium", size: 13))
+                        .font(.raleway("Medium", size: 13, relativeTo: .caption))
                         .foregroundColor(DesignColors.text.opacity(0.6))
 
                     Text(intensityLabel)
-                        .font(.custom("Raleway-SemiBold", size: 16))
+                        .font(.raleway("SemiBold", size: 16, relativeTo: .body))
                         .foregroundColor(DesignColors.text)
                 }
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel("Flow intensity: \(intensityLabel)")
 
                 Spacer()
             }
@@ -684,6 +701,8 @@ struct FlowIntensitySelector: View {
                             }
                     }
                     .buttonStyle(.plain)
+                    .accessibilityLabel("Flow level \(level) of 5")
+                    .accessibilityAddTraits(level == intensity ? [.isSelected, .isButton] : [.isButton])
                 }
             }
             .frame(maxWidth: .infinity)
@@ -729,11 +748,11 @@ private struct GlassSymptomsButton: View {
             HStack {
                 if selectedSymptoms.isEmpty {
                     Text("Add typical symptoms")
-                        .font(.custom("Raleway-Medium", size: 15))
+                        .font(.raleway("Medium", size: 15, relativeTo: .body))
                         .foregroundColor(DesignColors.text.opacity(0.6))
                 } else {
                     Text(symptomNames)
-                        .font(.custom("Raleway-Medium", size: 15))
+                        .font(.raleway("Medium", size: 15, relativeTo: .body))
                         .foregroundColor(DesignColors.text)
                         .lineLimit(1)
                         .truncationMode(.tail)
@@ -744,6 +763,7 @@ private struct GlassSymptomsButton: View {
                 Image(systemName: "chevron.right")
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundColor(DesignColors.text.opacity(0.4))
+                    .accessibilityHidden(true)
             }
             .padding(.horizontal, 24)
             .frame(height: 57)
@@ -784,15 +804,15 @@ private struct GlassContraceptionButton: View {
             HStack {
                 if usesContraception, let type = contraceptionType {
                     Text(type.displayName)
-                        .font(.custom("Raleway-SemiBold", size: 15))
+                        .font(.raleway("SemiBold", size: 15, relativeTo: .body))
                         .foregroundColor(DesignColors.text)
                 } else if usesContraception {
                     Text("Using contraception")
-                        .font(.custom("Raleway-Medium", size: 15))
+                        .font(.raleway("Medium", size: 15, relativeTo: .body))
                         .foregroundColor(DesignColors.text.opacity(0.8))
                 } else {
                     Text("Not using contraception")
-                        .font(.custom("Raleway-Medium", size: 15))
+                        .font(.raleway("Medium", size: 15, relativeTo: .body))
                         .foregroundColor(DesignColors.text.opacity(0.6))
                 }
 
@@ -801,6 +821,7 @@ private struct GlassContraceptionButton: View {
                 Image(systemName: "chevron.right")
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundColor(DesignColors.text.opacity(0.4))
+                    .accessibilityHidden(true)
             }
             .padding(.horizontal, 24)
             .frame(height: 57)

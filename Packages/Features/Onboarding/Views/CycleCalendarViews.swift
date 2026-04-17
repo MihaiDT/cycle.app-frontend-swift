@@ -3,6 +3,7 @@ import SwiftUI
 // MARK: - Inline Period Calendar Page
 
 struct InlinePeriodCalendarPage: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Binding var selectedDate: Date
     @Binding var periodDuration: Int
 
@@ -230,14 +231,15 @@ struct InlinePeriodCalendarPage: View {
                 Spacer().frame(height: 16)
 
                 Text("When did your\nlast period start?")
-                    .font(.custom("Raleway-Bold", size: 26))
+                    .font(.raleway("Bold", size: 26, relativeTo: .title2))
                     .foregroundColor(DesignColors.text)
                     .multilineTextAlignment(.center)
+                    .accessibilityAddTraits(.isHeader)
 
                 Spacer().frame(height: 8)
 
                 Text(getSubtitleText())
-                    .font(.custom("Raleway-Regular", size: 15))
+                    .font(.raleway("Regular", size: 15, relativeTo: .body))
                     .foregroundColor(tutorialStep == .complete ? DesignColors.accent : DesignColors.text.opacity(0.7))
                     .multilineTextAlignment(.center)
                     .animation(.easeInOut, value: tutorialStep)
@@ -252,8 +254,9 @@ struct InlinePeriodCalendarPage: View {
                         HStack(spacing: 6) {
                             Image(systemName: "plus.circle.fill")
                                 .font(.system(size: 14))
+                                .accessibilityHidden(true)
                             Text("Add & mark another")
-                                .font(.custom("Raleway-SemiBold", size: 14))
+                                .font(.raleway("SemiBold", size: 14, relativeTo: .body))
                         }
                         .foregroundColor(.white)
                         .padding(.horizontal, 16)
@@ -263,6 +266,7 @@ struct InlinePeriodCalendarPage: View {
                                 .fill(DesignColors.accent)
                         )
                     }
+                    .accessibilityLabel("Add and mark another period")
 
                     Spacer()
                 }
@@ -272,7 +276,7 @@ struct InlinePeriodCalendarPage: View {
 
                 // Saved periods count
                 Text("\(periods.count) period\(periods.count == 1 ? "" : "s") saved")
-                    .font(.custom("Raleway-Medium", size: 13))
+                    .font(.raleway("Medium", size: 13, relativeTo: .caption))
                     .foregroundColor(DesignColors.text.opacity(0.6))
                     .padding(.top, 8)
                     .opacity(periods.isEmpty ? 0 : 1)
@@ -284,7 +288,7 @@ struct InlinePeriodCalendarPage: View {
                     // Month navigation header
                     HStack {
                         Button {
-                            withAnimation(.easeInOut(duration: 0.3)) {
+                            withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.3)) {
                                 displayedMonth =
                                     calendar.date(byAdding: .month, value: -1, to: displayedMonth) ?? displayedMonth
                             }
@@ -294,12 +298,14 @@ struct InlinePeriodCalendarPage: View {
                                 .foregroundColor(DesignColors.accentWarm)
                                 .frame(width: 44, height: 44)
                         }
+                        .accessibilityLabel("Previous month")
 
                         Spacer()
 
                         Text(monthFormatter.string(from: displayedMonth))
-                            .font(.custom("Raleway-SemiBold", size: 18))
+                            .font(.raleway("SemiBold", size: 18, relativeTo: .headline))
                             .foregroundColor(DesignColors.text)
+                            .accessibilityAddTraits(.isHeader)
 
                         Spacer()
 
@@ -307,7 +313,7 @@ struct InlinePeriodCalendarPage: View {
                             let nextMonth =
                                 calendar.date(byAdding: .month, value: 1, to: displayedMonth) ?? displayedMonth
                             if nextMonth <= calendar.startOfMonth(for: Date()) {
-                                withAnimation(.easeInOut(duration: 0.3)) {
+                                withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.3)) {
                                     displayedMonth = nextMonth
                                 }
                             }
@@ -322,6 +328,7 @@ struct InlinePeriodCalendarPage: View {
                                 .frame(width: 44, height: 44)
                         }
                         .disabled(displayedMonth >= calendar.startOfMonth(for: Date()))
+                        .accessibilityLabel("Next month")
                     }
                     .padding(.horizontal, 24)
 
@@ -383,13 +390,15 @@ struct InlinePeriodCalendarPage: View {
                                 )
                                 .frame(width: 8, height: 8)
                         }
+                        .accessibilityHidden(true)
 
                         Text(tutorialTitle)
-                            .font(.custom("Raleway-Bold", size: 18))
+                            .font(.raleway("Bold", size: 18, relativeTo: .headline))
                             .foregroundColor(DesignColors.text)
+                            .accessibilityAddTraits(.isHeader)
 
                         Text(tutorialMessage)
-                            .font(.custom("Raleway-Regular", size: 15))
+                            .font(.raleway("Regular", size: 15, relativeTo: .body))
                             .foregroundColor(DesignColors.text.opacity(0.7))
                             .multilineTextAlignment(.center)
 
@@ -399,12 +408,13 @@ struct InlinePeriodCalendarPage: View {
                             .scaleEffect(pulseAnimation ? 1.1 : 1.0)
                             .opacity(pulseAnimation ? 0.85 : 1.0)
                             .animation(
-                                .easeInOut(duration: 0.8).repeatForever(autoreverses: true),
+                                reduceMotion ? nil : .easeInOut(duration: 0.8).repeatForever(autoreverses: true),
                                 value: pulseAnimation
                             )
                             .onAppear {
-                                pulseAnimation = true
+                                if !reduceMotion { pulseAnimation = true }
                             }
+                            .accessibilityHidden(true)
 
                         Button {
                             withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
@@ -412,7 +422,7 @@ struct InlinePeriodCalendarPage: View {
                             }
                         } label: {
                             Text("Got it")
-                                .font(.custom("Raleway-SemiBold", size: 15))
+                                .font(.raleway("SemiBold", size: 15, relativeTo: .body))
                                 .foregroundColor(.white)
                                 .padding(.horizontal, 32)
                                 .padding(.vertical, 12)
@@ -453,17 +463,19 @@ struct InlinePeriodCalendarPage: View {
                         Image(systemName: "checkmark.circle.fill")
                             .font(.system(size: 44))
                             .foregroundColor(.green)
+                            .accessibilityHidden(true)
 
                         Text("Period marked!")
-                            .font(.custom("Raleway-Bold", size: 20))
+                            .font(.raleway("Bold", size: 20, relativeTo: .title2))
                             .foregroundColor(DesignColors.text)
+                            .accessibilityAddTraits(.isHeader)
 
                         Text("\(currentDuration) days selected")
-                            .font(.custom("Raleway-Regular", size: 15))
+                            .font(.raleway("Regular", size: 15, relativeTo: .body))
                             .foregroundColor(DesignColors.text.opacity(0.7))
 
                         Text("Do you remember previous periods?")
-                            .font(.custom("Raleway-Regular", size: 14))
+                            .font(.raleway("Regular", size: 14, relativeTo: .body))
                             .foregroundColor(DesignColors.text.opacity(0.6))
                             .multilineTextAlignment(.center)
 
@@ -475,7 +487,7 @@ struct InlinePeriodCalendarPage: View {
                                 }
                             } label: {
                                 Text("Add more")
-                                    .font(.custom("Raleway-SemiBold", size: 15))
+                                    .font(.raleway("SemiBold", size: 15, relativeTo: .body))
                                     .foregroundColor(DesignColors.accent)
                                     .frame(maxWidth: .infinity)
                                     .padding(.vertical, 12)
@@ -491,7 +503,7 @@ struct InlinePeriodCalendarPage: View {
                                 }
                             } label: {
                                 Text("Continue")
-                                    .font(.custom("Raleway-SemiBold", size: 15))
+                                    .font(.raleway("SemiBold", size: 15, relativeTo: .body))
                                     .foregroundColor(.white)
                                     .frame(maxWidth: .infinity)
                                     .padding(.vertical, 12)
@@ -608,9 +620,10 @@ private struct InlineMonthView: View {
             LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 7), spacing: 4) {
                 ForEach(Array(weekdays.enumerated()), id: \.offset) { _, day in
                     Text(day)
-                        .font(.custom("Raleway-Medium", size: 12))
+                        .font(.raleway("Medium", size: 12, relativeTo: .caption))
                         .foregroundColor(DesignColors.text.opacity(0.5))
                         .frame(height: 24)
+                        .accessibilityHidden(true)
                 }
             }
 
@@ -655,6 +668,18 @@ private struct InlineDayCell: View {
 
     private let calendar = Calendar.current
 
+    private var dayAccessibilityLabel: String {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .full
+        var label = formatter.string(from: date)
+        if isToday { label = "Today, " + label }
+        if isInPeriod { label += ". Period day" }
+        if isStartDate { label += ". Period start" }
+        if isEndDate { label += ". Period end" }
+        if isFuture { label += ". Future date, disabled" }
+        return label
+    }
+
     var body: some View {
         Button(action: {
             if !isFuture {
@@ -682,7 +707,7 @@ private struct InlineDayCell: View {
                     }
 
                     Text("\(calendar.component(.day, from: date))")
-                        .font(.custom(isStartDate || isEndDate ? "Raleway-Bold" : "Raleway-Medium", size: 16))
+                        .font(.raleway(isStartDate || isEndDate ? "Bold" : "Medium", size: 16, relativeTo: .body))
                         .foregroundColor(dayTextColor)
                 }
                 .frame(width: 40, height: 40)
@@ -690,13 +715,15 @@ private struct InlineDayCell: View {
                 // "Today" label
                 if isToday {
                     Text("today")
-                        .font(.custom("Raleway-Medium", size: 9))
+                        .font(.raleway("Medium", size: 9, relativeTo: .caption2))
                         .foregroundColor(DesignColors.accentWarm)
                 }
             }
         }
         .disabled(isFuture)
         .buttonStyle(.plain)
+        .accessibilityLabel(dayAccessibilityLabel)
+        .accessibilityAddTraits(isInPeriod ? [.isSelected, .isButton] : [.isButton])
     }
 
     private var dayTextColor: Color {
@@ -782,12 +809,14 @@ private struct InlinePeriodCalendar: View {
                         .font(.system(size: 18, weight: .semibold))
                         .foregroundColor(DesignColors.accent)
                 }
+                .accessibilityLabel("Previous month")
 
                 Spacer()
 
                 Text(monthFormatter.string(from: displayedMonth))
-                    .font(.custom("Raleway-SemiBold", size: 18))
+                    .font(.raleway("SemiBold", size: 18, relativeTo: .headline))
                     .foregroundColor(DesignColors.text)
+                    .accessibilityAddTraits(.isHeader)
 
                 Spacer()
 
@@ -800,6 +829,7 @@ private struct InlinePeriodCalendar: View {
                         .font(.system(size: 18, weight: .semibold))
                         .foregroundColor(DesignColors.accent)
                 }
+                .accessibilityLabel("Next month")
             }
             .padding(.horizontal, 8)
 
@@ -807,9 +837,10 @@ private struct InlinePeriodCalendar: View {
             LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 7), spacing: 8) {
                 ForEach(["S", "M", "T", "W", "T", "F", "S"], id: \.self) { day in
                     Text(day)
-                        .font(.custom("Raleway-SemiBold", size: 12))
+                        .font(.raleway("SemiBold", size: 12, relativeTo: .caption))
                         .foregroundColor(DesignColors.text.opacity(0.5))
                         .frame(height: 30)
+                        .accessibilityHidden(true)
                 }
             }
 
@@ -857,10 +888,21 @@ private struct CalendarDayButton: View {
 
     private let calendar = Calendar.current
 
+    private var dayAccessibilityLabel: String {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .full
+        var label = formatter.string(from: date)
+        if isToday { label = "Today, " + label }
+        if isSelected { label += ". Selected" }
+        if isInPeriod { label += ". Period day" }
+        if isDisabled { label += ". Disabled" }
+        return label
+    }
+
     var body: some View {
         Button(action: action) {
             Text("\(calendar.component(.day, from: date))")
-                .font(.custom(isSelected ? "Raleway-Bold" : "Raleway-Medium", size: 16))
+                .font(.raleway(isSelected ? "Bold" : "Medium", size: 16, relativeTo: .body))
                 .foregroundColor(textColor)
                 .frame(width: 40, height: 40)
                 .background {
@@ -878,6 +920,8 @@ private struct CalendarDayButton: View {
         }
         .disabled(isDisabled)
         .buttonStyle(.plain)
+        .accessibilityLabel(dayAccessibilityLabel)
+        .accessibilityAddTraits(isSelected ? [.isSelected, .isButton] : [.isButton])
     }
 
     private var textColor: Color {
@@ -1183,11 +1227,12 @@ struct PeriodCalendarSheet: View {
                     HStack {
                         VStack(alignment: .leading, spacing: 4) {
                             Text(periods.isEmpty && currentStart == nil ? "Select your period" : "Your periods")
-                                .font(.custom("Raleway-Bold", size: 20))
+                                .font(.raleway("Bold", size: 20, relativeTo: .title2))
                                 .foregroundColor(DesignColors.text)
+                                .accessibilityAddTraits(.isHeader)
 
                             Text(getSubtitleText())
-                                .font(.custom("Raleway-Regular", size: 14))
+                                .font(.raleway("Regular", size: 14, relativeTo: .body))
                                 .foregroundColor(DesignColors.text.opacity(0.6))
                         }
 
@@ -1206,6 +1251,7 @@ struct PeriodCalendarSheet: View {
                                         .fill(Color.gray.opacity(0.15))
                                 )
                         }
+                        .accessibilityLabel("Close")
                     }
                     .padding(.horizontal, 20)
                     .padding(.bottom, 12)
@@ -1215,17 +1261,17 @@ struct PeriodCalendarSheet: View {
                         VStack(alignment: .leading, spacing: 4) {
                             if !periods.isEmpty {
                                 Text("\(periods.count) period\(periods.count == 1 ? "" : "s") saved")
-                                    .font(.custom("Raleway-Medium", size: 14))
+                                    .font(.raleway("Medium", size: 14, relativeTo: .body))
                                     .foregroundColor(DesignColors.text.opacity(0.7))
                             }
 
                             if currentDuration > 0 {
                                 Text("Current: \(currentDuration) days")
-                                    .font(.custom("Raleway-SemiBold", size: 15))
+                                    .font(.raleway("SemiBold", size: 15, relativeTo: .body))
                                     .foregroundColor(DesignColors.accent)
                             } else if periods.isEmpty {
                                 Text("No periods selected yet")
-                                    .font(.custom("Raleway-Regular", size: 14))
+                                    .font(.raleway("Regular", size: 14, relativeTo: .body))
                                     .foregroundColor(DesignColors.text.opacity(0.4))
                             }
                         }
@@ -1240,8 +1286,9 @@ struct PeriodCalendarSheet: View {
                                 HStack(spacing: 6) {
                                     Image(systemName: "plus.circle.fill")
                                         .font(.system(size: 14))
+                                        .accessibilityHidden(true)
                                     Text("Add")
-                                        .font(.custom("Raleway-SemiBold", size: 14))
+                                        .font(.raleway("SemiBold", size: 14, relativeTo: .body))
                                 }
                                 .foregroundColor(.white)
                                 .padding(.horizontal, 14)
@@ -1251,6 +1298,7 @@ struct PeriodCalendarSheet: View {
                                         .fill(DesignColors.accent)
                                 )
                             }
+                            .accessibilityLabel("Add period")
                         }
                     }
                     .padding(.horizontal, 20)
@@ -1324,11 +1372,12 @@ struct PeriodCalendarSheet: View {
                         }
 
                         Text(tutorialTitle)
-                            .font(.custom("Raleway-Bold", size: 18))
+                            .font(.raleway("Bold", size: 18, relativeTo: .headline))
                             .foregroundColor(DesignColors.text)
+                            .accessibilityAddTraits(.isHeader)
 
                         Text(tutorialMessage)
-                            .font(.custom("Raleway-Regular", size: 15))
+                            .font(.raleway("Regular", size: 15, relativeTo: .body))
                             .foregroundColor(DesignColors.text.opacity(0.7))
                             .multilineTextAlignment(.center)
 
@@ -1345,6 +1394,7 @@ struct PeriodCalendarSheet: View {
                             .onAppear {
                                 pulseAnimation = true
                             }
+                            .accessibilityHidden(true)
 
                         Button {
                             withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
@@ -1352,7 +1402,7 @@ struct PeriodCalendarSheet: View {
                             }
                         } label: {
                             Text("Got it")
-                                .font(.custom("Raleway-SemiBold", size: 15))
+                                .font(.raleway("SemiBold", size: 15, relativeTo: .body))
                                 .foregroundColor(.white)
                                 .padding(.horizontal, 32)
                                 .padding(.vertical, 12)
@@ -1385,17 +1435,19 @@ struct PeriodCalendarSheet: View {
                         Image(systemName: "checkmark.circle.fill")
                             .font(.system(size: 44))
                             .foregroundColor(.green)
+                            .accessibilityHidden(true)
 
                         Text("Period marked!")
-                            .font(.custom("Raleway-Bold", size: 20))
+                            .font(.raleway("Bold", size: 20, relativeTo: .title2))
                             .foregroundColor(DesignColors.text)
+                            .accessibilityAddTraits(.isHeader)
 
                         Text("\(currentDuration) days selected")
-                            .font(.custom("Raleway-Regular", size: 15))
+                            .font(.raleway("Regular", size: 15, relativeTo: .body))
                             .foregroundColor(DesignColors.text.opacity(0.7))
 
                         Text("Do you remember previous periods?")
-                            .font(.custom("Raleway-Regular", size: 14))
+                            .font(.raleway("Regular", size: 14, relativeTo: .body))
                             .foregroundColor(DesignColors.text.opacity(0.6))
                             .multilineTextAlignment(.center)
 
@@ -1408,7 +1460,7 @@ struct PeriodCalendarSheet: View {
                                 }
                             } label: {
                                 Text("Add more")
-                                    .font(.custom("Raleway-SemiBold", size: 15))
+                                    .font(.raleway("SemiBold", size: 15, relativeTo: .body))
                                     .foregroundColor(DesignColors.accent)
                                     .frame(maxWidth: .infinity)
                                     .padding(.vertical, 12)
@@ -1422,7 +1474,7 @@ struct PeriodCalendarSheet: View {
                                 closeSheet()
                             } label: {
                                 Text("Done")
-                                    .font(.custom("Raleway-SemiBold", size: 15))
+                                    .font(.raleway("SemiBold", size: 15, relativeTo: .body))
                                     .foregroundColor(.white)
                                     .frame(maxWidth: .infinity)
                                     .padding(.vertical, 12)
@@ -1529,16 +1581,18 @@ private struct MonthView: View {
                     Image(systemName: "arrow.left")
                         .font(.system(size: 12, weight: .semibold))
                         .foregroundColor(DesignColors.accent)
+                        .accessibilityHidden(true)
                 }
 
                 Text(monthName)
-                    .font(.custom("Raleway-SemiBold", size: 18))
+                    .font(.raleway("SemiBold", size: 18, relativeTo: .headline))
                     .foregroundColor(DesignColors.text)
+                    .accessibilityAddTraits(.isHeader)
 
                 // Period days count badge
                 if periodDaysInMonth > 0 {
                     Text("\(periodDaysInMonth)d")
-                        .font(.custom("Raleway-Medium", size: 12))
+                        .font(.raleway("Medium", size: 12, relativeTo: .caption))
                         .foregroundColor(.white)
                         .padding(.horizontal, 8)
                         .padding(.vertical, 3)
@@ -1546,6 +1600,7 @@ private struct MonthView: View {
                             Capsule()
                                 .fill(DesignColors.accent)
                         )
+                        .accessibilityLabel("\(periodDaysInMonth) period days this month")
                 }
 
                 // Arrow to next month
@@ -1553,6 +1608,7 @@ private struct MonthView: View {
                     Image(systemName: "arrow.right")
                         .font(.system(size: 12, weight: .semibold))
                         .foregroundColor(DesignColors.accent)
+                        .accessibilityHidden(true)
                 }
             }
             .frame(maxWidth: .infinity, alignment: .center)
@@ -1561,9 +1617,10 @@ private struct MonthView: View {
             HStack(spacing: 0) {
                 ForEach(Array(weekdays.enumerated()), id: \.offset) { _, day in
                     Text(day)
-                        .font(.custom("Raleway-Medium", size: 13))
+                        .font(.raleway("Medium", size: 13, relativeTo: .caption))
                         .foregroundColor(DesignColors.text.opacity(0.5))
                         .frame(maxWidth: .infinity)
+                        .accessibilityHidden(true)
                 }
             }
             .padding(.horizontal, 16)
@@ -1624,6 +1681,19 @@ private struct DayCell: View {
         "\(calendar.component(.day, from: date))"
     }
 
+    private var dayAccessibilityLabel: String {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .full
+        var label = formatter.string(from: date)
+        if isToday { label = "Today, " + label }
+        if isStartDay { label += ". Period start" }
+        if isEndDay { label += ". Period end" }
+        if isPeriodDay && !isStartDay && !isEndDay { label += ". Period day" }
+        if isSavedPeriod { label += ". Saved" }
+        if isFuture { label += ". Future date, disabled" }
+        return label
+    }
+
     var body: some View {
         Button(action: onTap) {
             ZStack {
@@ -1662,11 +1732,12 @@ private struct DayCell: View {
                     }
                     .frame(width: 44, height: 44)
                     .offset(x: -4, y: -4)
+                    .accessibilityHidden(true)
                 }
 
                 // Day number
                 Text(dayNumber)
-                    .font(.custom(isStartDay || isEndDay ? "Raleway-Bold" : "Raleway-Medium", size: 16))
+                    .font(.raleway(isStartDay || isEndDay ? "Bold" : "Medium", size: 16, relativeTo: .body))
                     .foregroundColor(
                         isFuture
                             ? DesignColors.text.opacity(0.3)
@@ -1677,6 +1748,8 @@ private struct DayCell: View {
         }
         .buttonStyle(.plain)
         .disabled(isFuture)
+        .accessibilityLabel(dayAccessibilityLabel)
+        .accessibilityAddTraits(isPeriodDay ? [.isSelected, .isButton] : [.isButton])
     }
 }
 

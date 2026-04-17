@@ -7,7 +7,6 @@ let package = Package(
     products: [
         .library(name: "Features", targets: ["Features"]),
         .library(name: "AppFeature", targets: ["AppFeature"]),
-        .library(name: "AuthenticationFeature", targets: ["AuthenticationFeature"]),
         .library(name: "HomeFeature", targets: ["HomeFeature"]),
         .library(name: "OnboardingFeature", targets: ["OnboardingFeature"]),
     ],
@@ -21,12 +20,11 @@ let package = Package(
     targets: [
         .target(
             name: "Features",
-            dependencies: ["AppFeature", "AuthenticationFeature", "HomeFeature", "OnboardingFeature"]
+            dependencies: ["AppFeature", "HomeFeature", "OnboardingFeature"]
         ),
         .target(
             name: "AppFeature",
             dependencies: [
-                "AuthenticationFeature",
                 "HomeFeature",
                 "OnboardingFeature",
                 .product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
@@ -36,15 +34,6 @@ let package = Package(
                 .product(name: "DesignSystem", package: "Core"),
             ],
             path: "App"
-        ),
-        .target(
-            name: "AuthenticationFeature",
-            dependencies: [
-                .product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
-                .product(name: "Inject", package: "Inject"),
-                .product(name: "Core", package: "Core"),
-            ],
-            path: "Authentication"
         ),
         .target(
             name: "HomeFeature",

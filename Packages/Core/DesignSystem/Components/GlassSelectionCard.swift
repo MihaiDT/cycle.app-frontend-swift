@@ -4,20 +4,32 @@ import SwiftUI
 
 public struct GlassSelectionCard<Icon: View>: View {
     public let title: String
+    public let description: String?
     public let isSelected: Bool
     public let action: () -> Void
     @ViewBuilder public let icon: () -> Icon
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
     public init(
         title: String,
+        description: String? = nil,
         isSelected: Bool,
         action: @escaping () -> Void,
         @ViewBuilder icon: @escaping () -> Icon
     ) {
         self.title = title
+        self.description = description
         self.isSelected = isSelected
         self.action = action
         self.icon = icon
+    }
+
+    private var accessibilityText: String {
+        if let description, !description.isEmpty {
+            return "\(title). \(description)"
+        }
+        return title
     }
 
     public var body: some View {
@@ -25,13 +37,15 @@ public struct GlassSelectionCard<Icon: View>: View {
             VStack(spacing: 8) {
                 icon()
                     .frame(width: 24, height: 24)
+                    .accessibilityHidden(true)
 
                 Text(title)
-                    .font(.custom("Raleway-SemiBold", size: 16))
+                    .font(.raleway("SemiBold", size: 16, relativeTo: .body))
                     .foregroundColor(DesignColors.text)
+                    .multilineTextAlignment(.center)
             }
             .frame(maxWidth: .infinity)
-            .frame(height: 100)
+            .frame(minHeight: 100)
             .background {
                 RoundedRectangle(cornerRadius: 20)
                     .fill(.ultraThinMaterial)
@@ -59,7 +73,10 @@ public struct GlassSelectionCard<Icon: View>: View {
             }
         }
         .buttonStyle(.plain)
-        .animation(.easeInOut(duration: 0.2), value: isSelected)
+        .animation(reduceMotion ? nil : .easeInOut(duration: 0.2), value: isSelected)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(accessibilityText)
+        .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
     }
 }
 

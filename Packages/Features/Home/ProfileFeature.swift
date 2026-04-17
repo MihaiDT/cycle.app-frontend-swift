@@ -216,7 +216,7 @@ public struct ProfileView: View {
                     .overlay {
                         if let user = store.user {
                             Text(user.initials)
-                                .font(.custom("Raleway-Bold", size: 32))
+                                .font(.raleway("Bold", size: 32, relativeTo: .largeTitle))
                                 .foregroundColor(DesignColors.text)
                         }
                     }
@@ -226,19 +226,19 @@ public struct ProfileView: View {
             VStack(spacing: 6) {
                 if let fullName = store.user?.fullName {
                     Text(fullName)
-                        .font(.custom("Raleway-Bold", size: 22))
+                        .font(.raleway("Bold", size: 22, relativeTo: .title2))
                         .foregroundColor(DesignColors.text)
                 }
 
                 if let email = store.user?.email {
                     Text(email)
-                        .font(.custom("Raleway-Regular", size: 14))
+                        .font(.raleway("Regular", size: 14, relativeTo: .body))
                         .foregroundColor(DesignColors.textSecondary)
                 }
 
                 if let memberSince = store.state.memberSinceFormatted {
                     Text("Member since \(memberSince)")
-                        .font(.custom("Raleway-Medium", size: 12))
+                        .font(.raleway("Medium", size: 12, relativeTo: .caption))
                         .foregroundColor(DesignColors.textPlaceholder)
                         .padding(.top, 2)
                 }
@@ -259,7 +259,7 @@ public struct ProfileView: View {
                 // Header
                 HStack {
                     Text("Daily Glow")
-                        .font(.custom("Raleway-Bold", size: 18))
+                        .font(.raleway("Bold", size: 18, relativeTo: .headline))
                         .foregroundStyle(DesignColors.text)
                     Spacer()
                 }
@@ -272,11 +272,11 @@ public struct ProfileView: View {
 
                     VStack(alignment: .leading, spacing: 6) {
                         Text(level.title)
-                            .font(.custom("Raleway-Bold", size: 20))
+                            .font(.raleway("Bold", size: 20, relativeTo: .title2))
                             .foregroundStyle(DesignColors.text)
 
                         Text("Level \(level.level) · \(profile.totalXP) XP")
-                            .font(.custom("Raleway-Medium", size: 14))
+                            .font(.raleway("Medium", size: 14, relativeTo: .subheadline))
                             .foregroundStyle(DesignColors.textSecondary)
                     }
 
@@ -321,10 +321,10 @@ public struct ProfileView: View {
     private func glowStat(value: String, label: String) -> some View {
         VStack(spacing: 2) {
             Text(value)
-                .font(.custom("Raleway-Bold", size: 16))
+                .font(.raleway("Bold", size: 16, relativeTo: .body))
                 .foregroundStyle(DesignColors.text)
             Text(label)
-                .font(.custom("Raleway-Regular", size: 11))
+                .font(.raleway("Regular", size: 11, relativeTo: .caption2))
                 .foregroundStyle(DesignColors.textSecondary)
         }
     }
@@ -346,7 +346,7 @@ public struct ProfileView: View {
                             .foregroundColor(DesignColors.accentWarm)
 
                         Text("Day \(status.currentCycle.cycleDay) · \(phase.displayName) Phase")
-                            .font(.custom("Raleway-SemiBold", size: 15))
+                            .font(.raleway("SemiBold", size: 15, relativeTo: .body))
                             .foregroundColor(DesignColors.text)
 
                         Spacer()
@@ -387,7 +387,7 @@ public struct ProfileView: View {
                             .font(.system(size: 12))
                             .foregroundColor(DesignColors.textPlaceholder)
                         Text("Tracking since \(trackingSince)")
-                            .font(.custom("Raleway-Regular", size: 12))
+                            .font(.raleway("Regular", size: 12, relativeTo: .caption))
                             .foregroundColor(DesignColors.textPlaceholder)
                     }
                 }
@@ -429,10 +429,10 @@ public struct ProfileView: View {
 
                             VStack(spacing: 0) {
                                 Text("\(score)")
-                                    .font(.custom("Raleway-Bold", size: 20))
+                                    .font(.raleway("Bold", size: 20, relativeTo: .title2))
                                     .foregroundColor(DesignColors.text)
                                 Text("HBI")
-                                    .font(.custom("Raleway-Medium", size: 9))
+                                    .font(.raleway("Medium", size: 9, relativeTo: .caption2))
                                     .foregroundColor(DesignColors.textSecondary)
                             }
                         }
@@ -440,7 +440,7 @@ public struct ProfileView: View {
 
                     VStack(alignment: .leading, spacing: 6) {
                         Text("Hormonal Balance")
-                            .font(.custom("Raleway-SemiBold", size: 15))
+                            .font(.raleway("SemiBold", size: 15, relativeTo: .body))
                             .foregroundColor(DesignColors.text)
 
                         if let trend = store.state.hbiTrend {
@@ -450,7 +450,7 @@ public struct ProfileView: View {
                                     .foregroundColor(trend == "up" ? .green : trend == "down" ? DesignColors.accentWarm : DesignColors.textSecondary)
 
                                 Text(trend == "up" ? "Trending up" : trend == "down" ? "Trending down" : "Stable")
-                                    .font(.custom("Raleway-Regular", size: 13))
+                                    .font(.raleway("Regular", size: 13, relativeTo: .caption))
                                     .foregroundColor(DesignColors.textSecondary)
                             }
                         }
@@ -508,13 +508,13 @@ public struct ProfileView: View {
                     .frame(width: 28)
 
                 Text("Version")
-                    .font(.custom("Raleway-Medium", size: 15))
+                    .font(.raleway("Medium", size: 15, relativeTo: .body))
                     .foregroundColor(DesignColors.text)
 
                 Spacer()
 
                 Text(appVersion)
-                    .font(.custom("Raleway-Regular", size: 14))
+                    .font(.raleway("Regular", size: 14, relativeTo: .body))
                     .foregroundColor(DesignColors.textPlaceholder)
             }
             .padding(.vertical, 14)
@@ -566,9 +566,9 @@ public struct ProfileView: View {
                     .frame(width: 20)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(title)
-                        .font(.custom("Raleway-SemiBold", size: 15))
+                        .font(.raleway("SemiBold", size: 15, relativeTo: .body))
                     Text(subtitle)
-                        .font(.custom("Raleway-Regular", size: 12))
+                        .font(.raleway("Regular", size: 12, relativeTo: .caption))
                         .foregroundColor(DesignColors.textSecondary)
                 }
                 Spacer()
@@ -600,7 +600,7 @@ public struct ProfileView: View {
                 .font(.system(size: 14, weight: .medium))
                 .foregroundColor(DesignColors.accentSecondary)
             Text(title)
-                .font(.custom("Raleway-SemiBold", size: 16))
+                .font(.raleway("SemiBold", size: 16, relativeTo: .headline))
                 .foregroundColor(DesignColors.text)
             Spacer()
         }
@@ -610,16 +610,16 @@ public struct ProfileView: View {
         VStack(spacing: 4) {
             HStack(alignment: .lastTextBaseline, spacing: 2) {
                 Text(value)
-                    .font(.custom("Raleway-Bold", size: 18))
+                    .font(.raleway("Bold", size: 18, relativeTo: .headline))
                     .foregroundColor(DesignColors.text)
                 if !unit.isEmpty {
                     Text(unit)
-                        .font(.custom("Raleway-Regular", size: 11))
+                        .font(.raleway("Regular", size: 11, relativeTo: .caption2))
                         .foregroundColor(DesignColors.textSecondary)
                 }
             }
             Text(label)
-                .font(.custom("Raleway-Regular", size: 11))
+                .font(.raleway("Regular", size: 11, relativeTo: .caption2))
                 .foregroundColor(DesignColors.textPlaceholder)
         }
         .frame(maxWidth: .infinity)
@@ -639,11 +639,11 @@ public struct ProfileView: View {
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
-                    .font(.custom("Raleway-Medium", size: 15))
+                    .font(.raleway("Medium", size: 15, relativeTo: .body))
                     .foregroundColor(DesignColors.text)
                 if let subtitle {
                     Text(subtitle)
-                        .font(.custom("Raleway-Regular", size: 12))
+                        .font(.raleway("Regular", size: 12, relativeTo: .caption))
                         .foregroundColor(DesignColors.textPlaceholder)
                 }
             }

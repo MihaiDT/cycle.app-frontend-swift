@@ -8,6 +8,8 @@ public struct OnboardingProgressBar: View {
     public let currentStep: Int
     public let totalSteps: Int
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
     public init(currentStep: Int, totalSteps: Int) {
         self.currentStep = currentStep
         self.totalSteps = totalSteps
@@ -38,9 +40,12 @@ public struct OnboardingProgressBar: View {
                     )
                 )
                 .frame(width: 180 * progress)
-                .animation(.easeOut(duration: 0.3), value: progress)
+                .animation(reduceMotion ? nil : .easeOut(duration: 0.3), value: progress)
         }
         .frame(width: 180, height: 8)
+        .accessibilityElement()
+        .accessibilityLabel("Onboarding progress")
+        .accessibilityValue("Step \(currentStep) of \(totalSteps)")
     }
 }
 

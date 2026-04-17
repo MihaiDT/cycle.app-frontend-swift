@@ -407,8 +407,6 @@ public struct AppFeature: Sendable {
             case .ageRestrictionTriggered:
                 state.destination = .onboarding
                 return .none
-
-            // MARK: - Guest Mode
             }
         }
     }

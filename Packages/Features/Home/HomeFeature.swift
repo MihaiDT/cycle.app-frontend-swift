@@ -10,7 +10,7 @@ import SwiftUI
 @Reducer
 public struct HomeFeature: Sendable {
     @ObservableState
-    public struct State: Equatable {
+    public struct State: Equatable, Sendable {
         public var user: User?
         public var isLoading: Bool
         public var selectedTab: Tab
@@ -339,7 +339,25 @@ public struct HomeView: View {
                 .zIndex(1)
             }
 
+            // Initial profile bootstrap — subtle non-blocking top indicator.
+            // Tabs stay interactive; hero already has its own skeleton state.
+            if store.isLoading && store.user == nil {
+                VStack {
+                    ProgressView()
+                        .progressViewStyle(.circular)
+                        .controlSize(.small)
+                        .tint(DesignColors.accentWarm)
+                        .padding(.top, 8)
+                        .accessibilityLabel("Loading your profile")
+                        .accessibilityAddTraits(.updatesFrequently)
+                    Spacer()
+                }
+                .allowsHitTesting(false)
+                .transition(.opacity)
+                .zIndex(2)
+            }
         }
+        .animation(.easeInOut(duration: 0.25), value: store.isLoading)
         .animation(.easeInOut(duration: 0.25), value: store.todayState.isCalendarVisible)
         .fullScreenCover(isPresented: Binding(
             get: { store.isCycleInsightsVisible },

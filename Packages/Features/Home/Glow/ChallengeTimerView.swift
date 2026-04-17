@@ -34,8 +34,11 @@ struct ChallengeTimerView: View {
                         .foregroundStyle(DesignColors.textSecondary)
                 }
                 .frame(width: 28, height: 28)
+                .frame(minWidth: 44, minHeight: 44)
+                .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
+            .accessibilityLabel("Close challenge")
 
             Spacer()
 
@@ -43,11 +46,15 @@ struct ChallengeTimerView: View {
                 .font(.custom("Raleway-Bold", size: 13, relativeTo: .caption))
                 .foregroundStyle(DesignColors.textPrincipal)
                 .lineLimit(1)
+                .accessibilityAddTraits(.isHeader)
 
             Spacer()
 
             // Balance spacer
-            Color.clear.frame(width: 28, height: 28)
+            Color.clear
+                .frame(width: 28, height: 28)
+                .frame(minWidth: 44, minHeight: 44)
+                .accessibilityHidden(true)
         }
         .padding(.bottom, 16)
     }
@@ -85,6 +92,9 @@ struct ChallengeTimerView: View {
         .background(
             Circle().fill(DesignColors.cardWarm)
         )
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Challenge timer")
+        .accessibilityValue("\(store.timerDisplayString) remaining")
     }
 
     // MARK: - Tips Card
@@ -107,6 +117,7 @@ struct ChallengeTimerView: View {
                             .foregroundStyle(DesignColors.accentWarm)
                     }
                     .frame(width: 20, height: 20)
+                    .accessibilityHidden(true)
 
                     Text(tip)
                         .font(.custom("Raleway-Medium", size: 12, relativeTo: .caption))
@@ -114,6 +125,8 @@ struct ChallengeTimerView: View {
                         .lineSpacing(3)
                         .fixedSize(horizontal: false, vertical: true)
                 }
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel("Step \(index + 1): \(tip)")
             }
         }
         .padding(18)
@@ -138,6 +151,7 @@ struct ChallengeTimerView: View {
                 .shadow(color: DesignColors.text.opacity(0.10), radius: 3, x: 0, y: 1)
         }
         .buttonStyle(.plain)
+        .accessibilityHint("Marks the challenge as complete and starts photo capture")
     }
 
     private var timerHint: some View {

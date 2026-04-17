@@ -24,6 +24,8 @@ public struct CycleHeroView: View {
     public var aiWellnessMessage: String?
     public var isLoadingWellnessMessage: Bool
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
     private let cal = Calendar.current
 
     // Layout constants
@@ -445,7 +447,7 @@ public struct CycleHeroView: View {
 
                 // Month name centered in top bar
                 Text(monthLabel)
-                    .font(.custom("Raleway-Bold", size: 17, relativeTo: .body))
+                    .font(.raleway("Bold", size: 17, relativeTo: .body))
                     .tracking(-0.2)
                     .foregroundColor(textOnHeroColor)
 
@@ -467,7 +469,7 @@ public struct CycleHeroView: View {
                         }
                     }
                     .frame(width: 44, height: 44)
-                    .animation(.easeInOut(duration: 0.25), value: isRefreshing)
+                    .animation(reduceMotion ? nil : .easeInOut(duration: 0.25), value: isRefreshing)
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel("Calendar")
@@ -494,7 +496,7 @@ public struct CycleHeroView: View {
                     .opacity(isLoadingWellnessMessage ? 1 : 0)
 
                 Text(aiWellnessMessage ?? wellnessMessage)
-                    .font(.custom("Raleway-MediumItalic", size: 17, relativeTo: .body))
+                    .font(.raleway("MediumItalic", size: 17, relativeTo: .body))
                     .foregroundColor(textOnHeroColor.opacity(0.75))
                     .multilineTextAlignment(.center)
                     .lineLimit(2)
@@ -505,12 +507,12 @@ public struct CycleHeroView: View {
             .frame(maxWidth: .infinity)
             .padding(.horizontal, 20)
             .padding(.top, 10)
-            .animation(.easeInOut(duration: 0.3), value: aiWellnessMessage)
+            .animation(reduceMotion ? nil : .easeInOut(duration: 0.3), value: aiWellnessMessage)
             .opacity(staggeredOpacity(fadeEnd: 0.50))
 
             // Cycle status — matches collapsed header
             Text(collapsedHeadline)
-                .font(.custom("Raleway-Medium", size: 15, relativeTo: .callout))
+                .font(.raleway("Medium", size: 15, relativeTo: .callout))
                 .foregroundColor(textOnHeroColor.opacity(0.5))
                 .padding(.top, 6)
                 .opacity(staggeredOpacity(fadeEnd: 0.45))
@@ -528,8 +530,9 @@ public struct CycleHeroView: View {
                         HStack(spacing: 6) {
                             Image(systemName: "drop.fill")
                                 .font(.system(size: 12, weight: .semibold))
+                                .accessibilityHidden(true)
                             Text("Log period")
-                                .font(.custom("Raleway-SemiBold", size: 15, relativeTo: .callout))
+                                .font(.raleway("SemiBold", size: 15, relativeTo: .callout))
                         }
                         .foregroundColor(.white)
                         .padding(.horizontal, 22)
@@ -567,7 +570,7 @@ public struct CycleHeroView: View {
                         onEditPeriod()
                     } label: {
                         Text("My cycle")
-                            .font(.custom("Raleway-SemiBold", size: 15, relativeTo: .callout))
+                            .font(.raleway("SemiBold", size: 15, relativeTo: .callout))
                             .foregroundColor(textOnHeroColor)
                             .padding(.horizontal, 22)
                             .padding(.vertical, 10)
@@ -622,7 +625,7 @@ public struct CycleHeroView: View {
             // Status summary
             VStack(alignment: .leading, spacing: 3) {
                 Text(collapsedHeadline)
-                    .font(.custom("Raleway-Bold", size: 17, relativeTo: .body))
+                    .font(.raleway("Bold", size: 17, relativeTo: .body))
                     .tracking(-0.2)
                     .foregroundColor(textOnHeroColor)
                     .lineLimit(1)
@@ -647,7 +650,7 @@ public struct CycleHeroView: View {
                     }
                 }
                 .frame(width: 44, height: 44)
-                .animation(.easeInOut(duration: 0.25), value: isRefreshing)
+                .animation(reduceMotion ? nil : .easeInOut(duration: 0.25), value: isRefreshing)
             }
             .buttonStyle(.plain)
             .accessibilityLabel("Calendar")
@@ -705,6 +708,8 @@ public struct CycleHeroView: View {
 private struct ShimmerEffect: ViewModifier {
     @State private var phase: CGFloat = -1
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
     func body(content: Content) -> some View {
         content
             .overlay {
@@ -720,6 +725,7 @@ private struct ShimmerEffect: ViewModifier {
                 .mask(content)
             }
             .onAppear {
+                guard !reduceMotion else { return }
                 withAnimation(.linear(duration: 1.5).repeatForever(autoreverses: false)) {
                     phase = 2
                 }

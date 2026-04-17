@@ -10,17 +10,20 @@ public struct DailyChallengeFeature: Sendable {
         public var challenge: ChallengeSnapshot?
         public var profile: GlowProfileSnapshot?
         public var challengeState: ChallengeState = .idle
+        /// Latest HBI score — broadcast from TodayFeature after dashboard loads.
+        /// Stored here so future challenge re-weighting (e.g. low-energy → gentler)
+        /// can key off the freshest value without a separate dependency.
+        public var currentHBI: HBIScore?
 
         public enum ChallengeState: Equatable, Sendable {
             case idle
             case available
-            case inProgress(startedAt: Date)
+            case inProgress(startedAt: Date, timerEndDate: Date)
             case skipped
             case completed
         }
 
         // TCA child features
-        @Presents public var acceptSheet: ChallengeAcceptFeature.State?
         @Presents public var levelUp: LevelUpFeature.State?
         @Presents public var journey: ChallengeJourneyFeature.State?
 
@@ -39,6 +42,10 @@ public struct DailyChallengeFeature: Sendable {
         case skipTapped
         case maybeLaterTapped
 
+        /// Broadcast from TodayFeature after each dashboard reload (post check-in etc.).
+        /// Subscribers store the latest score; no heavy work here yet.
+        case hbiUpdated(HBIScore)
+
         // Profile
         case profileLoaded(GlowProfileSnapshot)
 
@@ -46,7 +53,6 @@ public struct DailyChallengeFeature: Sendable {
         case levelUpTriggered(level: Int, title: String, emoji: String, unlock: String)
 
         // Child feature presentations
-        case acceptSheet(PresentationAction<ChallengeAcceptFeature.Action>)
         case levelUp(PresentationAction<LevelUpFeature.Action>)
         case journey(PresentationAction<ChallengeJourneyFeature.Action>)
 
@@ -114,10 +120,15 @@ public struct DailyChallengeFeature: Sendable {
             case let .challengeLoaded(snapshot):
                 state.challenge = snapshot
                 if let s = snapshot {
-                    switch s.status {
-                    case .completed: state.challengeState = .completed
-                    case .skipped: state.challengeState = .skipped
-                    case .available: state.challengeState = .available
+                    // Don't overwrite .inProgress — challenge is actively running
+                    if case .inProgress = state.challengeState {
+                        // keep inProgress
+                    } else {
+                        switch s.status {
+                        case .completed: state.challengeState = .completed
+                        case .skipped: state.challengeState = .skipped
+                        case .available: state.challengeState = .available
+                        }
                     }
                 }
                 return .merge(
@@ -130,7 +141,11 @@ public struct DailyChallengeFeature: Sendable {
 
             case let .challengeSelected(snapshot):
                 state.challenge = snapshot
-                state.challengeState = .available
+                if case .inProgress = state.challengeState {
+                    // keep inProgress
+                } else {
+                    state.challengeState = .available
+                }
                 return .merge(
                     .send(.delegate(.challengeStateChanged(snapshot))),
                     .run { [glowLocal] send in
@@ -147,17 +162,18 @@ public struct DailyChallengeFeature: Sendable {
 
             case .doItTapped:
                 guard let challenge = state.challenge else { return .none }
-                state.acceptSheet = ChallengeAcceptFeature.State(challenge: challenge)
+                // Open journey directly — accept is the first step inside
+                state.journey = ChallengeJourneyFeature.State(challenge: challenge)
                 return .none
+
 
             case .continueTapped:
                 guard let challenge = state.challenge else { return .none }
                 var journeyState = ChallengeJourneyFeature.State(challenge: challenge)
-                // Resume with remaining time based on when challenge started
-                if case let .inProgress(startedAt) = state.challengeState {
-                    let elapsed = Int(Date().timeIntervalSince(startedAt))
-                    let remaining = max(0, journeyState.timerDurationTotal - elapsed)
-                    journeyState.timerSecondsRemaining = remaining
+                // Skip to proof step — user is done with the activity
+                journeyState.step = .proof
+                if case let .inProgress(_, timerEndDate) = state.challengeState {
+                    journeyState.timerEndDate = timerEndDate
                 }
                 state.journey = journeyState
                 return .none
@@ -183,16 +199,12 @@ public struct DailyChallengeFeature: Sendable {
                 }
                 return .none
 
-            // MARK: - Accept Sheet Delegates
+            // MARK: - HBI Broadcast
 
-            case .acceptSheet(.presented(.delegate(.startChallenge))):
-                state.acceptSheet = nil
-                guard let challenge = state.challenge else { return .none }
-                state.challengeState = .inProgress(startedAt: Date())
-                state.journey = ChallengeJourneyFeature.State(challenge: challenge)
-                return .none
-
-            case .acceptSheet:
+            case let .hbiUpdated(score):
+                // Store latest score. Future work: re-weight challenge when energy
+                // drops significantly after a check-in.
+                state.currentHBI = score
                 return .none
 
             // MARK: - Level Up
@@ -244,7 +256,17 @@ public struct DailyChallengeFeature: Sendable {
                     }
                 }
 
+            case let .journey(.presented(.delegate(.challengeStarted(timerEndDate)))):
+                state.challengeState = .inProgress(startedAt: Date(), timerEndDate: timerEndDate)
+                return .none
+
             case .journey(.presented(.delegate(.cancelled))):
+                // If still on accept step (never started), reset to available
+                if case .inProgress = state.challengeState {} else {
+                    state.journey = nil
+                    return .none
+                }
+                // If in progress, keep state — just dismiss journey
                 state.journey = nil
                 return .none
 
@@ -255,7 +277,6 @@ public struct DailyChallengeFeature: Sendable {
                 return .none
             }
         }
-        .ifLet(\.$acceptSheet, action: \.acceptSheet) { ChallengeAcceptFeature() }
         .ifLet(\.$levelUp, action: \.levelUp) { LevelUpFeature() }
         .ifLet(\.$journey, action: \.journey) { ChallengeJourneyFeature() }
     }

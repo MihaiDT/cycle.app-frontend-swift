@@ -202,6 +202,16 @@ public struct TodayFeature: Sendable {
         return .send(.phaseResolved(phase, displayDay))
     }
 
+    /// Fan out HBI score to every child that subscribes. Single source,
+    /// many subscribers — add a new `.send` line here when wiring up a
+    /// new HBI-reactive feature.
+    private static func broadcastHBIEffect(_ score: HBIScore) -> Effect<Action> {
+        .merge(
+            .send(.cardStack(.hbiUpdated(score))),
+            .send(.dailyChallenge(.hbiUpdated(score)))
+        )
+    }
+
     public var body: some ReducerOf<Self> {
         BindingReducer()
 
@@ -360,11 +370,14 @@ public struct TodayFeature: Sendable {
                 state.isLoadingDashboard = false
                 state.dashboard = dashboard
                 if !state.hasAppeared { state.hasAppeared = true }
+                // Broadcast the fresh HBI score once per successful load.
+                // Subscribers (CardStack, DailyChallenge) react via inner scoping.
+                let broadcast: Effect<Action> = dashboard.today.map(Self.broadcastHBIEffect) ?? .none
                 if !state.hasTriggeredScoreAnimation {
                     state.hasTriggeredScoreAnimation = true
-                    return .send(.triggerScoreAnimation)
+                    return .merge(broadcast, .send(.triggerScoreAnimation))
                 }
-                return .none
+                return broadcast
 
             case .dashboardLoaded(.failure(let error)):
                 state.isLoadingDashboard = false
@@ -808,6 +821,29 @@ public struct TodayView: View {
 
                     // MARK: Content
                     VStack(spacing: 0) {
+                        // Silent dashboard reload indicator — only when content already exists.
+                        // Initial loads are covered by the hero skeleton; this covers refreshes
+                        // triggered by check-ins, mood arcs, etc. Non-blocking, tasteful.
+                        if store.isLoadingDashboard, store.dashboard != nil {
+                            dashboardRefreshIndicator
+                                .padding(.top, AppLayout.spacingM)
+                                .transition(.opacity.combined(with: .move(edge: .top)))
+                                .accessibilityLabel("Refreshing dashboard")
+                        }
+
+                        // Challenge in progress banner
+                        if case let .inProgress(startedAt, timerEndDate) = store.dailyChallengeState.challengeState,
+                           let challenge = store.dailyChallengeState.challenge {
+                            ChallengeInProgressBanner(
+                                challengeTitle: challenge.challengeTitle,
+                                challengeCategory: challenge.challengeCategory,
+                                timerStartDate: startedAt,
+                                timerEndDate: timerEndDate,
+                                onDone: { store.send(.dailyChallenge(.continueTapped)) }
+                            )
+                            .padding(.top, AppLayout.spacingL)
+                        }
+
                         if !store.cardStackState.cards.isEmpty || store.cardStackState.isLoading {
                             CardStackView(
                                 store: store.scope(
@@ -917,6 +953,7 @@ public struct TodayView: View {
         } message: {
             Text("Did your new cycle start around the expected date, or would you like to pick the correct dates?")
         }
+        .animation(.easeInOut(duration: 0.25), value: store.isLoadingDashboard)
         .onChange(of: store.hasAppeared) { _, appeared in
             guard appeared else { return }
             triggerStaggeredAnimations()
@@ -956,8 +993,8 @@ public struct TodayView: View {
 
     @ViewBuilder
     private var noCycleDataHero: some View {
-        let creamTop = Color(hex: 0xFEFCF7)
-        let creamBottom = Color(red: 0.95, green: 0.91, blue: 0.88)
+        let creamTop = DesignColors.heroCreamTop
+        let creamBottom = DesignColors.heroCreamBottom
 
         VStack(spacing: 0) {
             LinearGradient(
@@ -985,7 +1022,7 @@ public struct TodayView: View {
                         store.send(.calendarTapped)
                     } label: {
                         Text("Open Calendar")
-                            .font(.custom("Raleway-SemiBold", size: 15))
+                            .font(.raleway("SemiBold", size: 15, relativeTo: .body))
                             .foregroundStyle(.white)
                             .padding(.horizontal, 24)
                             .padding(.vertical, 12)
@@ -1005,12 +1042,38 @@ public struct TodayView: View {
         .frame(height: 320)
     }
 
+    // MARK: - Dashboard Refresh Indicator (subtle pill for silent reloads)
+
+    @ViewBuilder
+    private var dashboardRefreshIndicator: some View {
+        HStack(spacing: 8) {
+            ProgressView()
+                .progressViewStyle(.circular)
+                .controlSize(.mini)
+                .tint(DesignColors.accentWarm)
+            Text("Refreshing…")
+                .font(.raleway("Medium", size: 12, relativeTo: .caption))
+                .foregroundStyle(DesignColors.textSecondary)
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 7)
+        .background {
+            Capsule()
+                .fill(.ultraThinMaterial)
+                .overlay {
+                    Capsule()
+                        .strokeBorder(DesignColors.accentWarm.opacity(0.18), lineWidth: 0.5)
+                }
+        }
+        .frame(maxWidth: .infinity)
+    }
+
     // MARK: - Skeleton Hero
 
     @ViewBuilder
     private var heroSkeleton: some View {
-        let creamTop = Color(hex: 0xFEFCF7)
-        let creamBottom = Color(red: 0.95, green: 0.91, blue: 0.88)
+        let creamTop = DesignColors.heroCreamTop
+        let creamBottom = DesignColors.heroCreamBottom
         let shimmer = Color.white.opacity(0.45)
 
         VStack(spacing: 0) {
@@ -1088,6 +1151,9 @@ public struct TodayView: View {
         )
         .clipShape(Rectangle())
         .modifier(ShimmerModifier())
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Loading your cycle")
+        .accessibilityAddTraits(.updatesFrequently)
     }
 
 }
@@ -1146,15 +1212,6 @@ private struct DailyGlowPresentations: ViewModifier {
 
     func body(content: Content) -> some View {
         content
-            // Daily Glow — accept (full-screen)
-            .fullScreenCover(
-                item: $store.scope(
-                    state: \.dailyChallengeState.acceptSheet,
-                    action: \.dailyChallenge.acceptSheet
-                )
-            ) { acceptStore in
-                ChallengeAcceptView(store: acceptStore)
-            }
             // Daily Glow — challenge journey (full-screen)
             .fullScreenCover(
                 item: $store.scope(

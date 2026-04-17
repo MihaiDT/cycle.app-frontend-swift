@@ -76,15 +76,16 @@ public struct PlacesAutocompleteTextField: View {
                 Image(systemName: "mappin.circle.fill")
                     .font(.system(size: 20))
                     .foregroundColor(DesignColors.accentWarm)
+                    .accessibilityHidden(true)
 
                 TextField(
                     "",
                     text: $text,
                     prompt: Text(placeholder)
-                        .font(.custom("Raleway-Regular", size: 16))
+                        .font(.raleway("Regular", size: 16, relativeTo: .body))
                         .foregroundColor(DesignColors.text.opacity(0.5))
                 )
-                .font(.custom("Raleway-SemiBold", size: 16))
+                .font(.raleway("SemiBold", size: 16, relativeTo: .body))
                 .foregroundColor(DesignColors.text)
                 .textFieldStyle(.plain)
                 .autocorrectionDisabled()
@@ -95,10 +96,12 @@ public struct PlacesAutocompleteTextField: View {
                 .onSubmit {
                     isShowingResults = false
                 }
+                .accessibilityLabel(placeholder)
 
                 if isSearching {
                     ProgressView()
                         .scaleEffect(0.8)
+                        .accessibilityLabel("Searching")
                 } else if !text.isEmpty {
                     Button(action: {
                         text = ""
@@ -110,6 +113,7 @@ public struct PlacesAutocompleteTextField: View {
                             .font(.system(size: 18))
                             .foregroundColor(DesignColors.text.opacity(0.4))
                     }
+                    .accessibilityLabel("Clear text")
                 }
             }
             .padding(.horizontal, 16)
@@ -146,16 +150,17 @@ public struct PlacesAutocompleteTextField: View {
                                     .font(.system(size: 14))
                                     .foregroundColor(DesignColors.accentWarm.opacity(0.8))
                                     .frame(width: 24)
+                                    .accessibilityHidden(true)
 
                                 VStack(alignment: .leading, spacing: 2) {
                                     Text(result.mainText)
-                                        .font(.custom("Raleway-SemiBold", size: 14))
+                                        .font(.raleway("SemiBold", size: 14, relativeTo: .body))
                                         .foregroundColor(DesignColors.text)
                                         .lineLimit(1)
 
                                     if !result.secondaryText.isEmpty {
                                         Text(result.secondaryText)
-                                            .font(.custom("Raleway-Regular", size: 12))
+                                            .font(.raleway("Regular", size: 12, relativeTo: .caption))
                                             .foregroundColor(DesignColors.textSecondary)
                                             .lineLimit(1)
                                     }
@@ -168,11 +173,15 @@ public struct PlacesAutocompleteTextField: View {
                             .contentShape(Rectangle())
                         }
                         .buttonStyle(.plain)
+                        .accessibilityElement(children: .combine)
+                        .accessibilityLabel("\(result.mainText), \(result.secondaryText)")
+                        .accessibilityAddTraits(.isButton)
 
                         if result.id != searchResults.last?.id {
                             Divider()
                                 .background(DesignColors.text.opacity(0.1))
                                 .padding(.horizontal, 16)
+                                .accessibilityHidden(true)
                         }
                     }
                 }
@@ -288,7 +297,7 @@ public struct PlacesAutocompleteTextField: View {
 #Preview("Places Autocomplete") {
     ZStack {
         LinearGradient(
-            colors: [.white, Color(red: 0.85, green: 0.75, blue: 0.72)],
+            colors: [.white, DesignColors.onboardingPreviewTint],
             startPoint: .topLeading,
             endPoint: .bottomTrailing
         )

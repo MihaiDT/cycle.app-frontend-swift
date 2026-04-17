@@ -37,6 +37,7 @@ public enum PersonalGoal: String, CaseIterable, Identifiable, Equatable, Hashabl
 
 public struct PersonalGoalsView: View {
     @ObserveInjection var inject
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Binding public var selectedGoals: Set<PersonalGoal>
     public let onNext: () -> Void
     public let onBack: (() -> Void)?
@@ -66,17 +67,18 @@ public struct PersonalGoalsView: View {
                 // Header
                 VStack(spacing: 6) {
                     Text("personal touch")
-                        .font(.custom("Raleway-Regular", size: 13))
+                        .font(.raleway("Regular", size: 13, relativeTo: .caption))
                         .tracking(3)
                         .textCase(.uppercase)
                         .foregroundColor(DesignColors.text.opacity(0.5))
 
                     Text("Your Intentions")
-                        .font(.custom("Raleway-Bold", size: 32))
+                        .font(.raleway("Bold", size: 32, relativeTo: .title))
                         .foregroundColor(DesignColors.text)
+                        .accessibilityAddTraits(.isHeader)
 
                     Text("Select all that resonate with you")
-                        .font(.custom("Raleway-Regular", size: 15))
+                        .font(.raleway("Regular", size: 15, relativeTo: .body))
                         .foregroundColor(DesignColors.text.opacity(0.6))
                         .padding(.top, 4)
                 }
@@ -100,11 +102,15 @@ public struct PersonalGoalsView: View {
             }
         }
         .onAppear {
-            // Stagger animation on appear
-            for (index, goal) in PersonalGoal.allCases.enumerated() {
-                DispatchQueue.main.asyncAfter(deadline: .now() + Double(index) * 0.06) {
-                    withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
-                        _ = animatedGoals.insert(goal)
+            // Stagger animation on appear - show instantly under reduceMotion
+            if reduceMotion {
+                animatedGoals = Set(PersonalGoal.allCases)
+            } else {
+                for (index, goal) in PersonalGoal.allCases.enumerated() {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + Double(index) * 0.06) {
+                        withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
+                            _ = animatedGoals.insert(goal)
+                        }
                     }
                 }
             }
@@ -118,7 +124,7 @@ public struct PersonalGoalsView: View {
             generator.impactOccurred()
         #endif
 
-        withAnimation(.spring(response: 0.35, dampingFraction: 0.7)) {
+        withAnimation(reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 0.7)) {
             if selectedGoals.contains(goal) {
                 selectedGoals.remove(goal)
             } else {
@@ -156,11 +162,11 @@ private struct GoalCard: View {
                 // Content
                 VStack(alignment: .leading, spacing: 2) {
                     Text(goal.title)
-                        .font(.custom("Raleway-SemiBold", size: 17))
+                        .font(.raleway("SemiBold", size: 17, relativeTo: .body))
                         .foregroundColor(DesignColors.text)
 
                     Text(goal.subtitle)
-                        .font(.custom("Raleway-Regular", size: 12))
+                        .font(.raleway("Regular", size: 12, relativeTo: .caption))
                         .foregroundColor(DesignColors.text.opacity(isSelected ? 0.6 : 0.4))
                 }
                 .padding(.leading, 16)
@@ -171,6 +177,7 @@ private struct GoalCard: View {
                 GoalCheckbox(isSelected: isSelected)
                     .frame(width: 24, height: 24)
                     .padding(.trailing, 20)
+                    .accessibilityHidden(true)
             }
             .padding(.leading, 20)
             .frame(height: 64)
@@ -212,7 +219,10 @@ private struct GoalCard: View {
             .opacity(isAnimated ? 1.0 : 0.0)
         }
         .buttonStyle(.plain)
-        .animation(.spring(response: 0.4, dampingFraction: 0.75), value: isSelected)
+        .animation(.appBalanced, value: isSelected)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(goal.title). \(goal.subtitle)")
+        .accessibilityAddTraits(isSelected ? [.isSelected, .isButton] : [.isButton])
     }
 }
 

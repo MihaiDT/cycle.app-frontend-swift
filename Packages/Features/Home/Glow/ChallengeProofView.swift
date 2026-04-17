@@ -33,18 +33,26 @@ struct ChallengeProofView: View {
                         .foregroundStyle(DesignColors.textSecondary)
                 }
                 .frame(width: 28, height: 28)
+                .frame(minWidth: 44, minHeight: 44)
+                .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
+            .accessibilityLabel("Back")
+            .accessibilityHint("Returns to the previous step")
 
             Spacer()
 
             Text("Show Aria")
                 .font(.custom("Raleway-Bold", size: 13, relativeTo: .caption))
                 .foregroundStyle(DesignColors.textPrincipal)
+                .accessibilityAddTraits(.isHeader)
 
             Spacer()
 
-            Color.clear.frame(width: 28, height: 28)
+            Color.clear
+                .frame(width: 28, height: 28)
+                .frame(minWidth: 44, minHeight: 44)
+                .accessibilityHidden(true)
         }
         .padding(.bottom, 12)
     }
@@ -90,6 +98,8 @@ struct ChallengeProofView: View {
                         .shadow(color: DesignColors.text.opacity(0.22), radius: 10, x: 0, y: 4)
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel("Open camera")
+                .accessibilityHint("Takes a photo of your challenge result")
 
                 Button { store.send(.openGalleryTapped) } label: {
                     Text("Gallery")
@@ -107,6 +117,8 @@ struct ChallengeProofView: View {
                         )
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel("Open gallery")
+                .accessibilityHint("Picks an existing photo of your challenge result")
             }
         }
     }
@@ -120,6 +132,7 @@ struct ChallengeProofView: View {
                 .scaledToFit()
                 .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
                 .shadow(color: DesignColors.text.opacity(0.12), radius: 12, x: 0, y: 4)
+                .accessibilityLabel("Your challenge photo")
 
             Text("Aria will check if it matches your challenge")
                 .font(.custom("Raleway-Medium", size: 12, relativeTo: .caption))
@@ -141,13 +154,18 @@ struct ChallengeProofView: View {
                     .shadow(color: DesignColors.text.opacity(0.10), radius: 3, x: 0, y: 1)
             }
             .buttonStyle(.plain)
+            .accessibilityHint("Sends the photo for review")
 
             Button { store.send(.retakeTapped) } label: {
                 Text("Retake")
                     .font(.custom("Raleway-SemiBold", size: 14, relativeTo: .body))
                     .foregroundStyle(DesignColors.textPlaceholder)
+                    .frame(minWidth: 44, minHeight: 44)
+                    .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
+            .accessibilityLabel("Retake photo")
+            .accessibilityHint("Reopens the camera to capture again")
         }
     }
 }

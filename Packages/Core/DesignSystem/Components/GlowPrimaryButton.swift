@@ -11,7 +11,7 @@ public struct GlowPrimaryButtonStyle: ButtonStyle {
     public func makeBody(configuration: Configuration) -> some View {
         HStack(spacing: 12) {
             configuration.label
-                .font(.custom("Raleway-Bold", size: 17, relativeTo: .body))
+                .font(.raleway("Bold", size: 17, relativeTo: .body))
                 .foregroundStyle(DesignColors.background)
                 .frame(maxWidth: .infinity, alignment: .leading)
 
@@ -20,6 +20,7 @@ public struct GlowPrimaryButtonStyle: ButtonStyle {
                 .foregroundStyle(DesignColors.text)
                 .frame(width: 32, height: 32)
                 .background(Circle().fill(DesignColors.background))
+                .accessibilityHidden(true)
         }
         .padding(.vertical, 20)
         .padding(.horizontal, 26)
