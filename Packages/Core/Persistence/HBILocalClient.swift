@@ -18,6 +18,11 @@ public struct HBILocalClient: Sendable {
 
     /// Last 30 days of adjusted HBI scores for baseline calculation.
     public var getRecentScores: @Sendable () async throws -> [Double]
+
+    /// Per-phase personal baseline derived from the user's historical scores.
+    /// Returns `.insufficient` confidence (and `nil` average) until the user
+    /// has accumulated enough same-phase samples across at least two cycles.
+    public var getPersonalBaseline: @Sendable (_ phase: CyclePhase) async throws -> PersonalBaseline
 }
 
 // MARK: - Dependency
@@ -114,7 +119,7 @@ extension HBILocalClient {
                 )
                 context.insert(report)
 
-                // Compute HBI
+                // Compute HBI components (reuse existing Likert → 0-100 mapping)
                 let (phase, cycleDay) = try currentCycleContext(context: context)
 
                 let hbiResult = HBICalculator.calculate(
@@ -127,6 +132,35 @@ extension HBILocalClient {
                     cyclePhase: phase,
                     cycleDay: cycleDay
                 )
+
+                // Resolve the adjusted HBI via phase weights + personal baseline.
+                // Falls back to raw when no phase or insufficient samples.
+                let uiPhase = phase.flatMap { CyclePhase(rawValue: $0.rawValue) }
+                let adjusted: AdjustedHBIResult? = {
+                    guard let p = uiPhase else { return nil }
+                    let baseline = try? computePersonalBaseline(phase: p, context: context)
+                    let components = HBIComponents(
+                        energy: hbiResult.energyScore,
+                        mood: hbiResult.moodScore,
+                        sleep: hbiResult.sleepScore,
+                        // anxietyScore is "low stress = high score" already —
+                        // a higher value is calmer, matching the `calm` axis.
+                        calm: hbiResult.anxietyScore,
+                        clarity: hbiResult.clarityScore
+                    )
+                    return HBICalculator.calculateAdjustedWithBaseline(
+                        components: components,
+                        phase: p,
+                        baseline: baseline,
+                        hasHealthKitData: hbiResult.hasHealthKitData,
+                        completenessScore: hbiResult.completenessScore
+                    )
+                }()
+
+                let finalRaw = adjusted?.raw ?? hbiResult.hbiRaw
+                let finalAdjusted = adjusted?.adjusted ?? hbiResult.hbiAdjusted
+                let finalTrend = adjusted?.trendVsBaseline
+                let finalCompleteness = adjusted?.completenessScore ?? hbiResult.completenessScore
 
                 // Save HBI score (upsert by date)
                 let scoreDescriptor = FetchDescriptor<HBIScoreRecord>(
@@ -143,14 +177,17 @@ extension HBILocalClient {
                     sleepScore: hbiResult.sleepScore,
                     moodScore: hbiResult.moodScore,
                     clarityScore: hbiResult.clarityScore,
-                    hbiRaw: hbiResult.hbiRaw,
-                    hbiAdjusted: hbiResult.hbiAdjusted,
+                    hbiRaw: finalRaw,
+                    hbiAdjusted: finalAdjusted,
                     cyclePhase: hbiResult.cyclePhase?.rawValue,
                     cycleDay: hbiResult.cycleDay,
-                    phaseMultiplier: hbiResult.phaseMultiplier,
+                    // phaseMultiplier retained as nil — new model uses phase
+                    // weights directly instead of a single scalar multiplier.
+                    phaseMultiplier: nil,
+                    trendVsBaseline: finalTrend,
                     hasHealthKitData: hbiResult.hasHealthKitData,
                     hasSelfReport: hbiResult.hasSelfReport,
-                    completenessScore: hbiResult.completenessScore
+                    completenessScore: finalCompleteness
                 )
                 context.insert(scoreRecord)
                 try context.save()
@@ -172,7 +209,9 @@ extension HBILocalClient {
                     sortBy: [SortDescriptor(\.scoreDate)]
                 )
                 return try context.fetch(descriptor).map(\.hbiAdjusted)
-            }
+            },
+
+            getPersonalBaseline: liveGetPersonalBaseline()
         )
     }
 
@@ -226,7 +265,8 @@ extension HBILocalClient {
             getDashboard: { HBIDashboardResponse() },
             getToday: { HBITodayResponse() },
             submitDailyReport: { _ in DailyReportResponse(report: .mock) },
-            getRecentScores: { [] }
+            getRecentScores: { [] },
+            getPersonalBaseline: { phase in .empty(phase: phase) }
         )
     }
 }

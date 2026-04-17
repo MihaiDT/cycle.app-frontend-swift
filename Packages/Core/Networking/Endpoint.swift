@@ -80,27 +80,50 @@ extension Endpoint {
         try container.encode(fmt.string(from: utcDate))
     }
 
-    public static func post(_ path: String, body: some Encodable & Sendable) -> Endpoint {
+    /// Shared JSON encoder so all write methods produce the same wire format.
+    /// Snake-case keys, ISO-8601-UTC dates — must match the Go backend tags.
+    private static func makeJSONEncoder() -> JSONEncoder {
         let encoder = JSONEncoder()
         encoder.keyEncodingStrategy = .convertToSnakeCase
         encoder.dateEncodingStrategy = dateEncoder
-        let data = try? encoder.encode(body)
+        return encoder
+    }
+
+    /// Encodes a body or throws `APIError.encodingError` if anything goes
+    /// wrong. We previously silently swallowed encoding failures with
+    /// `try?`, which sent an empty-body request to the server and surfaced
+    /// as a confusing backend-side 400 "invalid request".
+    private static func encodeBodyOrThrow(_ body: some Encodable & Sendable) throws -> Data {
+        do {
+            let data = try makeJSONEncoder().encode(body)
+            // Guard against 0-byte payloads reaching the wire.
+            guard !data.isEmpty else {
+                throw APIError.encodingError(
+                    NSError(domain: "Endpoint", code: 0, userInfo: [
+                        NSLocalizedDescriptionKey: "Encoded body is empty"
+                    ])
+                )
+            }
+            return data
+        } catch let error as APIError {
+            throw error
+        } catch {
+            throw APIError.encodingError(error)
+        }
+    }
+
+    public static func post(_ path: String, body: some Encodable & Sendable) throws -> Endpoint {
+        let data = try encodeBodyOrThrow(body)
         return Endpoint(path: path, method: .post, body: data)
     }
 
-    public static func put(_ path: String, body: some Encodable & Sendable) -> Endpoint {
-        let encoder = JSONEncoder()
-        encoder.keyEncodingStrategy = .convertToSnakeCase
-        encoder.dateEncodingStrategy = dateEncoder
-        let data = try? encoder.encode(body)
+    public static func put(_ path: String, body: some Encodable & Sendable) throws -> Endpoint {
+        let data = try encodeBodyOrThrow(body)
         return Endpoint(path: path, method: .put, body: data)
     }
 
-    public static func patch(_ path: String, body: some Encodable & Sendable) -> Endpoint {
-        let encoder = JSONEncoder()
-        encoder.keyEncodingStrategy = .convertToSnakeCase
-        encoder.dateEncodingStrategy = dateEncoder
-        let data = try? encoder.encode(body)
+    public static func patch(_ path: String, body: some Encodable & Sendable) throws -> Endpoint {
+        let data = try encodeBodyOrThrow(body)
         return Endpoint(path: path, method: .patch, body: data)
     }
 

@@ -18,7 +18,7 @@ public struct ChallengeValidationResponse: Decodable, Sendable {
 }
 
 extension Endpoint {
-    static func validateChallenge(body: ChallengeValidationRequest) -> Endpoint {
-        .post("/api/challenge/validate", body: body)
+    static func validateChallenge(body: ChallengeValidationRequest) throws -> Endpoint {
+        try .post("/api/challenge/validate", body: body)
     }
 }

@@ -18,7 +18,7 @@ struct ChallengeJourneyView: View {
                 )
             } else {
                 VStack(spacing: 0) {
-                    progressDots
+                    stepHeader
                         .padding(.bottom, 14)
                     timerAndBeyond
                 }
@@ -30,27 +30,46 @@ struct ChallengeJourneyView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(DesignColors.background.ignoresSafeArea())
         .onAppear { store.send(.appeared) }
-        // Camera
-        .fullScreenCover(isPresented: Binding(
-            get: { store.isShowingCamera },
-            set: { if !$0 { store.send(.photoCancelled) } }
-        )) {
-            CameraPickerRepresentable(
-                onCapture: { data in store.send(.photoCaptured(data)) },
-                onCancel: { store.send(.photoCancelled) }
-            )
-            .ignoresSafeArea()
+    }
+
+    // MARK: - Step Header (dots leading, title centered, close trailing — single row)
+
+    private var stepHeader: some View {
+        ZStack {
+            // Centered title — reserve room for dots + close so long titles
+            // don't collide with them.
+            Text(store.challenge.challengeTitle)
+                .font(.custom("Raleway-Bold", size: 15, relativeTo: .subheadline))
+                .foregroundStyle(DesignColors.textPrincipal)
+                .lineLimit(1)
+                .padding(.horizontal, 72)
+                .accessibilityAddTraits(.isHeader)
+
+            // Leading: progress dots — trailing: close button. One row so
+            // everything is vertically aligned by default.
+            HStack(alignment: .center) {
+                progressDots
+                Spacer()
+                closeButton
+            }
         }
-        // Gallery
-        .fullScreenCover(isPresented: Binding(
-            get: { store.isShowingGallery },
-            set: { if !$0 { store.send(.photoCancelled) } }
-        )) {
-            GalleryPickerRepresentable(
-                onPick: { data in store.send(.photoCaptured(data)) },
-                onCancel: { store.send(.photoCancelled) }
-            )
+        .frame(height: 44)
+    }
+
+    // MARK: - Close Button (shared across non-accept steps)
+
+    private var closeButton: some View {
+        Button { store.send(.closeTapped) } label: {
+            Image(systemName: "xmark")
+                .font(.system(size: 14, weight: .bold))
+                .foregroundStyle(DesignColors.text)
+                .frame(width: 38, height: 38)
+                .background(Circle().fill(DesignColors.text.opacity(0.08)))
+                .frame(minWidth: 44, minHeight: 44)
+                .contentShape(Rectangle())
         }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Close challenge")
     }
 
     // MARK: - Progress Dots

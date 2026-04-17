@@ -201,6 +201,167 @@ struct HBICalculatorTrendTests {
     }
 }
 
+// MARK: - Adjusted HBI with Personal Baseline
+
+@Suite("HBICalculator — Adjusted with Baseline")
+struct HBIAdjustedWithBaselineTests {
+
+    // Same components — feed into multiple tests
+    private let midComponents = HBIComponents(
+        energy: 70, mood: 70, sleep: 70, calm: 70
+    )
+
+    @Test("Nil baseline → adjusted equals raw")
+    func nilBaselineReturnsRaw() {
+        let result = HBICalculator.calculateAdjustedWithBaseline(
+            components: midComponents,
+            phase: .follicular,
+            baseline: nil
+        )
+        #expect(result.adjusted == result.raw)
+        #expect(result.trendVsBaseline == nil)
+        #expect(result.baseline == nil)
+    }
+
+    @Test("Baseline with nil averageScore → adjusted equals raw")
+    func insufficientBaselineReturnsRaw() {
+        let baseline = PersonalBaseline(
+            phase: .follicular,
+            averageScore: nil,
+            sampleCount: 3,
+            cyclesRepresented: 1,
+            confidence: .insufficient
+        )
+        let result = HBICalculator.calculateAdjustedWithBaseline(
+            components: midComponents,
+            phase: .follicular,
+            baseline: baseline
+        )
+        #expect(result.adjusted == result.raw)
+        #expect(result.trendVsBaseline == nil)
+    }
+
+    @Test("Baseline above current raw → adjusted drops below 50")
+    func baselineAboveCurrentDrops() {
+        // Current raw ≈ 70 for mid components; baseline 80 means delta = -10.
+        let baseline = PersonalBaseline(
+            phase: .follicular,
+            averageScore: 80,
+            sampleCount: 12,
+            cyclesRepresented: 3,
+            confidence: .established
+        )
+        let result = HBICalculator.calculateAdjustedWithBaseline(
+            components: midComponents,
+            phase: .follicular,
+            baseline: baseline,
+            sensitivity: 1.2
+        )
+        // 50 + (70 - 80) * 1.2 = 50 - 12 = 38
+        #expect(result.adjusted < 50)
+        #expect(abs(result.adjusted - 38) < 0.5)
+        #expect(result.trendVsBaseline != nil)
+        #expect(result.trendVsBaseline! < 0)
+    }
+
+    @Test("Baseline below current raw → adjusted climbs above 50")
+    func baselineBelowCurrentClimbs() {
+        // Current raw ≈ 70, baseline 60 → delta = +10 * 1.2 = 12 → 62
+        let baseline = PersonalBaseline(
+            phase: .follicular,
+            averageScore: 60,
+            sampleCount: 12,
+            cyclesRepresented: 3,
+            confidence: .established
+        )
+        let result = HBICalculator.calculateAdjustedWithBaseline(
+            components: midComponents,
+            phase: .follicular,
+            baseline: baseline,
+            sensitivity: 1.2
+        )
+        #expect(result.adjusted > 50)
+        #expect(abs(result.adjusted - 62) < 0.5)
+        #expect(result.trendVsBaseline! > 0)
+    }
+
+    @Test("Sensitivity 2.0 doubles the delta")
+    func sensitivityDoublesDelta() {
+        let baseline = PersonalBaseline(
+            phase: .follicular,
+            averageScore: 60,
+            sampleCount: 12,
+            cyclesRepresented: 3,
+            confidence: .established
+        )
+        let atOne = HBICalculator.calculateAdjustedWithBaseline(
+            components: midComponents,
+            phase: .follicular,
+            baseline: baseline,
+            sensitivity: 1.0
+        )
+        let atTwo = HBICalculator.calculateAdjustedWithBaseline(
+            components: midComponents,
+            phase: .follicular,
+            baseline: baseline,
+            sensitivity: 2.0
+        )
+        // delta stays same, sensitivity scales it
+        let deltaOne = atOne.adjusted - 50
+        let deltaTwo = atTwo.adjusted - 50
+        #expect(abs(deltaTwo - 2 * deltaOne) < 0.5)
+    }
+
+    @Test("Adjusted clamps at 100 when delta * sensitivity huge positive")
+    func adjustedClampsHigh() {
+        // raw ~70, baseline 0 → delta 70 * 2.0 = 140 → clamp 100
+        let baseline = PersonalBaseline(
+            phase: .follicular,
+            averageScore: 0,
+            sampleCount: 12,
+            cyclesRepresented: 3,
+            confidence: .established
+        )
+        let result = HBICalculator.calculateAdjustedWithBaseline(
+            components: midComponents,
+            phase: .follicular,
+            baseline: baseline,
+            sensitivity: 2.0
+        )
+        #expect(result.adjusted == 100)
+    }
+
+    @Test("Adjusted clamps at 0 when delta * sensitivity huge negative")
+    func adjustedClampsLow() {
+        // raw ~70, baseline 100 → delta -30 * 2.0 = -60 → 50-60 = -10 → clamp 0
+        let baseline = PersonalBaseline(
+            phase: .follicular,
+            averageScore: 100,
+            sampleCount: 12,
+            cyclesRepresented: 3,
+            confidence: .established
+        )
+        let result = HBICalculator.calculateAdjustedWithBaseline(
+            components: midComponents,
+            phase: .follicular,
+            baseline: baseline,
+            sensitivity: 2.0
+        )
+        #expect(result.adjusted == 0)
+    }
+
+    @Test("Weights exposed on result match phase table")
+    func weightsExposed() {
+        let result = HBICalculator.calculateAdjustedWithBaseline(
+            components: midComponents,
+            phase: .menstrual,
+            baseline: nil
+        )
+        let expected = HBICalculator.phaseWeights(for: .menstrual).normalized()
+        #expect(result.weights == expected)
+    }
+}
+
 // MARK: - Likert bounds / clamping
 
 @Suite("HBICalculator — Likert clamping")

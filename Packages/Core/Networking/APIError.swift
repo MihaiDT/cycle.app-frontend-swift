@@ -7,6 +7,11 @@ public enum APIError: Error, Equatable, Sendable {
     case invalidResponse
     case httpError(statusCode: Int, data: Data)
     case decodingError(Error)
+    /// Failed to encode the outgoing request body (e.g. invalid JSON,
+    /// memory pressure on a huge payload). Raised by `Endpoint.post/put/patch`
+    /// — previously these used `try?` which silently sent an empty body
+    /// and produced a confusing 400 "invalid request" from the server.
+    case encodingError(Error)
     case networkError(Error)
     case unauthorized
     case forbidden
@@ -27,6 +32,7 @@ public enum APIError: Error, Equatable, Sendable {
         case let (.httpError(lhsCode, lhsData), .httpError(rhsCode, rhsData)):
             lhsCode == rhsCode && lhsData == rhsData
         case (.decodingError, .decodingError),
+             (.encodingError, .encodingError),
              (.networkError, .networkError):
             true
         default:
@@ -48,6 +54,8 @@ extension APIError: LocalizedError {
             "HTTP error: \(statusCode)"
         case let .decodingError(error):
             "Failed to decode response: \(error.localizedDescription)"
+        case let .encodingError(error):
+            "Failed to encode request: \(error.localizedDescription)"
         case let .networkError(error):
             "Network error: \(error.localizedDescription)"
         case .unauthorized:

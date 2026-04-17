@@ -281,3 +281,114 @@ struct RegeneratePredictionsTests {
         #expect(primary != nil)
     }
 }
+
+// MARK: - HBILocalClient.getPersonalBaseline live query
+
+@Suite("HBILocalClient — getPersonalBaseline", .serialized)
+struct HBILocalClientPersonalBaselineTests {
+
+    /// Seed the container with same-phase HBIScoreRecord samples split across
+    /// cycles so we exercise `distinctCycleCount` through the live query path.
+    private func seedScores(
+        container: ModelContainer,
+        phase: CyclePhase,
+        rawScores: [Int],
+        cycleBuckets: [Int] // days-ago per sample
+    ) throws {
+        precondition(rawScores.count == cycleBuckets.count)
+        let context = ModelContext(container)
+        let today = Calendar.current.startOfDay(for: Date())
+        for (i, raw) in rawScores.enumerated() {
+            let date = Calendar.current.date(
+                byAdding: .day, value: -cycleBuckets[i], to: today
+            )!
+            let record = HBIScoreRecord(
+                scoreDate: date,
+                energyScore: 70,
+                anxietyScore: 70,
+                sleepScore: 70,
+                moodScore: 70,
+                hbiRaw: Double(raw),
+                hbiAdjusted: Double(raw),
+                cyclePhase: phase.rawValue,
+                cycleDay: 1
+            )
+            context.insert(record)
+        }
+        try context.save()
+    }
+
+    @Test("Empty store → insufficient baseline")
+    func emptyStoreInsufficient() throws {
+        let container = CycleDataStore.makeTestContainer()
+        let context = ModelContext(container)
+        let baseline = try HBILocalClient.computePersonalBaseline(
+            phase: .luteal, context: context
+        )
+        #expect(baseline.confidence == .insufficient)
+        #expect(baseline.averageScore == nil)
+        #expect(baseline.sampleCount == 0)
+    }
+
+    @Test("6 luteal samples across 2 cycles → building with correct average")
+    func sixSamplesBuildingAverage() throws {
+        let container = CycleDataStore.makeTestContainer()
+        // Three in cycle A (~today), three in cycle B (~28 days ago)
+        let rawScores = [60, 70, 80, 50, 90, 100]
+        let bucketDaysAgo = [0, 1, 2, 28, 29, 30]
+        try seedScores(
+            container: container,
+            phase: .luteal,
+            rawScores: rawScores,
+            cycleBuckets: bucketDaysAgo
+        )
+        let context = ModelContext(container)
+        let baseline = try HBILocalClient.computePersonalBaseline(
+            phase: .luteal, context: context
+        )
+        #expect(baseline.confidence == .building)
+        #expect(baseline.sampleCount == 6)
+        #expect(baseline.cyclesRepresented == 2)
+        let expected = Double(rawScores.reduce(0, +)) / Double(rawScores.count)
+        #expect(abs((baseline.averageScore ?? -1) - expected) < 0.5)
+    }
+
+    @Test("Filters by phase — follicular samples ignored when asking for luteal")
+    func filtersByPhase() throws {
+        let container = CycleDataStore.makeTestContainer()
+        try seedScores(
+            container: container,
+            phase: .follicular,
+            rawScores: Array(repeating: 99, count: 12),
+            cycleBuckets: (0..<12).map { $0 }
+        )
+        let context = ModelContext(container)
+        let baseline = try HBILocalClient.computePersonalBaseline(
+            phase: .luteal, context: context
+        )
+        #expect(baseline.sampleCount == 0)
+        #expect(baseline.confidence == .insufficient)
+    }
+
+    @Test("12 samples across 3 cycles → established")
+    func twelveSamplesEstablished() throws {
+        let container = CycleDataStore.makeTestContainer()
+        // 4 samples per cycle × 3 cycles
+        let buckets: [Int] = [0, 1, 2, 3, 28, 29, 30, 31, 56, 57, 58, 59]
+        let raws: [Int] = Array(repeating: 70, count: 12)
+        try seedScores(
+            container: container,
+            phase: .luteal,
+            rawScores: raws,
+            cycleBuckets: buckets
+        )
+        let context = ModelContext(container)
+        let baseline = try HBILocalClient.computePersonalBaseline(
+            phase: .luteal, context: context
+        )
+        #expect(baseline.confidence == .established)
+        #expect(baseline.sampleCount == 12)
+        #expect(baseline.cyclesRepresented == 3)
+        #expect(abs((baseline.averageScore ?? 0) - 70) < 0.5)
+    }
+}

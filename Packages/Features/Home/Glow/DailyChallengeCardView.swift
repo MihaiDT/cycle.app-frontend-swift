@@ -12,7 +12,8 @@ struct DailyChallengeCardView: View {
 
     var body: some View {
         switch challenge.status {
-        case .available, .skipped: availableState
+        case .available: availableState
+        case .skipped: skippedState
         case .completed: completedState
         }
     }
@@ -21,20 +22,14 @@ struct DailyChallengeCardView: View {
 
     private var availableState: some View {
         VStack(alignment: .leading, spacing: 12) {
-            HStack(spacing: 6) {
-                Image(systemName: "flag.fill")
-                    .font(.system(size: 12, weight: .semibold))
-                    .accessibilityHidden(true)
-                Text("Challenge")
-                    .font(.custom("Raleway-SemiBold", size: 12, relativeTo: .caption))
-                    .tracking(0.2)
-            }
-            .foregroundStyle(DesignColors.accentWarm)
-            .padding(.horizontal, 12)
-            .padding(.vertical, 6)
-            .background { Capsule().fill(DesignColors.accentWarm.opacity(0.12)) }
-            .accessibilityElement(children: .ignore)
-            .accessibilityLabel("Challenge")
+            Text("Your moment")
+                .font(.custom("Raleway-SemiBold", size: 12, relativeTo: .caption))
+                .tracking(0.2)
+                .foregroundStyle(DesignColors.accentWarm)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 6)
+                .background { Capsule().fill(DesignColors.accentWarm.opacity(0.12)) }
+                .accessibilityLabel("Your moment")
 
             Text(challenge.challengeTitle)
                 .font(.custom("Raleway-Bold", size: 22, relativeTo: .title2))
@@ -74,7 +69,7 @@ struct DailyChallengeCardView: View {
                     onDoIt()
                 }
             } label: {
-                Text(isInProgress ? "Continue" : "I'm in")
+                Text(isInProgress ? "Continue" : "Take your moment")
                     .font(.custom("Raleway-SemiBold", size: 16, relativeTo: .body))
                     .foregroundStyle(.white)
                     .frame(maxWidth: .infinity)
@@ -87,7 +82,7 @@ struct DailyChallengeCardView: View {
                     .shadow(color: DesignColors.text.opacity(0.14), radius: 3, x: 0, y: 1)
             }
             .buttonStyle(.plain)
-            .accessibilityLabel(isInProgress ? "Continue challenge" : "Do challenge")
+            .accessibilityLabel(isInProgress ? "Continue your moment" : "Take your moment")
             .accessibilityHint("Opens the challenge detail screen")
             .padding(.top, 4)
         }
@@ -95,6 +90,68 @@ struct DailyChallengeCardView: View {
         .frame(maxWidth: .infinity, alignment: .topLeading)
         .frame(height: 340)
         .glowCardBackground(tint: .cocoa)
+    }
+
+    // MARK: - Skipped ("Let it go for today" → see you tomorrow)
+
+    private var skippedState: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            HStack(spacing: 6) {
+                Image(systemName: "moon.stars.fill")
+                    .font(.system(size: 12, weight: .semibold))
+                    .accessibilityHidden(true)
+                Text("Resting")
+                    .font(.custom("Raleway-SemiBold", size: 12, relativeTo: .caption))
+                    .tracking(0.2)
+            }
+            .foregroundStyle(DesignColors.accentWarm)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 6)
+            .background { Capsule().fill(DesignColors.accentWarm.opacity(0.12)) }
+
+            Spacer(minLength: 0)
+
+            VStack(alignment: .leading, spacing: 10) {
+                Text("Tomorrow - something fresh")
+                    .font(.custom("Raleway-Bold", size: 22, relativeTo: .title2))
+                    .tracking(-0.3)
+                    .foregroundStyle(DesignColors.text)
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .shadow(color: DesignColors.background.opacity(0.75), radius: 4, x: 0, y: 0)
+                    .accessibilityAddTraits(.isHeader)
+
+                Text("Today wasn't the right day for \u{201C}\(challenge.challengeTitle)\u{201D} — Aria will pick a new challenge for you tomorrow.")
+                    .font(.custom("Raleway-Medium", size: 14, relativeTo: .body))
+                    .foregroundStyle(DesignColors.textPrincipal)
+                    .lineSpacing(3)
+                    .lineLimit(4)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .shadow(color: DesignColors.background.opacity(0.6), radius: 3, x: 0, y: 0)
+            }
+
+            Spacer(minLength: 0)
+
+            HStack(spacing: 6) {
+                Image(systemName: "sparkle")
+                    .font(.system(size: 10, weight: .semibold))
+                    .foregroundStyle(DesignColors.accentWarm)
+                    .accessibilityHidden(true)
+                Text("See you tomorrow")
+                    .font(.custom("Raleway-SemiBold", size: 12, relativeTo: .caption))
+                    .foregroundStyle(DesignColors.accentWarm)
+            }
+            .padding(.top, 4)
+        }
+        .padding(24)
+        .frame(maxWidth: .infinity, alignment: .topLeading)
+        .frame(height: 340)
+        .glowCardBackground(tint: .cocoa)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(
+            "Challenge resting. Today wasn't the right day for \(challenge.challengeTitle). " +
+            "Aria will pick a fresh challenge for you tomorrow."
+        )
     }
 
     // MARK: - Completed

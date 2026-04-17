@@ -70,16 +70,16 @@ public struct ValidationFeature: Sendable {
                 let photoData = state.photoData
                 let anonId = anonymousID.getID()
                 return .run { send in
-                    let base64 = photoData.base64EncodedString()
-                    let request = ChallengeValidationRequest(
-                        anonymousId: anonId,
-                        challengeType: challenge.templateId,
-                        challengeDescription: challenge.challengeDescription,
-                        goldHint: challenge.goldHint,
-                        imageBase64: base64
-                    )
-                    let endpoint = Endpoint.validateChallenge(body: request)
                     do {
+                        let base64 = photoData.base64EncodedString()
+                        let request = ChallengeValidationRequest(
+                            anonymousId: anonId,
+                            challengeType: challenge.templateId,
+                            challengeDescription: challenge.challengeDescription,
+                            goldHint: challenge.goldHint,
+                            imageBase64: base64
+                        )
+                        let endpoint = try Endpoint.validateChallenge(body: request)
                         let response: ChallengeValidationResponse = try await apiClient.send(endpoint)
                         await send(.validationResponse(.success(response)))
                     } catch {

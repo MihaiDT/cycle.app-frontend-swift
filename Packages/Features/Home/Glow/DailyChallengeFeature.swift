@@ -270,6 +270,21 @@ public struct DailyChallengeFeature: Sendable {
                 state.journey = nil
                 return .none
 
+            case .journey(.presented(.delegate(.skippedForToday))):
+                // User chose "Let it go for today" on the validation failure
+                // screen. Mark the challenge as skipped, persist it, dismiss
+                // the journey. Card swaps to the "see you tomorrow" state.
+                state.journey = nil
+                guard var challenge = state.challenge else { return .none }
+                challenge.status = .skipped
+                state.challenge = challenge
+                state.challengeState = .skipped
+                let challengeId = challenge.id
+                return .merge(
+                    .send(.delegate(.challengeStateChanged(challenge))),
+                    .run { [glowLocal] _ in try await glowLocal.skipChallenge(challengeId) }
+                )
+
             case .journey:
                 return .none
 

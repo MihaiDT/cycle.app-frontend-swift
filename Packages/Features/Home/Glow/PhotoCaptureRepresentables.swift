@@ -1,97 +1,208 @@
-import PhotosUI
+// Packages/Features/Home/Glow/PhotoCaptureRepresentables.swift
+//
+// AVFoundation-backed inline camera for the challenge proof step. Replaces
+// the previous UIImagePickerController-based camera + PHPickerViewController
+// gallery flows; the journey now captures photos inline (no modals).
+
+import AVFoundation
 import SwiftUI
 import UIKit
 
-// MARK: - Camera Picker
+// MARK: - Camera Session (model)
 
-struct CameraPickerRepresentable: UIViewControllerRepresentable {
-    let onCapture: (Data) -> Void
-    let onCancel: () -> Void
-
-    func makeUIViewController(context: Context) -> UIImagePickerController {
-        let picker = UIImagePickerController()
-        picker.sourceType = .camera
-        picker.cameraDevice = .front
-        picker.delegate = context.coordinator
-        return picker
+/// Owns the AVCaptureSession and exposes a photo-capture API. Must be
+/// started with `start()` when the view appears and `stop()` when it
+/// disappears to release the hardware. The controller is MainActor-bound
+/// so published state stays on the UI actor; the session itself is
+/// driven off a private serial queue.
+@MainActor
+final class CameraCaptureController: NSObject, ObservableObject {
+    enum Availability: Equatable, Sendable {
+        case unknown
+        case authorized
+        case denied
+        case unavailable // simulator / no hardware
     }
 
-    func updateUIViewController(_ uiViewController: UIImagePickerController, context: Context) {}
+    @Published var availability: Availability = .unknown
+    @Published var isSessionRunning: Bool = false
+    @Published var capturedImageData: Data?
 
-    func makeCoordinator() -> Coordinator { Coordinator(onCapture: onCapture, onCancel: onCancel) }
+    let session = AVCaptureSession()
+    private let output = AVCapturePhotoOutput()
+    private let sessionQueue = DispatchQueue(label: "app.cycle.ios.camera-session")
+    private var hasConfigured = false
 
-    final class Coordinator: NSObject, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
-        let onCapture: (Data) -> Void
-        let onCancel: () -> Void
+    override init() {
+        super.init()
+    }
 
-        init(onCapture: @escaping (Data) -> Void, onCancel: @escaping () -> Void) {
-            self.onCapture = onCapture
-            self.onCancel = onCancel
-        }
+    // MARK: - Permission + Configuration
 
-        func imagePickerController(
-            _ picker: UIImagePickerController,
-            didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey: Any]
-        ) {
-            guard let image = info[.originalImage] as? UIImage,
-                  let data = image.jpegData(compressionQuality: 0.9)
-            else {
-                onCancel()
-                return
+    func requestPermissionAndConfigure() {
+        #if targetEnvironment(simulator)
+        availability = .unavailable
+        return
+        #else
+        switch AVCaptureDevice.authorizationStatus(for: .video) {
+        case .authorized:
+            availability = .authorized
+            configureAndStartIfNeeded()
+        case .notDetermined:
+            AVCaptureDevice.requestAccess(for: .video) { [weak self] granted in
+                Task { @MainActor in
+                    guard let self else { return }
+                    self.availability = granted ? .authorized : .denied
+                    if granted { self.configureAndStartIfNeeded() }
+                }
             }
-            onCapture(data)
+        case .denied, .restricted:
+            availability = .denied
+        @unknown default:
+            availability = .denied
+        }
+        #endif
+    }
+
+    private func configureAndStartIfNeeded() {
+        sessionQueue.async { [weak self] in
+            guard let self else { return }
+            if !self.hasConfigured {
+                self.configureSessionOnQueue()
+                self.hasConfigured = true
+            }
+            if !self.session.isRunning {
+                self.session.startRunning()
+            }
+            let running = self.session.isRunning
+            Task { @MainActor in self.isSessionRunning = running }
+        }
+    }
+
+    private func configureSessionOnQueue() {
+        session.beginConfiguration()
+        session.sessionPreset = .photo
+
+        // Back camera input
+        if
+            let device = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back),
+            let input = try? AVCaptureDeviceInput(device: device),
+            session.canAddInput(input)
+        {
+            session.addInput(input)
         }
 
-        func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
-            onCancel()
+        // Photo output
+        if session.canAddOutput(output) {
+            session.addOutput(output)
+        }
+
+        session.commitConfiguration()
+    }
+
+    // MARK: - Start / Stop
+
+    func start() {
+        #if targetEnvironment(simulator)
+        return
+        #else
+        guard availability == .authorized else { return }
+        sessionQueue.async { [weak self] in
+            guard let self else { return }
+            if !self.session.isRunning {
+                self.session.startRunning()
+                let running = self.session.isRunning
+                Task { @MainActor in self.isSessionRunning = running }
+            }
+        }
+        #endif
+    }
+
+    func stop() {
+        sessionQueue.async { [weak self] in
+            guard let self else { return }
+            if self.session.isRunning {
+                self.session.stopRunning()
+                Task { @MainActor in self.isSessionRunning = false }
+            }
+        }
+    }
+
+    // MARK: - Capture
+
+    func capturePhoto() {
+        #if targetEnvironment(simulator)
+        return
+        #else
+        guard availability == .authorized, session.isRunning else { return }
+        sessionQueue.async { [weak self] in
+            guard let self else { return }
+            // Prefer JPEG output so downstream re-encoding is a no-op
+            // and the base64 payload sent to the validate endpoint stays
+            // small and format-predictable (HEIC can bloat and has caused
+            // JSON decode failures server-side on slower networks).
+            let settings: AVCapturePhotoSettings
+            if self.output.availablePhotoCodecTypes.contains(.jpeg) {
+                settings = AVCapturePhotoSettings(format: [AVVideoCodecKey: AVVideoCodecType.jpeg])
+            } else {
+                settings = AVCapturePhotoSettings()
+            }
+            if self.output.supportedFlashModes.contains(.auto) {
+                settings.flashMode = .auto
+            }
+            self.output.capturePhoto(with: settings, delegate: self)
+        }
+        #endif
+    }
+
+    func clearCapture() {
+        capturedImageData = nil
+    }
+}
+
+// MARK: - AVCapturePhotoCaptureDelegate
+
+extension CameraCaptureController: AVCapturePhotoCaptureDelegate {
+    nonisolated func photoOutput(
+        _ output: AVCapturePhotoOutput,
+        didFinishProcessingPhoto photo: AVCapturePhoto,
+        error: Error?
+    ) {
+        guard error == nil, let data = photo.fileDataRepresentation() else { return }
+        Task { @MainActor in
+            self.capturedImageData = data
         }
     }
 }
 
-// MARK: - Gallery Picker
+// MARK: - SwiftUI Preview View
 
-struct GalleryPickerRepresentable: UIViewControllerRepresentable {
-    let onPick: (Data) -> Void
-    let onCancel: () -> Void
+/// Lightweight SwiftUI wrapper around an AVCaptureVideoPreviewLayer. The
+/// layer uses aspect-fill so the live preview completely covers the
+/// rounded stage we clip it to.
+struct CameraPreviewView: UIViewRepresentable {
+    let session: AVCaptureSession
 
-    func makeUIViewController(context: Context) -> PHPickerViewController {
-        var config = PHPickerConfiguration()
-        config.selectionLimit = 1
-        config.filter = .images
-        let picker = PHPickerViewController(configuration: config)
-        picker.delegate = context.coordinator
-        return picker
+    func makeUIView(context: Context) -> PreviewContainer {
+        let view = PreviewContainer()
+        view.backgroundColor = .black
+        view.videoPreviewLayer.session = session
+        view.videoPreviewLayer.videoGravity = .resizeAspectFill
+        return view
     }
 
-    func updateUIViewController(_ uiViewController: PHPickerViewController, context: Context) {}
-
-    func makeCoordinator() -> Coordinator { Coordinator(onPick: onPick, onCancel: onCancel) }
-
-    final class Coordinator: NSObject, PHPickerViewControllerDelegate {
-        let onPick: (Data) -> Void
-        let onCancel: () -> Void
-
-        init(onPick: @escaping (Data) -> Void, onCancel: @escaping () -> Void) {
-            self.onPick = onPick
-            self.onCancel = onCancel
+    func updateUIView(_ uiView: PreviewContainer, context: Context) {
+        if uiView.videoPreviewLayer.session !== session {
+            uiView.videoPreviewLayer.session = session
         }
+    }
 
-        func picker(_ picker: PHPickerViewController, didFinishPicking results: [PHPickerResult]) {
-            guard let provider = results.first?.itemProvider,
-                  provider.canLoadObject(ofClass: UIImage.self)
-            else {
-                onCancel()
-                return
-            }
-            provider.loadObject(ofClass: UIImage.self) { [onPick, onCancel] object, _ in
-                guard let image = object as? UIImage,
-                      let data = image.jpegData(compressionQuality: 0.9)
-                else {
-                    DispatchQueue.main.async { onCancel() }
-                    return
-                }
-                DispatchQueue.main.async { onPick(data) }
-            }
+    final class PreviewContainer: UIView {
+        override class var layerClass: AnyClass { AVCaptureVideoPreviewLayer.self }
+        var videoPreviewLayer: AVCaptureVideoPreviewLayer {
+            // Safe force-cast: `layerClass` is overridden above.
+            // swiftlint:disable:next force_cast
+            layer as! AVCaptureVideoPreviewLayer
         }
     }
 }
@@ -99,11 +210,18 @@ struct GalleryPickerRepresentable: UIViewControllerRepresentable {
 // MARK: - Photo Processor
 
 enum PhotoProcessor {
+    /// Max dimension for the uploaded JPEG. 896px + 0.6 quality produces
+    /// ~120–220 KB binary / ~160–300 KB base64, well under the backend's
+    /// 2 MB body limit and cheap enough that the validate POST doesn't
+    /// thrash memory on older devices.
+    static let uploadMaxDimension: CGFloat = 896
+    static let uploadQuality: CGFloat = 0.6
+
     static func process(_ imageData: Data) -> (fullSize: Data, thumbnail: Data)? {
         guard let image = UIImage(data: imageData) else { return nil }
 
-        let fullSize = resized(image, maxDimension: 1024)
-        guard let fullData = fullSize.jpegData(compressionQuality: 0.7) else { return nil }
+        let fullSize = resized(image, maxDimension: uploadMaxDimension)
+        guard let fullData = fullSize.jpegData(compressionQuality: uploadQuality) else { return nil }
 
         let thumb = resized(image, maxDimension: 200)
         guard let thumbData = thumb.jpegData(compressionQuality: 0.6) else { return nil }

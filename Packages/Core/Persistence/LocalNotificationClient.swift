@@ -11,6 +11,14 @@ public struct LocalNotificationClient: Sendable {
     public var requestAuthorization: @Sendable () async throws -> Bool
     /// Schedule a repeating daily check-in reminder.
     public var scheduleDailyReminder: @Sendable (Int, Int) async throws -> Void
+    /// Schedule a single one-off notification (e.g. challenge snooze,
+    /// "remind me later today"). Replaces any existing notification with
+    /// the same identifier so the latest snooze wins.
+    public var scheduleOneOff: @Sendable (_ id: String, _ title: String, _ body: String, _ after: TimeInterval) async throws -> Void
+    /// Cancel a specific pending notification by identifier (no-op if it
+    /// doesn't exist). Use when the user completes / skips the action
+    /// that a prior snooze was reminding them of.
+    public var cancelOneOff: @Sendable (_ id: String) async -> Void
     /// Cancel all scheduled reminders.
     public var cancelAll: @Sendable () async -> Void
     /// Check if notifications are currently authorized.
@@ -71,6 +79,36 @@ extension LocalNotificationClient {
 
                 try await UNUserNotificationCenter.current().add(request)
             },
+            scheduleOneOff: { id, title, body, after in
+                await MainActor.run {
+                    UNUserNotificationCenter.current()
+                        .removePendingNotificationRequests(withIdentifiers: [id])
+                }
+
+                let content = UNMutableNotificationContent()
+                content.title = title
+                content.body = body
+                content.sound = .default
+
+                let trigger = UNTimeIntervalNotificationTrigger(
+                    timeInterval: max(1, after),
+                    repeats: false
+                )
+
+                let request = UNNotificationRequest(
+                    identifier: id,
+                    content: content,
+                    trigger: trigger
+                )
+
+                try await UNUserNotificationCenter.current().add(request)
+            },
+            cancelOneOff: { id in
+                await MainActor.run {
+                    UNUserNotificationCenter.current()
+                        .removePendingNotificationRequests(withIdentifiers: [id])
+                }
+            },
             cancelAll: {
                 await MainActor.run {
                     UNUserNotificationCenter.current()
@@ -92,6 +130,8 @@ extension LocalNotificationClient {
         LocalNotificationClient(
             requestAuthorization: { true },
             scheduleDailyReminder: { _, _ in },
+            scheduleOneOff: { _, _, _, _ in },
+            cancelOneOff: { _ in },
             cancelAll: { },
             isAuthorized: { false }
         )

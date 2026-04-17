@@ -135,24 +135,6 @@ public struct TodayView: View {
                             .padding(.top, AppLayout.spacingL)
                         }
 
-                        // First-run empty state — prompt to complete the
-                        // first check-in so the HBI hero stops reading as 0.
-                        // Only shown when cycle data exists (otherwise the
-                        // noCycleDataHero path already handles onboarding)
-                        // and the user hasn't logged any check-ins yet.
-                        if store.cycle != nil
-                            && !store.hasCompletedCheckIn
-                            && !store.isLoadingDashboard
-                        {
-                            FirstCheckInPromptCard(onTap: {
-                                store.send(.checkInTapped)
-                            })
-                            .padding(.horizontal, AppLayout.horizontalPadding)
-                            .padding(.top, AppLayout.spacingL)
-                            .opacity(showContent ? 1 : 0)
-                            .offset(y: showContent ? 0 : 20)
-                        }
-
                         if !store.cardStackState.cards.isEmpty
                             || store.cardStackState.isLoading
                             || store.cardStackState.hasLoadError
@@ -380,12 +362,6 @@ public struct TodayView: View {
         .frame(maxWidth: .infinity)
     }
 
-    // MARK: - First Check-In Prompt (empty state)
-
-    // FirstCheckInPromptCard lives below — a muted card nudging the user to
-    // complete their first check-in so the HBI hero starts reflecting real
-    // data instead of sitting at 0.
-
     // MARK: - Skeleton Hero
 
     @ViewBuilder
@@ -476,58 +452,3 @@ public struct TodayView: View {
 
 }
 
-// MARK: - First Check-In Prompt Card
-
-/// Subtle prompt card shown on Today when the user has cycle data but hasn't
-/// completed their first daily check-in. Tapping opens the DailyCheckIn flow.
-struct FirstCheckInPromptCard: View {
-    var onTap: () -> Void
-
-    var body: some View {
-        Button(action: onTap) {
-            HStack(spacing: 12) {
-                Image(systemName: "heart.text.square")
-                    .font(.system(size: 20, weight: .light))
-                    .foregroundStyle(DesignColors.accentWarm)
-                    .frame(width: 36, height: 36)
-                    .background {
-                        Circle().fill(DesignColors.accentWarm.opacity(0.12))
-                    }
-                    .accessibilityHidden(true)
-
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Complete your first check-in")
-                        .font(.raleway("SemiBold", size: 14, relativeTo: .subheadline))
-                        .foregroundStyle(DesignColors.text)
-                    Text("See your energy, mood and sleep scores")
-                        .font(.raleway("Regular", size: 12, relativeTo: .caption))
-                        .foregroundStyle(DesignColors.textSecondary)
-                }
-
-                Spacer()
-
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundStyle(DesignColors.textSecondary.opacity(0.55))
-            }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 12)
-            .background {
-                RoundedRectangle(cornerRadius: AppLayout.cornerRadiusM, style: .continuous)
-                    .fill(.ultraThinMaterial)
-                    .overlay {
-                        RoundedRectangle(cornerRadius: AppLayout.cornerRadiusM, style: .continuous)
-                            .fill(DesignColors.accent.opacity(0.06))
-                    }
-                    .overlay {
-                        RoundedRectangle(cornerRadius: AppLayout.cornerRadiusM, style: .continuous)
-                            .strokeBorder(DesignColors.accentWarm.opacity(0.2), lineWidth: 0.5)
-                    }
-            }
-        }
-        .buttonStyle(.plain)
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel("Complete your first check-in to see your energy, mood and sleep scores")
-        .accessibilityHint("Opens the daily check-in")
-    }
-}

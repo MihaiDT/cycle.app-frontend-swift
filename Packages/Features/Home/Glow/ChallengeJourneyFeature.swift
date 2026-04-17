@@ -15,8 +15,6 @@ public struct ChallengeJourneyFeature: Sendable {
 
         var capturedFullSize: Data?
         var capturedThumbnail: Data?
-        var isShowingCamera = false
-        var isShowingGallery = false
 
         var validationState: ValidationState = .idle
 
@@ -78,15 +76,13 @@ public struct ChallengeJourneyFeature: Sendable {
         case startChallengeTapped
         case timerTick
         case imDoneTapped
-        case openCameraTapped
-        case openGalleryTapped
         case photoCaptured(Data)
-        case photoCancelled
         case retakeTapped
         case submitPhotoTapped
         case validationResponse(Result<ChallengeValidationResponse, Error>)
         case profileLoaded(GlowProfileSnapshot)
         case tryAgainTapped
+        case letItGoTapped
         case backToMyDayTapped
         case closeTapped
         case delegate(Delegate)
@@ -97,7 +93,13 @@ public struct ChallengeJourneyFeature: Sendable {
                 photoData: Data, thumbnailData: Data,
                 xpEarned: Int, rating: String, feedback: String
             )
+            /// Journey was dismissed without a decision (X tapped, soft cancel).
+            /// Challenge state is preserved — user can resume.
             case cancelled
+            /// User chose "Let it go for today" on the failure screen — the
+            /// challenge is skipped until tomorrow. Parent marks the card
+            /// as `.skipped` and persists via `glowLocal.skipChallenge`.
+            case skippedForToday
         }
     }
 
@@ -158,34 +160,17 @@ public struct ChallengeJourneyFeature: Sendable {
 
             case .imDoneTapped:
                 state.step = .proof
-                state.isShowingCamera = true
                 return .cancel(id: CancelID.timer)
 
-            case .openCameraTapped:
-                state.isShowingCamera = true
-                return .none
-
-            case .openGalleryTapped:
-                state.isShowingGallery = true
-                return .none
-
             case let .photoCaptured(data):
-                state.isShowingCamera = false
-                state.isShowingGallery = false
                 guard let processed = PhotoProcessor.process(data) else { return .none }
                 state.capturedFullSize = processed.fullSize
                 state.capturedThumbnail = processed.thumbnail
                 return .none
 
-            case .photoCancelled:
-                state.isShowingCamera = false
-                state.isShowingGallery = false
-                return .none
-
             case .retakeTapped:
                 state.capturedFullSize = nil
                 state.capturedThumbnail = nil
-                state.isShowingCamera = true
                 return .none
 
             case .submitPhotoTapped:
@@ -197,16 +182,16 @@ public struct ChallengeJourneyFeature: Sendable {
                 return .merge(
                     .run { _ in await ChallengeActivityBridge.endAll() },
                     .run { send in
-                        let base64 = photoData.base64EncodedString()
-                        let request = ChallengeValidationRequest(
-                            anonymousId: anonId,
-                            challengeType: challenge.templateId,
-                            challengeDescription: challenge.challengeDescription,
-                            goldHint: challenge.goldHint,
-                            imageBase64: base64
-                        )
-                        let endpoint = Endpoint.validateChallenge(body: request)
                         do {
+                            let base64 = photoData.base64EncodedString()
+                            let request = ChallengeValidationRequest(
+                                anonymousId: anonId,
+                                challengeType: challenge.templateId,
+                                challengeDescription: challenge.challengeDescription,
+                                goldHint: challenge.goldHint,
+                                imageBase64: base64
+                            )
+                            let endpoint = try Endpoint.validateChallenge(body: request)
                             let response: ChallengeValidationResponse = try await apiClient.send(endpoint)
                             await send(.validationResponse(.success(response)))
                         } catch {
@@ -247,8 +232,13 @@ public struct ChallengeJourneyFeature: Sendable {
                 state.capturedFullSize = nil
                 state.capturedThumbnail = nil
                 state.validationState = .idle
-                state.isShowingCamera = true
                 return .none
+
+            case .letItGoTapped:
+                // Close with a "skipped" intent so the parent can mark the
+                // challenge as done-for-today and swap the Home card to the
+                // "see you tomorrow" state.
+                return .send(.delegate(.skippedForToday))
 
             case .backToMyDayTapped:
                 guard let fullSize = state.capturedFullSize,
