@@ -32,27 +32,4 @@ struct UserModelTests {
         let user4 = User(id: .init("4"), email: "test@test.com")
         #expect(user4.initials == "")
     }
-
-    @Test
-    func testSessionValidity() {
-        let validSession = Session(
-            id: .init("1"),
-            accessToken: "token",
-            refreshToken: "refresh",
-            expiresAt: Date.now.addingTimeInterval(3600),
-            user: .mock
-        )
-        #expect(validSession.isValid)
-        #expect(!validSession.isExpired)
-
-        let expiredSession = Session(
-            id: .init("2"),
-            accessToken: "token",
-            refreshToken: "refresh",
-            expiresAt: Date.now.addingTimeInterval(-3600),
-            user: .mock
-        )
-        #expect(!expiredSession.isValid)
-        #expect(expiredSession.isExpired)
-    }
 }

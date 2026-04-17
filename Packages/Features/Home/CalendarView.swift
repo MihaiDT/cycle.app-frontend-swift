@@ -173,6 +173,26 @@ public struct CalendarView: View {
                 }
             }
 
+            // Empty state — no periods ever logged. Only shown when calendar
+            // has finished loading (`hasPreloaded` kicked off the initial load
+            // and `isLoadingCalendar` is back to false) AND the user isn't
+            // actively editing. Guards against a single-frame flicker on cold
+            // start before `.loadCalendar` fires.
+            if viewMode == .month
+                && store.hasPreloaded
+                && !store.isLoadingCalendar
+                && !store.isEditingPeriod
+                && store.periodDays.isEmpty
+                && store.predictedPeriodDays.isEmpty
+            {
+                CalendarEmptyStateCard(onLogTapped: {
+                    UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                    store.send(.editPeriodToggled, animation: .spring(response: 0.35, dampingFraction: 0.85))
+                })
+                .transition(.opacity.combined(with: .move(edge: .bottom)))
+                .allowsHitTesting(true)
+            }
+
             // Header overlay — pinned to top, content scrolls behind blur
             VStack(spacing: 0) {
                 FeedTopBar(store: store, viewMode: $viewMode, isCurrentMonthVisible: isCurrentMonthVisible, onTodayTapped: {
@@ -730,6 +750,92 @@ struct WeekdayLabelsRow: View {
                     .frame(maxWidth: .infinity)
             }
         }
+    }
+}
+
+// MARK: - Calendar Empty State
+
+/// Shown when the calendar grid has no period data yet. Sits centered on the
+/// grid with a subtle warm card inviting the user to log their first period.
+struct CalendarEmptyStateCard: View {
+    var onLogTapped: () -> Void
+
+    var body: some View {
+        VStack {
+            Spacer()
+
+            VStack(spacing: 14) {
+                Image(systemName: "drop.fill")
+                    .font(.system(size: 28, weight: .light))
+                    .foregroundStyle(DesignColors.accentWarm.opacity(0.7))
+                    .accessibilityHidden(true)
+
+                VStack(spacing: 6) {
+                    Text("No cycle data yet")
+                        .font(.raleway("Bold", size: 17, relativeTo: .headline))
+                        .foregroundStyle(DesignColors.text)
+                        .multilineTextAlignment(.center)
+
+                    Text("Log your first period to see predictions,\nfertile windows and your phase today.")
+                        .font(.raleway("Regular", size: 13, relativeTo: .body))
+                        .foregroundStyle(DesignColors.textSecondary)
+                        .multilineTextAlignment(.center)
+                        .lineSpacing(3)
+                }
+
+                Button {
+                    onLogTapped()
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: "plus")
+                            .font(.system(size: 12, weight: .semibold))
+                        Text("Log my first period")
+                            .font(.raleway("SemiBold", size: 14, relativeTo: .body))
+                    }
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 11)
+                    .background {
+                        Capsule()
+                            .fill(
+                                LinearGradient(
+                                    colors: [DesignColors.accentWarm, DesignColors.accentSecondary],
+                                    startPoint: .leading,
+                                    endPoint: .trailing
+                                )
+                            )
+                            .shadow(color: DesignColors.accentWarm.opacity(0.35), radius: 10, x: 0, y: 3)
+                    }
+                }
+                .buttonStyle(.plain)
+                .accessibilityHint("Opens edit-period mode to mark your first period days")
+                .padding(.top, 2)
+            }
+            .frame(maxWidth: 300)
+            .padding(.vertical, 28)
+            .padding(.horizontal, 24)
+            .background {
+                RoundedRectangle(cornerRadius: 22, style: .continuous)
+                    .fill(.ultraThinMaterial)
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 22, style: .continuous)
+                            .fill(DesignColors.accent.opacity(0.08))
+                    }
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 22, style: .continuous)
+                            .strokeBorder(DesignColors.accentWarm.opacity(0.18), lineWidth: 0.5)
+                    }
+                    .shadow(color: .black.opacity(0.06), radius: 14, x: 0, y: 6)
+            }
+            .padding(.horizontal, 28)
+
+            Spacer()
+            // Leave room for the floating "Log Symptoms / Edit Period" bar
+            // so the empty-state card doesn't collide with it.
+            Color.clear.frame(height: 80)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("No cycle data yet. Log your first period to see predictions, fertile windows, and your phase today.")
     }
 }
 

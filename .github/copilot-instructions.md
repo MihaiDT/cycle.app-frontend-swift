@@ -30,7 +30,7 @@ go run cmd/migrate/main.go           # Run migrations
 
 ```
 Packages/Core/    — Models, Networking, Persistence, DesignSystem, Utilities
-Packages/Features — App, Authentication, Home, Onboarding
+Packages/Features — App, Home, Onboarding
 ```
 
 ### TCA Pattern (MUST follow)

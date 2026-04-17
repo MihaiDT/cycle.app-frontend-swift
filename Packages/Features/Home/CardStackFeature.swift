@@ -25,6 +25,10 @@ public struct CardStackFeature: Sendable {
         /// card re-weighting / prompt personalization can read this directly
         /// instead of drilling through the parent.
         public var currentHBI: HBIScore?
+        /// True when the most recent AI card fetch failed (or returned empty).
+        /// Surfaced in the view as a small inline error with "Try again".
+        /// Cleared on successful regeneration.
+        public var hasLoadError: Bool = false
 
         public init() {}
 
@@ -47,6 +51,9 @@ public struct CardStackFeature: Sendable {
         case advance(by: Int)
         case cardTapped(DailyCard)
         case actionTapped(DailyCard)
+        /// Re-dispatches the last `loadCards` after a failure. No-op if we
+        /// don't have a phase yet (parent is still computing).
+        case retryLoadTapped
         /// Broadcast from TodayFeature after each dashboard reload. Subscribers
         /// store the fresh score so downstream re-weighting is keyed off truth,
         /// not stale state from the initial load.
@@ -93,11 +100,13 @@ public struct CardStackFeature: Sendable {
                     state.cards = cached
                     state.frontIndex = 0
                     state.isLoading = false
+                    state.hasLoadError = false
                     return .none
                 }
 
                 // Cache miss — fetch from AI, debounced
                 state.isLoading = true
+                state.hasLoadError = false
                 state.cards = []
                 let phaseStr = phase.rawValue
                 return .run { [clock] send in
@@ -117,10 +126,23 @@ public struct CardStackFeature: Sendable {
 
             case let .cardsGenerated(cards):
                 state.isLoading = false
-                guard !cards.isEmpty else { return .none }
+                guard !cards.isEmpty else {
+                    state.hasLoadError = true
+                    return .none
+                }
+                state.hasLoadError = false
                 state.cards = cards
                 state.frontIndex = 0
                 return .none
+
+            case .retryLoadTapped:
+                // Reset phase tracker so `.loadCards` doesn't short-circuit.
+                guard let phase = state.currentPhase, let day = state.currentDay else {
+                    return .none
+                }
+                state.currentPhase = nil
+                state.hasLoadError = false
+                return .send(.loadCards(phase, day))
 
             case let .advance(direction):
                 let count = state.cards.count
@@ -175,6 +197,9 @@ struct CardStackView: View {
     var body: some View {
         if store.isLoading {
             CardSkeletonView()
+                .transition(.opacity.animation(.easeIn(duration: 0.25)))
+        } else if store.hasLoadError && store.cards.isEmpty {
+            CardLoadErrorView(onRetry: { store.send(.retryLoadTapped) })
                 .transition(.opacity.animation(.easeIn(duration: 0.25)))
         } else {
             cardContent
@@ -327,16 +352,22 @@ struct CardStackView: View {
 
     @ViewBuilder
     private func cardBody(for card: DailyCard) -> some View {
-        if card.cardType == .do, let challenge = store.challengeSnapshot {
-            DailyChallengeCardView(
-                challenge: challenge,
-                isInProgress: store.challengeInProgress,
-                onDoIt: { store.send(.delegate(.challengeDoItTapped)) },
-                onContinue: { store.send(.delegate(.challengeContinueTapped)) },
-                onSkip: { store.send(.delegate(.challengeSkipTapped)) },
-                onMaybeLater: { store.send(.delegate(.challengeMaybeLaterTapped)) }
-            )
-            .padding(.horizontal, AppLayout.horizontalPadding)
+        if card.cardType == .do {
+            if let challenge = store.challengeSnapshot {
+                DailyChallengeCardView(
+                    challenge: challenge,
+                    isInProgress: store.challengeInProgress,
+                    onDoIt: { store.send(.delegate(.challengeDoItTapped)) },
+                    onContinue: { store.send(.delegate(.challengeContinueTapped)) },
+                    onSkip: { store.send(.delegate(.challengeSkipTapped)) },
+                    onMaybeLater: { store.send(.delegate(.challengeMaybeLaterTapped)) }
+                )
+                .padding(.horizontal, AppLayout.horizontalPadding)
+            } else {
+                // Empty state — no challenge available today
+                ChallengeEmptyStateCard()
+                    .padding(.horizontal, AppLayout.horizontalPadding)
+            }
         } else {
             DailyCardView(
                 card: card,
@@ -486,6 +517,79 @@ private struct CardSkeletonView: View {
                 }
                 .padding(24)
             }
+    }
+}
+
+// MARK: - Card Load Error View (Inline retry)
+
+/// Inline error state shown when AI card generation fails. Warm-toned, muted,
+/// matches the app's premium aesthetic — not a red alert banner.
+private struct CardLoadErrorView: View {
+    let onRetry: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("Your day")
+                .font(.custom("Raleway-Bold", size: 26, relativeTo: .title))
+                .tracking(-0.3)
+                .foregroundStyle(DesignColors.text)
+                .padding(.horizontal, AppLayout.horizontalPadding)
+
+            VStack(spacing: 14) {
+                Image(systemName: "sparkle")
+                    .font(.system(size: 28, weight: .light))
+                    .foregroundStyle(DesignColors.accentWarm.opacity(0.7))
+                    .accessibilityHidden(true)
+
+                VStack(spacing: 6) {
+                    Text("We couldn't load today's cards")
+                        .font(.custom("Raleway-Bold", size: 17, relativeTo: .headline))
+                        .foregroundStyle(DesignColors.text)
+                        .multilineTextAlignment(.center)
+
+                    Text("A quick hiccup. Let's try that again.")
+                        .font(.custom("Raleway-Medium", size: 13, relativeTo: .body))
+                        .foregroundStyle(DesignColors.textSecondary)
+                        .multilineTextAlignment(.center)
+                }
+
+                Button {
+                    UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                    onRetry()
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: "arrow.clockwise")
+                            .font(.system(size: 12, weight: .semibold))
+                        Text("Try again")
+                            .font(.custom("Raleway-SemiBold", size: 14, relativeTo: .body))
+                    }
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 10)
+                    .background {
+                        Capsule()
+                            .fill(DesignColors.accentWarm)
+                    }
+                }
+                .buttonStyle(.plain)
+                .accessibilityHint("Re-generates today's cards")
+                .padding(.top, 2)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 36)
+            .padding(.horizontal, 24)
+            .background {
+                RoundedRectangle(cornerRadius: AppLayout.cornerRadiusL, style: .continuous)
+                    .fill(DesignColors.skeletonBackground.opacity(0.6))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: AppLayout.cornerRadiusL, style: .continuous)
+                            .strokeBorder(DesignColors.accentWarm.opacity(0.18), lineWidth: 0.5)
+                    }
+            }
+            .padding(.horizontal, AppLayout.horizontalPadding)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("We couldn't load today's cards. Tap Try again to retry.")
     }
 }
 

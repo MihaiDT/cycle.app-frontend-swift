@@ -168,4 +168,53 @@ struct DailyChallengeCardView: View {
     }
 }
 
+// MARK: - Challenge Empty State
+
+/// Shown in the card stack's "do" slot when the challenge selector returns
+/// nil (no template matched today's phase/energy combination, or the glow
+/// profile returned empty). Reads as premium/gentle, not as a hard error.
+struct ChallengeEmptyStateCard: View {
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 6) {
+                Image(systemName: "flag")
+                    .font(.system(size: 12, weight: .semibold))
+                    .accessibilityHidden(true)
+                Text("Challenge")
+                    .font(.custom("Raleway-SemiBold", size: 12, relativeTo: .caption))
+                    .tracking(0.2)
+            }
+            .foregroundStyle(DesignColors.accentWarm)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 6)
+            .background { Capsule().fill(DesignColors.accentWarm.opacity(0.12)) }
+
+            Spacer()
+
+            VStack(alignment: .leading, spacing: 8) {
+                Text("No challenge today")
+                    .font(.custom("Raleway-Bold", size: 22, relativeTo: .title2))
+                    .tracking(-0.3)
+                    .foregroundStyle(DesignColors.text)
+                    .shadow(color: DesignColors.background.opacity(0.75), radius: 4, x: 0, y: 0)
+
+                Text("Rest up — a fresh one will be here\ntomorrow, tuned to how you feel.")
+                    .font(.custom("Raleway-Medium", size: 14, relativeTo: .body))
+                    .foregroundStyle(DesignColors.textPrincipal)
+                    .lineSpacing(3)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .shadow(color: DesignColors.background.opacity(0.6), radius: 3, x: 0, y: 0)
+            }
+
+            Spacer()
+        }
+        .padding(28)
+        .frame(maxWidth: .infinity, alignment: .topLeading)
+        .frame(height: 340)
+        .glowCardBackground(tint: .cocoa)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("No challenge today. Rest up — a fresh one will be here tomorrow, tuned to how you feel.")
+    }
+}
+
 // `glowCardBackground()` moved to DesignSystem/Components/GlowCardBackground.swift

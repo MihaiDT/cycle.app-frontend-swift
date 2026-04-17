@@ -19,6 +19,10 @@ public struct ChatFeature: Sendable {
         public var isStreaming: Bool = false
         public var sessionID: String
         public var hasLoadedHistory: Bool = false
+        /// True once the WebSocket has failed at least once without ever
+        /// successfully connecting in this session. Used to surface an inline
+        /// "Can't reach Aria" banner with a retry. Cleared on successful connect.
+        public var hasConnectionError: Bool = false
 
         public init() {
             if let stored = UserDefaults.standard.string(forKey: "cycle.chat.sessionID"), !stored.isEmpty {
@@ -63,6 +67,7 @@ public struct ChatFeature: Sendable {
         case webSocketDisconnected
         case messageReceived(String)
         case historyLoaded([ChatMessage])
+        case retryConnectionTapped
         case delegate(Delegate)
 
         public enum Delegate: Sendable, Equatable {
@@ -116,48 +121,14 @@ public struct ChatFeature: Sendable {
                         await send(.historyLoaded(messages))
                     },
                     // Connect WebSocket (slight delay to let UI render first)
-                    .run { send in
-                        try? await Task.sleep(for: .milliseconds(300))
-                        let url = URL(string: "\(ChatFeature.wsURL)?anonymous_id=\(anonID)")!
-                        let session = URLSession(configuration: .default)
-                        var backoffSeconds: UInt64 = 2
-
-                        func connect() -> URLSessionWebSocketTask {
-                            let task = session.webSocketTask(with: url)
-                            task.resume()
-                            WebSocketManager.shared.task = task
-                            return task
-                        }
-
-                        var wsTask = connect()
-                        WebSocketManager.shared.sessionID = sessionID
-                        await send(.webSocketConnected)
-
-                        while !Task.isCancelled {
-                            do {
-                                let message = try await wsTask.receive()
-                                backoffSeconds = 2  // Reset on success
-                                switch message {
-                                case .string(let text):
-                                    await send(.messageReceived(text))
-                                case .data:
-                                    break
-                                @unknown default:
-                                    break
-                                }
-                            } catch {
-                                guard !Task.isCancelled else { break }
-                                await send(.webSocketDisconnected)
-                                // Exponential backoff: 2s, 4s, 8s, 16s, max 30s
-                                try? await Task.sleep(for: .seconds(backoffSeconds))
-                                backoffSeconds = min(backoffSeconds * 2, 30)
-                                guard !Task.isCancelled else { break }
-                                wsTask = connect()
-                                await send(.webSocketConnected)
-                            }
-                        }
-                    }.cancellable(id: CancelID.webSocket, cancelInFlight: true)
+                    Self.webSocketConnectEffect(sessionID: sessionID, anonID: anonID)
                 )
+
+            case .retryConnectionTapped:
+                state.hasConnectionError = false
+                let sessionID = state.sessionID
+                let anonID = anonymousID.getID()
+                return Self.webSocketConnectEffect(sessionID: sessionID, anonID: anonID)
 
             // MARK: historyLoaded
 
@@ -237,10 +208,15 @@ public struct ChatFeature: Sendable {
 
             case .webSocketConnected:
                 state.isConnected = true
+                state.hasConnectionError = false
                 return .none
 
             case .webSocketDisconnected:
                 state.isConnected = false
+                // Only flag as error state if we've never connected OR the
+                // retry loop has been trying for a while. For now, any drop
+                // surfaces the banner — re-connects clear it automatically.
+                state.hasConnectionError = true
                 return .none
 
             // MARK: messageReceived
@@ -351,6 +327,55 @@ public struct ChatFeature: Sendable {
     private enum CancelID {
         case webSocket
     }
+
+    // MARK: - WebSocket connect helper
+
+    /// Shared WebSocket connection effect used by both `onAppear` and
+    /// `retryConnectionTapped`. Wrapped in `.cancellable(cancelInFlight:)` so
+    /// a retry tears down any prior listener cleanly.
+    private static func webSocketConnectEffect(sessionID: String, anonID: String) -> Effect<Action> {
+        .run { send in
+            try? await Task.sleep(for: .milliseconds(300))
+            let url = URL(string: "\(ChatFeature.wsURL)?anonymous_id=\(anonID)")!
+            let session = URLSession(configuration: .default)
+            var backoffSeconds: UInt64 = 2
+
+            func connect() -> URLSessionWebSocketTask {
+                let task = session.webSocketTask(with: url)
+                task.resume()
+                WebSocketManager.shared.task = task
+                return task
+            }
+
+            var wsTask = connect()
+            WebSocketManager.shared.sessionID = sessionID
+            await send(.webSocketConnected)
+
+            while !Task.isCancelled {
+                do {
+                    let message = try await wsTask.receive()
+                    backoffSeconds = 2  // Reset on success
+                    switch message {
+                    case .string(let text):
+                        await send(.messageReceived(text))
+                    case .data:
+                        break
+                    @unknown default:
+                        break
+                    }
+                } catch {
+                    guard !Task.isCancelled else { break }
+                    await send(.webSocketDisconnected)
+                    // Exponential backoff: 2s, 4s, 8s, 16s, max 30s
+                    try? await Task.sleep(for: .seconds(backoffSeconds))
+                    backoffSeconds = min(backoffSeconds * 2, 30)
+                    guard !Task.isCancelled else { break }
+                    wsTask = connect()
+                    await send(.webSocketConnected)
+                }
+            }
+        }.cancellable(id: CancelID.webSocket, cancelInFlight: true)
+    }
 }
 
 // MARK: - WebSocket Manager (Sendable singleton)
@@ -379,6 +404,16 @@ public struct ChatView: View {
             // Header
             chatHeader
 
+            // Connection error banner — shown when the WebSocket has failed
+            // and we haven't auto-reconnected yet. Uses a warm (not red) tone
+            // to match the premium aesthetic.
+            if store.hasConnectionError && !store.isConnected {
+                connectionErrorBanner
+                    .padding(.horizontal, 16)
+                    .padding(.top, 10)
+                    .transition(.opacity.combined(with: .move(edge: .top)))
+            }
+
             // Content
             if store.messages.isEmpty {
                 welcomeScreen
@@ -392,7 +427,59 @@ public struct ChatView: View {
         .background(DesignColors.background)
         .onTapGesture { isInputFocused = false }
         .task { store.send(.onAppear) }
+        .animation(.easeInOut(duration: 0.25), value: store.hasConnectionError)
+        .animation(.easeInOut(duration: 0.25), value: store.isConnected)
         .enableInjection()
+    }
+
+    // MARK: - Connection Error Banner
+
+    private var connectionErrorBanner: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "wifi.exclamationmark")
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(DesignColors.accentWarm)
+                .accessibilityHidden(true)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Can't reach Aria")
+                    .font(.raleway("SemiBold", size: 13, relativeTo: .subheadline))
+                    .foregroundStyle(DesignColors.text)
+                Text("Check your connection and try again.")
+                    .font(.raleway("Regular", size: 11, relativeTo: .caption))
+                    .foregroundStyle(DesignColors.textSecondary)
+            }
+
+            Spacer(minLength: 8)
+
+            Button {
+                store.send(.retryConnectionTapped)
+            } label: {
+                Text("Try again")
+                    .font(.raleway("SemiBold", size: 12, relativeTo: .caption))
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 7)
+                    .background {
+                        Capsule()
+                            .fill(DesignColors.accentWarm)
+                    }
+            }
+            .buttonStyle(.plain)
+            .accessibilityHint("Retries the connection to Aria")
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 10)
+        .background {
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .fill(.ultraThinMaterial)
+                .overlay {
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .strokeBorder(DesignColors.accentWarm.opacity(0.25), lineWidth: 0.5)
+                }
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Can't reach Aria. Check your connection and try again.")
     }
 
     // MARK: - Header

@@ -119,7 +119,6 @@ public struct TodayFeature: Sendable {
         case latePeriodStartedDifferent
         case latePeriodNotStarted
         case hideSyncStatus
-        case finishRefreshAnimation
         /// Background save + predict + reload — survives child dismissals
         case backgroundSyncPeriod(
             periodDays: Set<String>,
@@ -138,6 +137,7 @@ public struct TodayFeature: Sendable {
         case notificationsPanelDismissed
         case generateMissingRecaps
         case delegate(Delegate)
+        @CasePathable
         public enum Delegate: Sendable, Equatable {
             case openAriaChat(context: String)
             case openCycleInsights
@@ -183,6 +183,11 @@ public struct TodayFeature: Sendable {
             await send(.wellnessMessageLoaded(message))
         }
     }
+
+    /// Muted placeholder shown when the wellness AI fetch returns nil (network
+    /// failure, backend down, etc.). Intentionally gentle — keeps the hero
+    /// from collapsing to empty whitespace without screaming "error".
+    private static let wellnessPlaceholder = "Checking in with you soon."
 
     private static func syncPhaseEffect(state: State) -> Effect<Action> {
         guard let cycle = state.cycle,
@@ -538,12 +543,6 @@ public struct TodayFeature: Sendable {
                 state.isRefreshingCycleData = false
                 return .send(.generateMissingRecaps)
 
-            case .finishRefreshAnimation:
-                // Snapshot is updated immediately when calendar loads now, so
-                // this hook just clears the refresh flag.
-                state.isRefreshingCycleData = false
-                return .none
-
             // MARK: — Phase broadcast hub
             // All components that react to phase changes subscribe here.
             // To add a new component: add one .send line below.
@@ -585,7 +584,10 @@ public struct TodayFeature: Sendable {
 
             case .wellnessMessageLoaded(let message):
                 state.isLoadingWellnessMessage = false
-                state.wellnessMessage = message
+                // Fall back to a muted placeholder on nil (network failure) so
+                // the hero keeps its line of copy instead of collapsing to
+                // a default cycle phrase from CycleHeroView.
+                state.wellnessMessage = message ?? Self.wellnessPlaceholder
                 return .none
 
             case .backgroundSyncCompleted:

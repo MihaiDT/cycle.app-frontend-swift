@@ -77,6 +77,13 @@ struct ChallengeValidatingView: View {
         VStack(spacing: 24) {
             Spacer()
 
+            // Soft warm icon so the failure state still reads as "premium"
+            // rather than a hard red alert.
+            Image(systemName: "exclamationmark.circle")
+                .font(.system(size: 30, weight: .light))
+                .foregroundStyle(DesignColors.accentWarm.opacity(0.75))
+                .accessibilityHidden(true)
+
             Text(message)
                 .font(.custom("Raleway-Medium", size: 16, relativeTo: .body))
                 .foregroundStyle(DesignColors.textPrincipal)
@@ -87,18 +94,22 @@ struct ChallengeValidatingView: View {
 
             VStack(spacing: 12) {
                 Button { store.send(.tryAgainTapped) } label: {
-                    Text("Try again")
-                        .font(.custom("Raleway-Bold", size: 15, relativeTo: .body))
-                        .foregroundStyle(.white)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 14)
-                        .background(
-                            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                                .fill(DesignColors.accentWarm)
-                        )
+                    HStack(spacing: 6) {
+                        Image(systemName: "arrow.clockwise")
+                            .font(.system(size: 13, weight: .semibold))
+                        Text("Try again")
+                            .font(.custom("Raleway-Bold", size: 15, relativeTo: .body))
+                    }
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 14)
+                    .background(
+                        RoundedRectangle(cornerRadius: 14, style: .continuous)
+                            .fill(DesignColors.accentWarm)
+                    )
                 }
                 .buttonStyle(.plain)
-                .accessibilityHint("Retakes the photo")
+                .accessibilityHint("Retakes the photo and re-submits")
 
                 Button { store.send(.closeTapped) } label: {
                     Text("Skip for today")

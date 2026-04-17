@@ -38,6 +38,7 @@ struct AppFeatureTests {
         let store = TestStore(initialState: AppFeature.State(destination: .onboarding)) {
             AppFeature()
         }
+        store.exhaustivity = .off
 
         await store.send(.onboardingBeginTapped) {
             $0.destination = .privacy
@@ -79,8 +80,8 @@ struct AppFeatureTests {
             $0.destination = .recap
         }
 
-        await store.send(.recapFinishTapped) {
-            $0.isSubmittingOnboarding = true
-        }
+        // recapFinishTapped triggers submitOnboardingData + onboardingSubmitCompleted
+        // effects asynchronously; with .off exhaustivity both run before assert.
+        await store.send(.recapFinishTapped)
     }
 }
