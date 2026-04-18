@@ -13,17 +13,28 @@ public struct BondsTestFeature: Sendable {
         public var encryptedHex: String = ""
         public var decryptedText: String = ""
         public var bonds: [BondInfo] = []
+        public var myAnonymousID: String = ""
+        public var partnerIDInput: String = ""
+        public var activeBondID: String = ""
+        public var pendingBondID: String = ""
 
         public init() {}
     }
 
-    public enum Action: Sendable {
+    public enum Action: BindableAction, Sendable {
+        case binding(BindingAction<State>)
         case testCryptoTapped
         case testKeyRecoveryTapped
         case initializeKeysTapped
         case fetchBondsTapped
         case createTestBondTapped
         case fullE2ETestTapped
+        case onAppear
+        case realCreateBondTapped
+        case realAcceptBondTapped
+        case realUploadSummaryTapped
+        case realDownloadPartnerTapped
+        case realFetchPendingTapped
         case appendLog(String)
     }
 
@@ -36,8 +47,210 @@ public struct BondsTestFeature: Sendable {
     public init() {}
 
     public var body: some ReducerOf<Self> {
+        BindingReducer()
         Reduce { state, action in
             switch action {
+            case .binding:
+                return .none
+
+            // MARK: - On Appear
+            case .onAppear:
+                state.myAnonymousID = anonymousID.getID()
+                return .none
+
+            // MARK: - Real 2-device flow
+            case .realCreateBondTapped:
+                let partnerID = state.partnerIDInput.trimmingCharacters(in: .whitespacesAndNewlines)
+                guard !partnerID.isEmpty else {
+                    state.log.append("❌ Enter partner's ID first")
+                    return .none
+                }
+                state.isRunning = true
+                return .run { [bondCrypto, anonymousID] send in
+                    let base = "https://dth-backend-277319586889.us-central1.run.app"
+                    let myID = anonymousID.getID()
+                    do {
+                        // Init keys if needed
+                        let keychain = KeychainClient.live()
+                        if try keychain.load("bond.publicKey") == nil {
+                            await send(.appendLog("🔑 Generating keys..."))
+                            let keys = try bondCrypto.generateKeyPair()
+                            try keychain.save("bond.publicKey", keys.publicKey)
+                            try keychain.save("bond.secretKey", keys.secretKey)
+                            var req = URLRequest(url: URL(string: "\(base)/api/\(myID)/keys")!)
+                            req.httpMethod = "PUT"
+                            req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+                            req.httpBody = try JSONEncoder().encode(["public_key": keys.publicKey.base64EncodedString()])
+                            _ = try await URLSession.shared.data(for: req)
+                            await send(.appendLog("✅ Keys uploaded"))
+                        }
+
+                        // Create bond
+                        await send(.appendLog("🔗 Creating bond with \(partnerID.prefix(12))..."))
+                        var req = URLRequest(url: URL(string: "\(base)/api/\(myID)/bonds")!)
+                        req.httpMethod = "POST"
+                        req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+                        req.httpBody = try JSONEncoder().encode(["partner_id": partnerID])
+                        let (data, _) = try await URLSession.shared.data(for: req)
+                        let json = try JSONSerialization.jsonObject(with: data) as? [String: Any]
+                        let bondObj = json?["bond"] as? [String: Any]
+                        let bondID = bondObj?["id"] as? String ?? ""
+                        await send(.appendLog("✅ Bond created: \(bondID)"))
+                        await send(.appendLog("📋 Send this bond ID to your friend to accept"))
+                    } catch {
+                        await send(.appendLog("❌ \(error.localizedDescription)"))
+                    }
+                }
+
+            case .realFetchPendingTapped:
+                state.isRunning = true
+                return .run { [anonymousID] send in
+                    let base = "https://dth-backend-277319586889.us-central1.run.app"
+                    let myID = anonymousID.getID()
+                    do {
+                        let (data, _) = try await URLSession.shared.data(from: URL(string: "\(base)/api/\(myID)/bonds")!)
+                        let bonds = try JSONSerialization.jsonObject(with: data) as? [[String: Any]] ?? []
+                        for bond in bonds {
+                            let bondObj = bond["bond"] as? [String: Any] ?? bond
+                            let id = bondObj["id"] as? String ?? ""
+                            let status = bondObj["status"] as? String ?? ""
+                            let partner = bond["partner_id"] as? String ?? ""
+                            await send(.appendLog("Bond: \(id.prefix(12))... status=\(status) partner=\(partner.prefix(12))..."))
+                        }
+                        if bonds.isEmpty {
+                            await send(.appendLog("No bonds found"))
+                        }
+                    } catch {
+                        await send(.appendLog("❌ \(error.localizedDescription)"))
+                    }
+                }
+
+            case .realAcceptBondTapped:
+                let bondID = state.pendingBondID.trimmingCharacters(in: .whitespacesAndNewlines)
+                guard !bondID.isEmpty else {
+                    state.log.append("❌ Enter bond ID first")
+                    return .none
+                }
+                state.isRunning = true
+                return .run { [bondCrypto, anonymousID] send in
+                    let base = "https://dth-backend-277319586889.us-central1.run.app"
+                    let myID = anonymousID.getID()
+                    do {
+                        // Init keys if needed
+                        let keychain = KeychainClient.live()
+                        if try keychain.load("bond.publicKey") == nil {
+                            await send(.appendLog("🔑 Generating keys..."))
+                            let keys = try bondCrypto.generateKeyPair()
+                            try keychain.save("bond.publicKey", keys.publicKey)
+                            try keychain.save("bond.secretKey", keys.secretKey)
+                            var req = URLRequest(url: URL(string: "\(base)/api/\(myID)/keys")!)
+                            req.httpMethod = "PUT"
+                            req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+                            req.httpBody = try JSONEncoder().encode(["public_key": keys.publicKey.base64EncodedString()])
+                            _ = try await URLSession.shared.data(for: req)
+                            await send(.appendLog("✅ Keys uploaded"))
+                        }
+
+                        await send(.appendLog("✋ Accepting bond \(bondID.prefix(12))..."))
+                        var req = URLRequest(url: URL(string: "\(base)/api/\(myID)/bonds/\(bondID)/accept")!)
+                        req.httpMethod = "POST"
+                        req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+                        req.httpBody = "{}".data(using: .utf8)
+                        let (data, resp) = try await URLSession.shared.data(for: req)
+                        let code = (resp as? HTTPURLResponse)?.statusCode ?? 0
+                        await send(.appendLog("✅ Bond accepted (HTTP \(code))"))
+                    } catch {
+                        await send(.appendLog("❌ \(error.localizedDescription)"))
+                    }
+                }
+
+            case .realUploadSummaryTapped:
+                let bondID = state.activeBondID.trimmingCharacters(in: .whitespacesAndNewlines)
+                let partnerID = state.partnerIDInput.trimmingCharacters(in: .whitespacesAndNewlines)
+                guard !bondID.isEmpty, !partnerID.isEmpty else {
+                    state.log.append("❌ Need bond ID + partner ID")
+                    return .none
+                }
+                state.isRunning = true
+                return .run { [bondCrypto, anonymousID] send in
+                    let base = "https://dth-backend-277319586889.us-central1.run.app"
+                    let myID = anonymousID.getID()
+                    do {
+                        // Get partner's public key
+                        await send(.appendLog("🔑 Getting partner's public key..."))
+                        let (keyData, _) = try await URLSession.shared.data(from: URL(string: "\(base)/api/\(partnerID)/keys")!)
+                        let keyJSON = try JSONSerialization.jsonObject(with: keyData) as? [String: Any]
+                        guard let pubKeyB64 = keyJSON?["public_key"] as? String,
+                              let partnerPubKey = Data(base64Encoded: pubKeyB64) else {
+                            await send(.appendLog("❌ Partner hasn't uploaded keys yet"))
+                            return
+                        }
+
+                        // Create and encrypt summary
+                        let summary = BondSummary(
+                            cyclePhase: "follicular",
+                            energyLevel: 4,
+                            moodLevel: 3,
+                            dominantElement: "water",
+                            tensionScore: 0.6
+                        )
+                        let summaryData = try JSONEncoder().encode(summary)
+                        let encrypted = try bondCrypto.encrypt(summaryData, partnerPubKey)
+
+                        // Upload
+                        var req = URLRequest(url: URL(string: "\(base)/api/\(myID)/bonds/\(bondID)/blobs")!)
+                        req.httpMethod = "PUT"
+                        req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+                        req.httpBody = try JSONEncoder().encode([
+                            "blob_data": encrypted.base64EncodedString(),
+                            "blob_type": "summary"
+                        ])
+                        let (_, resp) = try await URLSession.shared.data(for: req)
+                        await send(.appendLog("✅ Summary encrypted & uploaded (HTTP \((resp as? HTTPURLResponse)?.statusCode ?? 0))"))
+                    } catch {
+                        await send(.appendLog("❌ \(error.localizedDescription)"))
+                    }
+                }
+
+            case .realDownloadPartnerTapped:
+                let bondID = state.activeBondID.trimmingCharacters(in: .whitespacesAndNewlines)
+                guard !bondID.isEmpty else {
+                    state.log.append("❌ Need bond ID")
+                    return .none
+                }
+                state.isRunning = true
+                return .run { [bondCrypto, anonymousID] send in
+                    let base = "https://dth-backend-277319586889.us-central1.run.app"
+                    let myID = anonymousID.getID()
+                    do {
+                        let keychain = KeychainClient.live()
+                        guard let myPubKey = try keychain.load("bond.publicKey"),
+                              let mySecKey = try keychain.load("bond.secretKey") else {
+                            await send(.appendLog("❌ No keys found — initialize first"))
+                            return
+                        }
+
+                        await send(.appendLog("📡 Downloading blobs..."))
+                        let (data, _) = try await URLSession.shared.data(from: URL(string: "\(base)/api/\(myID)/bonds/\(bondID)/blobs?type=summary")!)
+                        let json = try JSONSerialization.jsonObject(with: data) as? [String: Any]
+
+                        guard let partnerB64 = json?["partner_blob"] as? String,
+                              let partnerBlob = Data(base64Encoded: partnerB64) else {
+                            await send(.appendLog("⚠️ Partner hasn't uploaded a summary yet"))
+                            return
+                        }
+
+                        let decrypted = try bondCrypto.decrypt(partnerBlob, myPubKey, mySecKey)
+                        let summary = try JSONDecoder().decode(BondSummary.self, from: decrypted)
+                        await send(.appendLog("✅ Partner's summary:"))
+                        await send(.appendLog("   Phase: \(summary.cyclePhase)"))
+                        await send(.appendLog("   Energy: \(summary.energyLevel), Mood: \(summary.moodLevel)"))
+                        await send(.appendLog("   Element: \(summary.dominantElement)"))
+                        await send(.appendLog("🎉 Decryption successful!"))
+                    } catch {
+                        await send(.appendLog("❌ \(error.localizedDescription)"))
+                    }
+                }
 
             // MARK: - Test local crypto (no server needed)
             case .testCryptoTapped:
@@ -340,32 +553,103 @@ struct BondsTestView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
 
-                    // Full E2E test
+                    // Your ID
                     Section {
-                        testButton("🚀 Full E2E Test (2 users, bond, encrypt, decrypt)", action: .fullE2ETestTapped)
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Your Anonymous ID:")
+                                .font(.raleway("SemiBold", size: 13, relativeTo: .caption))
+                                .foregroundStyle(DesignColors.textSecondary)
+                            Text(store.myAnonymousID)
+                                .font(.system(size: 11, design: .monospaced))
+                                .foregroundStyle(DesignColors.text)
+                                .textSelection(.enabled)
+                            Button("Copy") {
+                                UIPasteboard.general.string = store.myAnonymousID
+                            }
+                            .font(.raleway("SemiBold", size: 13, relativeTo: .caption))
+                            .foregroundStyle(DesignColors.accentWarm)
+                        }
+                        .padding(14)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(RoundedRectangle(cornerRadius: 12).fill(.white))
+                        .shadow(color: .black.opacity(0.04), radius: 4, x: 0, y: 2)
                     } header: {
-                        sectionHeader("End-to-End Test")
+                        sectionHeader("Your Device")
                     }
 
                     Divider()
 
-                    // Local tests (no server needed)
+                    // Real 2-device test
                     Section {
+                        VStack(alignment: .leading, spacing: 12) {
+                            Text("Step 1: Initialize keys")
+                                .font(.raleway("SemiBold", size: 14, relativeTo: .body))
+                                .foregroundStyle(DesignColors.text)
+                            testButton("🔑 Initialize Keys", action: .initializeKeysTapped)
+
+                            Divider()
+
+                            Text("Step 2: Enter partner's ID")
+                                .font(.raleway("SemiBold", size: 14, relativeTo: .body))
+                                .foregroundStyle(DesignColors.text)
+                            TextField("Partner Anonymous ID", text: $store.partnerIDInput)
+                                .font(.system(size: 13, design: .monospaced))
+                                .textFieldStyle(.roundedBorder)
+                                .autocorrectionDisabled()
+                                .textInputAutocapitalization(.never)
+
+                            Divider()
+
+                            Text("Step 3: Create bond (Phone A does this)")
+                                .font(.raleway("SemiBold", size: 14, relativeTo: .body))
+                                .foregroundStyle(DesignColors.text)
+                            testButton("🔗 Create Bond", action: .realCreateBondTapped)
+
+                            Divider()
+
+                            Text("Step 4: Check pending bonds")
+                                .font(.raleway("SemiBold", size: 14, relativeTo: .body))
+                                .foregroundStyle(DesignColors.text)
+                            testButton("📋 List My Bonds", action: .realFetchPendingTapped)
+
+                            Divider()
+
+                            Text("Step 5: Accept bond (Phone B does this)")
+                                .font(.raleway("SemiBold", size: 14, relativeTo: .body))
+                                .foregroundStyle(DesignColors.text)
+                            TextField("Bond ID to accept", text: $store.pendingBondID)
+                                .font(.system(size: 13, design: .monospaced))
+                                .textFieldStyle(.roundedBorder)
+                                .autocorrectionDisabled()
+                                .textInputAutocapitalization(.never)
+                            testButton("✋ Accept Bond", action: .realAcceptBondTapped)
+
+                            Divider()
+
+                            Text("Step 6: Exchange data")
+                                .font(.raleway("SemiBold", size: 14, relativeTo: .body))
+                                .foregroundStyle(DesignColors.text)
+                            TextField("Active Bond ID", text: $store.activeBondID)
+                                .font(.system(size: 13, design: .monospaced))
+                                .textFieldStyle(.roundedBorder)
+                                .autocorrectionDisabled()
+                                .textInputAutocapitalization(.never)
+                            testButton("📤 Upload My Summary", action: .realUploadSummaryTapped)
+                            testButton("📥 Download Partner's Summary", action: .realDownloadPartnerTapped)
+                        }
+                    } header: {
+                        sectionHeader("Real 2-Device Test")
+                    }
+
+                    Divider()
+
+                    // Automated test
+                    Section {
+                        testButton("🚀 Full E2E Test (simulated)", action: .fullE2ETestTapped)
                         testButton("🔐 Test Crypto (local)", action: .testCryptoTapped)
                         testButton("🔑 Test Key Recovery (local)", action: .testKeyRecoveryTapped)
                     } header: {
-                        sectionHeader("Local Tests (no server)")
-                    }
-
-                    Divider()
-
-                    // Server tests
-                    Section {
-                        testButton("🔑 Initialize Keys", action: .initializeKeysTapped)
-                        testButton("📡 Fetch My Bonds", action: .fetchBondsTapped)
-                        testButton("➕ Create Test Bond", action: .createTestBondTapped)
-                    } header: {
-                        sectionHeader("Server Tests (needs backend)")
+                        sectionHeader("Automated Tests")
                     }
 
                     Divider()
@@ -392,6 +676,7 @@ struct BondsTestView: View {
             .background(DesignColors.background)
             .navigationTitle("Bonds Test")
             .navigationBarTitleDisplayMode(.inline)
+            .onAppear { store.send(.onAppear) }
         }
     }
 
