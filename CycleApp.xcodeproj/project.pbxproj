@@ -41,7 +41,6 @@
 		2F24A9251D263E5F9C114837 /* GlowProfileSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3320F62F7E1DCDF6F15FBB3F /* GlowProfileSnapshot.swift */; };
 		2F2DFA87AC69370BD4131C57 /* ChallengeJourneyFeatureTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AEE795415338E0F97CE4888 /* ChallengeJourneyFeatureTests.swift */; };
 		2F5D4959EB6E812DC69B2801 /* HealthRecords.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC414B9F62AE355B653A88EB /* HealthRecords.swift */; };
-		2F5F66810F7B6562D9DC30C1 /* AstrologyPerfBenchmark.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C74D0985D1AA56264E7C18D /* AstrologyPerfBenchmark.swift */; };
 		304CB9F73790823C77100D91 /* Inject in Frameworks */ = {isa = PBXBuildFile; productRef = 0446831096B8B9BD8D89586C /* Inject */; };
 		304E418C0DF3BC7793B0D0DA /* Raleway-ExtraLight.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 6245417E8CDA74DC974841F8 /* Raleway-ExtraLight.ttf */; };
 		30B8F1F1D1487A0E406A4973 /* glowing_orb.riv in Resources */ = {isa = PBXBuildFile; fileRef = 5ED03F559F4A2F374AF86A5C /* glowing_orb.riv */; };
@@ -64,7 +63,6 @@
 		43871BC7610359114EBD9DF7 /* SplineIntroView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4674CEEA6B50FCAB809318E6 /* SplineIntroView.swift */; };
 		44E021EDE4D2D22854A7F140 /* HBICalculator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42B1B55C9A99AA93CDC456BD /* HBICalculator.swift */; };
 		4503C9892C51B0B891A5EEAC /* ValidationFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F309D01584F377D9838A851 /* ValidationFeature.swift */; };
-		48B49AEED95E84B3647F267D /* TodayTransits.swift in Sources */ = {isa = PBXBuildFile; fileRef = 017339944C4C692D6667FD12 /* TodayTransits.swift */; };
 		496CB9CC2ABA3DB5441CB8B2 /* CycleAppLiveActivity.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 75D6127ECF3EBDD6447B1D46 /* CycleAppLiveActivity.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		497994E9A0C6F0E200D43FD9 /* GlowConstants.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A744F4748AE7AFCE59451A9 /* GlowConstants.swift */; };
 		49B07A298102453EC330BB35 /* RelationshipStatusView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9951D5FE998C1DD8DE8B9958 /* RelationshipStatusView.swift */; };
@@ -126,7 +124,6 @@
 		8C3CDFD3F89927B69C2370B5 /* ChatFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E943F4688D7290A2D03A26C /* ChatFeature.swift */; };
 		8E65A945BC5E33B5394380E5 /* OnboardingRecapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C5173191F10BFB448ECF0C0 /* OnboardingRecapView.swift */; };
 		93171D057A5C6A89B853B4F3 /* MoodArcFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = F20A3CE89B891747B164731C /* MoodArcFeature.swift */; };
-		982A5662450DDA451677AC98 /* FullReportDump.swift in Sources */ = {isa = PBXBuildFile; fileRef = 48A9AC0EB33772F2E77DCF59 /* FullReportDump.swift */; };
 		986DC0F5842157CD9402EE82 /* Raleway-Light.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 8706093A21A56ECBA0441334 /* Raleway-Light.ttf */; };
 		98B01DAE93DEFD8A8771464C /* CycleJourneyFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84F05DBD3274CDC65812AA44 /* CycleJourneyFeature.swift */; };
 		98C48FC656F4CA682EAE0D1D /* AriaRecapStories.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8401A3E28A02E96486B3F394 /* AriaRecapStories.swift */; };
@@ -225,9 +222,9 @@
 		F5EA81C29EE997219835D532 /* CelestialCycleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 91D49DDC5F4C3DAE7EF32645 /* CelestialCycleView.swift */; };
 		F63006C2A2957A33DEB472FE /* PhotoReviewFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEDC94436897365CDB098DFB /* PhotoReviewFeature.swift */; };
 		F6EE431810A1618291C3FF85 /* CycleInsightsFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA3B9C4C5B8CCFEC092F2EEE /* CycleInsightsFeature.swift */; };
-		F75DD9E50D0D506953B06164 /* AstrologyNatalVerification.swift in Sources */ = {isa = PBXBuildFile; fileRef = B8ACDDF816E6709D1242D4F7 /* AstrologyNatalVerification.swift */; };
 		F7778A97B96AC3334633A3FA /* Font+Raleway.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8485E88DDE7D7113519EC964 /* Font+Raleway.swift */; };
 		F796B28C6F0B4EDD0F77BCA7 /* CalendarAriaInsight.swift in Sources */ = {isa = PBXBuildFile; fileRef = E234B15081BB567827B75E0E /* CalendarAriaInsight.swift */; };
+		F8EFE71EE81D874CC6D1678B /* BondCryptoTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2671C6FE7F908D618738972 /* BondCryptoTests.swift */; };
 		F908604A58466C73C7E4F88A /* ChallengeCelebrationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90013BFB17E4809CA21AFF24 /* ChallengeCelebrationView.swift */; };
 		FD106B325B0DCD2350FCE058 /* Raleway-Black.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 4DAC1FA0A5CD5600CE6E4376 /* Raleway-Black.ttf */; };
 		FE0B55CA6AD817CF227B166A /* Async+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AD75AABB9CE6FF41B8116AE /* Async+Extensions.swift */; };
@@ -266,7 +263,6 @@
 
 /* Begin PBXFileReference section */
 		0132B1F82A5F0287717FAF61 /* PrivacyConsentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivacyConsentView.swift; sourceTree = "<group>"; };
-		017339944C4C692D6667FD12 /* TodayTransits.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayTransits.swift; sourceTree = "<group>"; };
 		01D3B37256BD926AA7EFCBC2 /* Logger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Logger.swift; sourceTree = "<group>"; };
 		0359E62B86A73F05ADE7FFF1 /* AnonymousIDClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnonymousIDClient.swift; sourceTree = "<group>"; };
 		03ACA4C0ED30010E12CCE993 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
@@ -318,7 +314,6 @@
 		4674CEEA6B50FCAB809318E6 /* SplineIntroView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplineIntroView.swift; sourceTree = "<group>"; };
 		4805DEF39BB13A739A6E1C25 /* ChallengeInProgressBanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChallengeInProgressBanner.swift; sourceTree = "<group>"; };
 		4826ABD18C16E30DACC2F4B6 /* BirthDataView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BirthDataView.swift; sourceTree = "<group>"; };
-		48A9AC0EB33772F2E77DCF59 /* FullReportDump.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FullReportDump.swift; sourceTree = "<group>"; };
 		4BCA28BDD1FB0A4D497A5CAA /* CycleRecapRecord.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CycleRecapRecord.swift; sourceTree = "<group>"; };
 		4BCD05B0769F861D03E644E9 /* Layout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Layout.swift; sourceTree = "<group>"; };
 		4C77124333395856EB581A13 /* LocalNotificationClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalNotificationClient.swift; sourceTree = "<group>"; };
@@ -379,7 +374,6 @@
 		8A382D97B1E46FCB1896FA78 /* OnboardingBackground.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingBackground.swift; sourceTree = "<group>"; };
 		8B25658F35072C37DA32E0E8 /* Raleway-Medium.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Raleway-Medium.ttf"; sourceTree = "<group>"; };
 		8B2E917A1A387F2983A37D06 /* ModelCodableTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelCodableTests.swift; sourceTree = "<group>"; };
-		8C74D0985D1AA56264E7C18D /* AstrologyPerfBenchmark.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AstrologyPerfBenchmark.swift; sourceTree = "<group>"; };
 		8DEFC656AD8FC3BB201AB0D9 /* Animation+Tiers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Animation+Tiers.swift"; sourceTree = "<group>"; };
 		8E8FBBDC5F3C40247FE20177 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		8EC87831D85087D66D6D3BB0 /* Raleway-ExtraBoldItalic.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Raleway-ExtraBoldItalic.ttf"; sourceTree = "<group>"; };
@@ -412,6 +406,7 @@
 		B0221FE22F62CE6F05DDF528 /* CycleInsightsDetailViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CycleInsightsDetailViews.swift; sourceTree = "<group>"; };
 		B0A5D544979E59D9EEF6F45A /* MenstrualLocalClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenstrualLocalClient.swift; sourceTree = "<group>"; };
 		B25F0848D5EE9FBB722FBAD6 /* CycleDataView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CycleDataView.swift; sourceTree = "<group>"; };
+		B2671C6FE7F908D618738972 /* BondCryptoTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BondCryptoTests.swift; sourceTree = "<group>"; };
 		B2940CF932F7370E57C35B79 /* HBIScore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HBIScore.swift; sourceTree = "<group>"; };
 		B2B0B1673FABC27A43A6B02D /* CycleInsightsComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CycleInsightsComponents.swift; sourceTree = "<group>"; };
 		B38AB06E18B5A4632AE2761A /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -420,7 +415,6 @@
 		B5D3B77B6EF5F17F3E47EB83 /* OnboardingProgressBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingProgressBar.swift; sourceTree = "<group>"; };
 		B5D52170A5CA66317D773334 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
 		B84BCFB1576C07C6DEA68DC3 /* GlowLocalClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlowLocalClient.swift; sourceTree = "<group>"; };
-		B8ACDDF816E6709D1242D4F7 /* AstrologyNatalVerification.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AstrologyNatalVerification.swift; sourceTree = "<group>"; };
 		B95AF5455648FC76034154C6 /* UserProfileRecord.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserProfileRecord.swift; sourceTree = "<group>"; };
 		BA263FB218AF9228CF648E42 /* Raleway-SemiBold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Raleway-SemiBold.ttf"; sourceTree = "<group>"; };
 		BB56C4D402DE76F749F5763C /* Raleway-ExtraLightItalic.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Raleway-ExtraLightItalic.ttf"; sourceTree = "<group>"; };
@@ -591,22 +585,19 @@
 			isa = PBXGroup;
 			children = (
 				15E5BBC3280206FB17B4DB65 /* AppFeatureTests.swift */,
-				B8ACDDF816E6709D1242D4F7 /* AstrologyNatalVerification.swift */,
-				8C74D0985D1AA56264E7C18D /* AstrologyPerfBenchmark.swift */,
+				B2671C6FE7F908D618738972 /* BondCryptoTests.swift */,
 				7DCB23D0D39C6673FBB862CF /* BroadcastTests.swift */,
 				1AEE795415338E0F97CE4888 /* ChallengeJourneyFeatureTests.swift */,
 				1F7823769E6FBFCECBCB6CAE /* ChallengeSnapshotTests.swift */,
 				BFDAB728D03A5022F4089209 /* CycleContextTests.swift */,
 				6F1A4A6CC1D5B26BCF74322D /* CycleEngineTests.swift */,
 				933570294E28A11D9CAC0726 /* CycleSnapshotTests.swift */,
-				48A9AC0EB33772F2E77DCF59 /* FullReportDump.swift */,
 				0BEC06F59B8B9180DB00A6C4 /* HBICalculatorExtendedTests.swift */,
 				8E8FBBDC5F3C40247FE20177 /* Info.plist */,
 				7B8BCDA4EDBEB5E424AECA1F /* MenstrualLocalClientTests.swift */,
 				DA99FC1013CD2777B5E38A3A /* MenstrualPredictorExtendedTests.swift */,
 				8B2E917A1A387F2983A37D06 /* ModelCodableTests.swift */,
 				60A69777B121E02CCD9ED6FD /* ModelTests.swift */,
-				017339944C4C692D6667FD12 /* TodayTransits.swift */,
 				6512D0891C474022446C2D98 /* ValidationTests.swift */,
 			);
 			path = CycleAppTests;
@@ -1287,21 +1278,18 @@
 			buildActionMask = 2147483647;
 			files = (
 				59BDEC46151CF3B972C59468 /* AppFeatureTests.swift in Sources */,
-				F75DD9E50D0D506953B06164 /* AstrologyNatalVerification.swift in Sources */,
-				2F5F66810F7B6562D9DC30C1 /* AstrologyPerfBenchmark.swift in Sources */,
+				F8EFE71EE81D874CC6D1678B /* BondCryptoTests.swift in Sources */,
 				ADB26A6EE2F64E6BB46564CC /* BroadcastTests.swift in Sources */,
 				2F2DFA87AC69370BD4131C57 /* ChallengeJourneyFeatureTests.swift in Sources */,
 				73751010818B10B59916451D /* ChallengeSnapshotTests.swift in Sources */,
 				D02AC33541A9502D8A84467D /* CycleContextTests.swift in Sources */,
 				A71309027B1FFC7844AB60CD /* CycleEngineTests.swift in Sources */,
 				31874D7D101B74F2780D9B61 /* CycleSnapshotTests.swift in Sources */,
-				982A5662450DDA451677AC98 /* FullReportDump.swift in Sources */,
 				189F03DD82CC3530BEBE441E /* HBICalculatorExtendedTests.swift in Sources */,
 				01D6CD7A25E3F29B6406832C /* MenstrualLocalClientTests.swift in Sources */,
 				D10E1FB23572C9DB2655E214 /* MenstrualPredictorExtendedTests.swift in Sources */,
 				4F5A6780E4C67EA9E30B1117 /* ModelCodableTests.swift in Sources */,
 				54BBA1A69E4714934F1D8300 /* ModelTests.swift in Sources */,
-				48B49AEED95E84B3647F267D /* TodayTransits.swift in Sources */,
 				53BBEBB468E1946BF1682D48 /* ValidationTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
