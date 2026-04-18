@@ -26,6 +26,7 @@
 		1E398DF44CDE89CED1E54CE8 /* RatingBadge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2FA7831814741F9DD13CF269 /* RatingBadge.swift */; };
 		1E3B4EC0E761F7ACF8F91F84 /* Raleway-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 9C912EA0509634526A9D7F08 /* Raleway-Bold.ttf */; };
 		1EBAF390664932B71CB5E403 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B38AB06E18B5A4632AE2761A /* Assets.xcassets */; };
+		21ECE9BDBCF12C248BC24F22 /* BondModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5410FC184646EFA794F42408 /* BondModels.swift */; };
 		23456C151B389D3726F53137 /* GlowIconButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68372D216C45E8F95742C783 /* GlowIconButton.swift */; };
 		24543E48DBC791E3EAE935D6 /* UserProfileLocalClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07F1D2E8D0B49CA5E71909AF /* UserProfileLocalClient.swift */; };
 		2463A9AD18BC23ACA9C05466 /* LevelUpFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = F837406D8C9EE075142E8207 /* LevelUpFeature.swift */; };
@@ -159,6 +160,7 @@
 		B23822CF0AEC66D9A5A6F2D9 /* Raleway-LightItalic.ttf in Resources */ = {isa = PBXBuildFile; fileRef = FC20EA8D8D952D23A5847DDB /* Raleway-LightItalic.ttf */; };
 		B2FD46D0C139524080026C3D /* DailyCardRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = D34DB3E24C0D055A3148660F /* DailyCardRecord.swift */; };
 		B3C842534218672CCDC49B93 /* Endpoint.swift in Sources */ = {isa = PBXBuildFile; fileRef = 32C504F11889B24005F6A29C /* Endpoint.swift */; };
+		B452F3B628FE805A172EBBA4 /* BondLocalClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC6A0B2886A2B169EC933793 /* BondLocalClient.swift */; };
 		B50E9BE7BC63C1E30C1E0ED8 /* AnonymousIDClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0359E62B86A73F05ADE7FFF1 /* AnonymousIDClient.swift */; };
 		B51ED6F3C6525B10A6232474 /* GradientTagline.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0BC45BF7323F201338BFDA2E /* GradientTagline.swift */; };
 		B5B59BD7A5531DBBA45DE149 /* GlowLocalClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = B84BCFB1576C07C6DEA68DC3 /* GlowLocalClient.swift */; };
@@ -213,6 +215,7 @@
 		ED42279453648574D6FA7228 /* WellnessPillarCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = E911916B959EE91C14269049 /* WellnessPillarCard.swift */; };
 		EF4128F62175DF892C0122E9 /* Raleway-ExtraBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 897DB2589F5482F282AC30FD /* Raleway-ExtraBold.ttf */; };
 		F111ECFB1ABCC7C05131215B /* Endpoints.swift in Sources */ = {isa = PBXBuildFile; fileRef = C37CC78C0030CB6EEA71B9C7 /* Endpoints.swift */; };
+		F219E8FBE39C55D6F4968D27 /* BondEndpoints.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAA28B28FF789A6333D71E73 /* BondEndpoints.swift */; };
 		F31FC48F8DC0CE9E05C34843 /* TodayFeatureView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6FFD8A28ED9C34496E287969 /* TodayFeatureView.swift */; };
 		F38C3DB0B0EB1DE32EE83688 /* Raleway-BoldItalic.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 0DDA4D46AFEF6322A76391AA /* Raleway-BoldItalic.ttf */; };
 		F4B91CB9A3A6B9975F7FCA25 /* BondCryptoManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F7F129F6E807638C8F9589C3 /* BondCryptoManager.swift */; };
@@ -325,6 +328,7 @@
 		506A05DCABFD9B74071A4DF0 /* ChallengeSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChallengeSnapshot.swift; sourceTree = "<group>"; };
 		50B6BC3D74C411A1FECF5405 /* CycleRecapGeneration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CycleRecapGeneration.swift; sourceTree = "<group>"; };
 		51194E26B3A815CB07BF5B59 /* SeparatedIcon.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SeparatedIcon.swift; sourceTree = "<group>"; };
+		5410FC184646EFA794F42408 /* BondModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BondModels.swift; sourceTree = "<group>"; };
 		54C3084875B364EF0293F3CD /* MenstrualLocalClient+CRUD.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MenstrualLocalClient+CRUD.swift"; sourceTree = "<group>"; };
 		5758D419558EBCD03AB48E87 /* NameInputView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NameInputView.swift; sourceTree = "<group>"; };
 		5886220E666CF879F28AA495 /* CalendarSymptomSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarSymptomSheet.swift; sourceTree = "<group>"; };
@@ -443,6 +447,7 @@
 		D9BEB4E6B19D12267D302E1E /* HBILocalClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HBILocalClient.swift; sourceTree = "<group>"; };
 		D9F733A507CEBB2471147642 /* MenstrualLocalClient+Live.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MenstrualLocalClient+Live.swift"; sourceTree = "<group>"; };
 		DA99FC1013CD2777B5E38A3A /* MenstrualPredictorExtendedTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenstrualPredictorExtendedTests.swift; sourceTree = "<group>"; };
+		DC6A0B2886A2B169EC933793 /* BondLocalClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BondLocalClient.swift; sourceTree = "<group>"; };
 		DDDE03554E177D8CB7758368 /* DailyChallengeFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyChallengeFeature.swift; sourceTree = "<group>"; };
 		DE958ED638662F939FCEFBC2 /* TodayFeaturePresentations.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayFeaturePresentations.swift; sourceTree = "<group>"; };
 		DFB5C69AF9E8C6B3B5A8F50C /* CycleJourneyEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CycleJourneyEngine.swift; sourceTree = "<group>"; };
@@ -472,6 +477,7 @@
 		F8E62ACB6092862D952F78FB /* GlassSelectionCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassSelectionCard.swift; sourceTree = "<group>"; };
 		FA3B9C4C5B8CCFEC092F2EEE /* CycleInsightsFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CycleInsightsFeature.swift; sourceTree = "<group>"; };
 		FA6B79551465ACB3BDCA4C84 /* ShieldCheckIcon.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShieldCheckIcon.swift; sourceTree = "<group>"; };
+		FAA28B28FF789A6333D71E73 /* BondEndpoints.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BondEndpoints.swift; sourceTree = "<group>"; };
 		FC20EA8D8D952D23A5847DDB /* Raleway-LightItalic.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Raleway-LightItalic.ttf"; sourceTree = "<group>"; };
 		FC414B9F62AE355B653A88EB /* HealthRecords.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthRecords.swift; sourceTree = "<group>"; };
 		FCE9EEEE1356254E0537A9D8 /* Raleway-BlackItalic.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Raleway-BlackItalic.ttf"; sourceTree = "<group>"; };
@@ -629,6 +635,7 @@
 		6C479D02C36C6316EB877FC0 /* Models */ = {
 			isa = PBXGroup;
 			children = (
+				5410FC184646EFA794F42408 /* BondModels.swift */,
 				B3AF820DEA7E37EE74A2C049 /* CycleSnapshot.swift */,
 				05C1863ED7A02D2799907F02 /* DailyCard.swift */,
 				0D235D9C76A26B122F55AFC7 /* DailySelfReport.swift */,
@@ -726,6 +733,7 @@
 				0359E62B86A73F05ADE7FFF1 /* AnonymousIDClient.swift */,
 				60DA695074FF83065EB0E7D5 /* AriaContextProvider.swift */,
 				F7F129F6E807638C8F9589C3 /* BondCryptoManager.swift */,
+				DC6A0B2886A2B169EC933793 /* BondLocalClient.swift */,
 				F15706D9828787C96870B18D /* ChallengeRecord.swift */,
 				506A05DCABFD9B74071A4DF0 /* ChallengeSnapshot.swift */,
 				C2DF004A482E18829FD5B58F /* ChatMessageRecord.swift */,
@@ -760,6 +768,7 @@
 			children = (
 				71EF173A08EFFAA9EAF10A56 /* APIClient.swift */,
 				EA867F396B072ED863219115 /* APIError.swift */,
+				FAA28B28FF789A6333D71E73 /* BondEndpoints.swift */,
 				44920808504C222952DDC963 /* ChallengeEndpoints.swift */,
 				32C504F11889B24005F6A29C /* Endpoint.swift */,
 				C37CC78C0030CB6EEA71B9C7 /* Endpoints.swift */,
@@ -1108,6 +1117,9 @@
 				FE0B55CA6AD817CF227B166A /* Async+Extensions.swift in Sources */,
 				04FCF9C17DCAE18F21511B08 /* BirthDataView.swift in Sources */,
 				F4B91CB9A3A6B9975F7FCA25 /* BondCryptoManager.swift in Sources */,
+				F219E8FBE39C55D6F4968D27 /* BondEndpoints.swift in Sources */,
+				B452F3B628FE805A172EBBA4 /* BondLocalClient.swift in Sources */,
+				21ECE9BDBCF12C248BC24F22 /* BondModels.swift in Sources */,
 				86238D33356C2AD45D27C382 /* Calendar+Helpers.swift in Sources */,
 				F796B28C6F0B4EDD0F77BCA7 /* CalendarAriaInsight.swift in Sources */,
 				884846A0471306F8D8063293 /* CalendarDayDetail.swift in Sources */,
