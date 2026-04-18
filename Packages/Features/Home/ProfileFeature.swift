@@ -12,6 +12,7 @@ public struct ProfileFeature: Sendable {
         public var menstrualStatus: MenstrualStatusResponse?
         public var hbiDashboard: HBIDashboardResponse?
         public var glowProfile: GlowProfileSnapshot?
+        @Presents public var bondsTest: BondsTestFeature.State?
 
         public init(
             user: User? = nil,
@@ -71,6 +72,8 @@ public struct ProfileFeature: Sendable {
         case chatDataDeleted
         case resetAnonymousIDTapped
         case anonymousIDReset
+        case bondsTestTapped
+        case bondsTest(PresentationAction<BondsTestFeature.Action>)
         case delegate(Delegate)
 
         public enum Delegate: Equatable, Sendable {
@@ -120,9 +123,19 @@ public struct ProfileFeature: Sendable {
             case .anonymousIDReset:
                 return .none
 
+            case .bondsTestTapped:
+                state.bondsTest = BondsTestFeature.State()
+                return .none
+
+            case .bondsTest:
+                return .none
+
             case .delegate:
                 return .none
             }
+        }
+        .ifLet(\.$bondsTest, action: \.bondsTest) {
+            BondsTestFeature()
         }
     }
 }
@@ -159,6 +172,9 @@ public struct ProfileView: View {
         .navigationTitle("Me")
         .navigationBarTitleDisplayMode(.large)
         .onAppear { store.send(.loadGlowProfile) }
+        .sheet(item: $store.scope(state: \.bondsTest, action: \.bondsTest)) { bondsStore in
+            BondsTestView(store: bondsStore)
+        }
         .enableInjection()
     }
 
@@ -484,6 +500,10 @@ public struct ProfileView: View {
             settingsRow(icon: "lock.shield", title: "Privacy", subtitle: "Data & permissions")
             settingsDivider
             settingsRow(icon: "apple.logo", title: "HealthKit", subtitle: "Connected data sources")
+            settingsDivider
+            Button { store.send(.bondsTestTapped) } label: {
+                settingsRow(icon: "link", title: "Bonds Test", subtitle: "Test E2E crypto")
+            }
         }
         .padding(AppLayout.spacingM)
         .frame(maxWidth: .infinity, alignment: .leading)
