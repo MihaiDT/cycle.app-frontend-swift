@@ -23,12 +23,15 @@ public struct BondsTestFeature: Sendable {
         case initializeKeysTapped
         case fetchBondsTapped
         case createTestBondTapped
+        case fullE2ETestTapped
         case appendLog(String)
     }
 
     @Dependency(\.bondCrypto) var bondCrypto
     @Dependency(\.bondLocal) var bondLocal
     @Dependency(\.keychainClient) var keychain
+    @Dependency(\.apiClient) var api
+    @Dependency(\.anonymousID) var anonymousID
 
     public init() {}
 
@@ -170,6 +173,154 @@ public struct BondsTestFeature: Sendable {
                     }
                 }
 
+            // MARK: - Full E2E Test (simulates 2 users, bond, encrypt, exchange, decrypt)
+            case .fullE2ETestTapped:
+                state.isRunning = true
+                state.log = []
+                return .run { [bondCrypto, api, anonymousID] send in
+                    do {
+                        let baseURL = "https://dth-backend-277319586889.us-central1.run.app"
+
+                        // === STEP 1: Generate keys for User A (us) ===
+                        await send(.appendLog("👤 STEP 1: Generating keys for User A (you)..."))
+                        let keysA = try bondCrypto.generateKeyPair()
+                        let myAnonID = anonymousID.getID()
+                        await send(.appendLog("   ID: \(myAnonID.prefix(12))..."))
+                        await send(.appendLog("   PubKey: \(keysA.publicKey.prefix(8).map { String(format: "%02x", $0) }.joined())..."))
+
+                        // Upload User A public key
+                        var reqA = URLRequest(url: URL(string: "\(baseURL)/api/\(myAnonID)/keys")!)
+                        reqA.httpMethod = "PUT"
+                        reqA.setValue("application/json", forHTTPHeaderField: "Content-Type")
+                        reqA.httpBody = try JSONEncoder().encode(["public_key": keysA.publicKey.base64EncodedString()])
+                        let (_, respA) = try await URLSession.shared.data(for: reqA)
+                        await send(.appendLog("   ✅ Uploaded public key (HTTP \((respA as? HTTPURLResponse)?.statusCode ?? 0))"))
+
+                        // === STEP 2: Generate keys for User B (simulated friend) ===
+                        await send(.appendLog("👥 STEP 2: Generating keys for User B (friend)..."))
+                        let keysB = try bondCrypto.generateKeyPair()
+                        let friendID = UUID().uuidString.lowercased()
+                        await send(.appendLog("   ID: \(friendID.prefix(12))..."))
+
+                        // Upload User B public key
+                        var reqB = URLRequest(url: URL(string: "\(baseURL)/api/\(friendID)/keys")!)
+                        reqB.httpMethod = "PUT"
+                        reqB.setValue("application/json", forHTTPHeaderField: "Content-Type")
+                        reqB.httpBody = try JSONEncoder().encode(["public_key": keysB.publicKey.base64EncodedString()])
+                        let (_, respB) = try await URLSession.shared.data(for: reqB)
+                        await send(.appendLog("   ✅ Uploaded friend's public key (HTTP \((respB as? HTTPURLResponse)?.statusCode ?? 0))"))
+
+                        // === STEP 3: Create bond A → B ===
+                        await send(.appendLog("🔗 STEP 3: Creating bond..."))
+                        var reqBond = URLRequest(url: URL(string: "\(baseURL)/api/\(myAnonID)/bonds")!)
+                        reqBond.httpMethod = "POST"
+                        reqBond.setValue("application/json", forHTTPHeaderField: "Content-Type")
+                        reqBond.httpBody = try JSONEncoder().encode(["partner_id": friendID])
+                        let (bondData, _) = try await URLSession.shared.data(for: reqBond)
+                        let bondJSON = try JSONSerialization.jsonObject(with: bondData) as? [String: Any]
+                        let bondObj = bondJSON?["bond"] as? [String: Any]
+                        let bondID = bondObj?["id"] as? String ?? ""
+                        await send(.appendLog("   ✅ Bond created: \(bondID.prefix(12))... (pending)"))
+
+                        // === STEP 4: Accept bond as User B ===
+                        await send(.appendLog("✋ STEP 4: Friend accepts bond..."))
+                        var reqAccept = URLRequest(url: URL(string: "\(baseURL)/api/\(friendID)/bonds/\(bondID)/accept")!)
+                        reqAccept.httpMethod = "POST"
+                        reqAccept.setValue("application/json", forHTTPHeaderField: "Content-Type")
+                        reqAccept.httpBody = "{}".data(using: .utf8)
+                        let (_, respAccept) = try await URLSession.shared.data(for: reqAccept)
+                        await send(.appendLog("   ✅ Bond accepted (HTTP \((respAccept as? HTTPURLResponse)?.statusCode ?? 0))"))
+
+                        // === STEP 5: User A encrypts summary for User B ===
+                        await send(.appendLog("📦 STEP 5: Encrypting your summary for friend..."))
+                        let summaryA = BondSummary(
+                            cyclePhase: "follicular",
+                            energyLevel: 4,
+                            moodLevel: 3,
+                            dominantElement: "water",
+                            tensionScore: 0.6
+                        )
+                        let summaryDataA = try JSONEncoder().encode(summaryA)
+                        let encryptedForB = try bondCrypto.encrypt(summaryDataA, keysB.publicKey)
+                        await send(.appendLog("   Encrypted: \(encryptedForB.count) bytes"))
+
+                        // Upload blob as User A
+                        var reqBlobA = URLRequest(url: URL(string: "\(baseURL)/api/\(myAnonID)/bonds/\(bondID)/blobs")!)
+                        reqBlobA.httpMethod = "PUT"
+                        reqBlobA.setValue("application/json", forHTTPHeaderField: "Content-Type")
+                        reqBlobA.httpBody = try JSONEncoder().encode([
+                            "blob_data": encryptedForB.base64EncodedString(),
+                            "blob_type": "summary"
+                        ])
+                        let (_, respBlobA) = try await URLSession.shared.data(for: reqBlobA)
+                        await send(.appendLog("   ✅ Uploaded your encrypted summary (HTTP \((respBlobA as? HTTPURLResponse)?.statusCode ?? 0))"))
+
+                        // === STEP 6: User B encrypts summary for User A ===
+                        await send(.appendLog("📦 STEP 6: Friend encrypts summary for you..."))
+                        let summaryB = BondSummary(
+                            cyclePhase: "luteal",
+                            energyLevel: 2,
+                            moodLevel: 2,
+                            dominantElement: "fire",
+                            tensionScore: 0.8
+                        )
+                        let summaryDataB = try JSONEncoder().encode(summaryB)
+                        let encryptedForA = try bondCrypto.encrypt(summaryDataB, keysA.publicKey)
+
+                        // Upload blob as User B
+                        var reqBlobB = URLRequest(url: URL(string: "\(baseURL)/api/\(friendID)/bonds/\(bondID)/blobs")!)
+                        reqBlobB.httpMethod = "PUT"
+                        reqBlobB.setValue("application/json", forHTTPHeaderField: "Content-Type")
+                        reqBlobB.httpBody = try JSONEncoder().encode([
+                            "blob_data": encryptedForA.base64EncodedString(),
+                            "blob_type": "summary"
+                        ])
+                        let (_, respBlobB) = try await URLSession.shared.data(for: reqBlobB)
+                        await send(.appendLog("   ✅ Friend uploaded encrypted summary (HTTP \((respBlobB as? HTTPURLResponse)?.statusCode ?? 0))"))
+
+                        // === STEP 7: User A downloads and decrypts User B's summary ===
+                        await send(.appendLog("🔓 STEP 7: Downloading & decrypting friend's summary..."))
+                        var reqGet = URLRequest(url: URL(string: "\(baseURL)/api/\(myAnonID)/bonds/\(bondID)/blobs?type=summary")!)
+                        reqGet.httpMethod = "GET"
+                        let (blobsData, _) = try await URLSession.shared.data(for: reqGet)
+                        let blobsJSON = try JSONSerialization.jsonObject(with: blobsData) as? [String: Any]
+
+                        guard let partnerBlobB64 = blobsJSON?["partner_blob"] as? String,
+                              let partnerBlobData = Data(base64Encoded: partnerBlobB64) else {
+                            await send(.appendLog("   ❌ No partner blob found"))
+                            return
+                        }
+                        await send(.appendLog("   Downloaded: \(partnerBlobData.count) encrypted bytes"))
+
+                        let decryptedB = try bondCrypto.decrypt(partnerBlobData, keysA.publicKey, keysA.secretKey)
+                        let decodedB = try JSONDecoder().decode(BondSummary.self, from: decryptedB)
+                        await send(.appendLog("   ✅ Decrypted friend's summary:"))
+                        await send(.appendLog("      Phase: \(decodedB.cyclePhase)"))
+                        await send(.appendLog("      Energy: \(decodedB.energyLevel), Mood: \(decodedB.moodLevel)"))
+                        await send(.appendLog("      Element: \(decodedB.dominantElement)"))
+
+                        // === VERIFY ===
+                        if decodedB.cyclePhase == "luteal" && decodedB.energyLevel == 2 && decodedB.dominantElement == "fire" {
+                            await send(.appendLog(""))
+                            await send(.appendLog("🎉🎉🎉 FULL E2E TEST PASSED! 🎉🎉🎉"))
+                            await send(.appendLog(""))
+                            await send(.appendLog("✅ Keys generated on device"))
+                            await send(.appendLog("✅ Public keys uploaded to server"))
+                            await send(.appendLog("✅ Bond created & accepted"))
+                            await send(.appendLog("✅ Data encrypted client-side"))
+                            await send(.appendLog("✅ Encrypted blobs stored on server"))
+                            await send(.appendLog("✅ Blobs downloaded & decrypted"))
+                            await send(.appendLog("✅ Original data recovered perfectly"))
+                            await send(.appendLog("✅ Server never saw plaintext!"))
+                        } else {
+                            await send(.appendLog("❌ DATA MISMATCH — decrypted doesn't match original"))
+                        }
+
+                    } catch {
+                        await send(.appendLog("❌ Error: \(error)"))
+                    }
+                }
+
             case let .appendLog(message):
                 state.log.append(message)
                 state.isRunning = false
@@ -188,6 +339,15 @@ struct BondsTestView: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
+
+                    // Full E2E test
+                    Section {
+                        testButton("🚀 Full E2E Test (2 users, bond, encrypt, decrypt)", action: .fullE2ETestTapped)
+                    } header: {
+                        sectionHeader("End-to-End Test")
+                    }
+
+                    Divider()
 
                     // Local tests (no server needed)
                     Section {
