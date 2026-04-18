@@ -793,8 +793,10 @@ private struct TypingIndicatorView: View {
         .onAppear {
             guard !reduceMotion else { return }
             bounceTimer = Timer.scheduledTimer(withTimeInterval: 0.15, repeats: true) { _ in
-                withAnimation(.easeInOut(duration: 0.3)) {
-                    phase = (phase + 1) % 4
+                Task { @MainActor in
+                    withAnimation(.easeInOut(duration: 0.3)) {
+                        phase = (phase + 1) % 4
+                    }
                 }
             }
         }

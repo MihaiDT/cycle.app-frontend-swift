@@ -64,7 +64,7 @@ extension BondCryptoManager: DependencyKey {
                 ) else {
                     throw BondCryptoError.passwordDerivationFailed
                 }
-                guard let encrypted = sodium.secretBox.seal(
+                guard let encrypted: Bytes = sodium.secretBox.seal(
                     message: Array(secretKey),
                     secretKey: derivedKey
                 ) else {
@@ -90,7 +90,7 @@ extension BondCryptoManager: DependencyKey {
                     throw BondCryptoError.passwordDerivationFailed
                 }
                 guard let decrypted = sodium.secretBox.open(
-                    authenticatedCipherText: encrypted,
+                    nonceAndAuthenticatedCipherText: encrypted,
                     secretKey: derivedKey
                 ) else {
                     throw BondCryptoError.decryptionFailed

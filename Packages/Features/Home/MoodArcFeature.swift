@@ -42,11 +42,13 @@ public struct MoodArcFeature: Sendable {
             switch action {
             case let .moodChanged(index):
                 let clamped = min(max(index, 0), Mood.allCases.count - 1)
-                if clamped != state.selectedIndex {
-                    state.selectedIndex = clamped
-                    UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                guard clamped != state.selectedIndex else { return .none }
+                state.selectedIndex = clamped
+                return .run { _ in
+                    await MainActor.run {
+                        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                    }
                 }
-                return .none
 
             case .dragStarted:
                 state.isDragging = true
@@ -54,8 +56,11 @@ public struct MoodArcFeature: Sendable {
 
             case .dragEnded:
                 state.isDragging = false
-                UIImpactFeedbackGenerator(style: .medium).impactOccurred()
-                return .none
+                return .run { _ in
+                    await MainActor.run {
+                        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                    }
+                }
 
             case .continueTapped:
                 state.isSubmitting = true

@@ -10,7 +10,7 @@ import SwiftData
 public enum CycleDataStore {
 
     /// All SwiftData model types managed by this store.
-    public static let schema = Schema([
+    nonisolated(unsafe) public static let schema = Schema([
         UserProfileRecord.self,
         MenstrualProfileRecord.self,
         CycleRecord.self,
@@ -28,7 +28,7 @@ public enum CycleDataStore {
 
     /// Shared container for the app and TCA dependencies.
     /// Uses CloudKit E2E encryption on device, local-only on simulator/tests.
-    public static let shared: ModelContainer = {
+    nonisolated(unsafe) public static let shared: ModelContainer = {
         let useCloudKit: Bool = {
             #if targetEnvironment(simulator)
             return false
