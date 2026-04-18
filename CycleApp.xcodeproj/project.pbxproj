@@ -215,6 +215,7 @@
 		F111ECFB1ABCC7C05131215B /* Endpoints.swift in Sources */ = {isa = PBXBuildFile; fileRef = C37CC78C0030CB6EEA71B9C7 /* Endpoints.swift */; };
 		F31FC48F8DC0CE9E05C34843 /* TodayFeatureView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6FFD8A28ED9C34496E287969 /* TodayFeatureView.swift */; };
 		F38C3DB0B0EB1DE32EE83688 /* Raleway-BoldItalic.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 0DDA4D46AFEF6322A76391AA /* Raleway-BoldItalic.ttf */; };
+		F4B91CB9A3A6B9975F7FCA25 /* BondCryptoManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F7F129F6E807638C8F9589C3 /* BondCryptoManager.swift */; };
 		F553D5D7D1563E6D5DC62F51 /* ConsentPrivacy.json in Resources */ = {isa = PBXBuildFile; fileRef = 929A3B534A8BCD8044EA93C4 /* ConsentPrivacy.json */; };
 		F5791588230E37ECC470FD77 /* GlowPrimaryButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3FD2B1629CCE01C8D0887F3 /* GlowPrimaryButton.swift */; };
 		F5EA81C29EE997219835D532 /* CelestialCycleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 91D49DDC5F4C3DAE7EF32645 /* CelestialCycleView.swift */; };
@@ -464,6 +465,7 @@
 		F2DF4BFD7D70E092655588F9 /* User.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = User.swift; sourceTree = "<group>"; };
 		F7090C01E475E70BB3540924 /* ConsentCheckbox.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConsentCheckbox.swift; sourceTree = "<group>"; };
 		F78183272EA1538F9B855ED3 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		F7F129F6E807638C8F9589C3 /* BondCryptoManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BondCryptoManager.swift; sourceTree = "<group>"; };
 		F832AB588BD5BCE9B4A7C836 /* ChallengeValidatingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChallengeValidatingView.swift; sourceTree = "<group>"; };
 		F837406D8C9EE075142E8207 /* LevelUpFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LevelUpFeature.swift; sourceTree = "<group>"; };
 		F8AAA5EAA0B0713C6D0F9CAC /* ProfileFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileFeature.swift; sourceTree = "<group>"; };
@@ -723,6 +725,7 @@
 			children = (
 				0359E62B86A73F05ADE7FFF1 /* AnonymousIDClient.swift */,
 				60DA695074FF83065EB0E7D5 /* AriaContextProvider.swift */,
+				F7F129F6E807638C8F9589C3 /* BondCryptoManager.swift */,
 				F15706D9828787C96870B18D /* ChallengeRecord.swift */,
 				506A05DCABFD9B74071A4DF0 /* ChallengeSnapshot.swift */,
 				C2DF004A482E18829FD5B58F /* ChatMessageRecord.swift */,
@@ -1104,6 +1107,7 @@
 				98C48FC656F4CA682EAE0D1D /* AriaRecapStories.swift in Sources */,
 				FE0B55CA6AD817CF227B166A /* Async+Extensions.swift in Sources */,
 				04FCF9C17DCAE18F21511B08 /* BirthDataView.swift in Sources */,
+				F4B91CB9A3A6B9975F7FCA25 /* BondCryptoManager.swift in Sources */,
 				86238D33356C2AD45D27C382 /* Calendar+Helpers.swift in Sources */,
 				F796B28C6F0B4EDD0F77BCA7 /* CalendarAriaInsight.swift in Sources */,
 				884846A0471306F8D8063293 /* CalendarDayDetail.swift in Sources */,
