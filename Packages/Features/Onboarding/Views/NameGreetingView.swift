@@ -1,11 +1,9 @@
-import Inject
 import SwiftUI
 import UIKit
 
 // MARK: - Name Greeting View
 
 public struct NameGreetingView: View {
-    @ObserveInjection var inject
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     public let name: String
     public let onContinue: () -> Void
@@ -169,7 +167,6 @@ public struct NameGreetingView: View {
                 onContinue()
             }
         }
-        .enableInjection()
     }
 }
 

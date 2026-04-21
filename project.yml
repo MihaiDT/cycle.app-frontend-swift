@@ -38,9 +38,6 @@ packages:
   Lottie:
     url: https://github.com/airbnb/lottie-ios
     from: "4.5.0"
-  Inject:
-    url: https://github.com/krzysztofzablocki/Inject
-    from: "1.5.2"
   RiveRuntime:
     url: https://github.com/rive-app/rive-ios
     from: "6.0.0"
@@ -79,7 +76,6 @@ targets:
       - package: Tagged
       - package: SplineRuntime
       - package: Lottie
-      - package: Inject
       - package: Firebase
         product: FirebaseCore
       - package: RiveRuntime

@@ -1,5 +1,4 @@
 import ComposableArchitecture
-import Inject
 import SwiftData
 import SwiftUI
 
@@ -17,9 +16,20 @@ public struct CycleJourneyFeature: Sendable {
         public var isLoading: Bool = false
         public var hasAppeared: Bool = false
         public var missedMonths: [MissedMonth] = []
-        public var isShowingInsights: Bool = false
         public var recap: RecapState?
         public var highlightRecapCycle: Bool = false
+        /// When true, the feature auto-presents the most recent completed
+        /// cycle's recap as soon as journey data loads. Consumed on the
+        /// first `.journeyLoaded(.success)`; resets to false so reopening
+        /// the screen manually doesn't pop the recap unexpectedly.
+        public var autoOpenLatestRecap: Bool = false
+
+        /// When true, the Journey screen acts purely as a host for the
+        /// recap overlay — header + list are hidden. Dismissing the recap
+        /// closes the whole Journey cover (returns to Home). Used by
+        /// the Home "Latest Story" deep-link to avoid a visible flash of
+        /// the Journey list before the recap covers it.
+        public var directRecapMode: Bool = false
 
         public init() {}
     }
@@ -30,8 +40,6 @@ public struct CycleJourneyFeature: Sendable {
         case journeyLoaded(Result<JourneyData, Error>)
         case logMissedTapped
         case dismissTapped
-        case insightsTapped
-        case insightsDismissed
         case cycleRecapTapped(JourneyCycleSummary)
         case recapLoaded(RecapData)
         case recapPageChanged(Int)
@@ -99,10 +107,24 @@ public struct CycleJourneyFeature: Sendable {
                     confirmedStartDates: data.records.map(\.startDate)
                 )
                 let summaries = state.summaries
-                return .run { _ in
-                    await CycleRecapGenerator.preGenerateAll(summaries: summaries)
+
+                // Handle Home's "Latest Story" deep-link: once summaries
+                // are ready, auto-tap the most recent completed cycle's
+                // recap. One-shot — reset the flag so reopening the
+                // screen later doesn't pop the recap again.
+                var effects: [Effect<Action>] = [
+                    .run { _ in
+                        await CycleRecapGenerator.preGenerateAll(summaries: summaries)
+                    }
+                    .cancellable(id: CancelID.recapPreGenerate, cancelInFlight: true)
+                ]
+                if state.autoOpenLatestRecap {
+                    state.autoOpenLatestRecap = false
+                    if let latest = summaries.last(where: { !$0.isCurrentCycle }) {
+                        effects.append(.send(.cycleRecapTapped(latest)))
+                    }
                 }
-                .cancellable(id: CancelID.recapPreGenerate, cancelInFlight: true)
+                return .merge(effects)
 
             case .journeyLoaded(.failure):
                 state.isLoading = false
@@ -115,28 +137,29 @@ public struct CycleJourneyFeature: Sendable {
             case .dismissTapped:
                 return .send(.delegate(.dismiss))
 
-            case .insightsTapped:
-                state.isShowingInsights = true
-                return .none
-
-            case .insightsDismissed:
-                state.isShowingInsights = false
-                return .none
-
             case .cycleRecapTapped(let summary):
                 state.recap = RecapState(summary: summary)
                 let allSummaries = state.summaries
                 let isCurrent = summary.isCurrentCycle
                 return .run { send in
-                    if let cached = CycleJourneyFeature.loadCachedRecap(cycleStart: summary.startDate, maxAge: isCurrent ? 86400 : nil) {
+                    if let cached = CycleJourneyFeature.loadCachedRecap(
+                        cycleStart: summary.startDate,
+                        maxAge: isCurrent ? 86400 : nil
+                    ) {
                         await send(.recapLoaded(cached))
                         return
                     }
-                    if let ai = await CycleJourneyFeature.fetchRecapAI(summary: summary, allSummaries: allSummaries) {
-                        CycleJourneyFeature.cacheRecap(ai, cycleStart: summary.startDate)
-                        await send(.recapLoaded(ai))
+                    await CycleRecapGenerator.generateForClosedCycle(summary.startDate)
+                    if let fresh = CycleJourneyFeature.loadCachedRecap(cycleStart: summary.startDate) {
+                        await send(.recapLoaded(fresh))
                     } else {
-                        let fallback = CycleJourneyFeature.templateRecap(summary: summary, allSummaries: allSummaries)
+                        // Last-ditch fallback with empty key days — keeps
+                        // the sheet from hanging if persistence also fails.
+                        let fallback = CycleJourneyFeature.templateRecap(
+                            summary: summary,
+                            allSummaries: allSummaries,
+                            keyDays: []
+                        )
                         await send(.recapLoaded(fallback))
                     }
                 }
@@ -146,10 +169,12 @@ public struct CycleJourneyFeature: Sendable {
                 state.recap?.isLoading = false
                 state.recap?.headline = data.headline
                 state.recap?.cycleVibe = data.cycleVibe
-                state.recap?.overviewText = data.overviewText
+                state.recap?.themeText = data.themeText
                 state.recap?.bodyText = data.bodyText
-                state.recap?.mindText = data.mindText
-                state.recap?.patternText = data.patternText
+                state.recap?.heartMindText = data.heartMindText
+                state.recap?.rhythmText = data.rhythmText
+                state.recap?.keyDays = data.keyDays
+                state.recap?.whatsComingText = data.whatsComingText
                 return .none
 
             case .recapPageChanged(let page):
@@ -157,6 +182,13 @@ public struct CycleJourneyFeature: Sendable {
                 return .none
 
             case .recapDismissed:
+                // In direct-recap mode, the parent owns the cover
+                // animation and clears state after the slide-down
+                // completes — so we keep `state.recap` populated here
+                // to avoid an empty/white frame during dismissal.
+                if state.directRecapMode {
+                    return .none
+                }
                 state.recap = nil
                 return .cancel(id: CancelID.recapFetch)
 
@@ -193,29 +225,36 @@ public struct RecapState: Equatable, Sendable, Identifiable {
     public var summary: JourneyCycleSummary
     public var currentPage: Int = 0
     public var isLoading: Bool = true
+
+    // Headline + short vibe word — shown on Chapter 1.
     public var headline: String = ""
     public var cycleVibe: String = ""
-    public var overviewText: String = ""
-    public var bodyText: String = ""
-    public var mindText: String = ""
-    public var patternText: String = ""
 
-    public static let totalPages = 5
+    // Six chapters.
+    public var themeText: String = ""        // Ch1
+    public var bodyText: String = ""         // Ch2
+    public var heartMindText: String = ""    // Ch3
+    public var rhythmText: String = ""       // Ch4
+    public var keyDays: [KeyDay] = []        // Ch5 — structured
+    public var whatsComingText: String = ""  // Ch6
+
+    public static let totalPages = 6
 }
 
 public struct RecapData: Equatable, Sendable {
     public let headline: String
     public let cycleVibe: String
-    public let overviewText: String
+    public let themeText: String
     public let bodyText: String
-    public let mindText: String
-    public let patternText: String
+    public let heartMindText: String
+    public let rhythmText: String
+    public let keyDays: [KeyDay]
+    public let whatsComingText: String
 }
 
 // MARK: - Cycle Journey View
 
 public struct CycleJourneyView: View {
-    @ObserveInjection var inject
     let store: StoreOf<CycleJourneyFeature>
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -230,64 +269,50 @@ public struct CycleJourneyView: View {
 
     public var body: some View {
         VStack(spacing: 0) {
-            journeyHeader
+            // Direct-recap mode hides the list UI entirely — the view
+            // is just a backdrop for the recap sheet that is about to
+            // present. Prevents the "Journey list flash" when deep-linking
+            // from Home's Latest Story tile.
+            if !store.directRecapMode {
+                journeyHeader
 
-            if store.isLoading {
+                if store.isLoading {
+                    Spacer()
+                    ProgressView()
+                        .tint(DesignColors.accentWarm)
+                    Spacer()
+                } else if store.summaries.isEmpty {
+                    Spacer()
+                    emptyState
+                    Spacer()
+                } else {
+                    journeyScrollContent
+                }
+            } else {
                 Spacer()
                 ProgressView()
                     .tint(DesignColors.accentWarm)
                 Spacer()
-            } else if store.summaries.isEmpty {
-                Spacer()
-                emptyState
-                Spacer()
-            } else {
-                journeyScrollContent
             }
         }
         .background { JourneyAnimatedBackground() }
         .onAppear { store.send(.onAppear) }
-        .sheet(isPresented: Binding(
-            get: { store.isShowingInsights },
-            set: { if !$0 { store.send(.insightsDismissed) } }
-        )) {
-            PatternInsightsSheet(
-                summaries: store.summaries,
-                insight: store.insight
-            )
-        }
         .fullScreenCover(item: Binding(
             get: { store.recap },
             set: { if $0 == nil { store.send(.recapDismissed) } }
         )) { _ in
             AriaRecapStories(store: store)
         }
-        .enableInjection()
     }
 
     // MARK: - Header
 
     private var journeyHeader: some View {
-        HStack(spacing: AppLayout.spacingM) {
-            Button {
-                store.send(.dismissTapped)
-            } label: {
-                Image(systemName: "chevron.left")
-                    .font(.system(size: 15, weight: .semibold))
-                    .foregroundStyle(DesignColors.text)
-                    .frame(width: 36, height: 36)
-                    .modifier(GlassCircleModifier())
-            }
-
-            Text("Your Journey")
-                .font(.raleway("Bold", size: 17, relativeTo: .headline))
-                .foregroundStyle(DesignColors.text)
-
-            Spacer()
-        }
-        .padding(.horizontal, horizontalInset)
-        .padding(.top, AppLayout.spacingS)
-        .padding(.bottom, AppLayout.spacingM)
+        SheetHeader(
+            title: "Your Journey",
+            eyebrow: "Every cycle, a chapter",
+            onDismiss: { store.send(.dismissTapped) }
+        )
     }
 
     // MARK: - Empty State
@@ -326,8 +351,7 @@ public struct CycleJourneyView: View {
                     JourneyMandala(
                         summaries: store.summaries,
                         currentCycleProgress: currentCycleProgress,
-                        targetCycles: nextMilestoneTarget,
-                        onInsightsTapped: { store.send(.insightsTapped) }
+                        targetCycles: nextMilestoneTarget
                     )
 
                     ForEach(Array(store.summaries.enumerated()), id: \.element.id) { index, summary in
@@ -464,11 +488,9 @@ public struct CycleJourneyView: View {
                 .onAppear {
                     guard isActive else { return }
                     DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
-                        // Zoom in
                         withAnimation(.easeOut(duration: 0.3)) {
                             scale = 1.08
                         }
-                        // Zoom back
                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
                             withAnimation(.spring(response: 0.4, dampingFraction: 0.6)) {
                                 scale = 1.0

@@ -186,48 +186,53 @@ public struct MiniCycleCalendar: View {
 
             // Calendar day number with indicator
             ZStack {
-                // Confirmed period (past/today): solid circle with fill
-                if isPeriod && !isPredicted && !isLatePred && !isFutureDay {
-                    Circle()
-                        .fill(phaseColor(.menstrual).opacity(0.2))
-                        .frame(width: 36, height: 36)
-                    Circle()
-                        .strokeBorder(phaseColor(.menstrual).opacity(0.6), lineWidth: 1.5)
-                        .frame(width: 36, height: 36)
-                }
-                // Confirmed period (future — not yet reached): dashed border, no fill
-                else if isPeriod && !isPredicted && !isLatePred && isFutureDay {
-                    Circle()
-                        .strokeBorder(
-                            style: StrokeStyle(lineWidth: 1.5, dash: [3, 3])
-                        )
-                        .foregroundColor(phaseColor(.menstrual).opacity(0.5))
-                        .frame(width: 36, height: 36)
-                }
-                // Late prediction: muted dashed border, no fill
-                else if isLatePred {
-                    Circle()
-                        .strokeBorder(
-                            style: StrokeStyle(lineWidth: 1.5, dash: [3, 3])
-                        )
-                        .foregroundColor(phaseColor(.menstrual).opacity(0.25))
-                        .frame(width: 36, height: 36)
-                }
-                // Normal prediction: dashed border, no fill
-                else if isPredicted {
-                    Circle()
-                        .strokeBorder(
-                            style: StrokeStyle(lineWidth: 1.5, dash: [3, 3])
-                        )
-                        .foregroundColor(phaseColor(.menstrual).opacity(0.4))
-                        .frame(width: 36, height: 36)
-                }
-                // Today — glass liquid highlight
-                else if isToday {
-                    ZStack {
-                        // Outer glow
+                // Base state (only rendered when NOT today — today wears
+                // the glass treatment below, with its border adapted to
+                // the underlying period/prediction state).
+                if !isToday {
+                    if isPeriod && !isPredicted && !isLatePred && !isFutureDay {
                         Circle()
-                            .fill(DesignColors.accentWarm.opacity(0.12))
+                            .fill(phaseColor(.menstrual).opacity(0.2))
+                            .frame(width: 36, height: 36)
+                        Circle()
+                            .strokeBorder(phaseColor(.menstrual).opacity(0.6), lineWidth: 1.5)
+                            .frame(width: 36, height: 36)
+                    } else if isPeriod && !isPredicted && !isLatePred && isFutureDay {
+                        Circle()
+                            .strokeBorder(
+                                style: StrokeStyle(lineWidth: 1.5, dash: [3, 3])
+                            )
+                            .foregroundColor(phaseColor(.menstrual).opacity(0.5))
+                            .frame(width: 36, height: 36)
+                    } else if isLatePred {
+                        Circle()
+                            .strokeBorder(
+                                style: StrokeStyle(lineWidth: 1.5, dash: [3, 3])
+                            )
+                            .foregroundColor(phaseColor(.menstrual).opacity(0.25))
+                            .frame(width: 36, height: 36)
+                    } else if isPredicted {
+                        Circle()
+                            .strokeBorder(
+                                style: StrokeStyle(lineWidth: 1, dash: [3, 3])
+                            )
+                            .foregroundColor(phaseColor(.menstrual).opacity(0.28))
+                            .frame(width: 34, height: 34)
+                    }
+                }
+                // Today — glass liquid highlight. Always wins, even on
+                // predicted/late period days; the border switches to a
+                // rose dashed ring so the period context is preserved.
+                else {
+                    ZStack {
+                        // Outer glow — warmer when today lands on a
+                        // period-related day.
+                        Circle()
+                            .fill(
+                                (isPredicted || isLatePred || isPeriod)
+                                    ? phaseColor(.menstrual).opacity(0.22)
+                                    : DesignColors.accentWarm.opacity(0.12)
+                            )
                             .frame(width: 40, height: 40)
                             .blur(radius: 4)
 
@@ -257,19 +262,44 @@ public struct MiniCycleCalendar: View {
                             .frame(width: 32, height: 32)
                             .offset(y: -2)
 
-                        // Border
-                        Circle()
-                            .strokeBorder(
-                                LinearGradient(
-                                    colors: [Color.white.opacity(0.8), DesignColors.accentWarm.opacity(0.3)],
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                ),
-                                lineWidth: 1
-                            )
-                            .frame(width: 36, height: 36)
+                        // Border — rose dashed on period-related days
+                        // (preserves the "period expected" context on
+                        // the glass today pill), otherwise warm accent.
+                        if isPredicted || isLatePred {
+                            // No dashed ring on today — the glass
+                            // bubble + rose text colour already make
+                            // today the focal point, and the dashes
+                            // read as "future", which contradicts now.
+                            Circle()
+                                .strokeBorder(
+                                    phaseColor(.menstrual).opacity(0.55),
+                                    lineWidth: 1.2
+                                )
+                                .frame(width: 36, height: 36)
+                        } else if isPeriod {
+                            Circle()
+                                .strokeBorder(
+                                    phaseColor(.menstrual).opacity(0.75),
+                                    lineWidth: 1.5
+                                )
+                                .frame(width: 36, height: 36)
+                        } else {
+                            Circle()
+                                .strokeBorder(
+                                    LinearGradient(
+                                        colors: [Color.white.opacity(0.8), DesignColors.accentWarm.opacity(0.3)],
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    ),
+                                    lineWidth: 1
+                                )
+                                .frame(width: 36, height: 36)
+                        }
                     }
-                    .shadow(color: DesignColors.accentWarm.opacity(0.2), radius: 8, x: 0, y: 3)
+                    .shadow(
+                        color: DesignColors.accentWarm.opacity(0.18),
+                        radius: 6, x: 0, y: 2
+                    )
                 }
 
                 // Selection highlight — always on top of any state
@@ -286,6 +316,7 @@ public struct MiniCycleCalendar: View {
                     .font(.raleway(isToday || isSelected ? "Bold" : "Medium", size: 15, relativeTo: .callout))
                     .foregroundColor(
                         isPeriod && !isPredicted && !isLatePred ? phaseColor(.menstrual) :
+                            (isPredicted || isLatePred) && isToday ? phaseColor(.menstrual) :
                             isLatePred ? phaseColor(.menstrual).opacity(0.45) :
                             isSelected ? DesignColors.text :
                             isToday ? DesignColors.text :

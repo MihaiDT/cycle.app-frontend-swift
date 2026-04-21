@@ -1,11 +1,9 @@
-import Inject
 import SwiftUI
 import UserNotifications
 
 // MARK: - Notification Permission View
 
 public struct NotificationPermissionView: View {
-    @ObserveInjection var inject
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     public let onEnable: (Int, Int) -> Void
     public let onSkip: () -> Void
@@ -120,7 +118,6 @@ public struct NotificationPermissionView: View {
                 animateIn = true
             }
         }
-        .enableInjection()
     }
 
     @ViewBuilder

@@ -23,6 +23,12 @@ public struct HBILocalClient: Sendable {
     /// Returns `.insufficient` confidence (and `nil` average) until the user
     /// has accumulated enough same-phase samples across at least two cycles.
     public var getPersonalBaseline: @Sendable (_ phase: CyclePhase) async throws -> PersonalBaseline
+
+    /// Apply a completed-moment bump to today's component scores, then
+    /// recompute + persist the HBI record so the Home widget reflects
+    /// the shift. If no check-in exists yet today, a neutral 50-baseline
+    /// record is seeded first so the bump has something to land on.
+    public var applyMomentBump: @Sendable (_ category: String, _ rating: String) async throws -> Void
 }
 
 // MARK: - Dependency
@@ -211,8 +217,148 @@ extension HBILocalClient {
                 return try context.fetch(descriptor).map(\.hbiAdjusted)
             },
 
-            getPersonalBaseline: liveGetPersonalBaseline()
+            getPersonalBaseline: liveGetPersonalBaseline(),
+
+            applyMomentBump: { category, rating in
+                let container = CycleDataStore.shared
+                let context = ModelContext(container)
+                let today = Calendar.current.startOfDay(for: Date())
+
+                // Bump table — calibrated heuristic, not clinical. Moves
+                // the components that this kind of moment actually helps.
+                let bump = MomentBump.forCategory(category, rating: rating)
+
+                // Start from today's record if it exists, otherwise seed a
+                // neutral 50-baseline so a completed moment can still land.
+                let existing = try fetchScore(context: context, date: today)
+
+                let baseEnergy: Double = existing?.energyScore ?? 50
+                let baseMood: Double = existing?.moodScore ?? 50
+                let baseSleep: Double = existing?.sleepScore ?? 50
+                let baseCalm: Double = existing?.anxietyScore ?? 50   // stored as anxietyScore, used as calm axis
+                let baseClarity: Double? = existing?.clarityScore
+
+                func clamp(_ value: Double) -> Double { max(0, min(100, value)) }
+
+                let newEnergy = clamp(baseEnergy + bump.energy)
+                let newMood = clamp(baseMood + bump.mood)
+                let newSleep = clamp(baseSleep + bump.sleep)
+                let newCalm = clamp(baseCalm + bump.calm)
+                let newClarity = baseClarity.map { clamp($0 + bump.clarity) }
+
+                let (phaseResult, cycleDay) = try currentCycleContext(context: context)
+                let phase = phaseResult.flatMap { CyclePhase(rawValue: $0.rawValue) }
+                    ?? existing?.cyclePhase.flatMap(CyclePhase.init(rawValue:))
+                let resolvedPhase = phase ?? .follicular   // fallback neutral weights
+
+                let components = HBIComponents(
+                    energy: newEnergy,
+                    mood: newMood,
+                    sleep: newSleep,
+                    calm: newCalm,
+                    clarity: newClarity
+                )
+
+                // Pull the personal baseline so the adjusted score reflects
+                // "you vs your own phase pattern" after the bump.
+                let baseline = try computePersonalBaseline(phase: resolvedPhase, context: context)
+
+                let adjusted = HBICalculator.calculateAdjustedWithBaseline(
+                    components: components,
+                    phase: resolvedPhase,
+                    baseline: baseline
+                )
+
+                // Upsert: update today's record or insert a new one.
+                if let record = existing {
+                    record.energyScore = newEnergy
+                    record.moodScore = newMood
+                    record.sleepScore = newSleep
+                    record.anxietyScore = newCalm
+                    record.clarityScore = newClarity
+                    record.hbiRaw = adjusted.raw
+                    record.hbiAdjusted = adjusted.adjusted
+                    record.cyclePhase = resolvedPhase.rawValue
+                    record.cycleDay = cycleDay
+                    record.trendVsBaseline = adjusted.trendVsBaseline
+                    record.hasSelfReport = existing?.hasSelfReport ?? false
+                    record.hasHealthKitData = adjusted.hasHealthKitData
+                    record.completenessScore = adjusted.completenessScore
+                } else {
+                    let fresh = HBIScoreRecord(
+                        scoreDate: today,
+                        energyScore: newEnergy,
+                        anxietyScore: newCalm,
+                        sleepScore: newSleep,
+                        moodScore: newMood,
+                        clarityScore: newClarity,
+                        hbiRaw: adjusted.raw,
+                        hbiAdjusted: adjusted.adjusted,
+                        cyclePhase: resolvedPhase.rawValue,
+                        cycleDay: cycleDay,
+                        phaseMultiplier: nil,
+                        trendVsBaseline: adjusted.trendVsBaseline,
+                        trendDirection: nil,
+                        hasHealthKitData: adjusted.hasHealthKitData,
+                        hasSelfReport: false,
+                        completenessScore: adjusted.completenessScore,
+                        createdAt: Date()
+                    )
+                    context.insert(fresh)
+                }
+
+                try context.save()
+            }
         )
+    }
+
+    // MARK: - Moment Bump Table
+
+    /// Per-category component delta applied on top of today's components
+    /// when a moment is completed. Rating scales the magnitude so a gold
+    /// reflection nudges more than a bronze one. Bronze=1.0 / silver=1.3 /
+    /// gold=1.6. Deliberately small: the point is to let moments shift
+    /// the needle a little, not inflate Wellness.
+    private struct MomentBump: Sendable {
+        var energy: Double = 0
+        var mood: Double = 0
+        var sleep: Double = 0
+        var calm: Double = 0
+        var clarity: Double = 0
+
+        static func forCategory(_ category: String, rating: String) -> MomentBump {
+            let multiplier: Double = {
+                switch rating.lowercased() {
+                case "gold":   return 1.6
+                case "silver": return 1.3
+                default:       return 1.0   // bronze or anything else
+                }
+            }()
+
+            var bump: MomentBump
+            switch category.lowercased() {
+            case "mindfulness", "self_care":
+                bump = MomentBump(energy: 0, mood: 2, sleep: 0, calm: 4, clarity: 1)
+            case "movement":
+                bump = MomentBump(energy: 4, mood: 2, sleep: 0, calm: 1, clarity: 0)
+            case "creative":
+                bump = MomentBump(energy: 1, mood: 4, sleep: 0, calm: 1, clarity: 2)
+            case "social":
+                bump = MomentBump(energy: 1, mood: 4, sleep: 0, calm: 1, clarity: 0)
+            case "nutrition":
+                bump = MomentBump(energy: 2, mood: 3, sleep: 0, calm: 1, clarity: 0)
+            default:
+                bump = MomentBump(energy: 1, mood: 3, sleep: 0, calm: 1, clarity: 0)
+            }
+
+            return MomentBump(
+                energy: bump.energy * multiplier,
+                mood: bump.mood * multiplier,
+                sleep: bump.sleep * multiplier,
+                calm: bump.calm * multiplier,
+                clarity: bump.clarity * multiplier
+            )
+        }
     }
 
     // MARK: Helpers
@@ -266,7 +412,8 @@ extension HBILocalClient {
             getToday: { HBITodayResponse() },
             submitDailyReport: { _ in DailyReportResponse(report: .mock) },
             getRecentScores: { [] },
-            getPersonalBaseline: { phase in .empty(phase: phase) }
+            getPersonalBaseline: { phase in .empty(phase: phase) },
+            applyMomentBump: { _, _ in }
         )
     }
 }

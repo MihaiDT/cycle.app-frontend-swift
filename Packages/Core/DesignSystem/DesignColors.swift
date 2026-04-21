@@ -160,11 +160,6 @@ public enum DesignColors {
     public static let onboardingGlowInnerStart = Color(hex: 0xF5E6E2)
     public static let onboardingGlowInnerEnd = Color(hex: 0xEDD9D3)
 
-    // MARK: - Rating Badge Tints
-    public static let ratingGold = Color(red: 1.0, green: 0.84, blue: 0.0)
-    public static let ratingSilver = Color(red: 0.75, green: 0.75, blue: 0.78)
-    public static let ratingBronze = Color(red: 0.80, green: 0.50, blue: 0.20)
-
     // MARK: - Legacy/Compatibility (mapped to palette)
     public static let link = Color(hex: 0x7A5F50)  // Deep Cocoa
     public static let accentLight = Color(hex: 0xD6A59A)  // Dusty Rose

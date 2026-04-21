@@ -1,5 +1,4 @@
 import ComposableArchitecture
-import Inject
 import SwiftUI
 
 // MARK: - EditPeriodFeature
@@ -350,7 +349,6 @@ public struct EditPeriodFeature: Sendable {
 // MARK: - EditPeriodView
 
 public struct EditPeriodView: View {
-    @ObserveInjection var inject
     @Bindable var store: StoreOf<EditPeriodFeature>
     @State private var appeared = false
 
@@ -430,7 +428,6 @@ public struct EditPeriodView: View {
             store.send(.appeared)
             appeared = true
         }
-        .enableInjection()
     }
 
     // MARK: - Prediction Banner

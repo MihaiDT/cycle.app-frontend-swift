@@ -1,5 +1,4 @@
 import ComposableArchitecture
-import Inject
 import RiveRuntime
 import SwiftData
 import SwiftUI
@@ -25,6 +24,13 @@ public struct HomeFeature: Sendable {
         public var cycleJourneyState: CycleJourneyFeature.State = CycleJourneyFeature.State()
         public var isCycleJourneyVisible: Bool = false
         public var shouldReopenJourney: Bool = false
+
+        /// Deep-link path for Home's "Latest Story" tile. We load Journey
+        /// data silently, then present `AriaRecapStories` directly as a
+        /// cover on Home — skipping the Journey screen entirely so the
+        /// user never sees the list flash behind the recap.
+        public var isWaitingForLatestRecap: Bool = false
+        public var isLatestRecapDirectVisible: Bool = false
 
         public enum Tab: Int, Equatable, Sendable, CaseIterable {
             case today = 0
@@ -74,6 +80,10 @@ public struct HomeFeature: Sendable {
         case userLoaded(Result<User, Error>)
         case logoutTapped
         case logoutCompleted
+        /// Fired after the direct-recap cover finishes its dismiss
+        /// animation — clears the preserved recap state so memory
+        /// doesn't leak and the flag resets for the next deep-link.
+        case clearDirectRecapState
 
         // Child features
         case today(TodayFeature.Action)
@@ -180,7 +190,6 @@ public struct HomeFeature: Sendable {
                     try? context.delete(model: SelfReportRecord.self)
                     try? context.delete(model: HBIScoreRecord.self)
                     try? context.delete(model: ChatMessageRecord.self)
-                    try? context.delete(model: DailyCardRecord.self)
                     try? context.delete(model: CycleRecapRecord.self)
                     try? context.delete(model: WellnessMessageRecord.self)
                     try? context.delete(model: ChallengeRecord.self)
@@ -204,6 +213,23 @@ public struct HomeFeature: Sendable {
                 state.isCycleInsightsVisible = true
                 return .none
 
+            case .today(.delegate(.openCycleStats)):
+                // Journey widget → Cycle Stats tile. Same destination as
+                // openCycleInsights but entered via the Journey page so
+                // we reset to the top-level view (no auto-open detail).
+                state.cycleInsightsState.cycleContext = state.todayState.cycle
+                state.cycleInsightsState.pendingInitialDetail = nil
+                state.isCycleInsightsVisible = true
+                return .none
+
+            case .today(.delegate(.openBodyPatterns)):
+                // Journey widget → Body Patterns tile. Opens CycleInsights
+                // and auto-presents the Body detail section on appear.
+                state.cycleInsightsState.cycleContext = state.todayState.cycle
+                state.cycleInsightsState.pendingInitialDetail = .body
+                state.isCycleInsightsVisible = true
+                return .none
+
             case .cycleInsights(.delegate(.dismiss)):
                 // Cache stats for entry card sparkline on Today tab
                 state.todayState.cachedCycleStats = state.cycleInsightsState.stats
@@ -218,6 +244,51 @@ public struct HomeFeature: Sendable {
                 state.cycleJourneyState.highlightRecapCycle = state.todayState.recapBannerMonth != nil
                 state.isCycleJourneyVisible = true
                 state.todayState.recapBannerMonth = nil
+                return .none
+
+            case .today(.delegate(.openLatestRecap)):
+                // Deep-link directly to the latest cycle's recap.
+                // Load Journey data silently in the background (without
+                // presenting the Journey cover), then present the recap
+                // as a fullScreenCover on Home when it's ready. This
+                // avoids the double-animation (Journey slide-up + recap
+                // slide-up) the user was seeing.
+                state.cycleJourneyState = CycleJourneyFeature.State()
+                state.cycleJourneyState.cycleContext = state.todayState.cycle
+                state.cycleJourneyState.menstrualStatus = state.todayState.menstrualStatus
+                state.cycleJourneyState.autoOpenLatestRecap = true
+                state.cycleJourneyState.directRecapMode = true
+                state.isWaitingForLatestRecap = true
+                return .send(.cycleJourney(.onAppear))
+
+            case .cycleJourney(.cycleRecapTapped(_)):
+                // When we're waiting on the deep-link, the child's own
+                // `autoOpenLatestRecap` logic will fire this action right
+                // after Journey data loads. Child state already holds a
+                // `recap` at this point — present the cover directly.
+                if state.isWaitingForLatestRecap {
+                    state.isWaitingForLatestRecap = false
+                    state.isLatestRecapDirectVisible = true
+                }
+                return .none
+
+            case .cycleJourney(.recapDismissed):
+                // Direct-path: child reducer intentionally keeps
+                // `state.recap` populated so the dismiss animation still
+                // has the recap UI to render. We hide the cover here,
+                // then clear state after the slide-down completes.
+                if state.isLatestRecapDirectVisible {
+                    state.isLatestRecapDirectVisible = false
+                    return .run { send in
+                        try? await Task.sleep(for: .milliseconds(450))
+                        await send(.clearDirectRecapState)
+                    }
+                }
+                return .none
+
+            case .clearDirectRecapState:
+                state.cycleJourneyState.recap = nil
+                state.cycleJourneyState.directRecapMode = false
                 return .none
 
             case .cycleJourney(.delegate(.dismiss)):
@@ -271,9 +342,14 @@ public struct HomeFeature: Sendable {
 // MARK: - Home View
 
 public struct HomeView: View {
-    @ObserveInjection var inject
     @Bindable var store: StoreOf<HomeFeature>
     @State private var safeAreaTop: CGFloat = 0
+    /// Local mirror of `isCalendarVisible` — the parallax offset
+    /// animation is driven from this instead of the store so SwiftUI's
+    /// animation transaction doesn't cascade into Today's ScrollView
+    /// and cause widgets to briefly shift down-then-back when the
+    /// calendar dismisses.
+    @State private var isCalendarOpen: Bool = false
 
     public init(store: StoreOf<HomeFeature>) {
         self.store = store
@@ -329,41 +405,72 @@ public struct HomeView: View {
                 .tag(HomeFeature.State.Tab.me)
             }
             .tint(DesignColors.accentWarm)
+            // Parallax driven from a LOCAL state mirror + scoped
+            // `.animation(_, value:)` — animates ONLY offset/overlay
+            // on this view. The pre-existing Rhythm-widget bounce on
+            // calendar dismiss is unrelated to this transform (it
+            // happened before the parallax was introduced).
+            .compositingGroup()
+            .offset(x: isCalendarOpen ? -rootGeo.size.width * 0.22 : 0)
+            .overlay(
+                Color.black
+                    .opacity(isCalendarOpen ? 0.22 : 0)
+                    .ignoresSafeArea()
+                    .allowsHitTesting(false)
+            )
+            .animation(.easeInOut(duration: 0.32), value: isCalendarOpen)
 
-            if store.todayState.isCalendarVisible {
-                ZStack {
-                    Color.white.ignoresSafeArea()
-                    CalendarView(
-                        store: store.scope(
-                            state: \.todayState.calendarState,
-                            action: \.today.calendar
+            // Calendar overlay — animation is scoped to this inner
+            // ZStack only so the `.transition` of the calendar doesn't
+            // emit a transaction that bleeds back into the parent's
+            // sibling views (previously animated Today's hero height
+            // while the overlay was sliding off, causing the Rhythm
+            // widgets to drift back up at the tail of dismiss).
+            ZStack {
+                if isCalendarOpen {
+                    ZStack {
+                        Color.white.ignoresSafeArea()
+                        CalendarView(
+                            store: store.scope(
+                                state: \.todayState.calendarState,
+                                action: \.today.calendar
+                            )
                         )
-                    )
+                    }
+                    .transition(.move(edge: .trailing))
                 }
-                .transition(.move(edge: .trailing).combined(with: .opacity))
-                .zIndex(1)
             }
+            .animation(.easeInOut(duration: 0.32), value: isCalendarOpen)
+            .zIndex(1)
 
             // Initial profile bootstrap — subtle non-blocking top indicator.
             // Tabs stay interactive; hero already has its own skeleton state.
-            if store.isLoading && store.user == nil {
-                VStack {
-                    ProgressView()
-                        .progressViewStyle(.circular)
-                        .controlSize(.small)
-                        .tint(DesignColors.accentWarm)
-                        .padding(.top, 8)
-                        .accessibilityLabel("Loading your profile")
-                        .accessibilityAddTraits(.updatesFrequently)
-                    Spacer()
+            ZStack {
+                if store.isLoading && store.user == nil {
+                    VStack {
+                        ProgressView()
+                            .progressViewStyle(.circular)
+                            .controlSize(.small)
+                            .tint(DesignColors.accentWarm)
+                            .padding(.top, 8)
+                            .accessibilityLabel("Loading your profile")
+                            .accessibilityAddTraits(.updatesFrequently)
+                        Spacer()
+                    }
+                    .allowsHitTesting(false)
+                    .transition(.opacity)
                 }
-                .allowsHitTesting(false)
-                .transition(.opacity)
-                .zIndex(2)
             }
+            .animation(.easeInOut(duration: 0.25), value: store.isLoading)
+            .zIndex(2)
         }
-        .animation(.easeInOut(duration: 0.25), value: store.isLoading)
-        .animation(.easeInOut(duration: 0.25), value: store.todayState.isCalendarVisible)
+        .onChange(of: store.todayState.isCalendarVisible) { _, newValue in
+            // Raw assignment — no `withAnimation` here. The animation
+            // is on the `.animation(_, value: isCalendarOpen)` modifier
+            // scoped to just the TabView's offset/overlay, so the
+            // transaction can't leak into sibling views.
+            isCalendarOpen = newValue
+        }
         .fullScreenCover(isPresented: Binding(
             get: { store.isCycleInsightsVisible },
             set: { if !$0 { store.send(.cycleInsights(.delegate(.dismiss))) } }
@@ -388,11 +495,31 @@ public struct HomeView: View {
             )
             .background(DesignColors.background.ignoresSafeArea())
         }
+        // Direct-recap deep-link from Home's Latest Story tile. Shows
+        // the recap immediately over Home (single slide-up animation)
+        // instead of going Home → Journey → Recap (double animation).
+        .fullScreenCover(isPresented: Binding(
+            get: { store.isLatestRecapDirectVisible },
+            set: { if !$0 { store.send(.cycleJourney(.recapDismissed)) } }
+        )) {
+            // ZStack with a warm backdrop under AriaRecapStories: when
+            // the close button clears `state.recap`, the recap view
+            // renders empty — this backdrop keeps the cover solid during
+            // the slide-down animation instead of flashing white.
+            ZStack {
+                DesignColors.background.ignoresSafeArea()
+                AriaRecapStories(
+                    store: store.scope(
+                        state: \.cycleJourneyState,
+                        action: \.cycleJourney
+                    )
+                )
+            }
+        }
         .onAppear { safeAreaTop = rootGeo.safeAreaInsets.top }
         .task {
             store.send(.onAppear)
         }
-        .enableInjection()
         } // GeometryReader
     }
 

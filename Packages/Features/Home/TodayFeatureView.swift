@@ -1,12 +1,10 @@
 import ComposableArchitecture
-import Inject
 import SwiftData
 import SwiftUI
 
 // MARK: - Today View
 
 public struct TodayView: View {
-    @ObserveInjection var inject
     @Bindable var store: StoreOf<TodayFeature>
 
     @State private var showHero = false
@@ -15,6 +13,15 @@ public struct TodayView: View {
     @State private var scrollOffset: CGFloat = 0
     @State private var initialScrollY: CGFloat?
     @State private var safeAreaTop: CGFloat = 0
+    /// When non-nil, overrides `collapseProgress` with a pinned value.
+    /// Captured the moment the calendar overlay appears and released
+    /// only after it fully dismisses, so the hero height can't
+    /// recompute from live scroll changes while something is sliding
+    /// in front of Today — the real cause of the Rhythm-widget bounce.
+    @State private var frozenCollapseProgress: CGFloat?
+    /// Current page of the Rhythm-section widget carousel.
+    /// 0 = Rhythm (wellness), 1 = Journey. Future widgets slot in after.
+    @State private var rhythmPage: Int = 0
     public init(store: StoreOf<TodayFeature>) {
         self.store = store
     }
@@ -31,15 +38,17 @@ public struct TodayView: View {
     private let collapsedHeroHeight: CGFloat = 64
     private let collapseThreshold: CGFloat = 260
 
-    /// Collapse progress: 0 = expanded, 1 = collapsed. Driven by scroll offset.
-    /// Steep S-curve so it snaps visually — stays near 0/1, jumps through middle.
+    /// Live collapse progress from scroll.
+    private var liveCollapseProgress: CGFloat {
+        min(max(scrollOffset / collapseThreshold, 0), 1)
+    }
+
+    /// Effective progress the hero actually sees — pinned value if
+    /// the calendar overlay is active, otherwise the live scroll-driven
+    /// value. This is the lock that keeps Today's layout frozen while
+    /// something slides over it.
     private var collapseProgress: CGFloat {
-        let t = min(max(scrollOffset / collapseThreshold, 0), 1)
-        // Steep logistic-style curve: t²/(t²+(1-t)²)
-        let tSq = t * t
-        let inv = (1 - t) * (1 - t)
-        let denom = tSq + inv
-        return denom > 0 ? tSq / denom : 0
+        frozenCollapseProgress ?? liveCollapseProgress
     }
 
     private var currentHeroHeight: CGFloat {
@@ -54,6 +63,11 @@ public struct TodayView: View {
 
     public var body: some View {
         GeometryReader { rootGeo in
+        // Prefer the synchronous geometry reading over the async `onAppear`
+        // state write — otherwise the hero renders under the notch on first
+        // paint and "jumps down" once onAppear fires (visible for ~1 frame).
+        let liveSafeAreaTop = max(rootGeo.safeAreaInsets.top, safeAreaTop)
+
         VStack(spacing: 0) {
             // MARK: Sticky Hero (above scroll — content never goes behind it)
             if let cycle = store.cycle, store.hasCompletedCalendarLoad {
@@ -73,7 +87,7 @@ public struct TodayView: View {
                         store.send(.notificationsTapped)
                     },
                     collapseProgress: collapseProgress,
-                    safeAreaTop: safeAreaTop,
+                    safeAreaTop: liveSafeAreaTop,
                     aiWellnessMessage: store.wellnessMessage,
                     isLoadingWellnessMessage: store.isLoadingWellnessMessage
                 )
@@ -135,14 +149,24 @@ public struct TodayView: View {
                             .padding(.top, AppLayout.spacingL)
                         }
 
-                        if !store.cardStackState.cards.isEmpty
-                            || store.cardStackState.isLoading
-                            || store.cardStackState.hasLoadError
+                        // MARK: Wellness widget (W2) — adjusted HBI hero card.
+                        // Renders once cycle data is available so phase + day
+                        // meta are trustworthy. Skeleton fills the same shape
+                        // on the very first load so the layout never jumps.
+                        if store.cycle != nil {
+                            wellnessSection
+                                .opacity(showContent ? 1 : 0)
+                                .offset(y: showContent ? 0 : 16)
+                        }
+
+                        if !store.yourDayState.previews.isEmpty
+                            || store.yourDayState.isLoading
+                            || store.yourDayState.hasLoadError
                         {
-                            CardStackView(
+                            YourDayView(
                                 store: store.scope(
-                                    state: \.cardStackState,
-                                    action: \.cardStack
+                                    state: \.yourDayState,
+                                    action: \.yourDay
                                 )
                             )
                             .padding(.top, AppLayout.spacingL)
@@ -150,19 +174,14 @@ public struct TodayView: View {
                             .offset(y: showContent ? 0 : 20)
                         }
 
-                        VerticalSpace.xl
-
-                        // Journey preview
-                        if let cycle = store.cycle {
-                            JourneyPreviewSection(
-                                cycleCount: cycle.cycleDay > 0 ? max(1, cycle.cycleDay / cycle.cycleLength) : 1,
-                                currentCycleNumber: cycle.cycleDay > 0 ? max(1, cycle.cycleDay / cycle.cycleLength) : 1,
-                                onTap: { store.send(.delegate(.openCycleJourney)) }
-                            )
-                            .padding(.horizontal, AppLayout.horizontalPadding)
+                        // MARK: Symptom Pattern section — sits after the
+                        // other widgets so it reads as a follow-up
+                        // "here's what I noticed" block plus the Log
+                        // Symptoms CTA.
+                        symptomPatternSection
+                            .padding(.top, AppLayout.spacingXL)
                             .opacity(showContent ? 1 : 0)
-                            .offset(y: showContent ? 0 : 24)
-                        }
+                            .offset(y: showContent ? 0 : 20)
 
                         VerticalSpace.xxl
                     }
@@ -173,15 +192,41 @@ public struct TodayView: View {
             .onPreferenceChange(ScrollOffsetKey.self) { value in
                 // iOS 17 fallback only
                 if #unavailable(iOS 18.0) {
-                    if initialScrollY == nil { initialScrollY = value }
-                    scrollOffset = max(0, (initialScrollY ?? 0) - value)
+                    var t = Transaction()
+                    t.disablesAnimations = true
+                    withTransaction(t) {
+                        if initialScrollY == nil { initialScrollY = value }
+                        scrollOffset = max(0, (initialScrollY ?? 0) - value)
+                    }
                 }
             }
-            .refreshable {
-                store.send(.refreshTapped)
-            }
+            // Pull-to-refresh intentionally omitted — when the calendar
+            // overlay dismissed, SwiftUI's refreshable was briefly
+            // animating the scroll content downward as if a refresh
+            // had started, producing a visible bounce under the hero.
+            // Data refreshes are driven by onAppear / state changes,
+            // so the gesture isn't needed here.
         }
         .ignoresSafeArea(edges: .top)
+        // Log symptoms sheet — surfaced directly on Home without
+        // routing through the calendar overlay. Still reads state and
+        // dispatches actions via the calendarState scope so the
+        // underlying logic is unchanged.
+        .sheet(
+            isPresented: Binding(
+                get: { store.calendarState.isShowingSymptomSheet },
+                set: { if !$0 { store.send(.calendar(.symptomSheetDismissed)) } }
+            )
+        ) {
+            SymptomLoggingSheet(
+                store: store.scope(state: \.calendarState, action: \.calendar)
+            )
+            .presentationDetents([.large])
+            .presentationDragIndicator(.visible)
+            .presentationCornerRadius(AppLayout.cornerRadiusXL)
+            .presentationBackground(.white)
+            .presentationBackgroundInteraction(.disabled)
+        }
         .sheet(isPresented: Binding(
             get: { store.isNotificationsPanelVisible },
             set: { if !$0 { store.send(.notificationsPanelDismissed) } }
@@ -227,6 +272,19 @@ public struct TodayView: View {
                 .presentationDragIndicator(.hidden)
                 .presentationCornerRadius(AppLayout.cornerRadiusL)
         }
+        .sheet(item: Binding(
+            get: { store.dayDetailPayload },
+            set: { if $0 == nil { store.send(.dayDetailDismissed) } }
+        )) { payload in
+            DayDetailView(
+                payload: payload,
+                onDismiss: { store.send(.dayDetailDismissed) }
+            )
+            .presentationDetents([.large])
+            .presentationDragIndicator(.visible)
+            .presentationCornerRadius(AppLayout.cornerRadiusL)
+            .presentationBackground(DesignColors.background)
+        }
         .modifier(DailyGlowPresentations(store: store))
         .confirmationDialog(
             "Log your period",
@@ -264,8 +322,35 @@ public struct TodayView: View {
                 }
             }
         }
-        .onAppear { safeAreaTop = rootGeo.safeAreaInsets.top }
-        .enableInjection()
+        .onAppear {
+            safeAreaTop = rootGeo.safeAreaInsets.top
+        }
+        .onChange(of: rootGeo.safeAreaInsets.top) { _, new in
+            var t = Transaction()
+            t.disablesAnimations = true
+            withTransaction(t) {
+                safeAreaTop = new
+            }
+        }
+        .onChange(of: store.isCalendarVisible) { _, isVisible in
+            if isVisible {
+                // Freeze layout the moment the overlay starts coming in
+                frozenCollapseProgress = liveCollapseProgress
+            } else {
+                // Release AFTER the overlay's dismiss animation fully
+                // settles — ~350ms covers the 0.32s transition + a
+                // small buffer so any trailing scrollOffset noise
+                // from the layout shuffle doesn't re-animate the hero.
+                Task { @MainActor in
+                    try? await Task.sleep(nanoseconds: 360_000_000)
+                    var t = Transaction()
+                    t.disablesAnimations = true
+                    withTransaction(t) {
+                        frozenCollapseProgress = nil
+                    }
+                }
+            }
+        }
         } // GeometryReader
     }
 
@@ -336,6 +421,253 @@ public struct TodayView: View {
         .frame(height: 320)
     }
 
+    // MARK: - Wellness Section (W2)
+
+    /// Home's wellness card + optional Aria voice line. Three states:
+    /// - Resolved HBI → tappable widget with trend + optional Aria line
+    /// - Actively loading (no dashboard yet) → skeleton
+    /// - No check-in today → empty-state widget that nudges toward the
+    ///   daily check-in instead of a permanent shimmer.
+    /// Widget-level carousel pairing Rhythm with Journey (and any future
+    /// widget pages). Section header's title and trailing dots track the
+    /// visible page — no full-page paging, only the widget area swipes.
+    private var widgetSectionPageCount: Int { 2 }
+
+    private var widgetSectionTitle: String {
+        switch rhythmPage {
+        case 1:  return "Journey"
+        default: return "Rhythm"
+        }
+    }
+
+    @ViewBuilder
+    private var wellnessSection: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            // Custom section header with a staggered letter reveal so the
+            // title animates when the user pages between widgets.
+            HStack(alignment: .lastTextBaseline, spacing: 12) {
+                StaggeredTitle(text: widgetSectionTitle)
+                Spacer(minLength: 8)
+            }
+            .padding(.horizontal, AppLayout.horizontalPadding)
+            .padding(.top, 24)
+            .padding(.bottom, 10)
+
+            HomeWidgetCarousel(
+                currentIndex: $rhythmPage,
+                pageCount: widgetSectionPageCount,
+                horizontalPadding: AppLayout.horizontalPadding
+            ) { index in
+                switch index {
+                case 0: rhythmPageContent
+                case 1: journeyPageContent
+                default: EmptyView()
+                }
+            }
+
+            // Dots centered below the carousel — more visible than a
+            // trailing slot on the section header, and give users a clear
+            // handle to tap between pages.
+            HStack {
+                Spacer()
+                HomeWidgetCarouselDots(
+                    pageCount: widgetSectionPageCount,
+                    currentIndex: $rhythmPage
+                )
+                Spacer()
+            }
+            .padding(.top, 14)
+        }
+    }
+
+    /// Rhythm page — existing wellness widget + two ritual tiles.
+    /// Trailing Spacer anchors content to the top so the Rhythm tiles
+    /// don't stretch when the carousel sizes to the taller Journey page.
+    @ViewBuilder
+    private var rhythmPageContent: some View {
+        VStack(spacing: 0) {
+            wellnessBody
+            Spacer(minLength: 0)
+        }
+    }
+
+    /// Journey page — 3 destination boxes: Journey (recap stories),
+    /// Cycle Stats (averages & trends), Body Patterns (symptoms & signals).
+    /// Kept structurally symmetric with the Rhythm page (hero + tile row)
+    /// so the carousel height stays constant across pages.
+    @ViewBuilder
+    private var journeyPageContent: some View {
+        VStack(spacing: 12) {
+            HStack(alignment: .top, spacing: 12) {
+                JourneyDestinationTile(
+                    kind: .stats,
+                    stat: cycleStatsPreview,
+                    onTap: { store.send(.delegate(.openCycleStats)) }
+                )
+
+                JourneyDestinationTile(
+                    kind: .body,
+                    stat: bodyPatternsPreview,
+                    onTap: { store.send(.delegate(.openBodyPatterns)) }
+                )
+            }
+
+            JourneyDestinationCard(
+                subtitle: journeyCardSubtitle,
+                isNew: store.recapBannerMonth != nil,
+                onTap: { store.send(.delegate(.openCycleJourney)) }
+            )
+
+            // Anchor content to the top so the carousel doesn't stretch
+            // child tiles when a sibling page happens to be shorter.
+            Spacer(minLength: 0)
+        }
+    }
+
+    private var journeyCardSubtitle: String {
+        if let month = store.recapBannerMonth {
+            return "Your \(month) recap is ready."
+        }
+        return "Every cycle, a chapter of your story."
+    }
+
+    private var cycleStatsPreview: String {
+        guard let avg = store.menstrualStatus?.profile.avgCycleLength, avg > 0 else {
+            return "—"
+        }
+        return "~\(avg)d"
+    }
+
+    private var bodyPatternsPreview: String {
+        guard let phase = store.wellnessPhase else { return "—" }
+        return phase.rawValue.capitalized
+    }
+
+    /// Wellness section body. Layout mirrors Apple Home widgets / Cal AI:
+    /// one big hero widget (ring + score) on top, a grid of smaller ritual
+    /// tiles below. The widget only appears after the daily check-in lands
+    /// — before then, the tiles are the primary surface so the user has
+    /// two obvious, equal-weight things to tap.
+    @ViewBuilder
+    private var wellnessBody: some View {
+        VStack(spacing: 12) {
+            if store.hasCompletedCheckIn, let adjusted = store.wellnessAdjusted {
+                WellnessWidget(
+                    adjusted: adjusted,
+                    trendVsBaseline: store.wellnessTrendVsBaseline,
+                    phase: store.wellnessPhase,
+                    cycleDay: store.wellnessCycleDay,
+                    sourceLabel: store.wellnessSourceLabel,
+                    onDetailTap: { store.send(.wellnessTapped) }
+                )
+            } else if store.isLoadingDashboard, store.dashboard == nil {
+                WellnessWidgetSkeleton()
+            } else {
+                wellnessAwaitingCard
+            }
+
+            ritualTilesRow
+
+            if store.shouldShowAriaVoice {
+                AriaVoiceLine(phase: store.wellnessPhase)
+                    .transition(.opacity.combined(with: .move(edge: .top)))
+            }
+        }
+    }
+
+    /// Pre-check-in placeholder that sits in the widget slot until the
+    /// score is ready. Mirrors the widget's shape and meta row so the
+    /// section layout stays stable and the tiles don't drift upward.
+    @ViewBuilder
+    private var wellnessAwaitingCard: some View {
+        let meta: String? = {
+            guard let phase = store.wellnessPhase, phase != .late else { return nil }
+            if let day = store.wellnessCycleDay {
+                return "\(phase.displayName.uppercased()) · DAY \(day)"
+            }
+            return phase.displayName.uppercased()
+        }()
+
+        VStack(alignment: .leading, spacing: 0) {
+            if let meta {
+                Text(meta)
+                    .font(.raleway("SemiBold", size: 11, relativeTo: .caption2))
+                    .tracking(0.6)
+                    .foregroundStyle(DesignColors.textSecondary)
+                    .padding(.bottom, 12)
+            }
+
+            HStack(alignment: .center, spacing: 16) {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Your rhythm is waiting")
+                        .font(.raleway("Bold", size: 22, relativeTo: .title3))
+                        .tracking(-0.3)
+                        .foregroundStyle(DesignColors.text)
+                        .lineLimit(2)
+                        .fixedSize(horizontal: false, vertical: true)
+
+                    Text("Start with today's rituals below to unlock your score.")
+                        .font(.raleway("Medium", size: 13, relativeTo: .subheadline))
+                        .foregroundStyle(DesignColors.textSecondary)
+                        .lineSpacing(3)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+                ZStack {
+                    Circle()
+                        .strokeBorder(
+                            style: StrokeStyle(lineWidth: 6, dash: [3, 5])
+                        )
+                        .foregroundStyle(DesignColors.text.opacity(0.12))
+                        .frame(width: 84, height: 84)
+
+                    Image(systemName: "leaf.fill")
+                        .font(.system(size: 24, weight: .semibold))
+                        .foregroundStyle(DesignColors.text.opacity(0.25))
+                }
+            }
+        }
+        .padding(18)
+        .widgetCardStyle()
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Your rhythm is waiting. Start with today's rituals to unlock your score.")
+    }
+
+    /// Two Cal-AI-style tiles side by side: check-in + moment. Always visible
+    /// so the day's rituals have a stable home — the widget above them comes
+    /// and goes based on whether the score is ready, but the call-to-action
+    /// surface is constant.
+    @ViewBuilder
+    private var ritualTilesRow: some View {
+        let checkInDone = store.hasCompletedCheckIn
+        let momentDone: Bool = {
+            if case .completed = store.dailyChallengeState.challengeState { return true }
+            return false
+        }()
+        let challenge = store.dailyChallengeState.challenge
+        let momentSubtitle = challenge?.challengeTitle ?? "Today's gentle moment"
+        let momentIcon = challenge?.tileIconName ?? "sparkles"
+
+        HStack(spacing: 12) {
+            WellnessRitualTile(
+                title: "Check-in",
+                subtitle: "How do you feel?",
+                iconName: "heart.fill",
+                isDone: checkInDone,
+                onTap: { store.send(.checkInTapped) }
+            )
+
+            WellnessRitualTile(
+                title: "Your moment",
+                subtitle: momentSubtitle,
+                iconName: momentIcon,
+                isDone: momentDone,
+                onTap: { store.send(.dailyChallenge(.doItTapped)) }
+            )
+        }
+    }
+
     // MARK: - Dashboard Refresh Indicator (subtle pill for silent reloads)
 
     @ViewBuilder
@@ -360,6 +692,120 @@ public struct TodayView: View {
                 }
         }
         .frame(maxWidth: .infinity)
+    }
+
+    // MARK: - Log Symptoms Pill
+    //
+    // Temporary home for the "Log Symptoms" quick action — used to live
+    // on the calendar's floating bottom bar. Tapping opens the calendar
+    // overlay and immediately surfaces today's symptom sheet.
+
+    // MARK: - Symptom Pattern Section
+    //
+    // Editorial "what your body's been saying" block under the widget
+    // carousel. Pairs a short AI-flavoured pattern hint with the Log
+    // Symptoms CTA — gives symptom tracking its own home on Today
+    // rather than a floating pill above everything.
+
+    @ViewBuilder
+    private var symptomPatternSection: some View {
+        VStack(alignment: .leading, spacing: AppLayout.spacingM) {
+            // Section header
+            HStack(alignment: .firstTextBaseline) {
+                Text("Symptom pattern")
+                    .font(.raleway("Bold", size: 22, relativeTo: .title3))
+                    .tracking(-0.2)
+                    .foregroundStyle(DesignColors.text)
+
+                Spacer()
+
+                Text("Last 7 days".uppercased())
+                    .font(.raleway("Medium", size: 10, relativeTo: .caption2))
+                    .tracking(1.4)
+                    .foregroundStyle(DesignColors.textSecondary.opacity(0.6))
+            }
+
+            // Pattern card
+            VStack(alignment: .leading, spacing: AppLayout.spacingM) {
+                Text("No patterns yet")
+                    .font(.raleway("SemiBold", size: 15, relativeTo: .headline))
+                    .foregroundStyle(DesignColors.text)
+
+                Text("Log a few symptoms and I'll start noticing how your body shows up across your cycle.")
+                    .font(.raleway("Regular", size: 14, relativeTo: .subheadline))
+                    .foregroundStyle(DesignColors.textSecondary)
+                    .lineSpacing(3)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                logSymptomsPill
+                    .padding(.top, AppLayout.spacingS)
+            }
+            .padding(AppLayout.spacingL)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(
+                RoundedRectangle(cornerRadius: AppLayout.cornerRadiusL, style: .continuous)
+                    .fill(Color.white.opacity(0.75))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: AppLayout.cornerRadiusL, style: .continuous)
+                    .strokeBorder(DesignColors.accentWarm.opacity(0.12), lineWidth: 0.5)
+            )
+            .shadow(color: .black.opacity(0.04), radius: 8, x: 0, y: 2)
+        }
+        .padding(.horizontal, AppLayout.horizontalPadding)
+    }
+
+    private var logSymptomsPill: some View {
+        Button {
+            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+            store.send(.logSymptomsTapped, animation: .appBalanced)
+        } label: {
+            HStack(spacing: 8) {
+                Image(systemName: "plus")
+                    .font(.system(size: 12, weight: .semibold))
+                Text("Log Symptoms")
+                    .font(.raleway("SemiBold", size: 15, relativeTo: .body))
+            }
+            .foregroundStyle(DesignColors.text)
+            .padding(.horizontal, 22)
+            .padding(.vertical, 11)
+            .fixedSize()
+            .background {
+                ZStack {
+                    Capsule()
+                        .fill(
+                            LinearGradient(
+                                colors: [Color.white.opacity(0.95), Color.white.opacity(0.7)],
+                                startPoint: .top,
+                                endPoint: .bottom
+                            )
+                        )
+                    Capsule()
+                        .fill(
+                            LinearGradient(
+                                colors: [Color.white.opacity(0.9), Color.clear],
+                                startPoint: .top,
+                                endPoint: .center
+                            )
+                        )
+                        .padding(2)
+                    Capsule()
+                        .strokeBorder(
+                            LinearGradient(
+                                colors: [Color.white.opacity(0.8), DesignColors.accentWarm.opacity(0.3)],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            ),
+                            lineWidth: 1
+                        )
+                }
+                .shadow(color: .black.opacity(0.08), radius: 4, x: 0, y: 2)
+                .shadow(color: DesignColors.accentWarm.opacity(0.12), radius: 8, x: 0, y: 3)
+            }
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Log symptoms for today")
+        .accessibilityHint("Opens the symptoms sheet")
     }
 
     // MARK: - Skeleton Hero

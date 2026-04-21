@@ -1,10 +1,8 @@
-import Inject
 import SwiftUI
 
 // MARK: - Splash View
 
 public struct SplashView: View {
-    @ObserveInjection var inject
     public init() {}
 
     public var body: some View {
@@ -23,7 +21,6 @@ public struct SplashView: View {
             // Glass card with logo
             GlassLogoCard()
         }
-        .enableInjection()
     }
 }
 

@@ -1,11 +1,9 @@
 import HealthKit
-import Inject
 import SwiftUI
 
 // MARK: - Health Permission View
 
 public struct HealthPermissionView: View {
-    @ObserveInjection var inject
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     public let onConnect: () -> Void
     public let onSkip: () -> Void
@@ -154,7 +152,6 @@ public struct HealthPermissionView: View {
                 animateIn = true
             }
         }
-        .enableInjection()
     }
 
     private func requestHealthPermission() {

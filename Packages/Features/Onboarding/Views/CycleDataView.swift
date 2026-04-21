@@ -1,10 +1,8 @@
-import Inject
 import SwiftUI
 
 // MARK: - Cycle Data View
 
 public struct CycleDataView: View {
-    @ObserveInjection var inject
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     // Required fields (matching backend API)
     @Binding public var lastPeriodDate: Date?
@@ -175,7 +173,6 @@ public struct CycleDataView: View {
                 .animation(.easeInOut(duration: 0.3), value: currentPage)
             }
         }
-        .enableInjection()
     }
 }
 

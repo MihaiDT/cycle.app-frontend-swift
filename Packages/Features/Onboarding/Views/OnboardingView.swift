@@ -1,10 +1,8 @@
-import Inject
 import SwiftUI
 
 // MARK: - Onboarding View (Marketing Screen)
 
 public struct OnboardingView: View {
-    @ObserveInjection var inject
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     public let onBegin: () -> Void
     public let onLogin: () -> Void
@@ -150,7 +148,6 @@ public struct OnboardingView: View {
             .ignoresSafeArea()
         }
         .onAppear { startEntranceAnimation() }
-        .enableInjection()
     }
 
     private func startEntranceAnimation() {

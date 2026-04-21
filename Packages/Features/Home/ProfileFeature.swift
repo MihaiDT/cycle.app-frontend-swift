@@ -1,5 +1,4 @@
 import ComposableArchitecture
-import Inject
 import SwiftUI
 
 // MARK: - Profile Feature
@@ -131,7 +130,6 @@ public struct ProfileFeature: Sendable {
 
 public struct ProfileView: View {
     @Bindable var store: StoreOf<ProfileFeature>
-    @ObserveInjection var inject
 
     public init(store: StoreOf<ProfileFeature>) {
         self.store = store
@@ -159,7 +157,6 @@ public struct ProfileView: View {
         .navigationTitle("Me")
         .navigationBarTitleDisplayMode(.large)
         .onAppear { store.send(.loadGlowProfile) }
-        .enableInjection()
     }
 
     // MARK: - Profile Header

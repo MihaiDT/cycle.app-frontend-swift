@@ -2,6 +2,14 @@ import Foundation
 import SwiftData
 
 // MARK: - Recap AI Generation + Caching
+//
+// The recap pipeline runs in three steps for a given cycle:
+//   1. Extract structured Key Days via `KeyDayExtractor` (deterministic).
+//   2. Call the backend AI to generate 6 chapters of narrative, passing
+//      the Key Days as context so the story references real data.
+//   3. On failure, fall back to a template recap that uses the same Key
+//      Days + cycle stats.
+// Results are cached per cycle in `CycleRecapRecord`.
 
 extension CycleJourneyFeature {
 
@@ -22,6 +30,8 @@ extension CycleJourneyFeature {
     // MARK: Cache
 
     /// Load cached recap. `maxAge` in seconds — nil means no expiry.
+    /// Returns nil when the cached record was written before the
+    /// 6-chapter refactor (detected via empty `chapterTheme`).
     static func loadCachedRecap(cycleStart: Date, maxAge: TimeInterval? = nil) -> RecapData? {
         let container = CycleDataStore.shared
         let context = ModelContext(container)
@@ -30,18 +40,26 @@ extension CycleJourneyFeature {
             predicate: #Predicate { $0.cycleKey == key }
         )
         guard let record = try? context.fetch(descriptor).first else { return nil }
+
+        // Stale pre-6-chapter cache — force regeneration.
+        if record.chapterTheme.isEmpty { return nil }
+
         if let maxAge, Date.now.timeIntervalSince(record.createdAt) > maxAge {
             context.delete(record)
             try? context.save()
             return nil
         }
+
+        let keyDays = decodeKeyDays(record.chapterKeyDaysJSON)
         return RecapData(
             headline: record.headline,
             cycleVibe: record.cycleVibe,
-            overviewText: record.chapterOverview,
+            themeText: record.chapterTheme,
             bodyText: record.chapterBody,
-            mindText: record.chapterMind,
-            patternText: record.chapterPattern
+            heartMindText: record.chapterMind,
+            rhythmText: record.chapterPattern,
+            keyDays: keyDays,
+            whatsComingText: record.chapterWhatsComing
         )
     }
 
@@ -59,10 +77,12 @@ extension CycleJourneyFeature {
 
         let record = CycleRecapRecord(
             cycleKey: key,
-            chapterOverview: data.overviewText,
+            chapterTheme: data.themeText,
             chapterBody: data.bodyText,
-            chapterMind: data.mindText,
-            chapterPattern: data.patternText,
+            chapterMind: data.heartMindText,
+            chapterPattern: data.rhythmText,
+            chapterKeyDaysJSON: encodeKeyDays(data.keyDays),
+            chapterWhatsComing: data.whatsComingText,
             headline: data.headline,
             cycleVibe: data.cycleVibe
         )
@@ -78,11 +98,28 @@ extension CycleJourneyFeature {
         }
     }
 
+    private static func encodeKeyDays(_ days: [KeyDay]) -> String {
+        let payload = days.map(KeyDayDTO.init(from:))
+        guard let data = try? JSONEncoder().encode(payload),
+              let string = String(data: data, encoding: .utf8)
+        else { return "" }
+        return string
+    }
+
+    private static func decodeKeyDays(_ json: String) -> [KeyDay] {
+        guard let data = json.data(using: .utf8),
+              let dtos = try? JSONDecoder().decode([KeyDayDTO].self, from: data)
+        else { return [] }
+        return dtos.map { $0.toModel() }
+    }
+
     // MARK: AI Fetch
 
     static func fetchRecapAI(
         summary: JourneyCycleSummary,
-        allSummaries: [JourneyCycleSummary]
+        allSummaries: [JourneyCycleSummary],
+        keyDays: [KeyDay],
+        moments: [MomentSummary]
     ) async -> RecapData? {
         let completed = allSummaries.filter { !$0.isCurrentCycle }
         let avgLength = completed.isEmpty
@@ -91,13 +128,30 @@ extension CycleJourneyFeature {
         let prevLengths = completed.map(\.cycleLength)
         let bd = summary.phaseBreakdown
 
-        let prompt = """
-        You are Aria, a warm and intuitive wellness companion. You speak like a wise, caring friend \
-        — never clinical, always personal. You notice patterns others miss and frame insights in ways \
-        that make women feel truly seen.
+        let keyDaysContext = keyDays.map { key -> String in
+            let reasons = key.reasons.map(\.rawValue).joined(separator: ", ")
+            var line = "Day \(key.day) (\(key.phase.displayName.lowercased())"
+            if let hbi = key.hbi { line += ", HBI \(hbi)" }
+            if let mood = key.mood { line += ", mood \(mood)/5" }
+            if let energy = key.energy { line += ", energy \(energy)/5" }
+            line += "): \(reasons)"
+            if let cat = key.momentCategory { line += " — moment: \(cat)" }
+            return "- " + line
+        }.joined(separator: "\n")
 
-        Generate a personalized cycle recap. Each chapter should feel like a different revelation — \
-        not repetitive, not generic.
+        let momentsContext = moments.map { m -> String in
+            "- Day \(m.day): \(m.category)"
+        }.joined(separator: "\n")
+
+        let prompt = """
+        You are a warm and intuitive wellness companion. You speak like a wise, \
+        caring friend — never clinical, always personal. You notice patterns others \
+        miss and frame insights in ways that make women feel truly seen.
+
+        Write a personalized 6-chapter cycle recap. Each chapter should feel like \
+        a different revelation — not repetitive, not generic. Reference the Key \
+        Days where natural. Never mention astrology, charts, transits, or any \
+        gamification labels (medals, ratings, points).
 
         CYCLE DATA:
         - Cycle #\(summary.cycleNumber)
@@ -110,17 +164,31 @@ extension CycleJourneyFeature {
         - Previous cycle lengths: \(prevLengths)
         - In progress: \(summary.isCurrentCycle ? "yes" : "no")
 
-        Respond with ONLY valid JSON (no markdown):
-        {"headline":"3-5 word title","cycle_vibe":"One word","chapter_overview":"2-3 sentences","chapter_body":"2-3 sentences","chapter_mind":"2-3 sentences","chapter_pattern":"2-3 sentences"}
+        KEY DAYS (selected by our engine — write a short 1-2 sentence narrative per day):
+        \(keyDaysContext.isEmpty ? "- none this cycle" : keyDaysContext)
+
+        MOMENTS THIS CYCLE:
+        \(momentsContext.isEmpty ? "- none logged" : momentsContext)
+
+        Respond with ONLY valid JSON (no markdown, no code fences):
+        {
+          "headline": "3-5 word title",
+          "cycle_vibe": "one word",
+          "theme": "2-3 sentences for Chapter 1 (the throughline of the cycle)",
+          "body": "2-3 sentences for Chapter 2 (how the body moved through this cycle)",
+          "heart_and_mind": "2-3 sentences for Chapter 3 (emotional story)",
+          "rhythm": "2-3 sentences for Chapter 4 (cross-cycle pattern, if any)",
+          "key_day_narratives": [ { "day": <Int>, "text": "1-2 sentences" } ],
+          "whats_coming": "2-3 sentences for Chapter 6 (what the next cycle might bring)"
+        }
 
         RULES:
         - Use "you" and "your" — speak directly to her
-        - Be specific with data, weave numbers naturally into sentences
-        - Never list stats — tell a story
+        - Weave numbers naturally; never list stats
         - Each chapter reveals something different
         - If mood/energy not tracked, encourage check-ins warmly
         - No emojis, no exclamation marks
-        - Max 3 sentences per chapter
+        - Max 3 sentences per chapter, max 2 per key day narrative
         """
 
         let payload: [String: Any] = [
@@ -148,23 +216,50 @@ extension CycleJourneyFeature {
         else { return nil }
 
         struct AIRecapResponse: Decodable {
+            struct KeyDayNarrative: Decodable {
+                let day: Int
+                let text: String
+            }
             let headline: String
             let cycle_vibe: String
-            let chapter_overview: String
-            let chapter_body: String
-            let chapter_mind: String
-            let chapter_pattern: String
+            let theme: String
+            let body: String
+            let heart_and_mind: String
+            let rhythm: String
+            let key_day_narratives: [KeyDayNarrative]?
+            let whats_coming: String
         }
 
         guard let ai = try? JSONDecoder().decode(AIRecapResponse.self, from: data) else { return nil }
 
+        // Merge AI narratives into structured KeyDays; fall back to the
+        // template narrative when the AI skipped or mislabeled a day.
+        let narrativeByDay: [Int: String] = Dictionary(
+            uniqueKeysWithValues: (ai.key_day_narratives ?? []).map { ($0.day, $0.text) }
+        )
+        let enrichedKeyDays = keyDays.map { key in
+            KeyDay(
+                id: key.id,
+                day: key.day,
+                phase: key.phase,
+                hbi: key.hbi,
+                mood: key.mood,
+                energy: key.energy,
+                reasons: key.reasons,
+                narrative: narrativeByDay[key.day] ?? key.narrative,
+                momentCategory: key.momentCategory
+            )
+        }
+
         return RecapData(
             headline: ai.headline,
             cycleVibe: ai.cycle_vibe,
-            overviewText: ai.chapter_overview,
-            bodyText: ai.chapter_body,
-            mindText: ai.chapter_mind,
-            patternText: ai.chapter_pattern
+            themeText: ai.theme,
+            bodyText: ai.body,
+            heartMindText: ai.heart_and_mind,
+            rhythmText: ai.rhythm,
+            keyDays: enrichedKeyDays,
+            whatsComingText: ai.whats_coming
         )
     }
 
@@ -172,7 +267,8 @@ extension CycleJourneyFeature {
 
     static func templateRecap(
         summary: JourneyCycleSummary,
-        allSummaries: [JourneyCycleSummary]
+        allSummaries: [JourneyCycleSummary],
+        keyDays: [KeyDay]
     ) -> RecapData {
         let completed = allSummaries.filter { !$0.isCurrentCycle }
         let avgLength = completed.isEmpty
@@ -181,54 +277,62 @@ extension CycleJourneyFeature {
         let diff = summary.cycleLength - Int(avgLength.rounded())
         let bd = summary.phaseBreakdown
 
-        var overview: String
+        // Ch1 Theme
+        let theme: String
         if summary.isCurrentCycle {
-            overview = "You're in the middle of cycle \(summary.cycleNumber) right now."
-            overview += " So far it's been tracking close to your \(Int(avgLength.rounded()))-day average."
+            theme = "This cycle is still unfolding. What you do today becomes part of the story you'll read at the end."
         } else if abs(diff) <= 1 {
-            overview = "This cycle was right on your rhythm at \(summary.cycleLength) days."
-            overview += " Your body stayed close to its natural tempo."
+            theme = "Your body kept to its own tempo this cycle. A steady chapter — and those matter more than they seem."
         } else if diff > 0 {
-            overview = "At \(summary.cycleLength) days, this cycle ran \(diff) days longer than your average."
-            overview += " Longer cycles happen — your body adjusts to what life brings."
+            theme = "This cycle stretched longer than your usual rhythm. Something was being processed underneath — your body took the time it needed."
         } else {
-            overview = "A shorter cycle at \(summary.cycleLength) days, \(abs(diff)) under your average."
-            overview += " Your body moved at its own pace this time."
+            theme = "A swifter cycle than usual. Your body moved through its arc at its own pace."
         }
 
-        var bodyText = "Your period lasted \(summary.bleedingDays) days, followed by \(bd.follicularDays) days of your follicular phase where energy typically rebuilds."
+        // Ch2 Body
+        var bodyText = "Your period lasted \(summary.bleedingDays) days, followed by \(bd.follicularDays) days where energy typically rebuilds."
         if let energy = summary.avgEnergy {
-            let word = energy >= 4 ? "high" : energy >= 3 ? "steady" : "lower"
-            bodyText += " Your energy ran \(word) this cycle, averaging \(String(format: "%.1f", energy)) out of 5."
+            let word = energy >= 4 ? "high" : energy >= 3 ? "steady" : "gentler"
+            bodyText += " Your energy ran \(word) this cycle — \(String(format: "%.1f", energy)) out of 5 on average."
         } else {
-            bodyText += " Track your energy next cycle to see how your body's rhythm unfolds day by day."
+            bodyText += " Track your energy next cycle to see how your body moves through each phase."
         }
 
-        var mindText: String
+        // Ch3 Heart & Mind
+        let heartMind: String
         if let mood = summary.avgMood {
             let word = mood >= 4 ? "bright" : mood >= 3 ? "balanced" : "quieter"
-            mindText = "Your emotional landscape this cycle was \(word), with an average mood of \(String(format: "%.1f", mood)) out of 5."
-            mindText += " Every cycle teaches you something new about your inner rhythms."
+            heartMind = "Your inner weather was \(word) this cycle, averaging \(String(format: "%.1f", mood)) out of 5. Every cycle teaches you something about your own rhythms."
         } else {
-            mindText = "Your emotional story this cycle is still unwritten."
-            mindText += " Daily check-ins take just a moment and reveal patterns that might surprise you. Start next cycle and watch your insights come alive."
+            heartMind = "Your emotional story this cycle is still unwritten. A daily check-in takes a moment and reveals patterns that might surprise you."
         }
 
-        var patternText: String
+        // Ch4 Rhythm
+        let rhythm: String
         if completed.count >= 2 {
             let lengths = completed.map(\.cycleLength)
             let shortest = lengths.min() ?? 0
             let longest = lengths.max() ?? 0
-            patternText = "Across \(completed.count) cycles, your rhythm ranges from \(shortest) to \(longest) days."
+            var sentence = "Across \(completed.count) cycles, your rhythm ranges from \(shortest) to \(longest) days."
             if abs(diff) <= 2 {
-                patternText += " This cycle fits your pattern beautifully — your body knows its tempo."
+                sentence += " This cycle fits right in."
             } else {
-                patternText += " Variation is natural. Each cycle adds to your unique story."
+                sentence += " Variation is natural — each cycle adds to your signature."
             }
+            rhythm = sentence
         } else {
-            patternText = "You're building your pattern with each cycle you track."
-            patternText += " By your third cycle, the rhythms unique to you will start to emerge."
+            rhythm = "You're still building your pattern. By your third cycle, the rhythm that's uniquely yours will start to show."
         }
+
+        // Ch6 What's Coming — phase-aware soft preview
+        let whatsComing: String
+        if summary.isCurrentCycle {
+            whatsComing = "Once this cycle closes, you'll see how it compares to the ones before. Keep tracking — the story is building."
+        } else {
+            whatsComing = "Next cycle, watch for your ovulatory peak around day \(max(1, Int(avgLength.rounded()) - 14)). Plan something for that window — your energy will be ready."
+        }
+
+        // Ch5 Key Days already have template narratives from the extractor.
 
         let headline: String
         let vibe: String
@@ -245,17 +349,72 @@ extension CycleJourneyFeature {
             headline = "Moving quickly"
             vibe = "Swift"
         } else {
-            headline = "Another chapter written"
+            headline = "Another chapter"
             vibe = "Grounded"
         }
 
         return RecapData(
             headline: headline,
             cycleVibe: vibe,
-            overviewText: overview,
+            themeText: theme,
             bodyText: bodyText,
-            mindText: mindText,
-            patternText: patternText
+            heartMindText: heartMind,
+            rhythmText: rhythm,
+            keyDays: keyDays,
+            whatsComingText: whatsComing
+        )
+    }
+}
+
+// MARK: - Persistence-side DTOs
+
+/// Moment logged within a cycle. Surface contract for the AI prompt —
+/// kept separate from `KeyDay` because not every moment is a key day.
+public struct MomentSummary: Equatable, Sendable {
+    public let day: Int
+    public let category: String
+
+    public init(day: Int, category: String) {
+        self.day = day
+        self.category = category
+    }
+}
+
+/// JSON-friendly projection of `KeyDay` used for cache serialization.
+private struct KeyDayDTO: Codable {
+    let id: UUID
+    let day: Int
+    let phase: String
+    let hbi: Int?
+    let mood: Int?
+    let energy: Int?
+    let reasons: [String]
+    let narrative: String
+    let momentCategory: String?
+
+    init(from model: KeyDay) {
+        self.id = model.id
+        self.day = model.day
+        self.phase = model.phase.rawValue
+        self.hbi = model.hbi
+        self.mood = model.mood
+        self.energy = model.energy
+        self.reasons = model.reasons.map(\.rawValue)
+        self.narrative = model.narrative
+        self.momentCategory = model.momentCategory
+    }
+
+    func toModel() -> KeyDay {
+        KeyDay(
+            id: id,
+            day: day,
+            phase: CyclePhase(rawValue: phase) ?? .menstrual,
+            hbi: hbi,
+            mood: mood,
+            energy: energy,
+            reasons: reasons.compactMap(KeyDay.Reason.init(rawValue:)),
+            narrative: narrative,
+            momentCategory: momentCategory
         )
     }
 }
@@ -281,9 +440,7 @@ enum CycleRecapGenerator {
                 cal.isDate($0.startDate, inSameDayAs: closedCycleStart)
             }) else { return }
 
-            if let recap = await CycleJourneyFeature.fetchRecapAI(summary: summary, allSummaries: summaries) {
-                CycleJourneyFeature.cacheRecap(recap, cycleStart: closedCycleStart)
-            }
+            await generateAndCache(summary: summary, allSummaries: summaries)
         } catch {}
     }
 
@@ -307,9 +464,114 @@ enum CycleRecapGenerator {
             if CycleJourneyFeature.loadCachedRecap(cycleStart: summary.startDate) != nil {
                 continue
             }
-            if let recap = await CycleJourneyFeature.fetchRecapAI(summary: summary, allSummaries: summaries) {
-                CycleJourneyFeature.cacheRecap(recap, cycleStart: summary.startDate)
-            }
+            await generateAndCache(summary: summary, allSummaries: summaries)
+        }
+    }
+
+    // MARK: - Internal
+
+    private static func generateAndCache(
+        summary: JourneyCycleSummary,
+        allSummaries: [JourneyCycleSummary]
+    ) async {
+        let keyDays = extractKeyDays(for: summary)
+        let moments = collectMoments(for: summary)
+
+        if let ai = await CycleJourneyFeature.fetchRecapAI(
+            summary: summary,
+            allSummaries: allSummaries,
+            keyDays: keyDays,
+            moments: moments
+        ) {
+            CycleJourneyFeature.cacheRecap(ai, cycleStart: summary.startDate)
+            return
+        }
+
+        // AI failed — cache the deterministic template so the user still
+        // gets a story. Template can be overwritten on next successful AI
+        // pass by clearing the record.
+        let fallback = CycleJourneyFeature.templateRecap(
+            summary: summary,
+            allSummaries: allSummaries,
+            keyDays: keyDays
+        )
+        CycleJourneyFeature.cacheRecap(fallback, cycleStart: summary.startDate)
+    }
+
+    // MARK: - Signal loading
+
+    private static func extractKeyDays(for summary: JourneyCycleSummary) -> [KeyDay] {
+        let context = ModelContext(CycleDataStore.shared)
+        let cal = Calendar.current
+        let cycleStart = cal.startOfDay(for: summary.startDate)
+        guard let cycleEnd = cal.date(byAdding: .day, value: summary.cycleLength, to: cycleStart) else {
+            return []
+        }
+
+        // Fetch all records for this cycle's date range in one pass.
+        let hbiDesc = FetchDescriptor<HBIScoreRecord>(
+            predicate: #Predicate { $0.scoreDate >= cycleStart && $0.scoreDate < cycleEnd }
+        )
+        let reportDesc = FetchDescriptor<SelfReportRecord>(
+            predicate: #Predicate { $0.reportDate >= cycleStart && $0.reportDate < cycleEnd }
+        )
+        let challengeDesc = FetchDescriptor<ChallengeRecord>(
+            predicate: #Predicate { $0.date >= cycleStart && $0.date < cycleEnd && $0.status == "completed" }
+        )
+
+        let hbis = (try? context.fetch(hbiDesc)) ?? []
+        let reports = (try? context.fetch(reportDesc)) ?? []
+        let challenges = (try? context.fetch(challengeDesc)) ?? []
+
+        var signals: [KeyDaySignal] = []
+        for day in 1...summary.cycleLength {
+            guard let date = cal.date(byAdding: .day, value: day - 1, to: cycleStart) else { continue }
+            let dayStart = cal.startOfDay(for: date)
+
+            let hbi = hbis.first { cal.isDate($0.scoreDate, inSameDayAs: dayStart) }
+                .map { Int($0.hbiAdjusted.rounded()) }
+            let report = reports.first { cal.isDate($0.reportDate, inSameDayAs: dayStart) }
+            let challenge = challenges.first { cal.isDate($0.date, inSameDayAs: dayStart) }
+
+            // Skip untracked days — no HBI and no report and no challenge
+            // means there's nothing to score against.
+            if hbi == nil, report == nil, challenge == nil { continue }
+
+            signals.append(KeyDaySignal(
+                day: day,
+                hbi: hbi,
+                mood: report?.moodLevel,
+                energy: report?.energyLevel,
+                stress: report?.stressLevel,
+                sleep: report?.sleepQuality,
+                momentCategory: challenge?.challengeCategory
+            ))
+        }
+
+        return KeyDayExtractor.extract(
+            signals: signals,
+            cycleLength: summary.cycleLength,
+            bleedingDays: summary.bleedingDays
+        )
+    }
+
+    private static func collectMoments(for summary: JourneyCycleSummary) -> [MomentSummary] {
+        let context = ModelContext(CycleDataStore.shared)
+        let cal = Calendar.current
+        let cycleStart = cal.startOfDay(for: summary.startDate)
+        guard let cycleEnd = cal.date(byAdding: .day, value: summary.cycleLength, to: cycleStart) else {
+            return []
+        }
+        let desc = FetchDescriptor<ChallengeRecord>(
+            predicate: #Predicate { $0.date >= cycleStart && $0.date < cycleEnd && $0.status == "completed" }
+        )
+        let records = (try? context.fetch(desc)) ?? []
+        return records.compactMap { record -> MomentSummary? in
+            let startOfDay = cal.startOfDay(for: record.date)
+            let diff = cal.dateComponents([.day], from: cycleStart, to: startOfDay).day ?? 0
+            let day = diff + 1
+            guard day >= 1, day <= summary.cycleLength else { return nil }
+            return MomentSummary(day: day, category: record.challengeCategory)
         }
     }
 }

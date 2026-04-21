@@ -171,9 +171,6 @@ struct DailyChallengeCardView: View {
                 }
 
                 VStack(alignment: .leading, spacing: 4) {
-                    if let rating = challenge.validationRating {
-                        RatingBadge(rating: rating, size: 24)
-                    }
                     Text("+\(challenge.xpEarned) XP")
                         .font(.custom("Raleway-SemiBold", size: 14, relativeTo: .callout))
                         .foregroundStyle(DesignColors.accentWarm)

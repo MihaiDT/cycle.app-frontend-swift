@@ -1,5 +1,4 @@
 import ComposableArchitecture
-import Inject
 import SwiftUI
 import UIKit
 
@@ -123,7 +122,6 @@ public enum Mood: String, CaseIterable, Sendable {
 // MARK: - Mood Arc View
 
 public struct MoodArcView: View {
-    @ObserveInjection var inject
     @Bindable var store: StoreOf<MoodArcFeature>
 
     @State private var showContent = false
@@ -218,7 +216,6 @@ public struct MoodArcView: View {
                 showContent = true
             }
         }
-        .enableInjection()
     }
 }
 

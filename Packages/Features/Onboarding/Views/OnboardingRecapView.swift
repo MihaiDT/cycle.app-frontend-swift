@@ -1,10 +1,8 @@
-import Inject
 import SwiftUI
 
 // MARK: - Onboarding Recap View
 
 public struct OnboardingRecapView: View {
-    @ObserveInjection var inject
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     public let userName: String
     public let birthDate: Date
@@ -298,7 +296,6 @@ public struct OnboardingRecapView: View {
             }
 
         }
-        .enableInjection()
     }
 
     private var ageString: String {

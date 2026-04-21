@@ -241,4 +241,19 @@ extension ChallengeSnapshot {
         default:         return "5 min"
         }
     }
+
+    /// SF Symbol used by the Wellness ritual tile. Placeholder until each
+    /// category gets a custom Lottie / PNG; keep the mapping centralized so
+    /// the tile + any future surfaces stay in sync.
+    var tileIconName: String {
+        switch challengeCategory.lowercased() {
+        case "self_care":   return "sparkles"
+        case "mindfulness": return "wind"
+        case "movement":    return "figure.walk"
+        case "creative":    return "paintbrush.pointed.fill"
+        case "nutrition":   return "leaf.fill"
+        case "social":      return "person.2.fill"
+        default:            return "heart.fill"
+        }
+    }
 }

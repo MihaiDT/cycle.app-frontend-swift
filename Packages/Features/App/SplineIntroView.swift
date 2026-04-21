@@ -1,4 +1,3 @@
-import Inject
 import SplineRuntime
 import SwiftUI
 
@@ -6,7 +5,6 @@ import SwiftUI
 
 /// A beautiful 3D animated intro screen using Spline
 public struct SplineIntroView: View {
-    @ObserveInjection var inject
     public let onContinue: () -> Void
 
     @State private var showContinueButton = false
@@ -47,7 +45,6 @@ public struct SplineIntroView: View {
                 .animation(.easeInOut(duration: 0.5), value: showContinueButton)
             }
         }
-        .enableInjection()
     }
 }
 

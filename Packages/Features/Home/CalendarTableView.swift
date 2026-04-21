@@ -31,7 +31,7 @@ struct CalendarTableView: UIViewRepresentable {
         tv.dataSource = context.coordinator
         tv.delegate = context.coordinator
         tv.separatorStyle = .none
-        tv.backgroundColor = .white
+        tv.backgroundColor = .clear
         tv.showsVerticalScrollIndicator = false
         tv.contentInsetAdjustmentBehavior = .never
         tv.contentInset = .zero

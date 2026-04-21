@@ -60,10 +60,17 @@ public struct DailyChallengeFeature: Sendable {
         case delegate(Delegate)
         public enum Delegate: Sendable {
             case challengeStateChanged(ChallengeSnapshot?)
+            /// Fires only at the exact transition-to-completed moment (after
+            /// validation success), so subscribers like TodayFeature can
+            /// reload the dashboard for the moment bump without re-firing
+            /// every time an already-completed snapshot is re-loaded at
+            /// app launch.
+            case challengeJustCompleted
         }
     }
 
     @Dependency(\.glowLocal) var glowLocal
+    @Dependency(\.hbiLocal) var hbiLocal
 
     public init() {}
 
@@ -239,22 +246,34 @@ public struct DailyChallengeFeature: Sendable {
                 state.challenge = challenge
                 state.challengeState = .completed
                 let challengeId = challenge.id
-                return .run { [glowLocal] send in
-                    try await glowLocal.completeChallenge(
-                        challengeId, photoData, thumbnailData, rating, feedback, xpEarned
-                    )
-                    let (previous, current) = try await glowLocal.addXP(xpEarned, rating)
-                    if current.currentLevel > previous.currentLevel {
-                        let info = GlowConstants.levelFor(xp: current.totalXP)
-                        let unlock = GlowConstants.unlockDescriptions[current.currentLevel] ?? ""
-                        await send(.levelUpTriggered(
-                            level: info.level,
-                            title: info.title,
-                            emoji: info.emoji,
-                            unlock: unlock
-                        ))
+                let category = challenge.challengeCategory
+                return .merge(
+                    .send(.delegate(.challengeStateChanged(challenge))),
+                    .send(.delegate(.challengeJustCompleted)),
+                    .run { [glowLocal, hbiLocal] send in
+                        try await glowLocal.completeChallenge(
+                            challengeId, photoData, thumbnailData, rating, feedback, xpEarned
+                        )
+                        // Nudge Wellness — moment's bump lands on today's
+                        // HBI components + recomputes adjusted score so the
+                        // widget on Home reflects the shift. TodayFeature
+                        // reloads the dashboard on challengeStateChanged
+                        // so the ring re-animates without a manual refresh.
+                        try? await hbiLocal.applyMomentBump(category, rating)
+
+                        let (previous, current) = try await glowLocal.addXP(xpEarned, rating)
+                        if current.currentLevel > previous.currentLevel {
+                            let info = GlowConstants.levelFor(xp: current.totalXP)
+                            let unlock = GlowConstants.unlockDescriptions[current.currentLevel] ?? ""
+                            await send(.levelUpTriggered(
+                                level: info.level,
+                                title: info.title,
+                                emoji: info.emoji,
+                                unlock: unlock
+                            ))
+                        }
                     }
-                }
+                )
 
             case let .journey(.presented(.delegate(.challengeStarted(timerEndDate)))):
                 state.challengeState = .inProgress(startedAt: Date(), timerEndDate: timerEndDate)

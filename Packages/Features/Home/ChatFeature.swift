@@ -1,6 +1,5 @@
 import ComposableArchitecture
 import Foundation
-import Inject
 import SwiftData
 import SwiftUI
 
@@ -390,7 +389,6 @@ final class WebSocketManager: @unchecked Sendable {
 // MARK: - Chat View
 
 public struct ChatView: View {
-    @ObserveInjection var inject
     @Bindable var store: StoreOf<ChatFeature>
     @FocusState private var isInputFocused: Bool
     @State private var scrollProxy: ScrollViewProxy?
@@ -429,7 +427,6 @@ public struct ChatView: View {
         .task { store.send(.onAppear) }
         .animation(.easeInOut(duration: 0.25), value: store.hasConnectionError)
         .animation(.easeInOut(duration: 0.25), value: store.isConnected)
-        .enableInjection()
     }
 
     // MARK: - Connection Error Banner
@@ -526,7 +523,10 @@ public struct ChatView: View {
             VStack(spacing: 24) {
                 Spacer().frame(height: 40)
 
-                // Avatar / gradient orb
+                // Simple avatar stack — NyraOrb was causing the chat
+                // view to freeze on tab entry (likely Task/animation
+                // interaction with WebSocket connect). Reverted to the
+                // lightweight circle-gradient avatar for now.
                 ZStack {
                     Circle()
                         .fill(

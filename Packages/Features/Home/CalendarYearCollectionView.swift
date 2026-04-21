@@ -84,7 +84,7 @@ final class YearCollectionContainer: UIView, UICollectionViewDataSource, UIColle
         layout.headerReferenceSize = CGSize(width: 0, height: 40)
 
         collectionView = UICollectionView(frame: .zero, collectionViewLayout: layout)
-        collectionView.backgroundColor = .white
+        collectionView.backgroundColor = .clear
         collectionView.showsVerticalScrollIndicator = false
         collectionView.dataSource = self
         collectionView.delegate = self

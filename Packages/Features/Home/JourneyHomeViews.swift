@@ -366,16 +366,6 @@ public struct JourneyPreviewSection: View {
                         .font(.raleway("Regular", size: 12, relativeTo: .caption))
                         .foregroundStyle(DesignColors.accentWarm)
                         .frame(maxWidth: .infinity, alignment: .leading)
-                } else if cycleCount < 3 {
-                    Text("\(3 - cycleCount) more cycles until your Blueprint")
-                        .font(.raleway("Regular", size: 12, relativeTo: .caption))
-                        .foregroundStyle(DesignColors.textSecondary)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                } else if cycleCount < 6 {
-                    Text("\(6 - cycleCount) more cycles until Patterns")
-                        .font(.raleway("Regular", size: 12, relativeTo: .caption))
-                        .foregroundStyle(DesignColors.textSecondary)
-                        .frame(maxWidth: .infinity, alignment: .leading)
                 }
             }
             .padding(AppLayout.spacingL)
@@ -396,16 +386,18 @@ struct JourneyMandala: View {
     let summaries: [JourneyCycleSummary]
     let currentCycleProgress: CGFloat?
     let targetCycles: Int
-    var onInsightsTapped: (() -> Void)?
 
     private var completedCount: Int { summaries.filter { !$0.isCurrentCycle }.count }
     private var totalTracked: Int { summaries.count }
 
-    private var milestone: (name: String, icon: String, target: Int) {
-        if completedCount < 3 { return ("Pattern Found", "sparkles", 3) }
-        if completedCount < 6 { return ("Rhythm", "waveform.path", 6) }
-        if completedCount < 12 { return ("Full Year", "sun.max.fill", 12) }
-        return ("Full Year", "sun.max.fill", completedCount)
+    /// Gentle milestone framing — no "unlock" promises, just simple
+    /// counters. Feature gates tied to cycle count removed; milestones
+    /// now only color the dot progression.
+    private var milestone: (name: String, target: Int) {
+        if completedCount < 3  { return ("3 cycles", 3) }
+        if completedCount < 6  { return ("6 cycles", 6) }
+        if completedCount < 12 { return ("a full year", 12) }
+        return ("a full year", completedCount)
     }
 
     private let warmPalette: [Color] = DesignColors.journeyPalette
@@ -428,22 +420,6 @@ struct JourneyMandala: View {
                 .frame(width: 1, height: 60)
 
             VStack(alignment: .leading, spacing: 8) {
-                if completedCount >= 3 {
-                    let warmBrown = DesignColors.warmBrown
-                    Button {
-                        onInsightsTapped?()
-                    } label: {
-                        HStack(spacing: 4) {
-                            Text("Pattern Found")
-                                .font(.raleway("Bold", size: 18, relativeTo: .headline))
-                            Image(systemName: "chevron.right")
-                                .font(.system(size: 12, weight: .bold))
-                        }
-                        .foregroundStyle(warmBrown)
-                    }
-                    .buttonStyle(.plain)
-                }
-
                 HStack(spacing: 6) {
                     ForEach(0..<milestone.target, id: \.self) { i in
                         let isCompleted = i < completedCount

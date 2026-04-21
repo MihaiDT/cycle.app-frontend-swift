@@ -1,5 +1,4 @@
 import ComposableArchitecture
-import Inject
 import SwiftData
 import SwiftUI
 
@@ -415,7 +414,6 @@ public struct AppFeature: Sendable {
 // MARK: - App View
 
 public struct AppView: View {
-    @ObserveInjection var inject
     @Bindable var store: StoreOf<AppFeature>
 
     public init(store: StoreOf<AppFeature>) {
@@ -429,7 +427,6 @@ public struct AppView: View {
                 store.send(.onAppear)
             }
             .modelContainer(CycleDataStore.shared)
-            .enableInjection()
     }
 
     @ViewBuilder

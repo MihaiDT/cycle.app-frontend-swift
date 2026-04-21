@@ -1,11 +1,9 @@
-import Inject
 import Lottie
 import SwiftUI
 
 // MARK: - Privacy Consent View
 
 public struct PrivacyConsentView: View {
-    @ObserveInjection var inject
     public let healthDataConsent: Bool
     public let termsConsent: Bool
     public let onToggleHealthData: () -> Void
@@ -132,7 +130,6 @@ public struct PrivacyConsentView: View {
                 .padding(.horizontal, 32)
             }
         }
-        .enableInjection()
     }
 }
 

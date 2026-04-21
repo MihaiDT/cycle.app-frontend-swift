@@ -23,6 +23,9 @@ public struct TodayFeature: Sendable {
 
         @Presents var checkIn: DailyCheckInFeature.State?
         @Presents var moodArc: MoodArcFeature.State?
+        /// Wellness detail sheet — hydrated from today's HBI on tap so the
+        /// sheet opens with the same numbers the widget just rendered.
+        @Presents var wellnessDetail: WellnessDetailFeature.State?
         /// Always-present calendar state — pre-loaded so opening is instant
         public var calendarState: CalendarFeature.State = CalendarFeature.State()
         /// Controls calendar visibility (fullScreenCover)
@@ -79,8 +82,84 @@ public struct TodayFeature: Sendable {
             dashboard?.today?.trendDirection
         }
 
-        // Card stack
-        public var cardStackState: CardStackFeature.State = CardStackFeature.State()
+        // MARK: — Wellness hero (W2)
+        //
+        // Mirrors of the latest `HBIScore` used to feed `WellnessWidget` on
+        // Home and seed the `WellnessDetailFeature` when the sheet opens.
+        // All values derive from `dashboard?.today` — never from math here.
+
+        /// 0-100 adjusted score from W1.
+        public var wellnessAdjusted: Double? {
+            guard let today = dashboard?.today else { return nil }
+            return Double(today.hbiAdjusted)
+        }
+
+        /// Signed delta vs the user's own phase baseline. `nil` when baseline
+        /// confidence is insufficient — widget renders the "building" copy.
+        public var wellnessTrendVsBaseline: Double? {
+            dashboard?.today?.trendVsBaseline
+        }
+
+        /// Resolved `CyclePhase` for the widget's header. Late is downgraded
+        /// to `.luteal` for layout (widget hides meta on `.late`).
+        public var wellnessPhase: CyclePhase? {
+            guard let raw = dashboard?.today?.cyclePhase else {
+                return cycle?.currentPhase
+            }
+            return CyclePhase(rawValue: raw) ?? cycle?.currentPhase
+        }
+
+        /// Cycle day paired with phase label ("Luteal · Day 22").
+        public var wellnessCycleDay: Int? {
+            dashboard?.today?.cycleDay ?? cycle?.cycleDay
+        }
+
+        /// "Based on" footer copy. Uses whichever signals hydrated today's
+        /// score; empty check-in state falls back to a gentle onboarding line.
+        public var wellnessSourceLabel: String {
+            guard let today = dashboard?.today else {
+                return "Complete your first check-in"
+            }
+            var pieces: [String] = []
+            if today.hasSelfReport { pieces.append("Today's check-in") }
+            if today.hasHealthkitData { pieces.append("Health data") }
+            if pieces.isEmpty { pieces.append("Building your picture") }
+            return pieces.joined(separator: " · ")
+        }
+
+        /// True when the Aria voice line should render under the widget.
+        /// Only fires when the trend is meaningfully positive so we don't
+        /// nag on routine fluctuations.
+        public var shouldShowAriaVoice: Bool {
+            guard let trend = wellnessTrendVsBaseline else { return false }
+            return trend > 3
+        }
+
+        // MARK: — Cycle Live (Journey page)
+        //
+        // Editorial snippet for the Journey page Cycle Live widget.
+        // Mirrors the Your moment category from Rhythm so both pages
+        // reference the same underlying choice (action vs context).
+
+        public var cycleLiveContent: CycleLiveContent? {
+            guard let phase = wellnessPhase else { return nil }
+            let category = dailyChallengeState.challenge?.challengeCategory
+            return CycleLiveEngine.content(
+                phase: phase,
+                cycleDay: wellnessCycleDay,
+                momentCategory: category
+            )
+        }
+
+        public var cycleLiveDaysUntilPeriod: Int? {
+            guard let days = cycle?.daysUntilPeriod(from: Date()) else {
+                return nil
+            }
+            return days > 0 ? days : nil
+        }
+
+        // Your Day — Lens previews
+        public var yourDayState: YourDayFeature.State = YourDayFeature.State()
 
         // Daily Glow challenge
         public var dailyChallengeState: DailyChallengeFeature.State = DailyChallengeFeature.State()
@@ -90,19 +169,25 @@ public struct TodayFeature: Sendable {
         public var isRecapSheetVisible: Bool = false
         public var isNotificationsPanelVisible: Bool = false
 
+        // Echo from last cycle (same cycle-day, one cycle ago).
+        // Surfaces on Home's Journey page and drives the Day Detail sheet.
+        public var echoPayload: DayDetailPayload?
+        public var dayDetailPayload: DayDetailPayload?
+
         public init() {}
     }
 
     public enum Action: BindableAction, Sendable {
         case binding(BindingAction<State>)
         case loadDashboard
-        case cardStack(CardStackFeature.Action)
+        case yourDay(YourDayFeature.Action)
         case dailyChallenge(DailyChallengeFeature.Action)
         case dashboardLoaded(Result<HBIDashboardResponse, Error>)
         case loadMenstrualStatus
         case menstrualStatusLoaded(Result<MenstrualStatusResponse, Error>)
         case checkInTapped
         case calendarTapped
+        case logSymptomsTapped
         case calendarDismissed
         case calendarEntriesLoaded(Result<MenstrualCalendarResponse, Error>)
         case checkIn(PresentationAction<DailyCheckInFeature.Action>)
@@ -135,13 +220,31 @@ public struct TodayFeature: Sendable {
         case recapSheetDismissed
         case notificationsTapped
         case notificationsPanelDismissed
+        case wellnessTapped
+        case wellnessDetail(PresentationAction<WellnessDetailFeature.Action>)
         case generateMissingRecaps
+        case loadEcho
+        case echoLoaded(DayDetailPayload?)
+        case echoCardTapped
+        case dayDetailDismissed
         case delegate(Delegate)
         @CasePathable
         public enum Delegate: Sendable, Equatable {
             case openAriaChat(context: String)
             case openCycleInsights
             case openCycleJourney
+            /// Opens CycleInsights focused on averages & trends (the
+            /// Rhythm/Phases sections). Journey widget's Cycle Stats tile.
+            case openCycleStats
+            /// Opens CycleInsights and deep-links to the Body detail
+            /// section (symptoms & signals). Journey widget's Body
+            /// Patterns tile.
+            case openBodyPatterns
+            /// Opens the Journey screen and immediately presents the
+            /// recap of the most recent completed cycle. Used by Home's
+            /// Latest Story tile — skips the "tap cycle card then tap
+            /// recap" hop and drops the user straight into the story.
+            case openLatestRecap
             /// Broadcast that the underlying cycle data has changed — siblings
             /// (CycleInsights, CycleJourney) should refresh their cached context.
             /// Fires after `menstrualStatusLoaded` and `calendarEntriesLoaded`.
@@ -205,10 +308,10 @@ public struct TodayFeature: Sendable {
     /// many subscribers — add a new `.send` line here when wiring up a
     /// new HBI-reactive feature.
     private static func broadcastHBIEffect(_ score: HBIScore) -> Effect<Action> {
-        .merge(
-            .send(.cardStack(.hbiUpdated(score))),
-            .send(.dailyChallenge(.hbiUpdated(score)))
-        )
+        // HBI only fans out to features that actually re-weight on it.
+        // YourDay's content is now phase-driven via LensPreviewClient —
+        // HBI changes don't invalidate today's preview list.
+        .send(.dailyChallenge(.hbiUpdated(score)))
     }
 
     /// Broadcast the latest CycleContext to downstream sibling features
@@ -221,6 +324,306 @@ public struct TodayFeature: Sendable {
         .send(.delegate(.cycleDataUpdated(cycle)))
     }
 
+    /// Extracted from the main `Reduce` to keep the switch small and
+    /// avoid Swift type-checker timeouts on the full reducer body.
+    private static func handleMenstrualStatusLoaded(
+        status: MenstrualStatusResponse,
+        state: inout State
+    ) -> Effect<Action> {
+        state.isLoadingMenstrual = false
+        state.menstrualStatus = status
+        state.calendarState.menstrualStatus = status
+        let hasCycleData = status.hasCycleData
+        let localCal = Calendar.current
+        if hasCycleData {
+            let startDate = CalendarFeature.localDate(from: status.currentCycle.startDate)
+            state.calendarState.cycleStartDate = localCal.startOfDay(for: startDate)
+        }
+        state.calendarState.cycleLength = status.profile.avgCycleLength ?? 28
+        state.calendarState.bleedingDays = status.currentCycle.bleedingDays ?? 5
+
+        var effects: [Effect<Action>] = []
+        if !state.calendarState.hasPreloaded {
+            state.calendarState.hasPreloaded = true
+            effects.append(.send(.calendar(.loadCalendar)))
+        }
+        if !hasCycleData {
+            state.yourDayState.previews = []
+            state.yourDayState.currentPhase = nil
+        } else if state.hasCompletedCalendarLoad {
+            effects.append(Self.syncPhaseEffect(state: state))
+        }
+        if hasCycleData && state.wellnessMessage == nil {
+            effects.append(.send(.loadWellnessMessage))
+        }
+        effects.append(Self.broadcastCycleDataEffect(state.cycle))
+        return effects.isEmpty ? .none : .merge(effects)
+    }
+
+    /// Extracted — see `handleMenstrualStatusLoaded` for rationale.
+    private static func handleCalendarEntriesLoaded(
+        response: MenstrualCalendarResponse,
+        state: inout State
+    ) -> Effect<Action> {
+        var days: Set<String> = []
+        var predicted: Set<String> = []
+        var fertile: [String: FertilityLevel] = [:]
+        var ovulation: Set<String> = []
+        let cal = Calendar.current
+        for entry in response.entries {
+            let localDay = CalendarFeature.localDate(from: entry.date)
+            let comps = cal.dateComponents([.year, .month, .day], from: localDay)
+            let key = String(
+                format: "%04d-%02d-%02d",
+                comps.year ?? 0,
+                comps.month ?? 0,
+                comps.day ?? 0
+            )
+            switch entry.type {
+            case "period":
+                days.insert(key)
+            case "predicted_period":
+                days.insert(key)
+                predicted.insert(key)
+            case "fertile":
+                if let levelStr = entry.fertilityLevel,
+                    let level = FertilityLevel(rawValue: levelStr)
+                {
+                    fertile[key] = level
+                }
+            case "ovulation":
+                ovulation.insert(key)
+            default:
+                break
+            }
+        }
+        state.hasCompletedCalendarLoad = true
+        let wasSyncing = state.syncStatus == .syncing
+        if wasSyncing {
+            state.syncStatus = .synced
+        }
+        let refreshedSnapshot = CycleSnapshot(
+            periodDays: days,
+            predictedDays: predicted,
+            fertileDays: fertile,
+            ovulationDays: ovulation,
+            flowIntensity: state.snapshot.flowIntensity
+        )
+        state.snapshot = refreshedSnapshot
+        state.calendarState.snapshot = refreshedSnapshot
+
+        let cardEffect = Self.syncPhaseEffect(state: state)
+        let cycleBroadcast = Self.broadcastCycleDataEffect(state.cycle)
+
+        if state.isRefreshingCycleData {
+            return .merge(
+                .run { send in
+                    try? await Task.sleep(nanoseconds: 2_500_000_000)
+                    await send(.hideSyncStatus, animation: .easeOut(duration: 0.3))
+                },
+                cardEffect,
+                cycleBroadcast
+            )
+        } else if wasSyncing {
+            return .merge(
+                .run { send in
+                    try? await Task.sleep(nanoseconds: 1_000_000_000)
+                    await send(.hideSyncStatus, animation: .easeOut(duration: 0.3))
+                },
+                cardEffect,
+                cycleBroadcast
+            )
+        }
+        return .merge(cardEffect, .send(.generateMissingRecaps), cycleBroadcast)
+    }
+
+    /// Extracted — the `.merge(.run, .send)` pattern was a notable
+    /// contributor to the type-checker timeout.
+    private static func loadDashboardEffect(hbiLocal: HBILocalClient) -> Effect<Action> {
+        .merge(
+            .run { send in
+                let result = await Result {
+                    try await hbiLocal.getDashboard()
+                }
+                await send(.dashboardLoaded(result))
+            },
+            .send(.loadMenstrualStatus)
+        )
+    }
+
+    /// Extracted — two parallel fetches merged.
+    private static func loadMenstrualStatusEffect(
+        menstrualLocal: MenstrualLocalClient
+    ) -> Effect<Action> {
+        .merge(
+            .run { send in
+                let result = await Result {
+                    try await menstrualLocal.getStatus()
+                }
+                await send(.menstrualStatusLoaded(result))
+            },
+            .run { send in
+                let start = Calendar.current.date(byAdding: .month, value: -24, to: Date())!
+                let end = Calendar.current.date(byAdding: .month, value: 12, to: Date())!
+                let result = await Result {
+                    try await menstrualLocal.getCalendar(start, end)
+                }
+                await send(.calendarEntriesLoaded(result), animation: .easeInOut(duration: 0.3))
+            }
+        )
+    }
+
+    /// Extracted — big `.run` block that confirms/removes period groups
+    /// and regenerates predictions. Inlining it alongside the rest of
+    /// the cases tips Swift's type-checker over the edge.
+    private static func handleBackgroundSyncPeriod(
+        periodDays: Set<String>,
+        originalPeriodDays: Set<String>,
+        menstrualLocal: MenstrualLocalClient
+    ) -> Effect<Action> {
+        let periodGroups = EditPeriodFeature.groupConsecutivePeriods(periodDays)
+        let removedDays = originalPeriodDays.subtracting(periodDays)
+        return .run { send in
+            if !removedDays.isEmpty {
+                let datesToRemove = removedDays.compactMap { CalendarFeature.parseDate($0) }
+                try? await menstrualLocal.removePeriodDays(datesToRemove)
+            }
+            for group in periodGroups {
+                try? await menstrualLocal.confirmPeriod(
+                    group.startDate, group.dayCount, nil, true
+                )
+            }
+            if !periodGroups.isEmpty {
+                try? await menstrualLocal.generatePrediction()
+            }
+            await send(.backgroundSyncCompleted)
+        }
+    }
+
+    /// Extracted to keep the main `Reduce` switch small — Swift's type
+    /// checker starts timing out when the body has too many complex
+    /// `.merge` / `.run` patterns side by side.
+    private static func handleYourDay(
+        _ action: YourDayFeature.Action,
+        state: inout State
+    ) -> Effect<Action> {
+        switch action {
+        case .previewsLoaded:
+            if state.recapBannerMonth != nil && !state.isRecapSheetVisible {
+                state.isRecapSheetVisible = true
+            }
+            return .none
+        case .delegate(.openLens(_)):
+            return .send(.delegate(.openCycleInsights))
+        default:
+            return .none
+        }
+    }
+
+    // MARK: - Echo loader
+    //
+    // Builds a `DayDetailPayload` for "today's cycle day, one cycle ago".
+    // Walks the journey records to find the previous cycle's start date,
+    // targets the matching day, then queries SwiftData for the day's
+    // self-report / moment / HBI signals. Returns `nil` when the user
+    // has no previous cycle to compare against.
+    static func fetchEchoPayload(
+        currentCycleDay: Int,
+        bleedingDays: Int
+    ) async -> DayDetailPayload? {
+        guard currentCycleDay > 0 else { return nil }
+        let data: JourneyData
+        do {
+            data = try await MenstrualLocalClient.liveJourneyData()()
+        } catch {
+            return nil
+        }
+
+        let cal = Calendar.current
+        let sortedOldestFirst = data.records.sorted { $0.startDate < $1.startDate }
+        guard sortedOldestFirst.count >= 2 else { return nil }
+        let previousRecord = sortedOldestFirst[sortedOldestFirst.count - 2]
+
+        let previousStart = cal.startOfDay(for: previousRecord.startDate)
+        guard let targetDate = cal.date(
+            byAdding: .day,
+            value: currentCycleDay - 1,
+            to: previousStart
+        ) else { return nil }
+
+        // Past-cycle length: prefer the actual recorded length; fall
+        // back to profile average so the phase math still lands somewhere
+        // sensible for older data.
+        let cycleLength: Int = {
+            if let actual = previousRecord.actualCycleLength {
+                return actual
+            }
+            let current = sortedOldestFirst.last?.startDate
+            if let current {
+                let gap = cal.dateComponents([.day], from: previousStart, to: current).day ?? data.profileAvgCycleLength
+                if gap >= 18 && gap <= 50 { return gap }
+            }
+            return data.profileAvgCycleLength
+        }()
+
+        let previousBleedingDays = previousRecord.bleedingDays > 0
+            ? previousRecord.bleedingDays
+            : bleedingDays
+
+        let signals = fetchDaySignals(on: targetDate)
+        let cycleNumber = sortedOldestFirst.count - 1 // previous cycle's ordinal
+
+        return JourneyEchoEngine.buildEcho(
+            for: targetDate,
+            cycleStartDate: previousStart,
+            cycleNumber: cycleNumber,
+            cycleDay: currentCycleDay,
+            cycleLength: cycleLength,
+            bleedingDays: previousBleedingDays,
+            signals: signals
+        )
+    }
+
+    /// Pulls per-day signals for a given calendar date from the shared
+    /// `CycleDataStore`. Returns a `DaySignals` with `nil`s wherever the
+    /// user has no log — the engine treats that as "untracked".
+    private static func fetchDaySignals(on date: Date) -> JourneyEchoEngine.DaySignals {
+        let context = ModelContext(CycleDataStore.shared)
+        let cal = Calendar.current
+        let dayStart = cal.startOfDay(for: date)
+        guard let dayEnd = cal.date(byAdding: .day, value: 1, to: dayStart) else {
+            return JourneyEchoEngine.DaySignals()
+        }
+
+        let reportDesc = FetchDescriptor<SelfReportRecord>(
+            predicate: #Predicate { $0.reportDate >= dayStart && $0.reportDate < dayEnd }
+        )
+        let challengeDesc = FetchDescriptor<ChallengeRecord>(
+            predicate: #Predicate { $0.date >= dayStart && $0.date < dayEnd && $0.status == "completed" }
+        )
+        let hbiDesc = FetchDescriptor<HBIScoreRecord>(
+            predicate: #Predicate { $0.scoreDate >= dayStart && $0.scoreDate < dayEnd }
+        )
+
+        let report = (try? context.fetch(reportDesc))?.first
+        let challenge = (try? context.fetch(challengeDesc))?.first
+        let hbi = (try? context.fetch(hbiDesc))?.first
+
+        return JourneyEchoEngine.DaySignals(
+            mood: report?.moodLevel,
+            energy: report?.energyLevel,
+            stress: report?.stressLevel,
+            sleep: report?.sleepQuality,
+            momentCategory: challenge?.challengeCategory,
+            momentTitle: challenge?.challengeTitle,
+            momentValidationFeedback: challenge?.validationFeedback,
+            momentValidationRating: challenge?.validationRating,
+            momentPhotoThumbnail: challenge?.photoThumbnail,
+            hbiAdjusted: hbi?.hbiAdjusted,
+            hbiTrendVsBaseline: hbi?.trendVsBaseline
+        )
+    }
+
     public var body: some ReducerOf<Self> {
         BindingReducer()
 
@@ -229,71 +632,14 @@ public struct TodayFeature: Sendable {
             case .loadDashboard:
                 state.isLoadingDashboard = true
                 state.dashboardError = nil
-                return .merge(
-                    .run { send in
-                        let result = await Result {
-                            try await hbiLocal.getDashboard()
-                        }
-                        await send(.dashboardLoaded(result))
-                    },
-                    .send(.loadMenstrualStatus)
-                )
+                return Self.loadDashboardEffect(hbiLocal: hbiLocal)
 
             case .loadMenstrualStatus:
                 state.isLoadingMenstrual = true
-                return .merge(
-                    .run { send in
-                        let result = await Result {
-                            try await menstrualLocal.getStatus()
-                        }
-                        await send(.menstrualStatusLoaded(result))
-                    },
-                    .run { [menstrualLocal] send in
-                        let start = Calendar.current.date(byAdding: .month, value: -24, to: Date())!
-                        let end = Calendar.current.date(byAdding: .month, value: 12, to: Date())!
-                        let result = await Result {
-                            try await menstrualLocal.getCalendar(start, end)
-                        }
-                        await send(.calendarEntriesLoaded(result), animation: .easeInOut(duration: 0.3))
-                    }
-                )
+                return Self.loadMenstrualStatusEffect(menstrualLocal: menstrualLocal)
 
             case .menstrualStatusLoaded(.success(let status)):
-                state.isLoadingMenstrual = false
-                state.menstrualStatus = status
-                // Sync to always-present calendar state
-                state.calendarState.menstrualStatus = status
-                let hasCycleData = status.hasCycleData
-                let localCal = Calendar.current
-                if hasCycleData {
-                    let startDate = CalendarFeature.localDate(from: status.currentCycle.startDate)
-                    state.calendarState.cycleStartDate = localCal.startOfDay(for: startDate)
-                }
-                state.calendarState.cycleLength = status.profile.avgCycleLength ?? 28
-                state.calendarState.bleedingDays = status.currentCycle.bleedingDays ?? 5
-                // Pre-load full calendar data (36 months) so opening is instant
-                var effects: [Effect<Action>] = []
-                // Pre-load calendar
-                if !state.calendarState.hasPreloaded {
-                    state.calendarState.hasPreloaded = true
-                    effects.append(.send(.calendar(.loadCalendar)))
-                }
-                if !hasCycleData {
-                    state.cardStackState.cards = []
-                    state.cardStackState.currentPhase = nil
-                } else if state.hasCompletedCalendarLoad {
-                    // Only sync phase if calendar is loaded (periodDays available)
-                    // Otherwise, calendarEntriesLoaded will sync when ready
-                    effects.append(Self.syncPhaseEffect(state: state))
-                }
-                // Load AI wellness message
-                if hasCycleData && state.wellnessMessage == nil {
-                    effects.append(.send(.loadWellnessMessage))
-                }
-                // Broadcast refreshed cycle context to sibling features
-                // (CycleInsights, CycleJourney) via HomeFeature delegate.
-                effects.append(Self.broadcastCycleDataEffect(state.cycle))
-                return effects.isEmpty ? .none : .merge(effects)
+                return Self.handleMenstrualStatusLoaded(status: status, state: &state)
 
             case .menstrualStatusLoaded(.failure):
                 state.isLoadingMenstrual = false
@@ -301,82 +647,7 @@ public struct TodayFeature: Sendable {
                 return Self.broadcastCycleDataEffect(nil)
 
             case .calendarEntriesLoaded(.success(let response)):
-                var days: Set<String> = []
-                var predicted: Set<String> = []
-                var fertile: [String: FertilityLevel] = [:]
-                var ovulation: Set<String> = []
-                let cal = Calendar.current
-                for entry in response.entries {
-                    let localDay = CalendarFeature.localDate(from: entry.date)
-                    let comps = cal.dateComponents([.year, .month, .day], from: localDay)
-                    let key = String(
-                        format: "%04d-%02d-%02d",
-                        comps.year ?? 0,
-                        comps.month ?? 0,
-                        comps.day ?? 0
-                    )
-                    switch entry.type {
-                    case "period":
-                        days.insert(key)
-                    case "predicted_period":
-                        days.insert(key)
-                        predicted.insert(key)
-                    case "fertile":
-                        if let levelStr = entry.fertilityLevel,
-                            let level = FertilityLevel(rawValue: levelStr)
-                        {
-                            fertile[key] = level
-                        }
-                    case "ovulation":
-                        ovulation.insert(key)
-                    default:
-                        break
-                    }
-                }
-                state.hasCompletedCalendarLoad = true
-                let wasSyncing = state.syncStatus == .syncing
-                if wasSyncing {
-                    state.syncStatus = .synced
-                }
-                // Unified single-source update: build one snapshot and propagate
-                // to both TodayFeature (cycle context) and CalendarFeature (views).
-                // Flow intensity is preserved — only server-derived fields are replaced.
-                let refreshedSnapshot = CycleSnapshot(
-                    periodDays: days,
-                    predictedDays: predicted,
-                    fertileDays: fertile,
-                    ovulationDays: ovulation,
-                    flowIntensity: state.snapshot.flowIntensity
-                )
-                state.snapshot = refreshedSnapshot
-                state.calendarState.snapshot = refreshedSnapshot
-
-                let cardEffect = Self.syncPhaseEffect(state: state)
-                // Broadcast enriched cycle context (now includes calendar-derived
-                // period/fertile/ovulation days) to sibling features.
-                let cycleBroadcast = Self.broadcastCycleDataEffect(state.cycle)
-
-                if state.isRefreshingCycleData {
-                    // Keep wave active for 2.5s minimum — premium processing feel
-                    return .merge(
-                        .run { send in
-                            try? await Task.sleep(nanoseconds: 2_500_000_000)
-                            await send(.hideSyncStatus, animation: .easeOut(duration: 0.3))
-                        },
-                        cardEffect,
-                        cycleBroadcast
-                    )
-                } else if wasSyncing {
-                    return .merge(
-                        .run { send in
-                            try? await Task.sleep(nanoseconds: 1_000_000_000)
-                            await send(.hideSyncStatus, animation: .easeOut(duration: 0.3))
-                        },
-                        cardEffect,
-                        cycleBroadcast
-                    )
-                }
-                return .merge(cardEffect, .send(.generateMissingRecaps), cycleBroadcast)
+                return Self.handleCalendarEntriesLoaded(response: response, state: &state)
 
             case .calendarEntriesLoaded(.failure):
                 state.hasCompletedCalendarLoad = true
@@ -429,6 +700,14 @@ public struct TodayFeature: Sendable {
                 state.isCalendarVisible = true
                 return .none
 
+            case .logSymptomsTapped:
+                // "Log Symptoms" on Home surfaces today's symptom sheet
+                // directly — no calendar overlay. The sheet itself is
+                // presented on Home via the calendarState scope.
+                let today = Calendar.current.startOfDay(for: Date())
+                state.calendarState.selectedDate = today
+                return .send(.calendar(.daySelected(today)))
+
             case .checkIn(.presented(.delegate(.didCompleteCheckIn(_)))):
                 return .send(.loadDashboard)
 
@@ -436,8 +715,14 @@ public struct TodayFeature: Sendable {
                 return .none
 
             case .calendar(.delegate(.didDismiss)):
+                // No automatic `.loadDashboard` here — if period data
+                // actually changed while the user was on the calendar,
+                // `.periodDataChanged` / `.periodDataNeedsSync`
+                // delegates will fire their own reloads. Unconditional
+                // reload on dismiss flashed the dashboardRefreshIndicator
+                // and pushed the Rhythm widgets down-then-up mid-dismiss.
                 state.isCalendarVisible = false
-                return .send(.loadDashboard)
+                return .none
 
             case .calendarDismissed:
                 state.isCalendarVisible = false
@@ -551,33 +836,18 @@ public struct TodayFeature: Sendable {
                 let rawEnergy = state.dashboard?.today?.energyScore ?? 50
                 let energy = max(1, min(10, (rawEnergy / 10) + 1))
                 return .merge(
-                    .send(.cardStack(.loadCards(phase, day))),
-                    .send(.dailyChallenge(.selectChallenge(phase: phase.rawValue, energyLevel: energy)))
+                    .send(.yourDay(.loadPreviews(phase, day))),
+                    .send(.dailyChallenge(.selectChallenge(phase: phase.rawValue, energyLevel: energy))),
+                    .send(.loadEcho)
                 )
 
-            case .backgroundSyncPeriod(let periodDays, let originalPeriodDays, let flowIntensity, let bleedingDays):
-                // Clear recap banner — cycle data is changing
+            case .backgroundSyncPeriod(let periodDays, let originalPeriodDays, _, _):
                 state.recapBannerMonth = nil
-                let periodGroups = EditPeriodFeature.groupConsecutivePeriods(periodDays)
-                let removedDays = originalPeriodDays.subtracting(periodDays)
-                return .run { [menstrualLocal] send in
-                    // Remove days first
-                    if !removedDays.isEmpty {
-                        let datesToRemove = removedDays.compactMap { CalendarFeature.parseDate($0) }
-                        try? await menstrualLocal.removePeriodDays(datesToRemove)
-                    }
-                    // Confirm remaining period groups (skip predictions — done once below)
-                    for group in periodGroups {
-                        try? await menstrualLocal.confirmPeriod(
-                            group.startDate, group.dayCount, nil, true
-                        )
-                    }
-                    // Regenerate predictions only if we have period data
-                    if !periodGroups.isEmpty {
-                        try? await menstrualLocal.generatePrediction()
-                    }
-                    await send(.backgroundSyncCompleted)
-                }
+                return Self.handleBackgroundSyncPeriod(
+                    periodDays: periodDays,
+                    originalPeriodDays: originalPeriodDays,
+                    menstrualLocal: menstrualLocal
+                )
 
             case .loadWellnessMessage:
                 return Self.handleLoadWellness(&state)
@@ -602,7 +872,7 @@ public struct TodayFeature: Sendable {
             case .recapBannerLoaded(let month):
                 state.recapBannerMonth = month
                 // Show sheet only after cards have loaded
-                if month != nil && !state.cardStackState.isLoading {
+                if month != nil && !state.yourDayState.isLoading {
                     state.isRecapSheetVisible = true
                 }
                 return .none
@@ -619,84 +889,77 @@ public struct TodayFeature: Sendable {
                 state.isNotificationsPanelVisible = false
                 return .none
 
+            case .wellnessTapped:
+                guard let adjusted = state.wellnessAdjusted else { return .none }
+                state.wellnessDetail = WellnessDetailFeature.State(
+                    adjusted: adjusted,
+                    trendVsBaseline: state.wellnessTrendVsBaseline,
+                    phase: state.wellnessPhase,
+                    cycleDay: state.wellnessCycleDay,
+                    sourceLabel: state.wellnessSourceLabel
+                )
+                return .none
+
+            case .wellnessDetail(.presented(.delegate(.dismiss))):
+                state.wellnessDetail = nil
+                return .none
+
+            case .wellnessDetail:
+                return .none
+
             case .generateMissingRecaps:
-                return .run { [menstrualLocal] send in
+                // Delegates to `CycleRecapGenerator.generateMissing()`,
+                // which handles the full 6-chapter pipeline (Key Day
+                // extraction + AI call + template fallback + cache). Keeps
+                // this reducer case small enough to type-check quickly.
+                return .run { send in
                     CycleJourneyFeature.cleanupLegacyRecapDefaults()
-                    let data = try await menstrualLocal.getJourneyData()
-                    let summaries = CycleJourneyEngine.buildSummaries(
-                        inputs: data.records,
-                        reports: data.reports,
-                        profileAvgCycleLength: data.profileAvgCycleLength,
-                        profileAvgBleedingDays: data.profileAvgBleedingDays,
-                        currentCycleStartDate: data.currentCycleStartDate
-                    )
-                    // Invalidate stale CloudKit-synced recaps from before reset/new account
-                    let accountDate = UserDefaults.standard.object(forKey: "CycleDataResetDate") as? Date ?? .distantPast
-                    let maxAge: TimeInterval? = accountDate == .distantPast ? nil : Date.now.timeIntervalSince(accountDate)
-                    for summary in summaries where !summary.isCurrentCycle {
-                        let hasCached = CycleJourneyFeature.loadCachedRecap(cycleStart: summary.startDate, maxAge: maxAge) != nil
-                        if !hasCached {
-                            if let recap = await CycleJourneyFeature.fetchRecapAI(summary: summary, allSummaries: summaries) {
-                                CycleJourneyFeature.cacheRecap(recap, cycleStart: summary.startDate)
-                            }
-                        }
-                    }
+                    await CycleRecapGenerator.generateMissing()
                     await send(.refreshRecapBanner)
                 }
                 .cancellable(id: CancelID.recapGeneration, cancelInFlight: true)
 
-            case .cardStack(.cardsGenerated):
-                // Cards just loaded — show recap sheet if recap is ready
-                if state.recapBannerMonth != nil && !state.isRecapSheetVisible {
-                    state.isRecapSheetVisible = true
-                }
-                return .none
-
-            case .cardStack(.delegate(.openLens)):
-                return .send(.delegate(.openCycleInsights))
-
-            case .cardStack(.delegate(.openCheckIn)):
-                return .send(.moodTapped)
-
-            case .cardStack(.delegate(.startBreathing)):
-                // Future: present breathing modal
-                return .none
-
-            case .cardStack(.delegate(.openJournal)):
-                // Future: present journal modal
-                return .none
-
-            case .cardStack(.delegate(.challengeDoItTapped)):
-                return .send(.dailyChallenge(.doItTapped))
-
-            case .cardStack(.delegate(.challengeContinueTapped)):
-                return .send(.dailyChallenge(.continueTapped))
-
-            case .cardStack(.delegate(.challengeSkipTapped)):
-                return .send(.dailyChallenge(.skipTapped))
-
-            case .cardStack(.delegate(.challengeMaybeLaterTapped)):
-                return .send(.dailyChallenge(.maybeLaterTapped))
+            case let .yourDay(inner):
+                return Self.handleYourDay(inner, state: &state)
 
             case let .dailyChallenge(.delegate(.challengeStateChanged(snapshot))):
-                state.cardStackState.challengeSnapshot = snapshot
-                if case .inProgress = state.dailyChallengeState.challengeState {
-                    state.cardStackState.challengeInProgress = true
-                } else {
-                    state.cardStackState.challengeInProgress = false
-                }
+                // Challenge lives solely in the Rhythm widget now, so no
+                // card-stack mirroring is required. Kept as a named case
+                // to make the data flow obvious at a glance.
+                _ = snapshot
                 return .none
+
+            case .dailyChallenge(.delegate(.challengeJustCompleted)):
+                // Fires only at the transition moment (after validation
+                // success), not on every app launch with an already-
+                // completed challenge. Safe to reload dashboard here.
+                return .send(.loadDashboard)
 
             case .dailyChallenge:
-                // Sync inProgress flag to card stack after any challenge action
-                if case .inProgress = state.dailyChallengeState.challengeState {
-                    state.cardStackState.challengeInProgress = true
-                } else {
-                    state.cardStackState.challengeInProgress = false
-                }
                 return .none
 
-            case .cardStack:
+            case .loadEcho:
+                guard let cycle = state.cycle else { return .none }
+                let cycleDay = cycle.cycleDay
+                let bleedingDays = cycle.bleedingDays
+                return .run { send in
+                    let payload = await Self.fetchEchoPayload(
+                        currentCycleDay: cycleDay,
+                        bleedingDays: bleedingDays
+                    )
+                    await send(.echoLoaded(payload))
+                }
+
+            case let .echoLoaded(payload):
+                state.echoPayload = payload
+                return .none
+
+            case .echoCardTapped:
+                state.dayDetailPayload = state.echoPayload
+                return .none
+
+            case .dayDetailDismissed:
+                state.dayDetailPayload = nil
                 return .none
 
             case .binding, .delegate:
@@ -709,11 +972,14 @@ public struct TodayFeature: Sendable {
         .ifLet(\.$moodArc, action: \.moodArc) {
             MoodArcFeature()
         }
+        .ifLet(\.$wellnessDetail, action: \.wellnessDetail) {
+            WellnessDetailFeature()
+        }
         Scope(state: \.calendarState, action: \.calendar) {
             CalendarFeature()
         }
-        Scope(state: \.cardStackState, action: \.cardStack) {
-            CardStackFeature()
+        Scope(state: \.yourDayState, action: \.yourDay) {
+            YourDayFeature()
         }
         Scope(state: \.dailyChallengeState, action: \.dailyChallenge) {
             DailyChallengeFeature()

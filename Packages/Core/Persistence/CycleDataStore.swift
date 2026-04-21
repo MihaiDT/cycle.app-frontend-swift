@@ -19,7 +19,6 @@ public enum CycleDataStore {
         SelfReportRecord.self,
         HBIScoreRecord.self,
         ChatMessageRecord.self,
-        DailyCardRecord.self,
         CycleRecapRecord.self,
         WellnessMessageRecord.self,
         ChallengeRecord.self,

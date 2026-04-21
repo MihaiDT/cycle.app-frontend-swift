@@ -76,6 +76,19 @@ struct DailyGlowPresentations: ViewModifier {
                     .presentationDragIndicator(.hidden)
                     .presentationBackground(.ultraThinMaterial)
             }
+            // Wellness detail sheet (W2)
+            .sheet(
+                item: $store.scope(
+                    state: \.wellnessDetail,
+                    action: \.wellnessDetail
+                )
+            ) { detailStore in
+                WellnessDetailView(store: detailStore)
+                    .presentationDetents([.large])
+                    .presentationDragIndicator(.visible)
+                    .presentationCornerRadius(AppLayout.cornerRadiusL)
+                    .presentationBackground(DesignColors.background)
+            }
     }
 }
 

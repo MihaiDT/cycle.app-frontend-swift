@@ -101,7 +101,6 @@ private struct StaggeredSuccessView: View {
         store.profileTotalXP + result.xpEarned
     }
 
-    @State private var showBadge = false
     @State private var showFeedback = false
     @State private var showXP = false
     @State private var showProgress = false
@@ -112,12 +111,7 @@ private struct StaggeredSuccessView: View {
             VStack(spacing: 24) {
                 Spacer().frame(height: 12)
 
-                // 1. Rating badge — appears at 0.3s
-                RatingBadge(rating: result.rating, size: 48, animated: true)
-                    .opacity(reduceMotion ? 1 : (showBadge ? 1 : 0))
-                    .scaleEffect(reduceMotion ? 1 : (showBadge ? 1 : 0.5))
-
-                // 2. Feedback — appears at 0.9s
+                // 1. Feedback — appears at 0.9s
                 Text(result.feedback)
                     .font(.raleway("Medium", size: 17, relativeTo: .body))
                     .foregroundStyle(DesignColors.text)
@@ -173,25 +167,21 @@ private struct StaggeredSuccessView: View {
         }
         .onAppear {
             if reduceMotion {
-                showBadge = true
                 showFeedback = true
                 showXP = true
                 showProgress = true
                 showButton = true
             } else {
-                withAnimation(.spring(response: 0.5, dampingFraction: 0.7).delay(0.3)) {
-                    showBadge = true
-                }
-                withAnimation(.easeOut(duration: 0.5).delay(0.9)) {
+                withAnimation(.easeOut(duration: 0.5).delay(0.3)) {
                     showFeedback = true
                 }
-                withAnimation(.appBalanced.delay(1.5)) {
+                withAnimation(.appBalanced.delay(0.9)) {
                     showXP = true
                 }
-                withAnimation(.easeOut(duration: 0.4).delay(2.2)) {
+                withAnimation(.easeOut(duration: 0.4).delay(1.5)) {
                     showProgress = true
                 }
-                withAnimation(.easeOut(duration: 0.4).delay(2.8)) {
+                withAnimation(.easeOut(duration: 0.4).delay(2.1)) {
                     showButton = true
                 }
             }

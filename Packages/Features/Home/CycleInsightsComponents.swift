@@ -1,5 +1,4 @@
 import ComposableArchitecture
-import Inject
 import SwiftUI
 
 // MARK: - Mini Visuals (shared between box previews and detail views)
