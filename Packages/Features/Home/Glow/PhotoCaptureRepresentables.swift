@@ -28,10 +28,10 @@ final class CameraCaptureController: NSObject, ObservableObject {
     @Published var isSessionRunning: Bool = false
     @Published var capturedImageData: Data?
 
-    let session = AVCaptureSession()
-    private let output = AVCapturePhotoOutput()
-    private let sessionQueue = DispatchQueue(label: "app.cycle.ios.camera-session")
-    private var hasConfigured = false
+    nonisolated(unsafe) let session = AVCaptureSession()
+    nonisolated(unsafe) private let output = AVCapturePhotoOutput()
+    nonisolated(unsafe) private let sessionQueue = DispatchQueue(label: "app.cycle.ios.camera-session")
+    nonisolated(unsafe) private var hasConfigured = false
 
     override init() {
         super.init()
@@ -64,7 +64,7 @@ final class CameraCaptureController: NSObject, ObservableObject {
         #endif
     }
 
-    private func configureAndStartIfNeeded() {
+    nonisolated private func configureAndStartIfNeeded() {
         sessionQueue.async { [weak self] in
             guard let self else { return }
             if !self.hasConfigured {
@@ -79,7 +79,7 @@ final class CameraCaptureController: NSObject, ObservableObject {
         }
     }
 
-    private func configureSessionOnQueue() {
+    nonisolated private func configureSessionOnQueue() {
         session.beginConfiguration()
         session.sessionPreset = .photo
 

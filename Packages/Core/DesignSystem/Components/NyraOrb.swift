@@ -933,8 +933,8 @@ private struct BlobShape: Shape {
             let radial = 1.0 + CGFloat(wobble1 + wobble2 * 0.6) * bulge * 0.5
             let rr = r * radial
             points.append(CGPoint(
-                x: cx + cos(theta) * rr,
-                y: cy + sin(theta) * rr
+                x: cx + CGFloat(cos(theta)) * rr,
+                y: cy + CGFloat(sin(theta)) * rr
             ))
         }
 

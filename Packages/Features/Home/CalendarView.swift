@@ -33,7 +33,7 @@ public struct CalendarView: View {
         return (-24...12).compactMap { cal.date(byAdding: .month, value: $0, to: current) }
     }()
 
-    static let monthIdFormatter: DateFormatter = {
+    nonisolated(unsafe) static let monthIdFormatter: DateFormatter = {
         let fmt = DateFormatter()
         fmt.dateFormat = "yyyy-MM"
         return fmt

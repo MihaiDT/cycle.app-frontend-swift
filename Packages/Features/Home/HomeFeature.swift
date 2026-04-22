@@ -35,12 +35,14 @@ public struct HomeFeature: Sendable {
         public enum Tab: Int, Equatable, Sendable, CaseIterable {
             case today = 0
             case chat = 1
-            case me = 2
+            case toDo = 2
+            case me = 3
 
             var title: String {
                 switch self {
                 case .today: "Today"
                 case .chat: "Aria"
+                case .toDo: "To Do"
                 case .me: "Me"
                 }
             }
@@ -49,6 +51,7 @@ public struct HomeFeature: Sendable {
                 switch self {
                 case .today: "sun.horizon"
                 case .chat: "bubble.left.and.text.bubble.right"
+                case .toDo: "checklist"
                 case .me: "person"
                 }
             }
@@ -57,6 +60,7 @@ public struct HomeFeature: Sendable {
                 switch self {
                 case .today: "sun.horizon.fill"
                 case .chat: "bubble.left.and.text.bubble.right.fill"
+                case .toDo: "checklist.checked"
                 case .me: "person.fill"
                 }
             }
@@ -387,6 +391,18 @@ public struct HomeView: View {
                         )
                     }
                     .tag(HomeFeature.State.Tab.chat)
+
+                // To Do Tab
+                ToDoView()
+                    .tabItem {
+                        Label(
+                            HomeFeature.State.Tab.toDo.title,
+                            systemImage: store.selectedTab == .toDo
+                                ? HomeFeature.State.Tab.toDo.selectedIcon
+                                : HomeFeature.State.Tab.toDo.icon
+                        )
+                    }
+                    .tag(HomeFeature.State.Tab.toDo)
 
                 // Me Tab
                 NavigationStack {

@@ -122,6 +122,7 @@
 		7C13CC4BABF0121CDDA43C94 /* SplashView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 94278F98041D7E509F99939B /* SplashView.swift */; };
 		7D383F183C5E202BD1376605 /* Raleway-ExtraLightItalic.ttf in Resources */ = {isa = PBXBuildFile; fileRef = BB56C4D402DE76F749F5763C /* Raleway-ExtraLightItalic.ttf */; };
 		7DEEFEE25F2E4577DD65220C /* GlassSelectionCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8E62ACB6092862D952F78FB /* GlassSelectionCard.swift */; };
+		7E1E9FD2A3382F0F9E229C6E /* ToDoView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 78721512376173BDD37CA1B9 /* ToDoView.swift */; };
 		814DE68D6BDA1378A8D0E58C /* GlassDateButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6C462B9D1B01812BDB61714 /* GlassDateButton.swift */; };
 		826BEB12143C0751CD9B015F /* ShieldCheckIcon.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA6B79551465ACB3BDCA4C84 /* ShieldCheckIcon.swift */; };
 		83B260584C32CCAFD28967EC /* DayDetailPayload.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C043A2082E6C0A084726140 /* DayDetailPayload.swift */; };
@@ -386,6 +387,7 @@
 		75D6127ECF3EBDD6447B1D46 /* CycleAppLiveActivity.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = CycleAppLiveActivity.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		75F538CF7F041D15352BB19F /* PersonalBaselineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersonalBaselineTests.swift; sourceTree = "<group>"; };
 		768AB686BAC4D9AE276C0E0F /* GlassDatePicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassDatePicker.swift; sourceTree = "<group>"; };
+		78721512376173BDD37CA1B9 /* ToDoView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToDoView.swift; sourceTree = "<group>"; };
 		79544B6CD03C92AA114BF491 /* AllStoriesTile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AllStoriesTile.swift; sourceTree = "<group>"; };
 		79A0533D66600EF003BDFC79 /* Raleway-Thin.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Raleway-Thin.ttf"; sourceTree = "<group>"; };
 		7B8BCDA4EDBEB5E424AECA1F /* MenstrualLocalClientTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenstrualLocalClientTests.swift; sourceTree = "<group>"; };
@@ -940,6 +942,7 @@
 				2C384BB38218230424E77203 /* TodayFeature.swift */,
 				DE958ED638662F939FCEFBC2 /* TodayFeaturePresentations.swift */,
 				6FFD8A28ED9C34496E287969 /* TodayFeatureView.swift */,
+				78721512376173BDD37CA1B9 /* ToDoView.swift */,
 				529A9602F399D3B2ECAEFEFD /* WellnessDetailFeature.swift */,
 				CA93F53F7EDD83FA264E8EB2 /* WellnessDetailView.swift */,
 				4FF46A2BB7B8E3D33F0C25E7 /* YourDayFeature.swift */,
@@ -1074,9 +1077,10 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
 				LastUpgradeCheck = 1600;
+				TargetAttributes = {
+				};
 			};
 			buildConfigurationList = 41EF942265CA089BEB2A7CEA /* Build configuration list for PBXProject "CycleApp" */;
-			compatibilityVersion = "Xcode 14.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -1094,6 +1098,7 @@
 				FDE4EA748176C63BCCDC26BB /* XCRemoteSwiftPackageReference "swift-tagged" */,
 			);
 			preferredProjectObjectVersion = 77;
+			productRefGroup = 7B3AC404FF7D6C24A3BD7162 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
@@ -1322,6 +1327,7 @@
 				84877C72BD1895DFA7825227 /* StaggeredTitle.swift in Sources */,
 				A3AE05DB8E49DCB72CAE64B6 /* StatEditorialHero.swift in Sources */,
 				28CB5F282CFC523F42F68FA7 /* String+Extensions.swift in Sources */,
+				7E1E9FD2A3382F0F9E229C6E /* ToDoView.swift in Sources */,
 				128EB6710703E9BA653C0ABB /* TodayFeature.swift in Sources */,
 				0E967C256200C3E623AFD4EB /* TodayFeaturePresentations.swift in Sources */,
 				F31FC48F8DC0CE9E05C34843 /* TodayFeatureView.swift in Sources */,
@@ -1434,8 +1440,8 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = "app.cycle.ios.live-activity";
 				SDKROOT = iphoneos;
-				SWIFT_STRICT_CONCURRENCY = complete;
-				SWIFT_VERSION = 6.0;
+				SWIFT_STRICT_CONCURRENCY = minimal;
+				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Release;
@@ -1473,8 +1479,8 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = "app.cycle.ios.live-activity";
 				SDKROOT = iphoneos;
-				SWIFT_STRICT_CONCURRENCY = complete;
-				SWIFT_VERSION = 6.0;
+				SWIFT_STRICT_CONCURRENCY = minimal;
+				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Debug;
@@ -1562,8 +1568,8 @@
 				SDKROOT = iphoneos;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
-				SWIFT_STRICT_CONCURRENCY = complete;
-				SWIFT_VERSION = 6.0;
+				SWIFT_STRICT_CONCURRENCY = minimal;
+				SWIFT_VERSION = 5.0;
 			};
 			name = Debug;
 		};
@@ -1620,8 +1626,8 @@
 				SDKROOT = iphoneos;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
-				SWIFT_STRICT_CONCURRENCY = complete;
-				SWIFT_VERSION = 6.0;
+				SWIFT_STRICT_CONCURRENCY = minimal;
+				SWIFT_VERSION = 5.0;
 			};
 			name = Release;
 		};

@@ -413,8 +413,8 @@ private struct TypeLabel: View {
     private var position: CGPoint {
         let radians = (180 + type.angle) * .pi / 180
         return CGPoint(
-            x: center.x + radius * cos(radians),
-            y: center.y + radius * sin(radians)
+            x: center.x + radius * CGFloat(cos(radians)),
+            y: center.y + radius * CGFloat(sin(radians))
         )
     }
 
@@ -449,8 +449,8 @@ private struct AppleThumb: View {
     private var position: CGPoint {
         let radians = (180 + angle) * .pi / 180
         return CGPoint(
-            x: center.x + radius * cos(radians),
-            y: center.y + radius * sin(radians)
+            x: center.x + radius * CGFloat(cos(radians)),
+            y: center.y + radius * CGFloat(sin(radians))
         )
     }
 

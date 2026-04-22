@@ -17,19 +17,14 @@ public struct WidgetCardStyleModifier: ViewModifier {
 
     @ViewBuilder
     public func body(content: Content) -> some View {
-        if #available(iOS 26.0, *) {
-            content
-                .glassEffect(in: .rect(cornerRadius: cornerRadius, style: .continuous))
-        } else {
-            content
-                .background(
-                    RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                        .fill(Color.white)
-                )
-                .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
-                .shadow(color: .black.opacity(0.06), radius: 2, x: 0, y: 1)
-                .shadow(color: .black.opacity(0.08), radius: 12, x: 0, y: 4)
-        }
+        content
+            .background(
+                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                    .fill(Color.white)
+            )
+            .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+            .shadow(color: .black.opacity(0.06), radius: 2, x: 0, y: 1)
+            .shadow(color: .black.opacity(0.08), radius: 12, x: 0, y: 4)
     }
 }
 

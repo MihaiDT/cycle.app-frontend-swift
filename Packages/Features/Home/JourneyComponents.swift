@@ -49,32 +49,23 @@ struct JourneyAnimatedBackground: View {
 /// Glass circle button — iOS 26+ Liquid Glass, fallback to material
 struct GlassCircleModifier: ViewModifier {
     func body(content: Content) -> some View {
-        if #available(iOS 26.0, *) {
-            content.glassEffect(in: .circle)
-        } else {
-            content
-                .background(Circle().fill(.ultraThinMaterial))
-                .clipShape(Circle())
-        }
+        content
+            .background(Circle().fill(.ultraThinMaterial))
+            .clipShape(Circle())
     }
 }
 
 /// Glass effect with iOS 26+ Liquid Glass, fallback to white card + shadows
 struct GlassCardModifier: ViewModifier {
     func body(content: Content) -> some View {
-        if #available(iOS 26.0, *) {
-            content
-                .glassEffect(in: .rect(cornerRadius: AppLayout.cornerRadiusL, style: .continuous))
-        } else {
-            content
-                .background(
-                    RoundedRectangle(cornerRadius: AppLayout.cornerRadiusL, style: .continuous)
-                        .fill(.white)
-                )
-                .clipShape(RoundedRectangle(cornerRadius: AppLayout.cornerRadiusL, style: .continuous))
-                .shadow(color: .black.opacity(0.06), radius: 2, x: 0, y: 1)
-                .shadow(color: .black.opacity(0.08), radius: 12, x: 0, y: 4)
-        }
+        content
+            .background(
+                RoundedRectangle(cornerRadius: AppLayout.cornerRadiusL, style: .continuous)
+                    .fill(.white)
+            )
+            .clipShape(RoundedRectangle(cornerRadius: AppLayout.cornerRadiusL, style: .continuous))
+            .shadow(color: .black.opacity(0.06), radius: 2, x: 0, y: 1)
+            .shadow(color: .black.opacity(0.08), radius: 12, x: 0, y: 4)
     }
 }
 
