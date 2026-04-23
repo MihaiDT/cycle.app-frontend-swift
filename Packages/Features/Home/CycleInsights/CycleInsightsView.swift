@@ -426,19 +426,14 @@ public struct CycleInsightsView: View {
     }
 
     // MARK: - Header Copy
+    //
+    // Parent screen is always Cycle Stats — the Body Patterns entry point
+    // from Home is a deep-link that should open a detail sheet on top, not
+    // rename the host. Keeping this tied to `activeDetail` previously left
+    // the title stuck on "Body Patterns" after the sheet was dismissed.
 
-    var headerTitle: String {
-        switch store.pendingInitialDetail ?? store.activeDetail {
-        case .body:   return "Body Patterns"
-        default:      return "Cycle Stats"
-        }
-    }
+    var headerTitle: String { "Cycle Stats" }
 
-    var headerEyebrow: String? {
-        switch store.pendingInitialDetail ?? store.activeDetail {
-        case .body:   return "Symptoms & signals"
-        default:      return "Averages & trends"
-        }
-    }
+    var headerEyebrow: String? { "Averages & trends" }
 }
 
