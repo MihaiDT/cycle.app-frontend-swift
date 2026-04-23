@@ -98,9 +98,9 @@ extension DependencyValues {
 
 **Flow:** `splash → onboarding (14 screens) → authChoice → auth/guest → home`. Returning users: `splash → home` (session check). Guest mode uses same local storage as authenticated — no difference in data handling.
 
-**Home tabs:** Today (TodayFeature), Chat/Aria (placeholder), Me (profile + logout). Only TodayFeature is a composed child feature; Chat and Me are inline views in HomeFeature.
+**Home tabs:** Today (TodayFeature), Chat/Aria, Me (profile). Home composes TodayFeature, CycleInsightsFeature, and CycleJourneyFeature as siblings; sibling fan-out is driven by TodayFeature delegate actions (e.g. `cycleDataUpdated`).
 
-**Child feature presentation:** Use `@Presents` in parent State + `.ifLet` in reducer body for modals/sheets/fullScreenCovers. Example: CalendarFeature presents EditPeriodFeature via `@Presents public var editPeriod: EditPeriodFeature.State?`.
+**Child feature presentation:** Use `@Presents` in parent State + `.ifLet` in reducer body for modals/sheets/fullScreenCovers. Example: TodayFeature presents DailyCheckInFeature, MoodArcFeature, and WellnessDetailFeature via `@Presents`.
 
 ### Package Structure
 
@@ -109,14 +109,30 @@ Packages/
 ├── Core/
 │   ├── CycleEngine/      # HBICalculator, MenstrualPredictor (V1-V4), CycleMath utilities
 │   ├── Models/           # Tagged IDs, User, Session, CyclePhase, HBIScore, MenstrualStatus types
-│   ├── Networking/       # APIClient, Endpoint, FirebaseAuthClient, PlacesClient (only Places proxy remains)
-│   ├── Persistence/      # SwiftData models, local clients, CycleDataStore, SessionClient, KeychainClient
-│   ├── DesignSystem/     # DesignColors, AppLayout, Components/ (Glass*, GradientBackground, OnboardingHeader)
-│   └── Utilities/        # Validation, Logger, Extensions
+│   ├── Networking/       # APIClient, Endpoint, FirebaseAuthClient, PlacesClient (Places proxy + Aria WS)
+│   ├── Persistence/      # SwiftData Records/, Clients/, CycleDataStore, SessionClient, KeychainClient
+│   ├── DesignSystem/     # Tokens/ (DesignColors, AppLayout, Typography) + Components/ grouped by role
+│   │                     # (Buttons/, Cards/, Controls/, Hero/, Layout/, Visualizations/, Widgets/, Brand/)
+│   └── Utilities/        # Validation, Logger, CycleContext+*, extensions
 └── Features/
     ├── App/              # AppFeature (root reducer + navigation state machine)
-    ├── Home/             # HomeFeature, TodayFeature, CalendarFeature, EditPeriodFeature, DailyCheckInFeature
-    └── Onboarding/       # 14-screen flow + CycleModels enums + Views/
+    ├── Home/             # Each tab/feature in its own subfolder:
+    │                     #   Home/          HomeFeature, HomeView (tab shell)
+    │                     #   Today/         TodayFeature (+State, +Helpers, +Presentations), YourDayFeature
+    │                     #   Calendar/      CalendarFeature, CalendarView, Components/, Sheets/
+    │                     #   CycleInsights/ Cycle stats editorial screen + cards
+    │                     #   CycleJourney/  Journey list, mandala, recap stories, share preview
+    │                     #   DailyCheckIn/  Ritual flow + Aria voice line
+    │                     #   EditPeriod/    Period editor + day cells
+    │                     #   Wellness/      Wellness detail view
+    │                     #   MoodArc/       Standalone mood ritual
+    │                     #   Glow/          Challenges/, Levels/, PhotoCapture/, Validation/
+    │                     #   Profile/       ProfileFeature + Settings
+    │                     #   Chat/          ChatFeature, ChatView
+    └── Onboarding/       # 14-screen flow organized by role
+                          #   Shell/         OnboardingView, SplashView, backgrounds
+                          #   Forms/         Calendar + cycle entry forms
+                          #   Permissions/   Privacy consent, HealthKit opt-in
 ```
 
 ### On-Device Data (SwiftData + CloudKit)
@@ -161,14 +177,15 @@ All health data stored locally with `@Attribute(.allowsCloudEncryption)` for E2E
 2. **No internal module imports** — flat compilation model, everything is in one target
 3. **Local-first** — all health data operations use local clients (`hbiLocal`, `menstrualLocal`, `userProfileLocal`), never API calls
 4. **SwiftData defaults** — all `@Model` properties must have default values (CloudKit requirement)
-5. **DesignSystem first** — use GlassButton, GlassTextField, GlassSelectionCard, DesignColors, AppLayout before creating new components
+5. **DesignSystem first** — use GlassButton, GlassTextField, GlassSelectionCard, GlassCheckbox, DesignColors, AppLayout, AppTypography before creating new components
 6. **Tagged IDs** — `Tagged<Model, String>`, never raw String for IDs
-7. **Feature + View co-location** — reducer and SwiftUI view live in the same file
+7. **Feature split allowed** — reducer/State/view live together by default, but split via `Feature+State.swift`, `Feature+Helpers.swift`, and `FeatureView+Section.swift` extensions when a file crosses ~500 lines. Keep files under that threshold.
 8. **Delegate actions** — child→parent communication via `Action.delegate(Delegate)`
 9. **State isolation** — capture all state values before `.run { send in }` blocks (Swift 6 `@Sendable` requirement)
 10. **Swift Testing** — `@testable import CycleApp` + `import Testing` + `@Test` + `TestStore`, NOT XCTest
-11. **Custom font** — Raleway family (Bold, SemiBold, Medium, Regular)
-12. **Hot reload** — Inject framework is integrated; views use `@ObserveInjection var inject` + `.enableInjection()`
+11. **Typography** — Raleway family via `AppTypography` tokens (in `DesignSystem/Tokens/Typography.swift`); avoid one-off `.raleway(..., size:)` literals in new code
+12. **Screen gutter** — `AppLayout.screenHorizontal` (14pt) is the canonical screen-edge padding for feed/list screens (Today, CycleInsights, CycleJourney, Profile); `AppLayout.horizontalPadding` (32pt) is reserved for ritual/focus screens (Onboarding, MoodArc, DailyCheckIn, Challenges)
+13. **Hot reload** — Inject framework is integrated; views use `@ObserveInjection var inject` + `.enableInjection()`
 
 ## Testing
 
