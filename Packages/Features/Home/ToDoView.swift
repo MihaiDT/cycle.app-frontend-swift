@@ -1680,7 +1680,7 @@ struct ToDoView: View {
     }
 
     private var composer: some View {
-        VStack(alignment: .leading, spacing: 20) {
+        VStack(alignment: .leading, spacing: 18) {
             VStack(alignment: .leading, spacing: 6) {
                 Text("Build your day.")
                     .font(.system(size: 26, weight: .bold))
@@ -1695,37 +1695,43 @@ struct ToDoView: View {
             composerInputRow
                 .padding(.horizontal, 20)
 
-            categoryChips
-                .padding(.top, 2)
-
             ScrollView(showsIndicators: false) {
-                let category = selectedComposerCategory
-                VStack(alignment: .leading, spacing: 14) {
-                    Text(category.eyebrow)
-                        .font(.system(size: 11, weight: .semibold))
-                        .tracking(1.8)
-                        .foregroundStyle(ink.opacity(0.45))
-                        .padding(.horizontal, 24)
+                VStack(alignment: .leading, spacing: 24) {
+                    nowSection
 
-                    if category.id == "mine" && category.suggestions.isEmpty {
-                        mineEmptyState
-                            .padding(.horizontal, 20)
-                            .padding(.bottom, 40)
-                    } else {
-                        LazyVGrid(
-                            columns: [
-                                GridItem(.flexible(), spacing: 12),
-                                GridItem(.flexible(), spacing: 12)
-                            ],
-                            spacing: 12
-                        ) {
-                            ForEach(category.suggestions) { suggestion in
-                                libraryTile(suggestion, inMine: category.id == "mine")
+                    VStack(alignment: .leading, spacing: 14) {
+                        librarySectionHeader
+                            .padding(.horizontal, 24)
+
+                        categoryChips
+
+                        let category = selectedComposerCategory
+                        Text(category.eyebrow)
+                            .font(.system(size: 11, weight: .semibold))
+                            .tracking(1.8)
+                            .foregroundStyle(ink.opacity(0.45))
+                            .padding(.horizontal, 24)
+                            .padding(.top, 4)
+
+                        if category.id == "mine" && category.suggestions.isEmpty {
+                            mineEmptyState
+                                .padding(.horizontal, 20)
+                        } else {
+                            LazyVGrid(
+                                columns: [
+                                    GridItem(.flexible(), spacing: 12),
+                                    GridItem(.flexible(), spacing: 12)
+                                ],
+                                spacing: 12
+                            ) {
+                                ForEach(category.suggestions) { suggestion in
+                                    libraryTile(suggestion, inMine: category.id == "mine")
+                                }
                             }
+                            .padding(.horizontal, 20)
                         }
-                        .padding(.horizontal, 20)
-                        .padding(.bottom, 40)
                     }
+                    .padding(.bottom, 40)
                 }
             }
         }
@@ -1734,6 +1740,118 @@ struct ToDoView: View {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
                 draftFocused = true
             }
+        }
+    }
+
+    // MARK: - "For right now" hero section
+
+    private var nowSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(alignment: .center, spacing: 8) {
+                Text(nowEyebrow)
+                    .font(.system(size: 11, weight: .semibold))
+                    .tracking(1.8)
+                    .foregroundStyle(ink.opacity(0.55))
+                Spacer()
+                seasonBadge
+            }
+            .padding(.horizontal, 24)
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 12) {
+                    ForEach(nowSuggestions) { s in
+                        nowCard(s)
+                    }
+                }
+                .padding(.horizontal, 20)
+            }
+        }
+    }
+
+    private var seasonBadge: some View {
+        let dot: Color = {
+            switch currentSeason {
+            case .winter: return Color(red: 0.45, green: 0.55, blue: 0.65)
+            case .spring: return Color(red: 0.50, green: 0.70, blue: 0.45)
+            case .summer: return Color(red: 0.95, green: 0.65, blue: 0.30)
+            case .fall:   return rust
+            }
+        }()
+        return HStack(spacing: 6) {
+            Circle().fill(dot).frame(width: 7, height: 7)
+            Text(seasonLabel)
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(ink.opacity(0.7))
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 6)
+        .background(Capsule().fill(cardCream))
+    }
+
+    private func nowCard(_ s: LibrarySuggestion) -> some View {
+        Button {
+            addFromLibrary(s)
+        } label: {
+            VStack(alignment: .leading, spacing: 10) {
+                Text(s.title)
+                    .font(.system(size: 19, weight: .bold))
+                    .foregroundStyle(ink)
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
+                Text(s.subtitle)
+                    .font(.system(size: 13, weight: .regular))
+                    .foregroundStyle(ink.opacity(0.6))
+                    .lineLimit(2)
+                Spacer(minLength: 6)
+                if let why = s.why {
+                    Text(why)
+                        .font(.system(size: 12, weight: .medium))
+                        .italic()
+                        .foregroundStyle(ink.opacity(0.55))
+                        .lineLimit(3)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                HStack {
+                    Text("Add to today")
+                        .font(.system(size: 11, weight: .semibold))
+                        .tracking(0.6)
+                        .foregroundStyle(ink.opacity(0.65))
+                    Spacer()
+                    ZStack {
+                        Circle().fill(ink).frame(width: 28, height: 28)
+                        Image(systemName: "plus")
+                            .font(.system(size: 12, weight: .bold))
+                            .foregroundStyle(cream)
+                    }
+                }
+                .padding(.top, 6)
+            }
+            .padding(18)
+            .frame(width: 250, alignment: .topLeading)
+            .frame(minHeight: 220, alignment: .topLeading)
+            .background(
+                RoundedRectangle(cornerRadius: 28, style: .continuous)
+                    .fill(
+                        LinearGradient(
+                            colors: [cardCream, cream],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                    )
+            )
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var librarySectionHeader: some View {
+        HStack(alignment: .firstTextBaseline) {
+            Text("Library")
+                .font(.system(size: 19, weight: .bold))
+                .foregroundStyle(ink)
+            Spacer()
+            Text("Long-press to save")
+                .font(.system(size: 11, weight: .medium))
+                .foregroundStyle(ink.opacity(0.45))
         }
     }
 
@@ -1842,7 +1960,7 @@ struct ToDoView: View {
         Button {
             addFromLibrary(suggestion)
         } label: {
-            VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: 6) {
                 Text(suggestion.title)
                     .font(.system(size: 16, weight: .bold))
                     .foregroundStyle(ink)
@@ -1852,7 +1970,16 @@ struct ToDoView: View {
                     .foregroundStyle(ink.opacity(0.55))
                     .lineLimit(2)
                     .fixedSize(horizontal: false, vertical: true)
-                Spacer(minLength: 6)
+                if let why = suggestion.why {
+                    Text(why)
+                        .font(.system(size: 11.5, weight: .medium))
+                        .italic()
+                        .foregroundStyle(ink.opacity(0.5))
+                        .lineLimit(3)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .padding(.top, 2)
+                }
+                Spacer(minLength: 8)
                 HStack(spacing: 0) {
                     if inMine {
                         Image(systemName: "heart.fill")
@@ -1871,7 +1998,7 @@ struct ToDoView: View {
                 }
             }
             .padding(18)
-            .frame(maxWidth: .infinity, minHeight: 128, alignment: .topLeading)
+            .frame(maxWidth: .infinity, minHeight: 160, alignment: .topLeading)
             .background(
                 RoundedRectangle(cornerRadius: 28, style: .continuous)
                     .fill(cardCream)
