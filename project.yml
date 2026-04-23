@@ -70,6 +70,8 @@ targets:
     resources:
       - path: CycleApp/Resources/logo_animation.splineswift
       - path: CycleApp/Resources/glowing_orb.riv
+      - path: CycleApp/Resources/ConsentPrivacy.json
+      - path: CycleApp/Resources/CycleDetailsHeader.json
       - path: Packages/Core/CycleEngine/Resources/challenge_templates.json
     dependencies:
       - package: ComposableArchitecture
@@ -99,7 +101,7 @@ targets:
         INFOPLIST_FILE: CycleApp/Resources/Info.plist
         PRODUCT_BUNDLE_IDENTIFIER: app.cycle.ios
         MARKETING_VERSION: "1.0.0"
-        CURRENT_PROJECT_VERSION: "1"
+        CURRENT_PROJECT_VERSION: "3"
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
 
@@ -108,10 +110,11 @@ targets:
     platform: iOS
     sources:
       - path: CycleApp/CycleAppLiveActivity
-      - path: Packages/Features/Home/Glow/ChallengeActivityBridge.swift
+      - path: Packages/Features/Home/Glow/Challenges/ChallengeActivityBridge.swift
     info:
       path: CycleApp/CycleAppLiveActivity/Info.plist
       properties:
+        CFBundleDisplayName: Cycle Activity
         NSExtension:
           NSExtensionPointIdentifier: com.apple.widgetkit-extension
     settings:
@@ -121,6 +124,8 @@ targets:
         TARGETED_DEVICE_FAMILY: "1"
         SWIFT_STRICT_CONCURRENCY: complete
         SWIFT_VERSION: "6.0"
+        MARKETING_VERSION: "1.0.0"
+        CURRENT_PROJECT_VERSION: "3"
 
   CycleAppTests:
     type: bundle.unit-test

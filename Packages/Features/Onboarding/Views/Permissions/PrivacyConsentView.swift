@@ -1,0 +1,156 @@
+import Lottie
+import SwiftUI
+
+// MARK: - Privacy Consent View
+
+public struct PrivacyConsentView: View {
+    public let healthDataConsent: Bool
+    public let termsConsent: Bool
+    public let onToggleHealthData: () -> Void
+    public let onToggleTerms: () -> Void
+    public let onBegin: () -> Void
+    public let onBack: (() -> Void)?
+
+    public init(
+        healthDataConsent: Bool,
+        termsConsent: Bool,
+        onToggleHealthData: @escaping () -> Void,
+        onToggleTerms: @escaping () -> Void,
+        onBegin: @escaping () -> Void,
+        onBack: (() -> Void)? = nil
+    ) {
+        self.healthDataConsent = healthDataConsent
+        self.termsConsent = termsConsent
+        self.onToggleHealthData = onToggleHealthData
+        self.onToggleTerms = onToggleTerms
+        self.onBegin = onBegin
+        self.onBack = onBack
+    }
+
+    private var canContinue: Bool {
+        healthDataConsent && termsConsent
+    }
+
+    public var body: some View {
+        OnboardingLayout(
+            currentStep: 2,
+            totalSteps: 8,
+            onBack: onBack,
+            onNext: onBegin,
+            nextButtonEnabled: canContinue
+        ) {
+            VStack(spacing: 0) {
+                // Privacy animation (plays once on appear)
+                LottieView(animation: .named("ConsentPrivacy", bundle: .main))
+                    .playing(loopMode: .playOnce)
+                    .frame(width: 240, height: 240)
+                    .frame(maxWidth: .infinity)
+                    .accessibilityHidden(true)
+
+                // Subtitle
+                Text("your privacy matters")
+                    .font(.raleway("Regular", size: 13, relativeTo: .caption))
+                    .tracking(3)
+                    .textCase(.uppercase)
+                    .foregroundColor(DesignColors.text.opacity(0.5))
+                    .frame(maxWidth: .infinity)
+
+                Spacer().frame(height: 8)
+
+                // Title (centered)
+                Text("For you. And only you.")
+                    .font(.raleway("Bold", size: 24, relativeTo: .title2))
+                    .foregroundColor(DesignColors.text)
+                    .frame(maxWidth: .infinity)
+                    .accessibilityAddTraits(.isHeader)
+
+                // Gap to description
+                Spacer().frame(height: 24)
+
+                // Description (centered)
+                Text("Your health data is protected and kept private.\nReview, export, or delete it anytime.")
+                    .font(.raleway("Regular", size: 17, relativeTo: .body))
+                    .foregroundColor(DesignColors.text.opacity(0.7))
+                    .multilineTextAlignment(.center)
+                    .lineSpacing(6)
+
+                // Gap to checkboxes
+                Spacer().frame(height: 24)
+
+                // Consent checkboxes
+                VStack(spacing: 26) {
+                    // Health data consent
+                    GlassCheckbox(
+                        isChecked: healthDataConsent,
+                        action: onToggleHealthData
+                    ) {
+                        (Text("I consent to the processing of my health data to enable core features in Cycle.\n")
+                            .font(.raleway("Regular", size: 17, relativeTo: .body))
+                            .foregroundColor(DesignColors.text.opacity(0.7))
+                            + Text("Learn more in the ")
+                            .font(.raleway("Regular", size: 17, relativeTo: .body))
+                            .foregroundColor(DesignColors.text.opacity(0.7))
+                            + Text("Privacy Policy")
+                            .font(.raleway("SemiBold", size: 17, relativeTo: .body))
+                            .foregroundColor(DesignColors.link)
+                            .underline()
+                            + Text(".")
+                            .font(.raleway("Regular", size: 17, relativeTo: .body))
+                            .foregroundColor(DesignColors.text.opacity(0.7)))
+                            .lineSpacing(6)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+
+                    // Terms consent
+                    GlassCheckbox(
+                        isChecked: termsConsent,
+                        action: onToggleTerms
+                    ) {
+                        (Text("I agree to the ")
+                            .font(.raleway("Regular", size: 17, relativeTo: .body))
+                            .foregroundColor(DesignColors.text.opacity(0.7))
+                            + Text("Privacy Policy")
+                            .font(.raleway("SemiBold", size: 17, relativeTo: .body))
+                            .foregroundColor(DesignColors.link)
+                            .underline()
+                            + Text(" and ")
+                            .font(.raleway("Regular", size: 17, relativeTo: .body))
+                            .foregroundColor(DesignColors.text.opacity(0.7))
+                            + Text("Terms of Use")
+                            .font(.raleway("SemiBold", size: 17, relativeTo: .body))
+                            .foregroundColor(DesignColors.link)
+                            .underline()
+                            + Text(".")
+                            .font(.raleway("Regular", size: 17, relativeTo: .body))
+                            .foregroundColor(DesignColors.text.opacity(0.7)))
+                            .lineSpacing(6)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+                .padding(.horizontal, 32)
+            }
+        }
+    }
+}
+
+#Preview("Privacy Consent") {
+    PrivacyConsentView(
+        healthDataConsent: false,
+        termsConsent: false,
+        onToggleHealthData: {},
+        onToggleTerms: {},
+        onBegin: {},
+        onBack: { }
+    )
+}
+
+#Preview("Privacy Consent - Checked") {
+    PrivacyConsentView(
+        healthDataConsent: true,
+        termsConsent: true,
+        onToggleHealthData: {},
+        onToggleTerms: {},
+        onBegin: {},
+        onBack: { }
+    )
+}

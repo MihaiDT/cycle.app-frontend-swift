@@ -6,7 +6,17 @@ import SwiftUI
 public enum AppLayout {
     // MARK: - Screen Margins
 
-    /// Horizontal padding for content (left/right)
+    /// **Standard screen-edge gutter** used by every feature surface
+    /// (Today tab, Cycle Stats, Cycle Journey, etc.). Matches the
+    /// Cycle Stats card list's `contentInsets` so every screen in the
+    /// app feels aligned on the same vertical column. Tight 14pt — the
+    /// point of this app is editorial content; wider gutters make the
+    /// content feel postage-stampy on a phone.
+    public static let screenHorizontal: CGFloat = 14
+
+    /// Horizontal padding for content (left/right) — legacy / editorial.
+    /// Used by onboarding screens where a wider margin is intentional.
+    /// New code should reach for `screenHorizontal` by default.
     public static let horizontalPadding: CGFloat = 32
 
     /// Small horizontal padding for tighter layouts
