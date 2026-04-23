@@ -68,7 +68,6 @@
 		4162B806EEFAB072B473575F /* Raleway-Medium.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 8B25658F35072C37DA32E0E8 /* Raleway-Medium.ttf */; };
 		41A627D58083C1BA2FA62B27 /* ChatFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 33565DBF022329AC0A71BAED /* ChatFeature.swift */; };
 		422EB7EE09E5D973842E778E /* TodayFeature+Helpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7FE49861A2ACC6DD33BED9E /* TodayFeature+Helpers.swift */; };
-		42512D6093035DF30C0E2A4C /* ProfileView+Settings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E49B2E0FBAD5C65DC236D72 /* ProfileView+Settings.swift */; };
 		43871BC7610359114EBD9DF7 /* SplineIntroView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4674CEEA6B50FCAB809318E6 /* SplineIntroView.swift */; };
 		4470D37CB33676E2E6D815EA /* GradientBackground.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0FEB82B376B0E1476E5ECD98 /* GradientBackground.swift */; };
 		44E021EDE4D2D22854A7F140 /* HBICalculator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42B1B55C9A99AA93CDC456BD /* HBICalculator.swift */; };
@@ -470,7 +469,6 @@
 		9C912EA0509634526A9D7F08 /* Raleway-Bold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Raleway-Bold.ttf"; sourceTree = "<group>"; };
 		9C922515946896A823CCBD6D /* LensPreviewClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LensPreviewClient.swift; sourceTree = "<group>"; };
 		9DE36DFEC5C00178CD630BD5 /* KeyDayExtractor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyDayExtractor.swift; sourceTree = "<group>"; };
-		9E49B2E0FBAD5C65DC236D72 /* ProfileView+Settings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ProfileView+Settings.swift"; sourceTree = "<group>"; };
 		A149FDA7148BEAA1EB014121 /* CycleHistory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CycleHistory.swift; sourceTree = "<group>"; };
 		A1FF005FF3F61A0F82E81BE7 /* Raleway-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Raleway-Regular.ttf"; sourceTree = "<group>"; };
 		A24A4253B63FF31025F94156 /* ChatView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatView.swift; sourceTree = "<group>"; };
@@ -736,7 +734,6 @@
 			children = (
 				75C7E1A61DEFAFD83E9FBFDF /* ProfileFeature.swift */,
 				0329312D9F047305DDD7F6F1 /* ProfileView.swift */,
-				9E49B2E0FBAD5C65DC236D72 /* ProfileView+Settings.swift */,
 			);
 			path = Profile;
 			sourceTree = "<group>";
@@ -1676,7 +1673,6 @@
 				050C5D2421F740ECE526E223 /* PrivacyConsentView.swift in Sources */,
 				8DAAFF7406FB783C690258AA /* ProfessionalContextView.swift in Sources */,
 				8D2F03A15169D5D7AF8CBE28 /* ProfileFeature.swift in Sources */,
-				42512D6093035DF30C0E2A4C /* ProfileView+Settings.swift in Sources */,
 				45D257289EC06E0E32FFF634 /* ProfileView.swift in Sources */,
 				0DF8184BE65B84DDFCAF62F8 /* RelationshipStatusView.swift in Sources */,
 				F061112368ACFEB584AC33C8 /* SectionHeader.swift in Sources */,

@@ -172,7 +172,6 @@ public struct HomeFeature: Sendable {
             case .userLoaded(.success(let user)):
                 state.isLoading = false
                 state.user = user
-                state.profileState.user = user
                 // Retry if parallel load failed (token wasn't ready post-registration)
                 if state.todayState.menstrualStatus == nil, !state.todayState.isLoadingMenstrual {
                     return .send(.today(.loadDashboard))
@@ -318,14 +317,6 @@ public struct HomeFeature: Sendable {
                     state.shouldReopenJourney = false
                     return .send(.today(.delegate(.openCycleJourney)))
                 }
-                return .none
-
-            case .today(.menstrualStatusLoaded(.success(let status))):
-                state.profileState.menstrualStatus = status
-                return .none
-
-            case .today(.dashboardLoaded(.success(let dashboard))):
-                state.profileState.hbiDashboard = dashboard
                 return .none
 
             // Fan out cycle-data broadcast from TodayFeature (the data owner)
