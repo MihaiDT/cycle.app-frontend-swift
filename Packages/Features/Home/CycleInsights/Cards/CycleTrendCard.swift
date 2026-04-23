@@ -123,50 +123,101 @@ public struct CycleTrendCard: View {
     }
 
     // MARK: - Chart
+    //
+    // Two layout modes:
+    // - Compact (≤ `fitThreshold` bars): bars + labels share the card
+    //   width, column size resolves via GeometryReader so 2–8 cycles
+    //   always fit edge-to-edge.
+    // - Scrollable (> `fitThreshold` bars): fixed-width columns inside
+    //   a horizontal ScrollView. Labels keep their design size instead
+    //   of shrinking into inconsistent pairs when a few strings are
+    //   longer ("Dec 2") than others ("Jul").
 
-    /// Max width per bar column. Prevents a 1- or 2-cycle history from
-    /// ballooning into chunky blocks, while bar width otherwise shrinks
-    /// to fit the card's actual width (1Y = 12 bars, All can be more).
+    /// Max width per bar column in compact mode.
     private static let maxBarWidth: CGFloat = 44
+    /// Fixed width per bar column when scrollable mode kicks in.
+    private static let scrollBarWidth: CGFloat = 38
+    /// Spacing between bar columns when scrollable mode kicks in.
+    private static let scrollSpacing: CGFloat = 10
+    /// Compact mode fits this many cycles without shrinking labels.
+    private static let fitThreshold: Int = 8
 
-    /// Resolve how wide and how spaced bars should be for `count`
-    /// columns inside `available` pt. Both bar and label columns share
-    /// the same values so numbers sit under their bars at any count.
-    private static func layout(for count: Int, available: CGFloat) -> (barWidth: CGFloat, spacing: CGFloat) {
+    private static func compactLayout(for count: Int, available: CGFloat) -> (barWidth: CGFloat, spacing: CGFloat) {
         guard count > 0 else { return (maxBarWidth, 10) }
-        let spacing: CGFloat = count > 8 ? 4 : 10
+        let spacing: CGFloat = 10
         let totalSpacing = spacing * CGFloat(max(count - 1, 0))
         let raw = (available - totalSpacing) / CGFloat(count)
-        let barWidth = max(8, min(maxBarWidth, raw))
+        let barWidth = max(20, min(maxBarWidth, raw))
         return (barWidth, spacing)
     }
 
     private var chart: some View {
         let visible = visiblePoints
         let range = chartRange(for: visible)
-        let lastIndex = visible.count - 1
-        return GeometryReader { geo in
-            let (barWidth, spacing) = Self.layout(for: visible.count, available: geo.size.width)
-            VStack(spacing: 10) {
-                HStack(alignment: .bottom, spacing: spacing) {
-                    ForEach(Array(visible.enumerated()), id: \.element.id) { index, point in
-                        bar(
-                            for: point,
-                            isCurrent: index == lastIndex,
-                            range: range,
-                            width: barWidth
-                        )
-                    }
-                }
-                .frame(maxWidth: .infinity)
-                .frame(height: 150)
+        return Group {
+            if visible.count > Self.fitThreshold {
+                scrollableChart(visible: visible, range: range)
+            } else {
+                fitChart(visible: visible, range: range)
+            }
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(chartAccessibilityLabel(for: visible))
+    }
 
+    // MARK: Compact — fits in the card
+
+    private func fitChart(visible: [Point], range: (lower: Int, upper: Int)) -> some View {
+        GeometryReader { geo in
+            let (barWidth, spacing) = Self.compactLayout(for: visible.count, available: geo.size.width)
+            VStack(spacing: 10) {
+                barsRow(visible: visible, range: range, barWidth: barWidth, spacing: spacing)
                 monthLabels(for: visible, barWidth: barWidth, spacing: spacing)
             }
         }
         .frame(height: 180)
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel(chartAccessibilityLabel(for: visible))
+    }
+
+    // MARK: Scrollable — 9+ cycles
+
+    private func scrollableChart(visible: [Point], range: (lower: Int, upper: Int)) -> some View {
+        let barWidth = Self.scrollBarWidth
+        let spacing = Self.scrollSpacing
+        return ScrollView(.horizontal, showsIndicators: false) {
+            VStack(alignment: .leading, spacing: 10) {
+                barsRow(visible: visible, range: range, barWidth: barWidth, spacing: spacing)
+                monthLabels(for: visible, barWidth: barWidth, spacing: spacing)
+            }
+            // Card has 22pt horizontal padding. Match it on the inner
+            // content so the first and last columns don't kiss the card
+            // edges while scrolled to the ends.
+            .padding(.horizontal, 0)
+        }
+        .frame(height: 180)
+        .defaultScrollAnchor(.trailing)
+    }
+
+    // MARK: Shared rows
+
+    private func barsRow(
+        visible: [Point],
+        range: (lower: Int, upper: Int),
+        barWidth: CGFloat,
+        spacing: CGFloat
+    ) -> some View {
+        let lastIndex = visible.count - 1
+        return HStack(alignment: .bottom, spacing: spacing) {
+            ForEach(Array(visible.enumerated()), id: \.element.id) { index, point in
+                bar(
+                    for: point,
+                    isCurrent: index == lastIndex,
+                    range: range,
+                    width: barWidth
+                )
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .frame(height: 150)
     }
 
     private func bar(
@@ -182,7 +233,6 @@ public struct CycleTrendCard: View {
                 .font(.raleway("SemiBold", size: 11, relativeTo: .caption2))
                 .foregroundStyle(isCurrent ? DesignColors.accentWarmText : DesignColors.textSecondary)
                 .lineLimit(1)
-                .minimumScaleFactor(0.8)
 
             RoundedRectangle(cornerRadius: 10, style: .continuous)
                 .fill(isCurrent ? DesignColors.accentWarm : DesignColors.accentWarm.opacity(0.14))
@@ -211,7 +261,7 @@ public struct CycleTrendCard: View {
                         index == lastIndex ? DesignColors.text : DesignColors.textSecondary
                     )
                     .lineLimit(1)
-                    .minimumScaleFactor(0.7)
+                    .fixedSize()
                     .frame(width: barWidth)
             }
         }
