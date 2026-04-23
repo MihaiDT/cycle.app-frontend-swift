@@ -2,24 +2,25 @@ import SwiftUI
 
 // MARK: - Cycle Trend Card
 //
-// Replaces the older "Your Cycle Average" card. Same data source
-// (`stats.cycleLength.history`) but reframes the answer from a single
-// number to a visible pattern — recent cycles as bars, with the
-// running average surfaced in the card's subtitle (not drawn as a
-// floating line, which was hard to read and noisy for VoiceOver).
-// The latest cycle is the accent bar so the eye lands there first,
-// and the segmented control (6M / 1Y / All) scopes the window.
+// Replaces the older "Your Cycle Average" card. Reframes the answer from
+// a single number to a visible pattern — recent cycles as bars, plus a
+// ghost forecast row to the right when the real history is still short.
+// The running average is surfaced in the subtitle (not a floating line,
+// which was noisy for VoiceOver). The latest logged cycle is the accent
+// bar so the eye lands there first.
 
 public struct CycleTrendCard: View {
     public struct Point: Equatable, Identifiable {
         public let id: Date
         public let startDate: Date
         public let days: Int
+        public let isPredicted: Bool
 
-        public init(id: Date, startDate: Date, days: Int) {
+        public init(id: Date, startDate: Date, days: Int, isPredicted: Bool = false) {
             self.id = id
             self.startDate = startDate
             self.days = days
+            self.isPredicted = isPredicted
         }
     }
 
@@ -67,8 +68,7 @@ public struct CycleTrendCard: View {
     // MARK: - Header
     //
     // Mirrors the hero-title treatment used by CycleHistoryCard so the
-    // stats screen reads as a single editorial spread rather than a
-    // grab-bag of differently-sized cards.
+    // stats screen reads as a single editorial spread.
 
     private var header: some View {
         HStack(alignment: .top, spacing: 12) {
@@ -91,13 +91,15 @@ public struct CycleTrendCard: View {
     }
 
     private var subtitle: String {
-        let count = visiblePoints.count
-        guard count > 0 else { return "Not enough cycles yet" }
-        let noun = count == 1 ? "cycle" : "cycles"
-        return "Last \(count) \(noun) · Avg \(averageDays) days"
+        let real = realCount
+        guard real > 0 else { return "Not enough cycles yet" }
+        let noun = real == 1 ? "cycle" : "cycles"
+        return "Last \(real) \(noun) · Avg \(averageDays) days"
     }
 
     private var windowPicker: some View {
+        // Neutral tint to match the "See all" pill on CycleHistoryCard —
+        // the stats screen keeps chrome muted so numbers stay the story.
         Picker("Range", selection: $window) {
             ForEach(Window.allCases, id: \.self) { w in
                 Text(w.rawValue).tag(w)
@@ -105,24 +107,28 @@ public struct CycleTrendCard: View {
         }
         .pickerStyle(.segmented)
         .fixedSize()
-        .tint(DesignColors.accentWarm)
+        .tint(DesignColors.text.opacity(0.85))
     }
 
     // MARK: - Chart
 
     /// Max width per bar column. Prevents a 1- or 2-cycle history from
     /// ballooning into chunky blocks that span the card. When bars can't
-    /// fill the row, a trailing Spacer packs them to the leading edge so
-    /// the chart grows naturally as more cycles are logged.
+    /// fill the row, a trailing Spacer packs them to the leading edge.
     private static let maxBarWidth: CGFloat = 44
 
     private var chart: some View {
         let visible = visiblePoints
         let range = chartRange(for: visible)
+        let lastRealIndex = visible.lastIndex(where: { !$0.isPredicted }) ?? (visible.count - 1)
         return VStack(spacing: 10) {
             HStack(alignment: .bottom, spacing: 10) {
                 ForEach(Array(visible.enumerated()), id: \.element.id) { index, point in
-                    bar(for: point, isCurrent: index == visible.count - 1, range: range)
+                    bar(
+                        for: point,
+                        isCurrent: index == lastRealIndex && !point.isPredicted,
+                        range: range
+                    )
                 }
                 if visible.count < (window.maxEntries ?? visible.count) {
                     Spacer(minLength: 0)
@@ -130,7 +136,7 @@ public struct CycleTrendCard: View {
             }
             .frame(height: 150)
 
-            monthLabels(for: visible)
+            monthLabels(for: visible, lastRealIndex: lastRealIndex)
         }
         .accessibilityElement(children: .combine)
         .accessibilityLabel(chartAccessibilityLabel(for: visible))
@@ -142,20 +148,44 @@ public struct CycleTrendCard: View {
         return VStack(spacing: 6) {
             Text("\(point.days)")
                 .font(.raleway("SemiBold", size: 11, relativeTo: .caption2))
-                .foregroundStyle(
-                    isCurrent
-                        ? DesignColors.accentWarmText
-                        : DesignColors.textSecondary
-                )
+                .foregroundStyle(dayLabelColor(for: point, isCurrent: isCurrent))
 
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .fill(isCurrent ? DesignColors.accentWarm : DesignColors.accentWarm.opacity(0.14))
+            barShape(for: point, isCurrent: isCurrent)
                 .frame(height: normalized)
         }
         .frame(maxWidth: Self.maxBarWidth)
     }
 
-    private func monthLabels(for points: [Point]) -> some View {
+    @ViewBuilder
+    private func barShape(for point: Point, isCurrent: Bool) -> some View {
+        let shape = RoundedRectangle(cornerRadius: 10, style: .continuous)
+        if point.isPredicted {
+            // Dashed outline, no fill — reads as "forecast" vs. the solid
+            // real cycles. Same corner radius so the silhouette still
+            // rhymes with the logged bars around it.
+            shape
+                .strokeBorder(
+                    DesignColors.accentWarm.opacity(0.45),
+                    style: StrokeStyle(lineWidth: 1, dash: [4, 3])
+                )
+        } else if isCurrent {
+            shape.fill(DesignColors.accentWarm)
+        } else {
+            shape.fill(DesignColors.accentWarm.opacity(0.14))
+        }
+    }
+
+    private func dayLabelColor(for point: Point, isCurrent: Bool) -> Color {
+        if point.isPredicted {
+            return DesignColors.textSecondary.opacity(0.6)
+        }
+        if isCurrent {
+            return DesignColors.accentWarmText
+        }
+        return DesignColors.textSecondary
+    }
+
+    private func monthLabels(for points: [Point], lastRealIndex: Int) -> some View {
         // Disambiguate consecutive cycles that start in the same calendar
         // month (short cycles can fit two starts inside one month) by
         // promoting the label to "MMM d".
@@ -165,22 +195,27 @@ public struct CycleTrendCard: View {
                 Text(label)
                     .font(
                         .raleway(
-                            index == points.count - 1 ? "SemiBold" : "Medium",
+                            index == lastRealIndex ? "SemiBold" : "Medium",
                             size: 11,
                             relativeTo: .caption2
                         )
                     )
-                    .foregroundStyle(
-                        index == points.count - 1
-                            ? DesignColors.text
-                            : DesignColors.textSecondary
-                    )
+                    .foregroundStyle(monthLabelColor(
+                        isCurrent: index == lastRealIndex,
+                        isPredicted: points[index].isPredicted
+                    ))
                     .frame(maxWidth: Self.maxBarWidth)
             }
             if points.count < (window.maxEntries ?? points.count) {
                 Spacer(minLength: 0)
             }
         }
+    }
+
+    private func monthLabelColor(isCurrent: Bool, isPredicted: Bool) -> Color {
+        if isPredicted { return DesignColors.textSecondary.opacity(0.5) }
+        if isCurrent   { return DesignColors.text }
+        return DesignColors.textSecondary
     }
 
     private func disambiguatedLabels(for points: [Point]) -> [String] {
@@ -216,20 +251,43 @@ public struct CycleTrendCard: View {
         .padding(.vertical, 30)
     }
 
-    // MARK: - Helpers
+    // MARK: - Visible data
+    //
+    // Takes the real (logged) points, clamps them to the window, and —
+    // for the bounded windows (6M / 1Y) — tops up with ghost forecast
+    // bars projected forward from the last real start date at `avg` days
+    // apart. The "All" window never forecasts; it only shows history.
 
-    private var visiblePoints: [Point] {
-        let sorted = points.sorted { $0.startDate < $1.startDate }
-        if let cap = window.maxEntries {
-            return Array(sorted.suffix(cap))
-        }
-        return sorted
+    private var realPoints: [Point] {
+        points.filter { !$0.isPredicted }.sorted { $0.startDate < $1.startDate }
     }
 
-    /// Clamp the chart's numeric range to a roomy band around the data
-    /// so the bars never render at 0 height when all cycles are close
-    /// to each other. Floor/ceiling widen in whole days so y-axis scale
-    /// reads stable cycle-to-cycle.
+    private var realCount: Int { realPoints.count }
+
+    private var visiblePoints: [Point] {
+        let real = realPoints
+        guard let cap = window.maxEntries else { return real }
+
+        let recent = Array(real.suffix(cap))
+        let missing = cap - recent.count
+        guard missing > 0, let anchor = real.last else { return recent }
+
+        let projected = (1...missing).compactMap { step -> Point? in
+            guard
+                let next = Calendar.current.date(
+                    byAdding: .day,
+                    value: step * averageDays,
+                    to: anchor.startDate
+                )
+            else { return nil }
+            return Point(id: next, startDate: next, days: averageDays, isPredicted: true)
+        }
+        return recent + projected
+    }
+
+    /// Clamp the chart's numeric range to a roomy band around the data.
+    /// Predictions use `averageDays` by construction so they don't stretch
+    /// the y-axis — the scale reads off the real cycles.
     private func chartRange(for visible: [Point]) -> (lower: Int, upper: Int) {
         let lengths = visible.map(\.days) + [averageDays]
         guard let minValue = lengths.min(), let maxValue = lengths.max() else {
@@ -249,9 +307,11 @@ public struct CycleTrendCard: View {
 
     private func chartAccessibilityLabel(for points: [Point]) -> String {
         guard !points.isEmpty else { return "No cycle data yet" }
+        let lastReal = points.lastIndex(where: { !$0.isPredicted }) ?? -1
         let readings = points.enumerated().map { index, point in
-            let suffix = index == points.count - 1 ? ", current cycle" : ""
-            return "\(monthLabel(for: point.startDate)) \(point.days) days\(suffix)"
+            let prefix = point.isPredicted ? "Forecast " : ""
+            let suffix = index == lastReal ? ", current cycle" : ""
+            return "\(prefix)\(monthLabel(for: point.startDate)) \(point.days) days\(suffix)"
         }
         return readings.joined(separator: ", ")
     }
