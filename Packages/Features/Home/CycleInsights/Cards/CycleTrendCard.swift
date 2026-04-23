@@ -125,51 +125,79 @@ public struct CycleTrendCard: View {
     // MARK: - Chart
 
     /// Max width per bar column. Prevents a 1- or 2-cycle history from
-    /// ballooning into chunky blocks. When bars can't fill the row the
-    /// group stays centered instead of packing to one edge.
+    /// ballooning into chunky blocks, while bar width otherwise shrinks
+    /// to fit the card's actual width (1Y = 12 bars, All can be more).
     private static let maxBarWidth: CGFloat = 44
+
+    /// Resolve how wide and how spaced bars should be for `count`
+    /// columns inside `available` pt. Both bar and label columns share
+    /// the same values so numbers sit under their bars at any count.
+    private static func layout(for count: Int, available: CGFloat) -> (barWidth: CGFloat, spacing: CGFloat) {
+        guard count > 0 else { return (maxBarWidth, 10) }
+        let spacing: CGFloat = count > 8 ? 4 : 10
+        let totalSpacing = spacing * CGFloat(max(count - 1, 0))
+        let raw = (available - totalSpacing) / CGFloat(count)
+        let barWidth = max(8, min(maxBarWidth, raw))
+        return (barWidth, spacing)
+    }
 
     private var chart: some View {
         let visible = visiblePoints
         let range = chartRange(for: visible)
         let lastIndex = visible.count - 1
-        return VStack(spacing: 10) {
-            HStack(alignment: .bottom, spacing: 10) {
-                ForEach(Array(visible.enumerated()), id: \.element.id) { index, point in
-                    bar(for: point, isCurrent: index == lastIndex, range: range)
+        return GeometryReader { geo in
+            let (barWidth, spacing) = Self.layout(for: visible.count, available: geo.size.width)
+            VStack(spacing: 10) {
+                HStack(alignment: .bottom, spacing: spacing) {
+                    ForEach(Array(visible.enumerated()), id: \.element.id) { index, point in
+                        bar(
+                            for: point,
+                            isCurrent: index == lastIndex,
+                            range: range,
+                            width: barWidth
+                        )
+                    }
                 }
-            }
-            .frame(maxWidth: .infinity)
-            .frame(height: 150)
+                .frame(maxWidth: .infinity)
+                .frame(height: 150)
 
-            monthLabels(for: visible)
+                monthLabels(for: visible, barWidth: barWidth, spacing: spacing)
+            }
         }
+        .frame(height: 180)
         .accessibilityElement(children: .combine)
         .accessibilityLabel(chartAccessibilityLabel(for: visible))
     }
 
-    private func bar(for point: Point, isCurrent: Bool, range: (lower: Int, upper: Int)) -> some View {
+    private func bar(
+        for point: Point,
+        isCurrent: Bool,
+        range: (lower: Int, upper: Int),
+        width: CGFloat
+    ) -> some View {
         let span = max(CGFloat(range.upper - range.lower), 1)
         let normalized = (CGFloat(point.days - range.lower) / span) * 110 + 24
         return VStack(spacing: 6) {
             Text("\(point.days)")
                 .font(.raleway("SemiBold", size: 11, relativeTo: .caption2))
                 .foregroundStyle(isCurrent ? DesignColors.accentWarmText : DesignColors.textSecondary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
 
             RoundedRectangle(cornerRadius: 10, style: .continuous)
                 .fill(isCurrent ? DesignColors.accentWarm : DesignColors.accentWarm.opacity(0.14))
                 .frame(height: normalized)
         }
-        .frame(width: Self.maxBarWidth)
+        .frame(width: width)
     }
 
-    private func monthLabels(for points: [Point]) -> some View {
+    private func monthLabels(for points: [Point], barWidth: CGFloat, spacing: CGFloat) -> some View {
         // Disambiguate consecutive cycles that start in the same calendar
         // month (short cycles can fit two starts inside one month) by
         // promoting the label to "MMM d".
         let labels = disambiguatedLabels(for: points)
         let lastIndex = points.count - 1
-        return HStack(spacing: 10) {
+        return HStack(spacing: spacing) {
             ForEach(Array(labels.enumerated()), id: \.offset) { index, label in
                 Text(label)
                     .font(
@@ -182,7 +210,9 @@ public struct CycleTrendCard: View {
                     .foregroundStyle(
                         index == lastIndex ? DesignColors.text : DesignColors.textSecondary
                     )
-                    .frame(width: Self.maxBarWidth)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+                    .frame(width: barWidth)
             }
         }
         .frame(maxWidth: .infinity)
