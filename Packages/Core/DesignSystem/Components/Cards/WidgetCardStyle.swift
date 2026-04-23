@@ -15,39 +15,41 @@ import SwiftUI
 
 public struct WidgetCardStyleModifier: ViewModifier {
     public let cornerRadius: CGFloat
+    /// When true (default), rasterizes the card into a Metal bitmap so
+    /// scroll translates one texture per cell. Set false on cards that
+    /// embed UIKit-backed views (`Picker(.segmented)`, Swift Charts,
+    /// `UIViewRepresentable`) — Metal flattening can't render those
+    /// subtrees and the runtime falls back to a broken yellow placeholder.
+    public let rasterize: Bool
 
-    public init(cornerRadius: CGFloat = 22) {
+    public init(cornerRadius: CGFloat = 22, rasterize: Bool = true) {
         self.cornerRadius = cornerRadius
+        self.rasterize = rasterize
     }
 
-    // Diagnostic mode: plain white card, no glass or material. Used to
-    // isolate whether the Liquid Glass/material passes were the real
-    // scroll cost or a red herring. Flip the `#if` block below back to
-    // the glass/material path once the diagnosis is complete.
     public func body(content: Content) -> some View {
-        // Rasterize the card's inner content into a Metal bitmap so
-        // scroll only translates one texture per cell (the main reason
-        // `.drawingGroup(opaque: false)` was applied per-card before).
-        // The shadow is then added on the Shape of the *outer*
-        // background, so it stays a layer-level shadow with the
-        // correct rounded silhouette instead of being baked into the
-        // bitmap and clipped to the view's rectangular bounds.
-        content
-            .drawingGroup(opaque: false)
-            .background {
-                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                    .fill(Color.white)
-                    .shadow(color: .black.opacity(0.1), radius: 8, x: 0, y: 3)
+        Group {
+            if rasterize {
+                content.drawingGroup(opaque: false)
+            } else {
+                content
             }
+        }
+        .background {
+            RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                .fill(Color.white)
+                .shadow(color: .black.opacity(0.1), radius: 8, x: 0, y: 3)
+        }
     }
 }
 
 public extension View {
-    /// Apply the shared card surface (Liquid Glass on iOS 26+, frosted
-    /// material + soft shadow below). Owns fill, clip, and shadow — do
+    /// Apply the shared card surface (fill + shadow, consistent across
+    /// every card on the stats screen). Owns fill, clip, and shadow — do
     /// not pair with `.background(.ultraThinMaterial)` or an outer
-    /// `.clipShape`.
-    func widgetCardStyle(cornerRadius: CGFloat = 22) -> some View {
-        modifier(WidgetCardStyleModifier(cornerRadius: cornerRadius))
+    /// `.clipShape`. Pass `rasterize: false` when the card contains
+    /// UIKit-backed subviews (native Picker, Swift Charts).
+    func widgetCardStyle(cornerRadius: CGFloat = 22, rasterize: Bool = true) -> some View {
+        modifier(WidgetCardStyleModifier(cornerRadius: cornerRadius, rasterize: rasterize))
     }
 }

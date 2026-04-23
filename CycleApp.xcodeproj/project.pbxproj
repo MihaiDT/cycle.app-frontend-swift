@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 77;
+	objectVersion = 63;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -364,7 +364,7 @@
 		3C2E784445D7755435EE3460 /* UserProfileLocalClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserProfileLocalClient.swift; sourceTree = "<group>"; };
 		3C380CB9877F9EFBE8833FE6 /* PlacesClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlacesClient.swift; sourceTree = "<group>"; };
 		3CE53393A877B1C19C7CDAC7 /* CycleStatsCardList.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CycleStatsCardList.swift; sourceTree = "<group>"; };
-		3D613DF8875F1A90F07C4F34 /* CycleApp.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = CycleApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		3D613DF8875F1A90F07C4F34 /* CycleApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CycleApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		3DF25DA65BAB201183A4C862 /* ChallengeSelector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChallengeSelector.swift; sourceTree = "<group>"; };
 		417471A8B95395E97DC10BF3 /* WellnessRitualTile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WellnessRitualTile.swift; sourceTree = "<group>"; };
 		4194779F49AFA1C483C9DDB1 /* JourneyDestinationTiles.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JourneyDestinationTiles.swift; sourceTree = "<group>"; };
@@ -394,7 +394,7 @@
 		5E090C54F4B6A5C23CD0D381 /* HomeWidgetCarousel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeWidgetCarousel.swift; sourceTree = "<group>"; };
 		5E39E23B0C038638CCFD9F17 /* EditPeriodFeatureTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditPeriodFeatureTests.swift; sourceTree = "<group>"; };
 		5EC4B5B5DEB0E25A730E4507 /* HealthKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = HealthKit.framework; path = System/Library/Frameworks/HealthKit.framework; sourceTree = SDKROOT; };
-		5ED03F559F4A2F374AF86A5C /* glowing_orb.riv */ = {isa = PBXFileReference; path = glowing_orb.riv; sourceTree = "<group>"; };
+		5ED03F559F4A2F374AF86A5C /* glowing_orb.riv */ = {isa = PBXFileReference; lastKnownFileType = file; path = glowing_orb.riv; sourceTree = "<group>"; };
 		5F90D69A90239DFEC866C703 /* CycleApp.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = CycleApp.entitlements; sourceTree = "<group>"; };
 		60A69777B121E02CCD9ED6FD /* ModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelTests.swift; sourceTree = "<group>"; };
 		61041271C1D1C8B65E70B7D3 /* PersonalGoalsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersonalGoalsView.swift; sourceTree = "<group>"; };
@@ -421,7 +421,7 @@
 		71EF173A08EFFAA9EAF10A56 /* APIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIClient.swift; sourceTree = "<group>"; };
 		73914611D3DF1FFC57B136D1 /* CycleContext+PeriodDetection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "CycleContext+PeriodDetection.swift"; sourceTree = "<group>"; };
 		75C7E1A61DEFAFD83E9FBFDF /* ProfileFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileFeature.swift; sourceTree = "<group>"; };
-		75D6127ECF3EBDD6447B1D46 /* CycleAppLiveActivity.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = CycleAppLiveActivity.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		75D6127ECF3EBDD6447B1D46 /* CycleAppLiveActivity.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = CycleAppLiveActivity.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		75F538CF7F041D15352BB19F /* PersonalBaselineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersonalBaselineTests.swift; sourceTree = "<group>"; };
 		774B022BDFFD276010750F70 /* ValidationFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ValidationFeature.swift; sourceTree = "<group>"; };
 		77AF7095ECA0C1ACF219D733 /* LifestyleRhythmView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LifestyleRhythmView.swift; sourceTree = "<group>"; };
@@ -537,7 +537,7 @@
 		E25D139762A5500AA29BBDE1 /* CycleCalendarViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CycleCalendarViews.swift; sourceTree = "<group>"; };
 		E394CEC4F5EAC23C77BA5C58 /* CycleJourneyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CycleJourneyView.swift; sourceTree = "<group>"; };
 		E55A36BBFC9A9AA9F04DA078 /* JourneyHomeViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JourneyHomeViews.swift; sourceTree = "<group>"; };
-		E687F11BA153A2DF683BD9B0 /* logo_animation.splineswift */ = {isa = PBXFileReference; path = logo_animation.splineswift; sourceTree = "<group>"; };
+		E687F11BA153A2DF683BD9B0 /* logo_animation.splineswift */ = {isa = PBXFileReference; lastKnownFileType = file; path = logo_animation.splineswift; sourceTree = "<group>"; };
 		E7FE49861A2ACC6DD33BED9E /* TodayFeature+Helpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "TodayFeature+Helpers.swift"; sourceTree = "<group>"; };
 		EA867F396B072ED863219115 /* APIError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIError.swift; sourceTree = "<group>"; };
 		EBC86DA5C36E0C18C60DDA86 /* CycleDataDurationRegularity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CycleDataDurationRegularity.swift; sourceTree = "<group>"; };
@@ -1441,7 +1441,6 @@
 				AEF383D9F05536120F2B291B /* XCRemoteSwiftPackageReference "spline-ios" */,
 				FDE4EA748176C63BCCDC26BB /* XCRemoteSwiftPackageReference "swift-tagged" */,
 			);
-			preferredProjectObjectVersion = 77;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
@@ -1761,6 +1760,7 @@
 				CODE_SIGN_ENTITLEMENTS = CycleApp/Resources/CycleApp.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CURRENT_PROJECT_VERSION = 3;
+				DEVELOPMENT_TEAM = AT2NH7U6W7;
 				INFOPLIST_FILE = CycleApp/Resources/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -1794,6 +1794,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CURRENT_PROJECT_VERSION = 3;
+				DEVELOPMENT_TEAM = AT2NH7U6W7;
 				INFOPLIST_FILE = CycleApp/CycleAppLiveActivity/Info.plist;
 				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -1819,6 +1820,7 @@
 				CODE_SIGN_ENTITLEMENTS = CycleApp/Resources/CycleApp.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CURRENT_PROJECT_VERSION = 3;
+				DEVELOPMENT_TEAM = AT2NH7U6W7;
 				INFOPLIST_FILE = CycleApp/Resources/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -1835,6 +1837,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CURRENT_PROJECT_VERSION = 3;
+				DEVELOPMENT_TEAM = AT2NH7U6W7;
 				INFOPLIST_FILE = CycleApp/CycleAppLiveActivity/Info.plist;
 				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
 				LD_RUNPATH_SEARCH_PATHS = (
