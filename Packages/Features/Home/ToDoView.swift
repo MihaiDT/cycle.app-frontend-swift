@@ -108,7 +108,8 @@ struct ToDoView: View {
     @State private var openedItemID: UUID?
     @State private var scrollOffset: CGFloat = 0
     @State private var isCirclePresented = false
-    @State private var selectedCategoryID: String = "move"
+    @State private var selectedCategoryID: String = "today"
+    @AppStorage("todoview.personal_habits") private var personalHabitsJSON: String = "[]"
 
     private let friends = ["Sofia", "Mara", "Elena", "Ioana", "Ana", "Maria"]
 
@@ -152,6 +153,7 @@ struct ToDoView: View {
                     .presentationDetents([.fraction(0.85)])
                     .presentationDragIndicator(.visible)
                     .presentationBackground(cream)
+                    .presentationCornerRadius(36)
             }
             .sheet(isPresented: $isCirclePresented) {
                 circleSheet
@@ -1479,14 +1481,96 @@ struct ToDoView: View {
         let suggestions: [LibrarySuggestion]
     }
 
-    private struct LibrarySuggestion: Identifiable, Hashable {
+    private struct LibrarySuggestion: Identifiable, Hashable, Codable {
         let title: String
         let subtitle: String
         var id: String { title }
     }
 
+    private var personalHabits: [LibrarySuggestion] {
+        guard let data = personalHabitsJSON.data(using: .utf8),
+              let decoded = try? JSONDecoder().decode([LibrarySuggestion].self, from: data) else { return [] }
+        return decoded
+    }
+
+    private func savePersonalHabit(_ s: LibrarySuggestion) {
+        var current = personalHabits
+        current.removeAll { $0.title.lowercased() == s.title.lowercased() }
+        current.insert(s, at: 0)
+        if let data = try? JSONEncoder().encode(current),
+           let str = String(data: data, encoding: .utf8) {
+            personalHabitsJSON = str
+        }
+    }
+
+    private func removePersonalHabit(_ s: LibrarySuggestion) {
+        var current = personalHabits
+        current.removeAll { $0.id == s.id }
+        if let data = try? JSONEncoder().encode(current),
+           let str = String(data: data, encoding: .utf8) {
+            personalHabitsJSON = str
+        }
+    }
+
+    // Time-aware suggestions for the "Today" category
+    private var todaySuggestions: [LibrarySuggestion] {
+        let hour = Calendar.current.component(.hour, from: Date())
+        switch hour {
+        case 5..<11: // morning
+            return [
+                LibrarySuggestion(title: "Morning pages", subtitle: "Three pages, no editing"),
+                LibrarySuggestion(title: "Hydrate", subtitle: "A full glass of water"),
+                LibrarySuggestion(title: "Morning yoga", subtitle: "Ten gentle poses"),
+                LibrarySuggestion(title: "Make the bed", subtitle: "A quiet win, early")
+            ]
+        case 11..<16: // midday
+            return [
+                LibrarySuggestion(title: "Long walk", subtitle: "No phone, slow pace"),
+                LibrarySuggestion(title: "Proper meal", subtitle: "Sit down, no screens"),
+                LibrarySuggestion(title: "Stretch", subtitle: "Loosen up, head to toe"),
+                LibrarySuggestion(title: "Message someone", subtitle: "A thought-of-you text")
+            ]
+        case 16..<21: // evening
+            return [
+                LibrarySuggestion(title: "Call a friend", subtitle: "One real conversation"),
+                LibrarySuggestion(title: "Read", subtitle: "A few pages, analog"),
+                LibrarySuggestion(title: "Tidy a corner", subtitle: "Just one small space"),
+                LibrarySuggestion(title: "Deep breaths", subtitle: "Five slow rounds")
+            ]
+        default: // night
+            return [
+                LibrarySuggestion(title: "Journal", subtitle: "One honest paragraph"),
+                LibrarySuggestion(title: "Skincare", subtitle: "The full evening ritual"),
+                LibrarySuggestion(title: "Warm bath", subtitle: "No rush, no phone"),
+                LibrarySuggestion(title: "Sleep early", subtitle: "Lights out before 11")
+            ]
+        }
+    }
+
+    private var todayEyebrow: String {
+        let hour = Calendar.current.component(.hour, from: Date())
+        switch hour {
+        case 5..<11:  return "FOR THIS MORNING"
+        case 11..<16: return "FOR THIS AFTERNOON"
+        case 16..<21: return "FOR THIS EVENING"
+        default:      return "FOR TONIGHT"
+        }
+    }
+
     private var habitCategories: [HabitCategory] {
         [
+            HabitCategory(
+                id: "today",
+                title: "Today",
+                eyebrow: todayEyebrow,
+                suggestions: todaySuggestions
+            ),
+            HabitCategory(
+                id: "mine",
+                title: "Mine",
+                eyebrow: "YOUR HABITS",
+                suggestions: personalHabits
+            ),
             HabitCategory(
                 id: "move",
                 title: "Move",
@@ -1583,19 +1667,25 @@ struct ToDoView: View {
                         .foregroundStyle(ink.opacity(0.45))
                         .padding(.horizontal, 24)
 
-                    LazyVGrid(
-                        columns: [
-                            GridItem(.flexible(), spacing: 12),
-                            GridItem(.flexible(), spacing: 12)
-                        ],
-                        spacing: 12
-                    ) {
-                        ForEach(category.suggestions) { suggestion in
-                            libraryTile(suggestion)
+                    if category.id == "mine" && category.suggestions.isEmpty {
+                        mineEmptyState
+                            .padding(.horizontal, 20)
+                            .padding(.bottom, 40)
+                    } else {
+                        LazyVGrid(
+                            columns: [
+                                GridItem(.flexible(), spacing: 12),
+                                GridItem(.flexible(), spacing: 12)
+                            ],
+                            spacing: 12
+                        ) {
+                            ForEach(category.suggestions) { suggestion in
+                                libraryTile(suggestion, inMine: category.id == "mine")
+                            }
                         }
+                        .padding(.horizontal, 20)
+                        .padding(.bottom, 40)
                     }
-                    .padding(.horizontal, 20)
-                    .padding(.bottom, 40)
                 }
             }
         }
@@ -1679,7 +1769,36 @@ struct ToDoView: View {
         )
     }
 
-    private func libraryTile(_ suggestion: LibrarySuggestion) -> some View {
+    private var mineEmptyState: some View {
+        VStack(spacing: 12) {
+            ZStack {
+                Circle()
+                    .fill(ink.opacity(0.08))
+                    .frame(width: 56, height: 56)
+                Image(systemName: "heart")
+                    .font(.system(size: 22, weight: .semibold))
+                    .foregroundStyle(ink.opacity(0.55))
+            }
+            VStack(spacing: 4) {
+                Text("Build your own.")
+                    .font(.system(size: 17, weight: .bold))
+                    .foregroundStyle(ink)
+                Text("Long-press a habit to save it here, or write your own above.")
+                    .font(.system(size: 13, weight: .regular))
+                    .foregroundStyle(ink.opacity(0.55))
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 16)
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 36)
+        .background(
+            RoundedRectangle(cornerRadius: 28, style: .continuous)
+                .fill(cardCream)
+        )
+    }
+
+    private func libraryTile(_ suggestion: LibrarySuggestion, inMine: Bool) -> some View {
         Button {
             addFromLibrary(suggestion)
         } label: {
@@ -1694,15 +1813,22 @@ struct ToDoView: View {
                     .lineLimit(2)
                     .fixedSize(horizontal: false, vertical: true)
                 Spacer(minLength: 6)
-                ZStack {
-                    Circle()
-                        .fill(ink)
-                        .frame(width: 28, height: 28)
-                    Image(systemName: "plus")
-                        .font(.system(size: 12, weight: .bold))
-                        .foregroundStyle(cream)
+                HStack(spacing: 0) {
+                    if inMine {
+                        Image(systemName: "heart.fill")
+                            .font(.system(size: 11, weight: .semibold))
+                            .foregroundStyle(rust.opacity(0.85))
+                    }
+                    Spacer()
+                    ZStack {
+                        Circle()
+                            .fill(ink)
+                            .frame(width: 28, height: 28)
+                        Image(systemName: "plus")
+                            .font(.system(size: 12, weight: .bold))
+                            .foregroundStyle(cream)
+                    }
                 }
-                .frame(maxWidth: .infinity, alignment: .trailing)
             }
             .padding(18)
             .frame(maxWidth: .infinity, minHeight: 128, alignment: .topLeading)
@@ -1712,6 +1838,23 @@ struct ToDoView: View {
             )
         }
         .buttonStyle(.plain)
+        .contextMenu {
+            if inMine {
+                Button(role: .destructive) {
+                    removePersonalHabit(suggestion)
+                } label: {
+                    Label("Remove from Mine", systemImage: "heart.slash")
+                }
+            } else {
+                Button {
+                    savePersonalHabit(suggestion)
+                    let gen = UIImpactFeedbackGenerator(style: .soft)
+                    gen.impactOccurred()
+                } label: {
+                    Label("Save to Mine", systemImage: "heart")
+                }
+            }
+        }
     }
 
     private func addFromLibrary(_ suggestion: LibrarySuggestion) {
@@ -1724,6 +1867,7 @@ struct ToDoView: View {
             steps: []
         )
         items.append(item)
+        savePersonalHabit(suggestion)
         draft = ""
         isComposerPresented = false
     }
@@ -1742,6 +1886,7 @@ struct ToDoView: View {
             steps: []
         )
         items.append(item)
+        savePersonalHabit(LibrarySuggestion(title: trimmed, subtitle: "Your habit"))
         draft = ""
         isComposerPresented = false
     }
