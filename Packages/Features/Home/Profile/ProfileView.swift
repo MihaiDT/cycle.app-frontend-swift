@@ -16,7 +16,7 @@ public struct ProfileView: View {
 
     public var body: some View {
         ZStack {
-            GradientBackground()
+            DesignColors.background.ignoresSafeArea()
 
             VStack(spacing: AppLayout.spacingL) {
                 Spacer(minLength: 0)
