@@ -23,7 +23,7 @@ public enum CycleStatsCard: String, CaseIterable, Codable, Sendable, Identifiabl
         switch self {
         case .overview:   return "Averages overview"
         case .normality:  return "Normality check"
-        case .avgCycle:   return "Average cycle chart"
+        case .avgCycle:   return "Cycle trend"
         case .history:    return "Cycle history"
         case .reflection: return "Rhythm reflection"
         }
@@ -39,7 +39,7 @@ public enum CycleStatsCard: String, CaseIterable, Codable, Sendable, Identifiabl
         case .normality:
             return "Clinical read on your last cycle and variability."
         case .avgCycle:
-            return "Chart of past cycle lengths with the projected next one."
+            return "Bar chart of recent cycle lengths with your average overlay."
         case .history:
             return "Scrollable list of past cycles with Energy, Mood, and Sleep dots."
         case .reflection:

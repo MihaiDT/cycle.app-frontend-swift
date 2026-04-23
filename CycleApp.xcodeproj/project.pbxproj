@@ -128,6 +128,7 @@
 		758EC158A861BD7757081636 /* WellnessMessageRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A463CEDCD3BF23E43177E20 /* WellnessMessageRecord.swift */; };
 		75FEF928A9D33AEA1C13E105 /* CycleContext+Countdown.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF7B6F03AE94AFF4A82A0518 /* CycleContext+Countdown.swift */; };
 		768ED5B5046FB0069C512FF3 /* NotificationPermissionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 857199A6042434404711372F /* NotificationPermissionView.swift */; };
+		77C296D2E4E99B9FD2970BDE /* CycleTrendCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EDB612136F59FE7F336C203 /* CycleTrendCard.swift */; };
 		79336A90E553B790F6CCF604 /* UIFont+Raleway.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3994AAF48ABC03F15465A1FD /* UIFont+Raleway.swift */; };
 		7A775A86E5868AADE9EC5ED9 /* KeyDayExtractor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9DE36DFEC5C00178CD630BD5 /* KeyDayExtractor.swift */; };
 		7B1207969E11F76C7D2CA81D /* LifestyleRhythmView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 77AF7095ECA0C1ACF219D733 /* LifestyleRhythmView.swift */; };
@@ -413,6 +414,7 @@
 		6DD7E113E164FF27E534BBF8 /* CycleStatsCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CycleStatsCard.swift; sourceTree = "<group>"; };
 		6E02FB6CD7C744A1401C9090 /* ChallengeTemplatePool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChallengeTemplatePool.swift; sourceTree = "<group>"; };
 		6E1A7BF75F4398D3B56ED731 /* WellnessDetailFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WellnessDetailFeature.swift; sourceTree = "<group>"; };
+		6EDB612136F59FE7F336C203 /* CycleTrendCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CycleTrendCard.swift; sourceTree = "<group>"; };
 		6EE112FE88E6C24E473706B8 /* ChallengeTimerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChallengeTimerView.swift; sourceTree = "<group>"; };
 		6F1A4A6CC1D5B26BCF74322D /* CycleEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CycleEngineTests.swift; sourceTree = "<group>"; };
 		6F77761E587B22C3A5ECFFE6 /* HBICalculator+Baseline.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "HBICalculator+Baseline.swift"; sourceTree = "<group>"; };
@@ -1117,6 +1119,7 @@
 				1C7606E3E82E0F282C77633A /* CycleInsightsSkeletons.swift */,
 				171CF7DA8130270099E90B18 /* CycleNormality.swift */,
 				3CE53393A877B1C19C7CDAC7 /* CycleStatsCardList.swift */,
+				6EDB612136F59FE7F336C203 /* CycleTrendCard.swift */,
 				C211FF27E2398FD258CD5C08 /* HideCycleDialog.swift */,
 			);
 			path = Cards;
@@ -1587,6 +1590,7 @@
 				87BE01E3E05A3796C5102089 /* CycleStatsCardList.swift in Sources */,
 				8B393324CA4722AE32527A88 /* CycleStatsCustomize.swift in Sources */,
 				D8EA30D8AC76D559E0011E7E /* CycleStatsLayoutClient.swift in Sources */,
+				77C296D2E4E99B9FD2970BDE /* CycleTrendCard.swift in Sources */,
 				D00AB947693B0C93411EBBED /* DailyChallengeCardView.swift in Sources */,
 				C26DD3D5CD53063D5813FD5C /* DailyChallengeFeature.swift in Sources */,
 				D16B7E5795C2F09949557796 /* DailyCheckInFeature.swift in Sources */,

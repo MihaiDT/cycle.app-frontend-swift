@@ -278,7 +278,16 @@ public struct CycleInsightsView: View {
                 CycleNormalitySkeleton()
             }
         case .avgCycle:
-            avgCycleCard
+            if store.stats != nil {
+                CycleTrendCard(
+                    points: pastCycleEntries.map {
+                        CycleTrendCard.Point(id: $0.id, startDate: $0.startDate, days: $0.length)
+                    },
+                    averageDays: averageLengthInt
+                )
+            } else {
+                CycleTrendSkeleton()
+            }
         case .history:
             if store.journey != nil {
                 CycleHistoryCard(

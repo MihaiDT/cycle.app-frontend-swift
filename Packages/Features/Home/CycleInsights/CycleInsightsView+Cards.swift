@@ -1,118 +1,13 @@
 import ComposableArchitecture
 import SwiftUI
 
-// MARK: - CycleInsightsView › Avg Cycle Card + Rhythm Reflection
+// MARK: - CycleInsightsView › Rhythm Reflection
 //
-// Two editorial cards on the stats screen — extracted so the main
-// CycleInsightsView.swift stays focused on navigation + dispatcher.
+// Editorial closing card — extracted so the main CycleInsightsView.swift
+// stays focused on navigation + dispatcher. The trend/chart card lives
+// in `Cards/CycleTrendCard.swift` as a standalone component.
 
 extension CycleInsightsView {
-    // MARK: - Average Cycle Card
-    //
-    // Binary render: skeleton while `store.stats` is nil (the fetch
-    // in `.onAppear` hasn't come back yet), real card once it lands.
-    // No fallback to profile numbers — we'd rather show an honest
-    // loading state for ~100ms than flash a number that shifts under
-    // the user when the full history arrives. The skeleton mirrors
-    // the real card's vertical rhythm so nothing reflows on swap.
-    @ViewBuilder
-    var avgCycleCard: some View {
-        if let stats = store.stats {
-            let past = pastCycleEntries
-            let lengths = past.map(\.length)
-            let avg = Int(stats.cycleLength.average.rounded())
-            let minLen = lengths.min() ?? avg
-            let maxLen = lengths.max() ?? avg
-            let hasRange = !lengths.isEmpty && minLen != maxLen
-            avgCycleContent(
-                avg: max(avg, 1),
-                minLen: minLen,
-                maxLen: maxLen,
-                count: past.count,
-                hasRange: hasRange,
-                trendCopy: store.avgTrendCopy
-            )
-        } else {
-            AvgCycleSkeleton()
-        }
-    }
-
-    // Skeletons live in `CycleInsightsSkeletons.swift` as standalone
-    // views (`CycleStatsOverviewSkeleton`, `CycleNormalitySkeleton`,
-    // `CycleHistorySkeleton`, `AvgCycleSkeleton`). The dispatcher
-    // switches directly on the data-loaded flag and instantiates them.
-
-    @ViewBuilder
-    func avgCycleContent(avg: Int, minLen: Int, maxLen: Int, count: Int, hasRange: Bool, trendCopy: String) -> some View {
-        VStack(alignment: .leading, spacing: 18) {
-            // Title on the left, big number on the right — collapses
-            // the two-row stack into one row so the card shortens by
-            // a full number-block height without sacrificing scale.
-            HStack(alignment: .bottom, spacing: 16) {
-                Text("YOUR CYCLE\nAVERAGE")
-                    .font(AppTypography.cardTitlePrimary)
-                    .tracking(AppTypography.cardTitlePrimaryTracking)
-                    .foregroundStyle(DesignColors.text)
-                    .lineSpacing(-2)
-                    .fixedSize(horizontal: false, vertical: true)
-
-                Spacer(minLength: 8)
-
-                HStack(alignment: .firstTextBaseline, spacing: 6) {
-                    Text("\(avg)")
-                        .font(.raleway("Bold", size: 48, relativeTo: .largeTitle))
-                        .tracking(-1.0)
-                        .foregroundStyle(DesignColors.accentWarmText)
-                    Text(avg == 1 ? "day" : "days")
-                        .font(.raleway("Medium", size: 14, relativeTo: .callout))
-                        .foregroundStyle(DesignColors.textSecondary)
-                }
-            }
-
-            HStack(spacing: 0) {
-                avgStatSummary(
-                    label: "RANGE",
-                    value: hasRange ? "\(minLen)–\(maxLen)d" : "\(avg)d"
-                )
-                Spacer(minLength: 16)
-                Rectangle()
-                    .fill(DesignColors.text.opacity(DesignColors.dividerOpacity))
-                    .frame(width: 0.5, height: 34)
-                Spacer(minLength: 16)
-                avgStatSummary(
-                    label: "TRACKED",
-                    value: count == 0 ? "From profile" : "\(count) \(count == 1 ? "cycle" : "cycles")"
-                )
-            }
-
-            Text(trendCopy)
-                .font(.raleway("Regular", size: 14, relativeTo: .callout))
-                .foregroundStyle(DesignColors.text.opacity(0.78))
-                .lineSpacing(3)
-                .fixedSize(horizontal: false, vertical: true)
-        }
-        .padding(22)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .widgetCardStyle(cornerRadius: 28)
-    }
-
-
-    @ViewBuilder
-    func avgStatSummary(label: String, value: String) -> some View {
-        VStack(alignment: .leading, spacing: 5) {
-            Text(label)
-                .font(.raleway("SemiBold", size: 10, relativeTo: .caption2))
-                .tracking(0.9)
-                .foregroundStyle(DesignColors.textSecondary.opacity(0.75))
-            Text(value)
-                .font(.raleway("SemiBold", size: 16, relativeTo: .body))
-                .foregroundStyle(DesignColors.text)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-    }
-
-
-
     // MARK: - Rhythm reflection
     //
     // Closing editorial paragraph on Cycle Stats. Phrased in cycle.app

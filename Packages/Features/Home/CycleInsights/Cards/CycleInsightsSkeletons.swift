@@ -105,39 +105,3 @@ struct CycleHistorySkeleton: View {
     }
 }
 
-// MARK: - Average cycle card
-
-struct AvgCycleSkeleton: View {
-    var body: some View {
-        VStack(alignment: .leading, spacing: 18) {
-            VStack(alignment: .leading, spacing: 6) {
-                SkeletonBlock(width: 150, height: 22)
-                SkeletonBlock(width: 190, height: 22)
-            }
-            SkeletonBlock(width: 140, height: 52, radius: 6)
-            HStack(spacing: 0) {
-                VStack(alignment: .leading, spacing: 5) {
-                    SkeletonBlock(width: 50, height: 9, radius: 3)
-                    SkeletonBlock(width: 80, height: 18, radius: 3)
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                Rectangle()
-                    .fill(DesignColors.text.opacity(DesignColors.dividerOpacity))
-                    .frame(width: 1, height: 34)
-                VStack(alignment: .leading, spacing: 5) {
-                    SkeletonBlock(width: 55, height: 9, radius: 3)
-                    SkeletonBlock(width: 70, height: 18, radius: 3)
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.leading, 16)
-            }
-            VStack(alignment: .leading, spacing: 6) {
-                SkeletonBlock(height: 12, radius: 3)
-                SkeletonBlock(width: 180, height: 12, radius: 3)
-            }
-        }
-        .padding(22)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .widgetCardStyle(cornerRadius: 28)
-    }
-}
