@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 // MARK: - Cycle Trend Card
 //
@@ -43,6 +44,20 @@ public struct CycleTrendCard: View {
     public init(points: [Point], averageDays: Int) {
         self.points = points
         self.averageDays = averageDays
+        Self.applySegmentedAppearance()
+    }
+
+    /// Force the native segmented control's title color to the app's
+    /// Cocoa Dark (`DesignColors.text`). SwiftUI's `Picker(.segmented)`
+    /// doesn't expose a foreground modifier — it's a UIKit-backed view,
+    /// so we route through `UISegmentedControl.appearance()`. Applied on
+    /// init (idempotent) so later screens that re-enter the card pick up
+    /// any theme change without extra wiring.
+    private static func applySegmentedAppearance() {
+        let cocoa = UIColor(DesignColors.text)
+        let attrs: [NSAttributedString.Key: Any] = [.foregroundColor: cocoa]
+        UISegmentedControl.appearance().setTitleTextAttributes(attrs, for: .normal)
+        UISegmentedControl.appearance().setTitleTextAttributes(attrs, for: .selected)
     }
 
     public var body: some View {
