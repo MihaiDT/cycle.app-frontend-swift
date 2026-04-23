@@ -241,8 +241,14 @@ public struct CycleInsightsView: View {
     /// Feed for the Cycle Trend card: real logged cycles plus the
     /// forecasts the predictor already generated for the calendar. Each
     /// predicted cycle length is derived from the gap to the previous
-    /// predicted (or last real) start date, so the ghost bars reflect
-    /// the same variance the calendar shows — not a flat `avg` row.
+    /// start date, so the ghost bars reflect the same variance the
+    /// calendar shows — not a flat `avg` row.
+    ///
+    /// Anchors forecasts from `currentCycleStartDate` when available
+    /// (the in-progress cycle's start), falling back to the last closed
+    /// cycle. Anchoring from the last *closed* cycle would double-count
+    /// the current cycle in the gap — prediction[0] would read as a
+    /// 60-day "phantom" spanning both.
     var trendPoints: [CycleTrendCard.Point] {
         let real = pastCycleEntries.map {
             CycleTrendCard.Point(
@@ -255,11 +261,11 @@ public struct CycleInsightsView: View {
         guard
             let predictions = store.journey?.predictions,
             !predictions.isEmpty,
-            let lastRealStart = real.last?.startDate
+            let anchor = store.journey?.currentCycleStartDate ?? real.last?.startDate
         else { return real }
 
         let cal = Calendar.current
-        var previous = lastRealStart
+        var previous = anchor
         let fallback = max(averageLengthInt, 1)
         let predicted: [CycleTrendCard.Point] = predictions
             .sorted { $0.predictedDate < $1.predictedDate }

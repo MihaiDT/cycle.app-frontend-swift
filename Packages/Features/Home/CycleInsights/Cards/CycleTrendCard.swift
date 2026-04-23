@@ -266,7 +266,9 @@ public struct CycleTrendCard: View {
 
     private var visiblePoints: [Point] {
         let real = realPoints
-        guard let cap = window.maxEntries else { return real }
+        // "All" shows everything — every real cycle + every forecast the
+        // predictor gave us, same horizon the big calendar uses.
+        guard let cap = window.maxEntries else { return real + predictedPoints }
 
         let recent = Array(real.suffix(cap))
         let missing = cap - recent.count
