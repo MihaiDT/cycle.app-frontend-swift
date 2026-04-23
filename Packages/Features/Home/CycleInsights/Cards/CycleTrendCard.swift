@@ -74,6 +74,10 @@ public struct CycleTrendCard: View {
         // `rasterize: false` — the native segmented Picker is UIKit-backed
         // and can't be flattened into a Metal bitmap by `.drawingGroup`.
         .widgetCardStyle(cornerRadius: 28, rasterize: false)
+        // Spring on the whole card so the window change ripples through
+        // bars (frame interpolation), labels, and the compact/scroll
+        // swap with the same motion.
+        .animation(.spring(response: 0.42, dampingFraction: 0.86), value: window)
         .accessibilityElement(children: .contain)
     }
 
@@ -96,6 +100,8 @@ public struct CycleTrendCard: View {
                     .font(AppTypography.cardLabel)
                     .tracking(AppTypography.cardLabelTracking)
                     .foregroundStyle(DesignColors.textSecondary)
+                    .contentTransition(.numericText())
+                    .transaction { $0.animation = .easeInOut(duration: 0.25) }
             }
             Spacer(minLength: 8)
             windowPicker
