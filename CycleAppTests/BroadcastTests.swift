@@ -6,7 +6,7 @@ import Testing
 // MARK: - Broadcast: Today → Siblings (TCA TestStore)
 
 /// Verifies the fan-out / broadcast wiring in TodayFeature & HomeFeature:
-/// - `dashboardLoaded(.success)` → broadcasts HBI to CardStack + DailyChallenge
+/// - `dashboardLoaded(.success)` → broadcasts HBI to DailyChallenge
 /// - `menstrualStatusLoaded(.success)` → broadcasts CycleContext via delegate
 /// - `calendarEntriesLoaded(.success)` → broadcasts CycleContext via delegate
 /// - Home forwards `delegate.cycleDataUpdated` → CycleInsights + CycleJourney
@@ -26,7 +26,7 @@ struct TodayBroadcastTests {
         )
     }
 
-    @Test("dashboardLoaded.success broadcasts hbiUpdated to cardStack and dailyChallenge")
+    @Test("dashboardLoaded.success broadcasts hbiUpdated to dailyChallenge")
     func dashboardBroadcastsHBI() async {
         let store = TestStore(initialState: TodayFeature.State()) {
             TodayFeature()
@@ -42,10 +42,8 @@ struct TodayBroadcastTests {
             $0.hasAppeared = true
             $0.hasTriggeredScoreAnimation = true
         }
-        // After broadcast — both children's currentHBI should reflect new score.
-        await store.receive(\.cardStack.hbiUpdated) {
-            $0.cardStackState.currentHBI = HBIScore.mock
-        }
+        // After broadcast — DailyChallenge should reflect new score.
+        // YourDay is no longer HBI-reactive (phase-driven via LensPreviewClient).
         await store.receive(\.dailyChallenge.hbiUpdated) {
             $0.dailyChallengeState.currentHBI = HBIScore.mock
         }
@@ -69,8 +67,7 @@ struct TodayBroadcastTests {
             $0.hasAppeared = true
             $0.hasTriggeredScoreAnimation = true
         }
-        // CardStack & DailyChallenge should NOT have currentHBI updated
-        #expect(store.state.cardStackState.currentHBI == nil)
+        // DailyChallenge should NOT have currentHBI updated
         #expect(store.state.dailyChallengeState.currentHBI == nil)
         await store.skipReceivedActions(strict: false)
         await store.skipInFlightEffects(strict: false)
@@ -119,7 +116,7 @@ struct TodayBroadcastTests {
         await store.skipInFlightEffects(strict: false)
     }
 
-    @Test("phaseResolved fans out to cardStack.loadCards and dailyChallenge.selectChallenge")
+    @Test("phaseResolved fans out to yourDay.loadPreviews and dailyChallenge.selectChallenge")
     func phaseResolvedFanOut() async {
         let store = TestStore(initialState: TodayFeature.State()) {
             TodayFeature()
@@ -130,7 +127,7 @@ struct TodayBroadcastTests {
 
         await store.send(.phaseResolved(.follicular, 8))
         // Expect the two child actions emitted downstream.
-        await store.receive(\.cardStack.loadCards)
+        await store.receive(\.yourDay.loadPreviews)
         await store.receive(\.dailyChallenge.selectChallenge)
         await store.skipReceivedActions(strict: false)
         await store.skipInFlightEffects(strict: false)
@@ -211,18 +208,6 @@ struct HomeBroadcastTests {
 @Suite("Broadcast — Children update state on receipt")
 struct ChildBroadcastReceiptTests {
 
-    @Test("CardStackFeature.hbiUpdated updates currentHBI")
-    func cardStackStoresHBI() async {
-        let store = TestStore(initialState: CardStackFeature.State()) {
-            CardStackFeature()
-        } withDependencies: {
-            $0.continuousClock = ImmediateClock()
-        }
-        await store.send(.hbiUpdated(HBIScore.mock)) {
-            $0.currentHBI = HBIScore.mock
-        }
-    }
-
     @Test("DailyChallengeFeature.hbiUpdated updates currentHBI")
     func dailyChallengeStoresHBI() async {
         let store = TestStore(initialState: DailyChallengeFeature.State()) {
@@ -248,9 +233,15 @@ struct ChildBroadcastReceiptTests {
         } withDependencies: {
             $0.continuousClock = ImmediateClock()
         }
+        // cycleDataChanged now triggers stats/journey/insights reload effects —
+        // out of scope for this broadcast-wiring assertion.
+        store.exhaustivity = .off
+
         await store.send(.cycleDataChanged(context)) {
             $0.cycleContext = context
         }
+        await store.skipReceivedActions(strict: false)
+        await store.skipInFlightEffects(strict: false)
     }
 
     @Test("CycleJourneyFeature.cycleDataChanged updates cycleContext")
@@ -287,8 +278,12 @@ struct ChildBroadcastReceiptTests {
         } withDependencies: {
             $0.continuousClock = ImmediateClock()
         }
+        store.exhaustivity = .off
+
         await store.send(.cycleDataChanged(nil)) {
             $0.cycleContext = nil
         }
+        await store.skipReceivedActions(strict: false)
+        await store.skipInFlightEffects(strict: false)
     }
 }
