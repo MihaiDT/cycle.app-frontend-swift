@@ -146,16 +146,9 @@ public struct CycleTrendCard: View {
         let span = max(CGFloat(range.upper - range.lower), 1)
         let normalized = (CGFloat(point.days - range.lower) / span) * 110 + 24
         return VStack(spacing: 6) {
-            // Real cycles show the measured length; forecasts stay silent
-            // so a row of identical `avg`-height bars doesn't read as data.
-            if point.isPredicted {
-                Color.clear.frame(height: 14)
-            } else {
-                Text("\(point.days)")
-                    .font(.raleway("SemiBold", size: 11, relativeTo: .caption2))
-                    .foregroundStyle(dayLabelColor(for: point, isCurrent: isCurrent))
-            }
-
+            Text("\(point.days)")
+                .font(.raleway("SemiBold", size: 11, relativeTo: .caption2))
+                .foregroundStyle(dayLabelColor(for: point, isCurrent: isCurrent))
             barShape(for: point, isCurrent: isCurrent)
                 .frame(height: normalized)
         }
@@ -182,9 +175,9 @@ public struct CycleTrendCard: View {
     }
 
     private func dayLabelColor(for point: Point, isCurrent: Bool) -> Color {
-        // Forecasts skip the label entirely (see `bar(for:isCurrent:range:)`),
-        // so this only branches between current-real and other-real bars.
-        isCurrent ? DesignColors.accentWarmText : DesignColors.textSecondary
+        if point.isPredicted { return DesignColors.textSecondary.opacity(0.55) }
+        if isCurrent         { return DesignColors.accentWarmText }
+        return DesignColors.textSecondary
     }
 
     private func monthLabels(for points: [Point], lastRealIndex: Int) -> some View {
@@ -255,13 +248,18 @@ public struct CycleTrendCard: View {
 
     // MARK: - Visible data
     //
-    // Takes the real (logged) points, clamps them to the window, and —
-    // for the bounded windows (6M / 1Y) — tops up with ghost forecast
-    // bars projected forward from the last real start date at `avg` days
-    // apart. The "All" window never forecasts; it only shows history.
+    // Takes the real (logged) points and the predicted points the caller
+    // supplies (already derived from the calendar's MenstrualPredictor —
+    // so each ghost bar has the variance the predictor actually forecast,
+    // not a flat `avg` row). Bounded windows (6M / 1Y) top up with just
+    // enough forecast bars to hit the cap; "All" never forecasts.
 
     private var realPoints: [Point] {
         points.filter { !$0.isPredicted }.sorted { $0.startDate < $1.startDate }
+    }
+
+    private var predictedPoints: [Point] {
+        points.filter { $0.isPredicted }.sorted { $0.startDate < $1.startDate }
     }
 
     private var realCount: Int { realPoints.count }
@@ -272,19 +270,10 @@ public struct CycleTrendCard: View {
 
         let recent = Array(real.suffix(cap))
         let missing = cap - recent.count
-        guard missing > 0, let anchor = real.last else { return recent }
+        guard missing > 0 else { return recent }
 
-        let projected = (1...missing).compactMap { step -> Point? in
-            guard
-                let next = Calendar.current.date(
-                    byAdding: .day,
-                    value: step * averageDays,
-                    to: anchor.startDate
-                )
-            else { return nil }
-            return Point(id: next, startDate: next, days: averageDays, isPredicted: true)
-        }
-        return recent + projected
+        let forecasts = predictedPoints.prefix(missing)
+        return recent + Array(forecasts)
     }
 
     /// Clamp the chart's numeric range to a roomy band around the data.

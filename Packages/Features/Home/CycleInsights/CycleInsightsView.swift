@@ -238,6 +238,44 @@ public struct CycleInsightsView: View {
         store.stats?.cycleLength.history.count ?? 0
     }
 
+    /// Feed for the Cycle Trend card: real logged cycles plus the
+    /// forecasts the predictor already generated for the calendar. Each
+    /// predicted cycle length is derived from the gap to the previous
+    /// predicted (or last real) start date, so the ghost bars reflect
+    /// the same variance the calendar shows — not a flat `avg` row.
+    var trendPoints: [CycleTrendCard.Point] {
+        let real = pastCycleEntries.map {
+            CycleTrendCard.Point(
+                id: $0.id,
+                startDate: $0.startDate,
+                days: $0.length,
+                isPredicted: false
+            )
+        }
+        guard
+            let predictions = store.journey?.predictions,
+            !predictions.isEmpty,
+            let lastRealStart = real.last?.startDate
+        else { return real }
+
+        let cal = Calendar.current
+        var previous = lastRealStart
+        let fallback = max(averageLengthInt, 1)
+        let predicted: [CycleTrendCard.Point] = predictions
+            .sorted { $0.predictedDate < $1.predictedDate }
+            .map { prediction in
+                let days = cal.dateComponents([.day], from: previous, to: prediction.predictedDate).day ?? fallback
+                previous = prediction.predictedDate
+                return CycleTrendCard.Point(
+                    id: prediction.predictedDate,
+                    startDate: prediction.predictedDate,
+                    days: max(days, 1),
+                    isPredicted: true
+                )
+            }
+        return real + predicted
+    }
+
     @ViewBuilder
     func statsCardView(for card: CycleStatsCard) -> some View {
         // `.drawingGroup(opaque: false)` on every card **except** the
@@ -280,9 +318,7 @@ public struct CycleInsightsView: View {
         case .avgCycle:
             if store.stats != nil {
                 CycleTrendCard(
-                    points: pastCycleEntries.map {
-                        CycleTrendCard.Point(id: $0.id, startDate: $0.startDate, days: $0.length)
-                    },
+                    points: trendPoints,
                     averageDays: averageLengthInt
                 )
             } else {
