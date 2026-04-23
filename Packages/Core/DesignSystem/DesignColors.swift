@@ -178,3 +178,31 @@ extension Color {
         )
     }
 }
+
+// MARK: - Cycle Phase Palette
+
+extension CyclePhase {
+    public var orbitColor: Color {
+        switch self {
+        case .menstrual: Color(red: 0.79, green: 0.25, blue: 0.38)
+        case .follicular: Color(red: 0.36, green: 0.72, blue: 0.65)
+        case .ovulatory: Color(red: 0.91, green: 0.66, blue: 0.22)
+        case .luteal: Color(red: 0.55, green: 0.49, blue: 0.78)
+        case .late: Color(red: 0.65, green: 0.62, blue: 0.60)
+        }
+    }
+
+    public var glowColor: Color {
+        switch self {
+        case .menstrual: Color(red: 0.66, green: 0.19, blue: 0.31)
+        case .follicular: Color(red: 0.24, green: 0.60, blue: 0.53)
+        case .ovulatory: Color(red: 0.80, green: 0.55, blue: 0.13)
+        case .luteal: Color(red: 0.43, green: 0.38, blue: 0.69)
+        case .late: Color(red: 0.55, green: 0.52, blue: 0.50)
+        }
+    }
+
+    public var gradientColors: [Color] {
+        [orbitColor, glowColor]
+    }
+}
