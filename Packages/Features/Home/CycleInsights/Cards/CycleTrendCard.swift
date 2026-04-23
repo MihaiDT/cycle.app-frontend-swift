@@ -146,9 +146,15 @@ public struct CycleTrendCard: View {
         let span = max(CGFloat(range.upper - range.lower), 1)
         let normalized = (CGFloat(point.days - range.lower) / span) * 110 + 24
         return VStack(spacing: 6) {
-            Text("\(point.days)")
-                .font(.raleway("SemiBold", size: 11, relativeTo: .caption2))
-                .foregroundStyle(dayLabelColor(for: point, isCurrent: isCurrent))
+            // Real cycles show the measured length; forecasts stay silent
+            // so a row of identical `avg`-height bars doesn't read as data.
+            if point.isPredicted {
+                Color.clear.frame(height: 14)
+            } else {
+                Text("\(point.days)")
+                    .font(.raleway("SemiBold", size: 11, relativeTo: .caption2))
+                    .foregroundStyle(dayLabelColor(for: point, isCurrent: isCurrent))
+            }
 
             barShape(for: point, isCurrent: isCurrent)
                 .frame(height: normalized)
@@ -176,13 +182,9 @@ public struct CycleTrendCard: View {
     }
 
     private func dayLabelColor(for point: Point, isCurrent: Bool) -> Color {
-        if point.isPredicted {
-            return DesignColors.textSecondary.opacity(0.6)
-        }
-        if isCurrent {
-            return DesignColors.accentWarmText
-        }
-        return DesignColors.textSecondary
+        // Forecasts skip the label entirely (see `bar(for:isCurrent:range:)`),
+        // so this only branches between current-real and other-real bars.
+        isCurrent ? DesignColors.accentWarmText : DesignColors.textSecondary
     }
 
     private func monthLabels(for points: [Point], lastRealIndex: Int) -> some View {
