@@ -1680,14 +1680,13 @@ struct ToDoView: View {
     }
 
     private var composer: some View {
-        VStack(alignment: .leading, spacing: 18) {
-            VStack(alignment: .leading, spacing: 6) {
-                Text("Build your day.")
-                    .font(.system(size: 26, weight: .bold))
+        VStack(alignment: .leading, spacing: 16) {
+            HStack(alignment: .firstTextBaseline) {
+                Text("Build your day")
+                    .font(.system(size: 28, weight: .bold))
                     .foregroundStyle(ink)
-                Text("A personal habit, picked on purpose.")
-                    .font(.system(size: 13, weight: .regular))
-                    .foregroundStyle(ink.opacity(0.55))
+                Spacer()
+                seasonBadge
             }
             .padding(.horizontal, 24)
             .padding(.top, 14)
@@ -1696,43 +1695,14 @@ struct ToDoView: View {
                 .padding(.horizontal, 20)
 
             ScrollView(showsIndicators: false) {
-                VStack(alignment: .leading, spacing: 24) {
+                VStack(alignment: .leading, spacing: 28) {
                     nowSection
 
-                    VStack(alignment: .leading, spacing: 14) {
-                        librarySectionHeader
-                            .padding(.horizontal, 24)
+                    sectionDivider
 
-                        categoryChips
-
-                        let category = selectedComposerCategory
-                        Text(category.eyebrow)
-                            .font(.system(size: 11, weight: .semibold))
-                            .tracking(1.8)
-                            .foregroundStyle(ink.opacity(0.45))
-                            .padding(.horizontal, 24)
-                            .padding(.top, 4)
-
-                        if category.id == "mine" && category.suggestions.isEmpty {
-                            mineEmptyState
-                                .padding(.horizontal, 20)
-                        } else {
-                            LazyVGrid(
-                                columns: [
-                                    GridItem(.flexible(), spacing: 12),
-                                    GridItem(.flexible(), spacing: 12)
-                                ],
-                                spacing: 12
-                            ) {
-                                ForEach(category.suggestions) { suggestion in
-                                    libraryTile(suggestion, inMine: category.id == "mine")
-                                }
-                            }
-                            .padding(.horizontal, 20)
-                        }
-                    }
-                    .padding(.bottom, 40)
+                    librarySection
                 }
+                .padding(.bottom, 40)
             }
         }
         .padding(.top, 8)
@@ -1743,19 +1713,21 @@ struct ToDoView: View {
         }
     }
 
+    private var sectionDivider: some View {
+        Rectangle()
+            .fill(ink.opacity(0.07))
+            .frame(height: 1)
+            .padding(.horizontal, 24)
+    }
+
     // MARK: - "For right now" hero section
 
     private var nowSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack(alignment: .center, spacing: 8) {
-                Text(nowEyebrow)
-                    .font(.system(size: 11, weight: .semibold))
-                    .tracking(1.8)
-                    .foregroundStyle(ink.opacity(0.55))
-                Spacer()
-                seasonBadge
-            }
-            .padding(.horizontal, 24)
+        VStack(alignment: .leading, spacing: 14) {
+            Text("For right now")
+                .font(.system(size: 20, weight: .bold))
+                .foregroundStyle(ink)
+                .padding(.horizontal, 24)
 
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 12) {
@@ -1764,6 +1736,37 @@ struct ToDoView: View {
                     }
                 }
                 .padding(.horizontal, 20)
+            }
+        }
+    }
+
+    private var librarySection: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            Text("Library")
+                .font(.system(size: 20, weight: .bold))
+                .foregroundStyle(ink)
+                .padding(.horizontal, 24)
+
+            categoryChips
+
+            if selectedComposerCategory.id == "mine" && selectedComposerCategory.suggestions.isEmpty {
+                mineEmptyState
+                    .padding(.horizontal, 20)
+                    .padding(.top, 4)
+            } else {
+                LazyVGrid(
+                    columns: [
+                        GridItem(.flexible(), spacing: 12),
+                        GridItem(.flexible(), spacing: 12)
+                    ],
+                    spacing: 12
+                ) {
+                    ForEach(selectedComposerCategory.suggestions) { suggestion in
+                        libraryTile(suggestion, inMine: selectedComposerCategory.id == "mine")
+                    }
+                }
+                .padding(.horizontal, 20)
+                .padding(.top, 4)
             }
         }
     }
@@ -1792,50 +1795,38 @@ struct ToDoView: View {
         Button {
             addFromLibrary(s)
         } label: {
-            VStack(alignment: .leading, spacing: 10) {
-                Text(s.title)
-                    .font(.system(size: 19, weight: .bold))
-                    .foregroundStyle(ink)
-                    .lineLimit(2)
-                    .fixedSize(horizontal: false, vertical: true)
-                Text(s.subtitle)
-                    .font(.system(size: 13, weight: .regular))
-                    .foregroundStyle(ink.opacity(0.6))
-                    .lineLimit(2)
-                Spacer(minLength: 6)
-                if let why = s.why {
-                    Text(why)
-                        .font(.system(size: 12, weight: .medium))
-                        .italic()
-                        .foregroundStyle(ink.opacity(0.55))
-                        .lineLimit(3)
+            HStack(alignment: .top, spacing: 14) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(s.title)
+                        .font(.system(size: 18, weight: .bold))
+                        .foregroundStyle(ink)
+                        .lineLimit(2)
                         .fixedSize(horizontal: false, vertical: true)
+                    Text(s.subtitle)
+                        .font(.system(size: 13, weight: .regular))
+                        .foregroundStyle(ink.opacity(0.55))
+                        .lineLimit(2)
                 }
-                HStack {
-                    Text("Add to today")
-                        .font(.system(size: 11, weight: .semibold))
-                        .tracking(0.6)
-                        .foregroundStyle(ink.opacity(0.65))
-                    Spacer()
-                    ZStack {
-                        Circle().fill(ink).frame(width: 28, height: 28)
-                        Image(systemName: "plus")
-                            .font(.system(size: 12, weight: .bold))
-                            .foregroundStyle(cream)
-                    }
+                Spacer(minLength: 4)
+                ZStack {
+                    Circle().fill(ink).frame(width: 32, height: 32)
+                    Image(systemName: "plus")
+                        .font(.system(size: 13, weight: .bold))
+                        .foregroundStyle(cream)
                 }
-                .padding(.top, 6)
             }
             .padding(18)
-            .frame(width: 250, alignment: .topLeading)
-            .frame(minHeight: 220, alignment: .topLeading)
+            .frame(width: 240, alignment: .topLeading)
             .background(
-                RoundedRectangle(cornerRadius: 28, style: .continuous)
+                RoundedRectangle(cornerRadius: 24, style: .continuous)
                     .fill(
                         LinearGradient(
-                            colors: [cardCream, cream],
-                            startPoint: .top,
-                            endPoint: .bottom
+                            colors: [
+                                Color(red: 0.99, green: 0.93, blue: 0.85),
+                                Color(red: 0.97, green: 0.88, blue: 0.78)
+                            ],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
                         )
                     )
             )
@@ -1960,48 +1951,40 @@ struct ToDoView: View {
         Button {
             addFromLibrary(suggestion)
         } label: {
-            VStack(alignment: .leading, spacing: 6) {
+            VStack(alignment: .leading, spacing: 4) {
                 Text(suggestion.title)
-                    .font(.system(size: 16, weight: .bold))
+                    .font(.system(size: 15, weight: .bold))
                     .foregroundStyle(ink)
                     .lineLimit(1)
                 Text(suggestion.subtitle)
-                    .font(.system(size: 13, weight: .regular))
-                    .foregroundStyle(ink.opacity(0.55))
+                    .font(.system(size: 12, weight: .regular))
+                    .foregroundStyle(ink.opacity(0.5))
                     .lineLimit(2)
                     .fixedSize(horizontal: false, vertical: true)
-                if let why = suggestion.why {
-                    Text(why)
-                        .font(.system(size: 11.5, weight: .medium))
-                        .italic()
-                        .foregroundStyle(ink.opacity(0.5))
-                        .lineLimit(3)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .padding(.top, 2)
-                }
-                Spacer(minLength: 8)
+                Spacer(minLength: 6)
                 HStack(spacing: 0) {
                     if inMine {
                         Image(systemName: "heart.fill")
-                            .font(.system(size: 11, weight: .semibold))
+                            .font(.system(size: 10, weight: .semibold))
                             .foregroundStyle(rust.opacity(0.85))
                     }
                     Spacer()
-                    ZStack {
-                        Circle()
-                            .fill(ink)
-                            .frame(width: 28, height: 28)
-                        Image(systemName: "plus")
-                            .font(.system(size: 12, weight: .bold))
-                            .foregroundStyle(cream)
-                    }
+                    Image(systemName: "plus")
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundStyle(ink.opacity(0.6))
+                        .frame(width: 22, height: 22)
+                        .background(Circle().fill(ink.opacity(0.08)))
                 }
             }
-            .padding(18)
-            .frame(maxWidth: .infinity, minHeight: 160, alignment: .topLeading)
+            .padding(14)
+            .frame(maxWidth: .infinity, minHeight: 102, alignment: .topLeading)
             .background(
-                RoundedRectangle(cornerRadius: 28, style: .continuous)
-                    .fill(cardCream)
+                RoundedRectangle(cornerRadius: 20, style: .continuous)
+                    .fill(Color.white.opacity(0.55))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 20, style: .continuous)
+                    .stroke(ink.opacity(0.06), lineWidth: 1)
             )
         }
         .buttonStyle(.plain)
