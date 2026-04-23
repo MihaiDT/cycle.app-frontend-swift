@@ -108,8 +108,9 @@ struct ToDoView: View {
     @State private var openedItemID: UUID?
     @State private var scrollOffset: CGFloat = 0
     @State private var isCirclePresented = false
-    @State private var selectedCategoryID: String = "today"
+    @State private var selectedCategoryID: String = "mine"
     @AppStorage("todoview.personal_habits") private var personalHabitsJSON: String = "[]"
+    @AppStorage("todoview.debug_season") private var debugSeasonRaw: String = "spring"
 
     private let friends = ["Sofia", "Mara", "Elena", "Ioana", "Ana", "Maria"]
 
@@ -1484,7 +1485,97 @@ struct ToDoView: View {
     private struct LibrarySuggestion: Identifiable, Hashable, Codable {
         let title: String
         let subtitle: String
+        var why: String? = nil
         var id: String { title }
+    }
+
+    private enum CycleSeason: String, Codable {
+        case winter, spring, summer, fall
+    }
+
+    private var currentSeason: CycleSeason {
+        CycleSeason(rawValue: debugSeasonRaw) ?? .spring
+    }
+
+    private var seasonLabel: String {
+        switch currentSeason {
+        case .winter: return "Winter season"
+        case .spring: return "Spring season"
+        case .summer: return "Summer season"
+        case .fall:   return "Fall season"
+        }
+    }
+
+    private var nowEyebrow: String {
+        let hour = Calendar.current.component(.hour, from: Date())
+        switch hour {
+        case 5..<11:  return "FOR THIS SOFT MORNING"
+        case 11..<16: return "FOR THIS AFTERNOON"
+        case 16..<21: return "FOR THIS EVENING"
+        default:      return "PERMISSION FOR TONIGHT"
+        }
+    }
+
+    private var nowSuggestions: [LibrarySuggestion] {
+        let hour = Calendar.current.component(.hour, from: Date())
+        let isLuteal = currentSeason == .fall
+        let isMenstrual = currentSeason == .winter
+        switch hour {
+        case 5..<11:
+            if isMenstrual {
+                return [
+                    LibrarySuggestion(title: "Warm tea", subtitle: "Slow and quiet", why: "Cocoon mode. Heat eases cramps gently."),
+                    LibrarySuggestion(title: "Soft stretch", subtitle: "Five gentle poses", why: "Light movement helps without taxing you."),
+                    LibrarySuggestion(title: "Permission to rest", subtitle: "Listen to your body", why: "Rest is the habit today.")
+                ]
+            } else if isLuteal {
+                return [
+                    LibrarySuggestion(title: "Hydrate first", subtitle: "A full glass of water", why: "Bloating eases when you front-load fluids."),
+                    LibrarySuggestion(title: "Morning pages", subtitle: "Three honest pages", why: "Catch the noise before it gets louder."),
+                    LibrarySuggestion(title: "Long walk", subtitle: "No phone, slow pace", why: "Steady movement steadies the mood.")
+                ]
+            } else {
+                return [
+                    LibrarySuggestion(title: "Hydrate", subtitle: "A full glass of water", why: "Anchor it to making coffee."),
+                    LibrarySuggestion(title: "Morning yoga", subtitle: "Ten gentle poses", why: "Energy is climbing — moving compounds it."),
+                    LibrarySuggestion(title: "Make the bed", subtitle: "A quiet win, early", why: "One done thing rewires the day's tone.")
+                ]
+            }
+        case 11..<16:
+            if isLuteal {
+                return [
+                    LibrarySuggestion(title: "Proper meal", subtitle: "Sit down, no screens", why: "Steady blood sugar = steady mood."),
+                    LibrarySuggestion(title: "Easy walk", subtitle: "Just twenty minutes", why: "Light cardio without pushing it."),
+                    LibrarySuggestion(title: "Message someone", subtitle: "A thought-of-you text", why: "Cheapest mood lift there is.")
+                ]
+            } else {
+                return [
+                    LibrarySuggestion(title: "Long walk", subtitle: "No phone, slow pace", why: "Sun + steps = best afternoon reset."),
+                    LibrarySuggestion(title: "Proper meal", subtitle: "Sit down, no screens", why: "Blood sugar drives the rest of your day."),
+                    LibrarySuggestion(title: "Deep work, 25 min", subtitle: "One thing, fully", why: "Focus capacity peaks now — use it.")
+                ]
+            }
+        case 16..<21:
+            if isLuteal || isMenstrual {
+                return [
+                    LibrarySuggestion(title: "Cocoon mode", subtitle: "Cozy clothes, dim lights", why: "Lower stimulation now so sleep arrives easier."),
+                    LibrarySuggestion(title: "Warm bath", subtitle: "No rush, no phone", why: "Heat + quiet recalibrates the nervous system."),
+                    LibrarySuggestion(title: "Read", subtitle: "A few pages, analog", why: "Off-screen wind-down outperforms scrolling.")
+                ]
+            } else {
+                return [
+                    LibrarySuggestion(title: "Call a friend", subtitle: "One real conversation", why: "Social warmth drops cortisol."),
+                    LibrarySuggestion(title: "Tidy a corner", subtitle: "Just one small space", why: "Tomorrow-you will thank tonight-you."),
+                    LibrarySuggestion(title: "Stretch", subtitle: "Head to toe, slow", why: "Releases the day held in your shoulders.")
+                ]
+            }
+        default:
+            return [
+                LibrarySuggestion(title: "Permission to rest", subtitle: "Lights out early", why: "Sleep is the most under-rated habit there is."),
+                LibrarySuggestion(title: "Skincare ritual", subtitle: "The full evening one", why: "Anchors a wind-down routine."),
+                LibrarySuggestion(title: "Journal one line", subtitle: "Just how today felt", why: "Tiny habit — small enough to never skip.")
+            ]
+        }
     }
 
     private var personalHabits: [LibrarySuggestion] {
@@ -1512,59 +1603,8 @@ struct ToDoView: View {
         }
     }
 
-    // Time-aware suggestions for the "Today" category
-    private var todaySuggestions: [LibrarySuggestion] {
-        let hour = Calendar.current.component(.hour, from: Date())
-        switch hour {
-        case 5..<11: // morning
-            return [
-                LibrarySuggestion(title: "Morning pages", subtitle: "Three pages, no editing"),
-                LibrarySuggestion(title: "Hydrate", subtitle: "A full glass of water"),
-                LibrarySuggestion(title: "Morning yoga", subtitle: "Ten gentle poses"),
-                LibrarySuggestion(title: "Make the bed", subtitle: "A quiet win, early")
-            ]
-        case 11..<16: // midday
-            return [
-                LibrarySuggestion(title: "Long walk", subtitle: "No phone, slow pace"),
-                LibrarySuggestion(title: "Proper meal", subtitle: "Sit down, no screens"),
-                LibrarySuggestion(title: "Stretch", subtitle: "Loosen up, head to toe"),
-                LibrarySuggestion(title: "Message someone", subtitle: "A thought-of-you text")
-            ]
-        case 16..<21: // evening
-            return [
-                LibrarySuggestion(title: "Call a friend", subtitle: "One real conversation"),
-                LibrarySuggestion(title: "Read", subtitle: "A few pages, analog"),
-                LibrarySuggestion(title: "Tidy a corner", subtitle: "Just one small space"),
-                LibrarySuggestion(title: "Deep breaths", subtitle: "Five slow rounds")
-            ]
-        default: // night
-            return [
-                LibrarySuggestion(title: "Journal", subtitle: "One honest paragraph"),
-                LibrarySuggestion(title: "Skincare", subtitle: "The full evening ritual"),
-                LibrarySuggestion(title: "Warm bath", subtitle: "No rush, no phone"),
-                LibrarySuggestion(title: "Sleep early", subtitle: "Lights out before 11")
-            ]
-        }
-    }
-
-    private var todayEyebrow: String {
-        let hour = Calendar.current.component(.hour, from: Date())
-        switch hour {
-        case 5..<11:  return "FOR THIS MORNING"
-        case 11..<16: return "FOR THIS AFTERNOON"
-        case 16..<21: return "FOR THIS EVENING"
-        default:      return "FOR TONIGHT"
-        }
-    }
-
     private var habitCategories: [HabitCategory] {
         [
-            HabitCategory(
-                id: "today",
-                title: "Today",
-                eyebrow: todayEyebrow,
-                suggestions: todaySuggestions
-            ),
             HabitCategory(
                 id: "mine",
                 title: "Mine",
@@ -1574,66 +1614,66 @@ struct ToDoView: View {
             HabitCategory(
                 id: "move",
                 title: "Move",
-                eyebrow: "FOR THE BODY",
+                eyebrow: "GENTLE OR STRONG, YOUR CALL",
                 suggestions: [
-                    LibrarySuggestion(title: "Long walk", subtitle: "No phone, slow pace"),
-                    LibrarySuggestion(title: "Stretch", subtitle: "Loosen up, head to toe"),
-                    LibrarySuggestion(title: "Morning yoga", subtitle: "Ten gentle poses"),
-                    LibrarySuggestion(title: "Workout", subtitle: "Move with intention"),
-                    LibrarySuggestion(title: "Dance it out", subtitle: "One full song, kitchen floor"),
-                    LibrarySuggestion(title: "Deep breaths", subtitle: "Five slow rounds")
+                    LibrarySuggestion(title: "Long walk", subtitle: "No phone, slow pace", why: "Anchor it to lunch — habits stick to existing routines."),
+                    LibrarySuggestion(title: "Stretch", subtitle: "Loosen up, head to toe", why: "Two minutes counts. Tiny is the point."),
+                    LibrarySuggestion(title: "Morning yoga", subtitle: "Ten gentle poses", why: "Sets the nervous system for the day."),
+                    LibrarySuggestion(title: "Workout", subtitle: "Move with intention", why: "Listen to today's energy, not the calendar."),
+                    LibrarySuggestion(title: "Dance it out", subtitle: "One full song, kitchen floor", why: "Mood follows movement — even three minutes."),
+                    LibrarySuggestion(title: "Deep breaths", subtitle: "Five slow rounds", why: "Down-regulates stress in under a minute.")
                 ]
             ),
             HabitCategory(
                 id: "mind",
                 title: "Mind",
-                eyebrow: "FOR THE HEAD",
+                eyebrow: "QUIET INPUT, CLEARER HEAD",
                 suggestions: [
-                    LibrarySuggestion(title: "Morning pages", subtitle: "Three pages, no editing"),
-                    LibrarySuggestion(title: "Journal", subtitle: "One honest paragraph"),
-                    LibrarySuggestion(title: "Meditate", subtitle: "Ten quiet minutes"),
-                    LibrarySuggestion(title: "Read", subtitle: "A few pages, analog"),
-                    LibrarySuggestion(title: "Gratitude note", subtitle: "Three small things"),
-                    LibrarySuggestion(title: "Screen-free hour", subtitle: "Put the phone away")
+                    LibrarySuggestion(title: "Morning pages", subtitle: "Three pages, no editing", why: "Catches the noise before it gets louder."),
+                    LibrarySuggestion(title: "Journal", subtitle: "One honest paragraph", why: "You become a person who reflects."),
+                    LibrarySuggestion(title: "Meditate", subtitle: "Ten quiet minutes", why: "Even five minutes shifts attention quality."),
+                    LibrarySuggestion(title: "Read", subtitle: "A few pages, analog", why: "Off-screen wind-down outperforms scrolling."),
+                    LibrarySuggestion(title: "Gratitude note", subtitle: "Three small things", why: "Cheap mood lift, free."),
+                    LibrarySuggestion(title: "Screen-free hour", subtitle: "Put the phone away", why: "Boundary > willpower.")
                 ]
             ),
             HabitCategory(
                 id: "care",
                 title: "Care",
-                eyebrow: "FOR YOURSELF",
+                eyebrow: "PERMISSION, NOT PERFORMANCE",
                 suggestions: [
-                    LibrarySuggestion(title: "Hydrate", subtitle: "A full glass of water"),
-                    LibrarySuggestion(title: "Skincare", subtitle: "The full evening ritual"),
-                    LibrarySuggestion(title: "Sleep early", subtitle: "Lights out before 11"),
-                    LibrarySuggestion(title: "Cold shower", subtitle: "Thirty seconds, cold"),
-                    LibrarySuggestion(title: "Warm bath", subtitle: "No rush, no phone"),
-                    LibrarySuggestion(title: "Proper meal", subtitle: "Sit down, no screens")
+                    LibrarySuggestion(title: "Hydrate", subtitle: "A full glass of water", why: "Front-load fluids, especially in luteal week."),
+                    LibrarySuggestion(title: "Skincare", subtitle: "The full evening ritual", why: "Anchor a wind-down to a thing you already do."),
+                    LibrarySuggestion(title: "Sleep early", subtitle: "Lights out before 11", why: "The most under-rated habit there is."),
+                    LibrarySuggestion(title: "Cold shower", subtitle: "Thirty seconds, cold", why: "Resets focus when you can't get going."),
+                    LibrarySuggestion(title: "Warm bath", subtitle: "No rush, no phone", why: "Heat + quiet recalibrates the nervous system."),
+                    LibrarySuggestion(title: "Proper meal", subtitle: "Sit down, no screens", why: "Steady blood sugar, steady mood.")
                 ]
             ),
             HabitCategory(
                 id: "connect",
                 title: "Connect",
-                eyebrow: "FOR YOUR PEOPLE",
+                eyebrow: "WARMTH IN SMALL DOSES",
                 suggestions: [
-                    LibrarySuggestion(title: "Call a friend", subtitle: "One real conversation"),
-                    LibrarySuggestion(title: "Family dinner", subtitle: "Together, at the table"),
-                    LibrarySuggestion(title: "Message someone", subtitle: "A thought-of-you text"),
-                    LibrarySuggestion(title: "Coffee date", subtitle: "In person, no rush"),
-                    LibrarySuggestion(title: "Check on mom", subtitle: "Just a quick hi"),
-                    LibrarySuggestion(title: "Compliment someone", subtitle: "Out loud, no hedging")
+                    LibrarySuggestion(title: "Call a friend", subtitle: "One real conversation", why: "Social warmth drops cortisol."),
+                    LibrarySuggestion(title: "Family dinner", subtitle: "Together, at the table", why: "Shared meals are a quiet superpower."),
+                    LibrarySuggestion(title: "Message someone", subtitle: "A thought-of-you text", why: "Cheapest connection move there is."),
+                    LibrarySuggestion(title: "Coffee date", subtitle: "In person, no rush", why: "Slow time with one beats five group chats."),
+                    LibrarySuggestion(title: "Check on mom", subtitle: "Just a quick hi", why: "Two minutes, big return."),
+                    LibrarySuggestion(title: "Compliment someone", subtitle: "Out loud, no hedging", why: "Both of you walk away lighter.")
                 ]
             ),
             HabitCategory(
                 id: "home",
                 title: "Home",
-                eyebrow: "FOR THE DAY",
+                eyebrow: "TINY WINS THAT COMPOUND",
                 suggestions: [
-                    LibrarySuggestion(title: "Tidy a corner", subtitle: "Just one small space"),
-                    LibrarySuggestion(title: "Plan tomorrow", subtitle: "Three things, no more"),
-                    LibrarySuggestion(title: "Make the bed", subtitle: "A quiet win, early"),
-                    LibrarySuggestion(title: "Open the windows", subtitle: "Fresh air, five minutes"),
-                    LibrarySuggestion(title: "Empty inbox", subtitle: "Zero unread, zero stress"),
-                    LibrarySuggestion(title: "Fresh flowers", subtitle: "One small bunch")
+                    LibrarySuggestion(title: "Tidy a corner", subtitle: "Just one small space", why: "Small visible win shifts the day's tone."),
+                    LibrarySuggestion(title: "Plan tomorrow", subtitle: "Three things, no more", why: "Closes today, opens tomorrow."),
+                    LibrarySuggestion(title: "Make the bed", subtitle: "A quiet win, early", why: "First done thing of the day."),
+                    LibrarySuggestion(title: "Open the windows", subtitle: "Fresh air, five minutes", why: "Resets the room and your head."),
+                    LibrarySuggestion(title: "Empty inbox", subtitle: "Zero unread, zero stress", why: "Less open loops = less background noise."),
+                    LibrarySuggestion(title: "Fresh flowers", subtitle: "One small bunch", why: "Beauty in the room costs almost nothing.")
                 ]
             )
         ]
