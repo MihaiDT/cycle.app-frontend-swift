@@ -27,6 +27,7 @@
 		1360EDCBDB2D5A84A769B7BA /* HBILocalClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0ED29B7251E0101B748B9266 /* HBILocalClient.swift */; };
 		1444D6F9BB78A27EBB85C57F /* TodayFeaturePresentations.swift in Sources */ = {isa = PBXBuildFile; fileRef = F73CE1B25B180D5655CAF638 /* TodayFeaturePresentations.swift */; };
 		14B669ED4C6D19486ED9F02B /* LensPreviewClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C922515946896A823CCBD6D /* LensPreviewClient.swift */; };
+		164DA7B9F921DFC0F847BEA9 /* EditPeriodFeatureTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E39E23B0C038638CCFD9F17 /* EditPeriodFeatureTests.swift */; };
 		16CE8AE3FAED3EC29E5AE77A /* CycleHistory.swift in Sources */ = {isa = PBXBuildFile; fileRef = A149FDA7148BEAA1EB014121 /* CycleHistory.swift */; };
 		1851604735C0ED67DC1B51F8 /* CycleMath.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5E9E5A48055F02165B8992B /* CycleMath.swift */; };
 		189F03DD82CC3530BEBE441E /* HBICalculatorExtendedTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0BEC06F59B8B9180DB00A6C4 /* HBICalculatorExtendedTests.swift */; };
@@ -436,6 +437,7 @@
 		5D402E105E4D91C781AB6D26 /* UserDefaultsClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserDefaultsClient.swift; sourceTree = "<group>"; };
 		5D7B14D8AD8C6E5DFBD03E5B /* GlowProfileRecord.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlowProfileRecord.swift; sourceTree = "<group>"; };
 		5E090C54F4B6A5C23CD0D381 /* HomeWidgetCarousel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeWidgetCarousel.swift; sourceTree = "<group>"; };
+		5E39E23B0C038638CCFD9F17 /* EditPeriodFeatureTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditPeriodFeatureTests.swift; sourceTree = "<group>"; };
 		5EC4B5B5DEB0E25A730E4507 /* HealthKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = HealthKit.framework; path = System/Library/Frameworks/HealthKit.framework; sourceTree = SDKROOT; };
 		5ED03F559F4A2F374AF86A5C /* glowing_orb.riv */ = {isa = PBXFileReference; path = glowing_orb.riv; sourceTree = "<group>"; };
 		5F90D69A90239DFEC866C703 /* CycleApp.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = CycleApp.entitlements; sourceTree = "<group>"; };
@@ -858,6 +860,7 @@
 				BFDAB728D03A5022F4089209 /* CycleContextTests.swift */,
 				6F1A4A6CC1D5B26BCF74322D /* CycleEngineTests.swift */,
 				933570294E28A11D9CAC0726 /* CycleSnapshotTests.swift */,
+				5E39E23B0C038638CCFD9F17 /* EditPeriodFeatureTests.swift */,
 				0BEC06F59B8B9180DB00A6C4 /* HBICalculatorExtendedTests.swift */,
 				BC7ED835B44B101AF113FCAE /* HBICalculatorPhaseWeightsTests.swift */,
 				8E8FBBDC5F3C40247FE20177 /* Info.plist */,
@@ -1841,6 +1844,7 @@
 				D02AC33541A9502D8A84467D /* CycleContextTests.swift in Sources */,
 				A71309027B1FFC7844AB60CD /* CycleEngineTests.swift in Sources */,
 				31874D7D101B74F2780D9B61 /* CycleSnapshotTests.swift in Sources */,
+				164DA7B9F921DFC0F847BEA9 /* EditPeriodFeatureTests.swift in Sources */,
 				189F03DD82CC3530BEBE441E /* HBICalculatorExtendedTests.swift in Sources */,
 				E75366318E23742497499634 /* HBICalculatorPhaseWeightsTests.swift in Sources */,
 				01D6CD7A25E3F29B6406832C /* MenstrualLocalClientTests.swift in Sources */,
