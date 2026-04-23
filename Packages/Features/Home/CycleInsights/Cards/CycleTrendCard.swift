@@ -40,6 +40,12 @@ public struct CycleTrendCard: View {
     public let averageDays: Int
 
     @State private var window: Window = .sixMonths
+    /// Drives the staggered rise animation — bars render at height 0
+    /// until this flips, then spring up with a per-index delay. Reset
+    /// to false on window change so switching 6M/1Y/All replays the
+    /// same entrance instead of a silent re-layout.
+    @State private var barsRevealed = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     public init(points: [Point], averageDays: Int) {
         self.points = points
@@ -74,11 +80,26 @@ public struct CycleTrendCard: View {
         // `rasterize: false` — the native segmented Picker is UIKit-backed
         // and can't be flattened into a Metal bitmap by `.drawingGroup`.
         .widgetCardStyle(cornerRadius: 28, rasterize: false)
-        // Spring on the whole card so the window change ripples through
-        // bars (frame interpolation), labels, and the compact/scroll
-        // swap with the same motion.
-        .animation(.spring(response: 0.42, dampingFraction: 0.86), value: window)
+        .onAppear { barsRevealed = true }
+        .onChange(of: window) { _, _ in replayReveal() }
         .accessibilityElement(children: .contain)
+    }
+
+    /// Snap bars to 0 with animations disabled (otherwise the spring on
+    /// the card would interpolate the collapse back into the rise and
+    /// the bars would appear to stand still while only the numbers
+    /// fade). Next runloop, flip `barsRevealed` back on — the per-bar
+    /// `.animation(value: barsRevealed)` catches that change and the
+    /// staggered spring runs clean.
+    private func replayReveal() {
+        guard !reduceMotion else { return }
+        var tx = Transaction()
+        tx.disablesAnimations = true
+        withTransaction(tx) { barsRevealed = false }
+        Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(60))
+            barsRevealed = true
+        }
     }
 
     // MARK: - Header
@@ -218,7 +239,8 @@ public struct CycleTrendCard: View {
                     for: point,
                     isCurrent: index == lastIndex,
                     range: range,
-                    width: barWidth
+                    width: barWidth,
+                    index: index
                 )
             }
         }
@@ -230,21 +252,33 @@ public struct CycleTrendCard: View {
         for point: Point,
         isCurrent: Bool,
         range: (lower: Int, upper: Int),
-        width: CGFloat
+        width: CGFloat,
+        index: Int
     ) -> some View {
         let span = max(CGFloat(range.upper - range.lower), 1)
         let normalized = (CGFloat(point.days - range.lower) / span) * 110 + 24
+        let revealed = barsRevealed
+        let targetHeight = revealed ? normalized : 0
+        // Delay caps at a reasonable ~0.35s so 12+ bars don't stretch
+        // the entrance into a slow crawl.
+        let delay = min(Double(index) * 0.045, 0.35)
         return VStack(spacing: 6) {
             Text("\(point.days)")
                 .font(.raleway("SemiBold", size: 11, relativeTo: .caption2))
                 .foregroundStyle(isCurrent ? DesignColors.accentWarmText : DesignColors.textSecondary)
                 .lineLimit(1)
+                .opacity(revealed ? 1 : 0)
+                .animation(.easeOut(duration: 0.2).delay(delay + 0.08), value: revealed)
 
             RoundedRectangle(cornerRadius: 10, style: .continuous)
                 .fill(isCurrent ? DesignColors.accentWarm : DesignColors.accentWarm.opacity(0.14))
-                .frame(height: normalized)
+                .frame(height: targetHeight)
+                .animation(
+                    .spring(response: 0.55, dampingFraction: 0.78).delay(delay),
+                    value: revealed
+                )
         }
-        .frame(width: width)
+        .frame(width: width, height: 150, alignment: .bottom)
     }
 
     private func monthLabels(for points: [Point], barWidth: CGFloat, spacing: CGFloat) -> some View {
