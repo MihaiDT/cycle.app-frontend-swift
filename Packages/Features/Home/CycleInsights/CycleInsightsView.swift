@@ -238,48 +238,15 @@ public struct CycleInsightsView: View {
         store.stats?.cycleLength.history.count ?? 0
     }
 
-    /// Feed for the Cycle Trend card: real logged cycles plus the
-    /// forecasts the predictor already generated for the calendar. Each
-    /// predicted cycle length is derived from the gap to the previous
-    /// start date, so the ghost bars reflect the same variance the
-    /// calendar shows — not a flat `avg` row.
-    ///
-    /// Anchors forecasts from `currentCycleStartDate` when available
-    /// (the in-progress cycle's start), falling back to the last closed
-    /// cycle. Anchoring from the last *closed* cycle would double-count
-    /// the current cycle in the gap — prediction[0] would read as a
-    /// 60-day "phantom" spanning both.
+    /// Feed for the Cycle Trend card — only real logged cycles. The
+    /// predictor currently writes every future prediction at the same
+    /// `avgCycleLength`, so rendering forecasts as bars produced a
+    /// deceptive flat row. Once the predictor emits per-cycle length
+    /// variance, revisit and re-enable the forecast branch.
     var trendPoints: [CycleTrendCard.Point] {
-        let real = pastCycleEntries.map {
-            CycleTrendCard.Point(
-                id: $0.id,
-                startDate: $0.startDate,
-                days: $0.length,
-                isPredicted: false
-            )
+        pastCycleEntries.map {
+            CycleTrendCard.Point(id: $0.id, startDate: $0.startDate, days: $0.length)
         }
-        guard
-            let predictions = store.journey?.predictions,
-            !predictions.isEmpty,
-            let anchor = store.journey?.currentCycleStartDate ?? real.last?.startDate
-        else { return real }
-
-        let cal = Calendar.current
-        var previous = anchor
-        let fallback = max(averageLengthInt, 1)
-        let predicted: [CycleTrendCard.Point] = predictions
-            .sorted { $0.predictedDate < $1.predictedDate }
-            .map { prediction in
-                let days = cal.dateComponents([.day], from: previous, to: prediction.predictedDate).day ?? fallback
-                previous = prediction.predictedDate
-                return CycleTrendCard.Point(
-                    id: prediction.predictedDate,
-                    startDate: prediction.predictedDate,
-                    days: max(days, 1),
-                    isPredicted: true
-                )
-            }
-        return real + predicted
     }
 
     @ViewBuilder
