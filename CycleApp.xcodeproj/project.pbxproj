@@ -60,7 +60,6 @@
 		375F407A03F063871516C06A /* CycleHeroView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 617634D01BB34150AA15DDA2 /* CycleHeroView.swift */; };
 		381897AAF887E144FA4B383A /* CycleHistoryTimeline.swift in Sources */ = {isa = PBXBuildFile; fileRef = A99D484DF44E41F7E0FA71FC /* CycleHistoryTimeline.swift */; };
 		3856D66BE07503CC89BD50AC /* GlowLocalClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9B8CB10C398A2C522E97C6D6 /* GlowLocalClient.swift */; };
-		391E4E13E6F1D4B01DAE2136 /* CycleSelectionSheets.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B2D350A999332CA154B740B /* CycleSelectionSheets.swift */; };
 		395E6EB894714D5526249732 /* DesignColors.swift in Sources */ = {isa = PBXBuildFile; fileRef = 925024F96EEC4267179A9CA3 /* DesignColors.swift */; };
 		3D4939F89A63F1F49930037A /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = CA84224FE7398C7FF08D5BB5 /* GoogleService-Info.plist */; };
 		3DD5F64D427F4ED1639CE319 /* Layout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BCD05B0769F861D03E644E9 /* Layout.swift */; };
@@ -93,7 +92,6 @@
 		54ED2CA1FEB9CA766734709B /* ConsentAnimation.json in Resources */ = {isa = PBXBuildFile; fileRef = C583F02AC2453EA8B7C971D2 /* ConsentAnimation.json */; };
 		550083D322D3B2EF0710F00E /* CycleStatInfoDetail.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E8F7A9182B34DF220D8CA33 /* CycleStatInfoDetail.swift */; };
 		55753ABF335FE3B4EA649FBE /* BirthDataView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E76EAD676123790B9B19C92 /* BirthDataView.swift */; };
-		56F9E16AAE2C1FAA0478B3D0 /* ValidationResultView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6CEFE620757D76C19E4505BE /* ValidationResultView.swift */; };
 		57530AFEBBFC573D814C5814 /* NyraOrb+Lifecycle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 86F8743C2BFA7F8AF8FDB810 /* NyraOrb+Lifecycle.swift */; };
 		5965EE859D54A4DBBA4D7842 /* Raleway-Italic.ttf in Resources */ = {isa = PBXBuildFile; fileRef = AAE2E54DEE19A7F71CEE3E72 /* Raleway-Italic.ttf */; };
 		599B61EB32D7E062D0616867 /* ValidationFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 774B022BDFFD276010750F70 /* ValidationFeature.swift */; };
@@ -110,6 +108,7 @@
 		60C0A86EADAAFDA4D6453218 /* DailyCheckInRitualView+Aria.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7F659D52D829FD3E897024C /* DailyCheckInRitualView+Aria.swift */; };
 		62809091030AFF3269BA8864 /* CalendarSymptomSheetSubViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79A4ADECEFAD4BCC19AF2BC3 /* CalendarSymptomSheetSubViews.swift */; };
 		633F2651341C30F4D76A2F12 /* NyraOrbShapes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C72E2C15313460FCF156734 /* NyraOrbShapes.swift */; };
+		63831B62BDE7E8E57764389A /* SymptomChip.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83F85B196221F186792BC94A /* SymptomChip.swift */; };
 		63EBAF4D98BC307DD2279DB8 /* CycleDetails.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10C88D166E6DDF3FDBBA1551 /* CycleDetails.swift */; };
 		642D8331CA283010ED3B6FB3 /* DailyCheckInRitualView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDB9CFE211A695FD67C6F0A7 /* DailyCheckInRitualView.swift */; };
 		65962311B2B6C4CB93678BF3 /* APIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 71EF173A08EFFAA9EAF10A56 /* APIClient.swift */; };
@@ -197,8 +196,6 @@
 		BCB3D88B987307E170067F55 /* MenstrualLocalClient+Queries.swift in Sources */ = {isa = PBXBuildFile; fileRef = C49E76E7F8B42962EEDFD759 /* MenstrualLocalClient+Queries.swift */; };
 		BD09A556AB0323CD57303B92 /* CycleDataComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65A2D2458E5FDEE5D536B02C /* CycleDataComponents.swift */; };
 		BD55D53EC9B634FB69DB8CDC /* Raleway-MediumItalic.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 5A599EEAB5931BAEBC4207E9 /* Raleway-MediumItalic.ttf */; };
-		BFA0710DA2EA2D8DAD3B79C1 /* UserDefaultsClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D402E105E4D91C781AB6D26 /* UserDefaultsClient.swift */; };
-		C108129BF646802352F8B8E6 /* Logger.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01D3B37256BD926AA7EFCBC2 /* Logger.swift */; };
 		C13DA7D142D2EFBE9A62FD2C /* MiniCycleCalendar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66713FB6F00626CCF87DCEEF /* MiniCycleCalendar.swift */; };
 		C14D38E7246D896515FCACF5 /* Raleway-BlackItalic.ttf in Resources */ = {isa = PBXBuildFile; fileRef = FCE9EEEE1356254E0537A9D8 /* Raleway-BlackItalic.ttf */; };
 		C20ED8868FAE5A75C67314C9 /* CycleCalendarInlineMonth.swift in Sources */ = {isa = PBXBuildFile; fileRef = 30C15A2C47DE667943229C7A /* CycleCalendarInlineMonth.swift */; };
@@ -228,11 +225,9 @@
 		D3CDA4F00FD44AEF8027FA0E /* CycleHistoryEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = BFB2A5A00AF74A19EBE7F5B8 /* CycleHistoryEntry.swift */; };
 		D42760D71EDF9710416528ED /* HBIScore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2940CF932F7370E57C35B79 /* HBIScore.swift */; };
 		D429B0E602D541E0E38E2104 /* MenstrualStatus.swift in Sources */ = {isa = PBXBuildFile; fileRef = A92A0FCA4E1CB208FC65AEBE /* MenstrualStatus.swift */; };
-		D4BC8FAA66D4059F1A677416 /* PhotoReviewFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 59DD41031C0CFFAAC82574D8 /* PhotoReviewFeature.swift */; };
 		D4C2C0754D1618C181854BA7 /* OnboardingBackground.swift in Sources */ = {isa = PBXBuildFile; fileRef = DAB22D8F7CDDFD4BDDBB5DD5 /* OnboardingBackground.swift */; };
 		D52BA74BB964E25CBE9AE467 /* CycleDataView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5D38B91778F5025F8CC4271 /* CycleDataView.swift */; };
 		D5DB5E3F12ED82E1B33B679F /* CycleDataGlassButtons.swift in Sources */ = {isa = PBXBuildFile; fileRef = 794C9F1099F16E6B3905BC71 /* CycleDataGlassButtons.swift */; };
-		D5E0E37EE1A4B6C92531C2DF /* NameGreetingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0DAAE954441B84A9A2B48522 /* NameGreetingView.swift */; };
 		D655B06B75EB302BFD5EA737 /* Raleway-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = A1FF005FF3F61A0F82E81BE7 /* Raleway-Regular.ttf */; };
 		D6F2083115FBC4271042BF75 /* TodayFeatureView+Wellness.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84FD9B91B0AFA20A9E912D3E /* TodayFeatureView+Wellness.swift */; };
 		D8C64C1BF56DDBC0AD5151F2 /* LensPreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A05D2229D239CA670E1A396 /* LensPreview.swift */; };
@@ -267,12 +262,10 @@
 		F63A392C562868DA62BA6FFF /* CalendarYearView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A770D9AD03C3435FABF87E1 /* CalendarYearView.swift */; };
 		F6B217151E95B5F2D4E44610 /* CircularRitualDial.swift in Sources */ = {isa = PBXBuildFile; fileRef = 784AD97478EE3903B4269D68 /* CircularRitualDial.swift */; };
 		F7778A97B96AC3334633A3FA /* Font+Raleway.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8485E88DDE7D7113519EC964 /* Font+Raleway.swift */; };
-		F8C0513AE50CC76EFD916AB7 /* NameInputView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5043BBD9F38774EF39421254 /* NameInputView.swift */; };
 		FB2FDFDA7E7F1A19433F52E3 /* PlacesAutocompleteTextField.swift in Sources */ = {isa = PBXBuildFile; fileRef = C641F81C00379601AA6D1CEE /* PlacesAutocompleteTextField.swift */; };
 		FD106B325B0DCD2350FCE058 /* Raleway-Black.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 4DAC1FA0A5CD5600CE6E4376 /* Raleway-Black.ttf */; };
 		FDEEE3E8691EC08B2C3D915C /* PhotoCaptureRepresentables.swift in Sources */ = {isa = PBXBuildFile; fileRef = B16230AC0E1B8A3D7500E249 /* PhotoCaptureRepresentables.swift */; };
 		FDFCBF69A1BA3268D0BD0DC2 /* GlowProfileSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7D6ACC188EBBFD2476180C4 /* GlowProfileSnapshot.swift */; };
-		FE0B55CA6AD817CF227B166A /* Async+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AD75AABB9CE6FF41B8116AE /* Async+Extensions.swift */; };
 		FF0D9CB3366ED4BC44BB5400 /* CycleLiveEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B53A686C39C24DCFF6E5D7E /* CycleLiveEngine.swift */; };
 /* End PBXBuildFile section */
 
@@ -309,7 +302,6 @@
 
 /* Begin PBXFileReference section */
 		0026A9EBC24241510D654408 /* JourneyComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JourneyComponents.swift; sourceTree = "<group>"; };
-		01D3B37256BD926AA7EFCBC2 /* Logger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Logger.swift; sourceTree = "<group>"; };
 		02D5F98FE2B721FFDF09D8BE /* CalendarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarView.swift; sourceTree = "<group>"; };
 		0329312D9F047305DDD7F6F1 /* ProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileView.swift; sourceTree = "<group>"; };
 		0362DE3A6C62555FEC34A9B8 /* HomeFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeFeature.swift; sourceTree = "<group>"; };
@@ -317,12 +309,10 @@
 		0697573AAD9D43F759A8A475 /* LevelUpFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LevelUpFeature.swift; sourceTree = "<group>"; };
 		07E99F716BD6967D5C05C8A5 /* CycleApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CycleApp.swift; sourceTree = "<group>"; };
 		08B95D7CDDA325D0D4506B4D /* TodayFeatureView+Symptoms.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "TodayFeatureView+Symptoms.swift"; sourceTree = "<group>"; };
-		0AD75AABB9CE6FF41B8116AE /* Async+Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Async+Extensions.swift"; sourceTree = "<group>"; };
 		0BEC06F59B8B9180DB00A6C4 /* HBICalculatorExtendedTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HBICalculatorExtendedTests.swift; sourceTree = "<group>"; };
 		0CC2B5FF367980FDE2F92CE9 /* MenstrualLocalClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenstrualLocalClient.swift; sourceTree = "<group>"; };
 		0D06AFF612C03354483BDF22 /* GlassDateButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassDateButton.swift; sourceTree = "<group>"; };
 		0D235D9C76A26B122F55AFC7 /* DailySelfReport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailySelfReport.swift; sourceTree = "<group>"; };
-		0DAAE954441B84A9A2B48522 /* NameGreetingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NameGreetingView.swift; sourceTree = "<group>"; };
 		0DDA4D46AFEF6322A76391AA /* Raleway-BoldItalic.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Raleway-BoldItalic.ttf"; sourceTree = "<group>"; };
 		0E8F7A9182B34DF220D8CA33 /* CycleStatInfoDetail.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CycleStatInfoDetail.swift; sourceTree = "<group>"; };
 		0ED29B7251E0101B748B9266 /* HBILocalClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HBILocalClient.swift; sourceTree = "<group>"; };
@@ -340,7 +330,6 @@
 		1A66050F4C74FE51653D500A /* CycleHistoryAll.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CycleHistoryAll.swift; sourceTree = "<group>"; };
 		1AEE795415338E0F97CE4888 /* ChallengeJourneyFeatureTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChallengeJourneyFeatureTests.swift; sourceTree = "<group>"; };
 		1B1C286899662B543D4D1B9E /* CycleInsightsComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CycleInsightsComponents.swift; sourceTree = "<group>"; };
-		1B2D350A999332CA154B740B /* CycleSelectionSheets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CycleSelectionSheets.swift; sourceTree = "<group>"; };
 		1C7606E3E82E0F282C77633A /* CycleInsightsSkeletons.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CycleInsightsSkeletons.swift; sourceTree = "<group>"; };
 		1E6B0059E8A2C809F072EC6B /* CycleRecapRecord.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CycleRecapRecord.swift; sourceTree = "<group>"; };
 		1E76EAD676123790B9B19C92 /* BirthDataView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BirthDataView.swift; sourceTree = "<group>"; };
@@ -391,19 +380,16 @@
 		4DA66632816E4919ADB4D982 /* ChallengeActivityLiveActivity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChallengeActivityLiveActivity.swift; sourceTree = "<group>"; };
 		4DAC1FA0A5CD5600CE6E4376 /* Raleway-Black.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Raleway-Black.ttf"; sourceTree = "<group>"; };
 		4EF57A0AB4BE1C3832A0D532 /* ChallengeValidatingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChallengeValidatingView.swift; sourceTree = "<group>"; };
-		5043BBD9F38774EF39421254 /* NameInputView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NameInputView.swift; sourceTree = "<group>"; };
 		51687F9A23C2E95732E869F8 /* CalendarMonthGrid.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarMonthGrid.swift; sourceTree = "<group>"; };
 		51D1C1500268ADA5F8F667DA /* Typography.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Typography.swift; sourceTree = "<group>"; };
 		5462AFEA89E1FF960590587A /* SplashView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplashView.swift; sourceTree = "<group>"; };
 		54DF6E09CE0375BAA8B5E8DB /* GlassWeekCalendar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassWeekCalendar.swift; sourceTree = "<group>"; };
 		55E7752F5E737ECD378C5BE1 /* CycleHeroShapes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CycleHeroShapes.swift; sourceTree = "<group>"; };
 		56C8DF57131C6E77ABECA73E /* StaggeredTitle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StaggeredTitle.swift; sourceTree = "<group>"; };
-		59DD41031C0CFFAAC82574D8 /* PhotoReviewFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoReviewFeature.swift; sourceTree = "<group>"; };
 		5A2A32414836BA74562A05DC /* ChallengeInProgressBanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChallengeInProgressBanner.swift; sourceTree = "<group>"; };
 		5A599EEAB5931BAEBC4207E9 /* Raleway-MediumItalic.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Raleway-MediumItalic.ttf"; sourceTree = "<group>"; };
 		5B53A686C39C24DCFF6E5D7E /* CycleLiveEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CycleLiveEngine.swift; sourceTree = "<group>"; };
 		5C043A2082E6C0A084726140 /* DayDetailPayload.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DayDetailPayload.swift; sourceTree = "<group>"; };
-		5D402E105E4D91C781AB6D26 /* UserDefaultsClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserDefaultsClient.swift; sourceTree = "<group>"; };
 		5D7B14D8AD8C6E5DFBD03E5B /* GlowProfileRecord.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlowProfileRecord.swift; sourceTree = "<group>"; };
 		5E090C54F4B6A5C23CD0D381 /* HomeWidgetCarousel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeWidgetCarousel.swift; sourceTree = "<group>"; };
 		5E39E23B0C038638CCFD9F17 /* EditPeriodFeatureTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditPeriodFeatureTests.swift; sourceTree = "<group>"; };
@@ -424,7 +410,6 @@
 		6B8296A9FCD4E89123B3F487 /* CalendarYearCollectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarYearCollectionView.swift; sourceTree = "<group>"; };
 		6BA9F0BC8790F467EF827599 /* WellnessWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WellnessWidget.swift; sourceTree = "<group>"; };
 		6C72E2C15313460FCF156734 /* NyraOrbShapes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NyraOrbShapes.swift; sourceTree = "<group>"; };
-		6CEFE620757D76C19E4505BE /* ValidationResultView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ValidationResultView.swift; sourceTree = "<group>"; };
 		6D64A91DCD9B528E9CCB610A /* CalendarChrome.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarChrome.swift; sourceTree = "<group>"; };
 		6DD7E113E164FF27E534BBF8 /* CycleStatsCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CycleStatsCard.swift; sourceTree = "<group>"; };
 		6E02FB6CD7C744A1401C9090 /* ChallengeTemplatePool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChallengeTemplatePool.swift; sourceTree = "<group>"; };
@@ -453,6 +438,7 @@
 		81BB379FACE659B52BE7FF7A /* GlassLogoCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassLogoCard.swift; sourceTree = "<group>"; };
 		823B14CA893AB18E490B49AD /* Date+Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Date+Extensions.swift"; sourceTree = "<group>"; };
 		83EBD176631DE4F334634FE8 /* HealthPermissionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthPermissionView.swift; sourceTree = "<group>"; };
+		83F85B196221F186792BC94A /* SymptomChip.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SymptomChip.swift; sourceTree = "<group>"; };
 		847BC930202DF1E22429093B /* MenstrualPredictor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenstrualPredictor.swift; sourceTree = "<group>"; };
 		8485E88DDE7D7113519EC964 /* Font+Raleway.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Font+Raleway.swift"; sourceTree = "<group>"; };
 		84FD9B91B0AFA20A9E912D3E /* TodayFeatureView+Wellness.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "TodayFeatureView+Wellness.swift"; sourceTree = "<group>"; };
@@ -603,7 +589,6 @@
 				B1A65F750DD76B8450EB4A7A /* CycleContext+Factory.swift */,
 				73914611D3DF1FFC57B136D1 /* CycleContext+PeriodDetection.swift */,
 				F0A28A632355436E6006C1CB /* CycleContext+Phase.swift */,
-				01D3B37256BD926AA7EFCBC2 /* Logger.swift */,
 				FFD79DF9CED358A6F2B17C43 /* Validation.swift */,
 			);
 			path = Utilities;
@@ -642,7 +627,6 @@
 				4393CCA6FF8926A5C2910A7A /* MenstrualLocalClient+Live.swift */,
 				337CB5C98A2984AD4D62A72A /* MenstrualLocalClient+Predictions.swift */,
 				C49E76E7F8B42962EEDFD759 /* MenstrualLocalClient+Queries.swift */,
-				5D402E105E4D91C781AB6D26 /* UserDefaultsClient.swift */,
 				3C2E784445D7755435EE3460 /* UserProfileLocalClient.swift */,
 				26621AB8AD8B2C1950C14BFF /* WellnessClient.swift */,
 			);
@@ -913,14 +897,12 @@
 				794C9F1099F16E6B3905BC71 /* CycleDataGlassButtons.swift */,
 				9C403C0FE6F3275F4BEF8F50 /* CycleDataSelectors.swift */,
 				C5D38B91778F5025F8CC4271 /* CycleDataView.swift */,
-				1B2D350A999332CA154B740B /* CycleSelectionSheets.swift */,
 				77AF7095ECA0C1ACF219D733 /* LifestyleRhythmView.swift */,
-				0DAAE954441B84A9A2B48522 /* NameGreetingView.swift */,
-				5043BBD9F38774EF39421254 /* NameInputView.swift */,
 				61041271C1D1C8B65E70B7D3 /* PersonalGoalsView.swift */,
 				C641F81C00379601AA6D1CEE /* PlacesAutocompleteTextField.swift */,
 				CADB3AAD88F5AD859CC9D62C /* ProfessionalContextView.swift */,
 				BD436AD3DB12CE3C6F06F2D9 /* RelationshipStatusView.swift */,
+				83F85B196221F186792BC94A /* SymptomChip.swift */,
 			);
 			path = Forms;
 			sourceTree = "<group>";
@@ -1037,7 +1019,6 @@
 		82D3DB014200BE3EE62955D5 /* Extensions */ = {
 			isa = PBXGroup;
 			children = (
-				0AD75AABB9CE6FF41B8116AE /* Async+Extensions.swift */,
 				EC9D7B9E60FCE14DEE802BAA /* Calendar+Helpers.swift */,
 				FDC7FC7B5C4F41A2ADC7EC1C /* Collection+Extensions.swift */,
 				823B14CA893AB18E490B49AD /* Date+Extensions.swift */,
@@ -1270,7 +1251,6 @@
 			children = (
 				4EF57A0AB4BE1C3832A0D532 /* ChallengeValidatingView.swift */,
 				774B022BDFFD276010750F70 /* ValidationFeature.swift */,
-				6CEFE620757D76C19E4505BE /* ValidationResultView.swift */,
 			);
 			path = Validation;
 			sourceTree = "<group>";
@@ -1334,7 +1314,6 @@
 			isa = PBXGroup;
 			children = (
 				B16230AC0E1B8A3D7500E249 /* PhotoCaptureRepresentables.swift */,
-				59DD41031C0CFFAAC82574D8 /* PhotoReviewFeature.swift */,
 			);
 			path = PhotoCapture;
 			sourceTree = "<group>";
@@ -1532,7 +1511,6 @@
 				F3459EB30A4B4EF4384A40C9 /* AppView.swift in Sources */,
 				47C35B00E15E66274DD85AE0 /* AriaContextProvider.swift in Sources */,
 				807A0BD8F1194D116F3BBD43 /* AriaRecapStories.swift in Sources */,
-				FE0B55CA6AD817CF227B166A /* Async+Extensions.swift in Sources */,
 				55753ABF335FE3B4EA649FBE /* BirthDataView.swift in Sources */,
 				86238D33356C2AD45D27C382 /* Calendar+Helpers.swift in Sources */,
 				9AB651466B6E9FC8BA7B73F8 /* CalendarAriaInsight.swift in Sources */,
@@ -1606,7 +1584,6 @@
 				077FE98F70660FE7E343CDB6 /* CycleRecapGeneration.swift in Sources */,
 				90FB4BB8A9DEF4C4CA35F15F /* CycleRecapGenerator.swift in Sources */,
 				6D92A0F31CAFB8E809A4DEDE /* CycleRecapRecord.swift in Sources */,
-				391E4E13E6F1D4B01DAE2136 /* CycleSelectionSheets.swift in Sources */,
 				4D2BE56E939A8525C7E1F104 /* CycleSnapshot.swift in Sources */,
 				550083D322D3B2EF0710F00E /* CycleStatInfoDetail.swift in Sources */,
 				754815C7DBBC7995D6FC0D72 /* CycleStatsCard.swift in Sources */,
@@ -1670,7 +1647,6 @@
 				7B1207969E11F76C7D2CA81D /* LifestyleRhythmView.swift in Sources */,
 				A149833A49EC9A7B165FE036 /* LiquidGlassModifier.swift in Sources */,
 				E4834899C6B039EEF684B128 /* LocalNotificationClient.swift in Sources */,
-				C108129BF646802352F8B8E6 /* Logger.swift in Sources */,
 				191A6F43EC1D6766801AC90D /* MenstrualLocalClient+CRUD.swift in Sources */,
 				007F4E831F1C866954AF6F03 /* MenstrualLocalClient+Journey.swift in Sources */,
 				DF1ABAD367BBF6D05759EACB /* MenstrualLocalClient+Live.swift in Sources */,
@@ -1682,8 +1658,6 @@
 				D429B0E602D541E0E38E2104 /* MenstrualStatus.swift in Sources */,
 				C13DA7D142D2EFBE9A62FD2C /* MiniCycleCalendar.swift in Sources */,
 				28398FE7B3332AA2003C569D /* MoodArcFeature.swift in Sources */,
-				D5E0E37EE1A4B6C92531C2DF /* NameGreetingView.swift in Sources */,
-				F8C0513AE50CC76EFD916AB7 /* NameInputView.swift in Sources */,
 				768ED5B5046FB0069C512FF3 /* NotificationPermissionView.swift in Sources */,
 				83CC8FAB6EAC4BF1C9E63984 /* NyraOrb+Layers.swift in Sources */,
 				57530AFEBBFC573D814C5814 /* NyraOrb+Lifecycle.swift in Sources */,
@@ -1697,7 +1671,6 @@
 				25F7E5539E6527962BFEB5EC /* OnboardingView.swift in Sources */,
 				D2DF3C6090F3A56E80A01BCD /* PersonalGoalsView.swift in Sources */,
 				FDEEE3E8691EC08B2C3D915C /* PhotoCaptureRepresentables.swift in Sources */,
-				D4BC8FAA66D4059F1A677416 /* PhotoReviewFeature.swift in Sources */,
 				FB2FDFDA7E7F1A19433F52E3 /* PlacesAutocompleteTextField.swift in Sources */,
 				8886C73FA1452FEEA91322D0 /* PlacesClient.swift in Sources */,
 				050C5D2421F740ECE526E223 /* PrivacyConsentView.swift in Sources */,
@@ -1712,6 +1685,7 @@
 				43871BC7610359114EBD9DF7 /* SplineIntroView.swift in Sources */,
 				832CEEA7A7C3F55729FF956D /* StaggeredTitle.swift in Sources */,
 				28CB5F282CFC523F42F68FA7 /* String+Extensions.swift in Sources */,
+				63831B62BDE7E8E57764389A /* SymptomChip.swift in Sources */,
 				422EB7EE09E5D973842E778E /* TodayFeature+Helpers.swift in Sources */,
 				999CF49D806CABF3B5214CDD /* TodayFeature+State.swift in Sources */,
 				4DD0D6C1DA3073ECA64A82C7 /* TodayFeature.swift in Sources */,
@@ -1723,12 +1697,10 @@
 				8615C57A1ED557DFA7483972 /* Typography.swift in Sources */,
 				79336A90E553B790F6CCF604 /* UIFont+Raleway.swift in Sources */,
 				D1CF7852379A9A2B365FCE80 /* User.swift in Sources */,
-				BFA0710DA2EA2D8DAD3B79C1 /* UserDefaultsClient.swift in Sources */,
 				0454C57DFA25D344D26BC6E2 /* UserProfileLocalClient.swift in Sources */,
 				F4B1AE273282CC03DC06907C /* UserProfileRecord.swift in Sources */,
 				65C96E5B313A2E5D7212C475 /* Validation.swift in Sources */,
 				599B61EB32D7E062D0616867 /* ValidationFeature.swift in Sources */,
-				56F9E16AAE2C1FAA0478B3D0 /* ValidationResultView.swift in Sources */,
 				C27399E3D757F4AE6B48A9AB /* WellnessClient.swift in Sources */,
 				F46A8922C6B5DCD308FAD534 /* WellnessDetailFeature.swift in Sources */,
 				CD38E46C5FBAD0C68732E815 /* WellnessDetailView.swift in Sources */,
