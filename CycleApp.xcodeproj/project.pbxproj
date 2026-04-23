@@ -174,6 +174,7 @@
 		997031E520EBD700B61BCB14 /* Raleway-SemiBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = BA263FB218AF9228CF648E42 /* Raleway-SemiBold.ttf */; };
 		998F52152515CAB7AF50F7AF /* TodayFeatureView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C1C8723548E26DE605ED58D /* TodayFeatureView.swift */; };
 		9998D9E572E259CF136E9166 /* ChallengeActivityLiveActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4DA66632816E4919ADB4D982 /* ChallengeActivityLiveActivity.swift */; };
+		999CF49D806CABF3B5214CDD /* TodayFeature+State.swift in Sources */ = {isa = PBXBuildFile; fileRef = 35AE4E98825534EAEEED9904 /* TodayFeature+State.swift */; };
 		9AB651466B6E9FC8BA7B73F8 /* CalendarAriaInsight.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38F11C8E6DC83049D73B7E89 /* CalendarAriaInsight.swift */; };
 		9C107A749240038256D39949 /* CycleNormality.swift in Sources */ = {isa = PBXBuildFile; fileRef = 171CF7DA8130270099E90B18 /* CycleNormality.swift */; };
 		9F90B1CD40B13AC61A4552E4 /* WidgetCardStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1707AD5096A53687F36FD245 /* WidgetCardStyle.swift */; };
@@ -395,6 +396,7 @@
 		343F1358575D1B7FB222AD07 /* ChatMessageRecord.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatMessageRecord.swift; sourceTree = "<group>"; };
 		34A6F94AAF7182E46C4F885F /* Raleway-SemiBoldItalic.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Raleway-SemiBoldItalic.ttf"; sourceTree = "<group>"; };
 		34A867AD4A55C60A2B7A61EB /* CelestialCosmicParticles.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CelestialCosmicParticles.swift; sourceTree = "<group>"; };
+		35AE4E98825534EAEEED9904 /* TodayFeature+State.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "TodayFeature+State.swift"; sourceTree = "<group>"; };
 		38F11C8E6DC83049D73B7E89 /* CalendarAriaInsight.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarAriaInsight.swift; sourceTree = "<group>"; };
 		3994AAF48ABC03F15465A1FD /* UIFont+Raleway.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UIFont+Raleway.swift"; sourceTree = "<group>"; };
 		3BB681239E502C1F47023873 /* SectionHeader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SectionHeader.swift; sourceTree = "<group>"; };
@@ -1152,6 +1154,7 @@
 			children = (
 				DD39CD72FF8EE33496F332F7 /* TodayFeature.swift */,
 				E7FE49861A2ACC6DD33BED9E /* TodayFeature+Helpers.swift */,
+				35AE4E98825534EAEEED9904 /* TodayFeature+State.swift */,
 				F73CE1B25B180D5655CAF638 /* TodayFeaturePresentations.swift */,
 				9C1C8723548E26DE605ED58D /* TodayFeatureView.swift */,
 				8639299F3EA771681A6A1346 /* TodayFeatureView+Skeletons.swift */,
@@ -1798,6 +1801,7 @@
 				A9A4173F8BA666A9837EEF96 /* StatEditorialHero.swift in Sources */,
 				28CB5F282CFC523F42F68FA7 /* String+Extensions.swift in Sources */,
 				422EB7EE09E5D973842E778E /* TodayFeature+Helpers.swift in Sources */,
+				999CF49D806CABF3B5214CDD /* TodayFeature+State.swift in Sources */,
 				4DD0D6C1DA3073ECA64A82C7 /* TodayFeature.swift in Sources */,
 				1444D6F9BB78A27EBB85C57F /* TodayFeaturePresentations.swift in Sources */,
 				F5E37E29D21D1D5FBC708AAE /* TodayFeatureView+Skeletons.swift in Sources */,
