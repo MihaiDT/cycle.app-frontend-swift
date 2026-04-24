@@ -39,18 +39,6 @@ struct CycleStatInfoDetailView: View {
         ScrollView(.vertical, showsIndicators: false) {
             VStack(alignment: .leading, spacing: 0) {
                 CycleStatInfoHeaderImage(kind: kind)
-                    // Parallax: header scrolls at ~0.5× content speed on
-                    // upward scroll, and stretches-from-top when pulled
-                    // down (the classic Apple photos/Health pattern).
-                    .visualEffect { content, proxy in
-                        let minY = proxy.frame(in: .scrollView).minY
-                        return content
-                            .offset(y: minY > 0 ? -minY : -minY * 0.5)
-                            .scaleEffect(
-                                minY > 0 ? 1 + minY / 400 : 1,
-                                anchor: .top
-                            )
-                    }
 
                 VStack(alignment: .leading, spacing: 40) {
                     CycleStatInfoPersonalReading(
