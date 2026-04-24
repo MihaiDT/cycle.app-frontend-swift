@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 63;
+	objectVersion = 77;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -33,6 +33,7 @@
 		191A6F43EC1D6766801AC90D /* MenstrualLocalClient+CRUD.swift in Sources */ = {isa = PBXBuildFile; fileRef = 172ACA5B70544F69C08564D0 /* MenstrualLocalClient+CRUD.swift */; };
 		1A640E0A771CED5A60C73650 /* SplashView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5462AFEA89E1FF960590587A /* SplashView.swift */; };
 		1D2E82BBC7F411B0F4F26009 /* Raleway-SemiBoldItalic.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 34A6F94AAF7182E46C4F885F /* Raleway-SemiBoldItalic.ttf */; };
+		1DA06426DAE4FD374031C548 /* CycleStatInfoHeaderImage.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4F6DC96460267F08354100E /* CycleStatInfoHeaderImage.swift */; };
 		1E3B4EC0E761F7ACF8F91F84 /* Raleway-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 9C912EA0509634526A9D7F08 /* Raleway-Bold.ttf */; };
 		1EBAF390664932B71CB5E403 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B38AB06E18B5A4632AE2761A /* Assets.xcassets */; };
 		1FCFE45393AA104340520649 /* CalendarYearCollectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6B8296A9FCD4E89123B3F487 /* CalendarYearCollectionView.swift */; };
@@ -160,6 +161,7 @@
 		998F52152515CAB7AF50F7AF /* TodayFeatureView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C1C8723548E26DE605ED58D /* TodayFeatureView.swift */; };
 		9998D9E572E259CF136E9166 /* ChallengeActivityLiveActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4DA66632816E4919ADB4D982 /* ChallengeActivityLiveActivity.swift */; };
 		999CF49D806CABF3B5214CDD /* TodayFeature+State.swift in Sources */ = {isa = PBXBuildFile; fileRef = 35AE4E98825534EAEEED9904 /* TodayFeature+State.swift */; };
+		9A3C5FE0637019AF23814DDE /* CycleStatInfoPersonalReading.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3398A6C9E1190C24A7DFEFD /* CycleStatInfoPersonalReading.swift */; };
 		9AB651466B6E9FC8BA7B73F8 /* CalendarAriaInsight.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38F11C8E6DC83049D73B7E89 /* CalendarAriaInsight.swift */; };
 		9C107A749240038256D39949 /* CycleNormality.swift in Sources */ = {isa = PBXBuildFile; fileRef = 171CF7DA8130270099E90B18 /* CycleNormality.swift */; };
 		9F90B1CD40B13AC61A4552E4 /* WidgetCardStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1707AD5096A53687F36FD245 /* WidgetCardStyle.swift */; };
@@ -202,6 +204,7 @@
 		C26DD3D5CD53063D5813FD5C /* DailyChallengeFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C58D97874DE825B65B63828 /* DailyChallengeFeature.swift */; };
 		C27399E3D757F4AE6B48A9AB /* WellnessClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 26621AB8AD8B2C1950C14BFF /* WellnessClient.swift */; };
 		C298980955E6E3C21720624A /* CycleInsightsView+Cards.swift in Sources */ = {isa = PBXBuildFile; fileRef = BFFE5653AA0A910DCF7367AE /* CycleInsightsView+Cards.swift */; };
+		C37E2D5B42149431B8408414 /* CycleStatInfoSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61339ED3D814F21B8A7147FD /* CycleStatInfoSection.swift */; };
 		C449B0A9F3048076FACE9502 /* CycleHeroView+Content.swift in Sources */ = {isa = PBXBuildFile; fileRef = D449D0B2060B6D39F2364C2B /* CycleHeroView+Content.swift */; };
 		C477A9BD12160F9413526673 /* ChallengeTemplatePool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E02FB6CD7C744A1401C9090 /* ChallengeTemplatePool.swift */; };
 		C4A156361AE25E46624DA921 /* MenstrualLocalClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0CC2B5FF367980FDE2F92CE9 /* MenstrualLocalClient.swift */; };
@@ -211,6 +214,7 @@
 		C83661A8946D28C113791C46 /* YourDayFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = D07913279DDA78175531E0E0 /* YourDayFeature.swift */; };
 		C85567454F67BFEE2491BA69 /* EditPeriodFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 77CC76176EE4EC87FDCD6B34 /* EditPeriodFeature.swift */; };
 		C85C8F6E49BF8E54F5185F9D /* LensPreviewCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1FE36AFB619E1E754D6ADEBD /* LensPreviewCard.swift */; };
+		C90E8B040CF549927CBCA95D /* CycleStatInfoCopy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 878C7C2380B31BEBE82A5F5A /* CycleStatInfoCopy.swift */; };
 		CAA90AEE5AB137DC40A4EE40 /* challenge_templates.json in Resources */ = {isa = PBXBuildFile; fileRef = D15ECC4BC47E7CE3641BD838 /* challenge_templates.json */; };
 		CD38E46C5FBAD0C68732E815 /* WellnessDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE80D24EC60C20D49242159F /* WellnessDetailView.swift */; };
 		D00AB947693B0C93411EBBED /* DailyChallengeCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F597FD7CAA79B9DD0713EB47 /* DailyChallengeCardView.swift */; };
@@ -364,7 +368,7 @@
 		3C2E784445D7755435EE3460 /* UserProfileLocalClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserProfileLocalClient.swift; sourceTree = "<group>"; };
 		3C380CB9877F9EFBE8833FE6 /* PlacesClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlacesClient.swift; sourceTree = "<group>"; };
 		3CE53393A877B1C19C7CDAC7 /* CycleStatsCardList.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CycleStatsCardList.swift; sourceTree = "<group>"; };
-		3D613DF8875F1A90F07C4F34 /* CycleApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CycleApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		3D613DF8875F1A90F07C4F34 /* CycleApp.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = CycleApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		3DF25DA65BAB201183A4C862 /* ChallengeSelector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChallengeSelector.swift; sourceTree = "<group>"; };
 		417471A8B95395E97DC10BF3 /* WellnessRitualTile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WellnessRitualTile.swift; sourceTree = "<group>"; };
 		4194779F49AFA1C483C9DDB1 /* JourneyDestinationTiles.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JourneyDestinationTiles.swift; sourceTree = "<group>"; };
@@ -394,10 +398,11 @@
 		5E090C54F4B6A5C23CD0D381 /* HomeWidgetCarousel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeWidgetCarousel.swift; sourceTree = "<group>"; };
 		5E39E23B0C038638CCFD9F17 /* EditPeriodFeatureTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditPeriodFeatureTests.swift; sourceTree = "<group>"; };
 		5EC4B5B5DEB0E25A730E4507 /* HealthKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = HealthKit.framework; path = System/Library/Frameworks/HealthKit.framework; sourceTree = SDKROOT; };
-		5ED03F559F4A2F374AF86A5C /* glowing_orb.riv */ = {isa = PBXFileReference; lastKnownFileType = file; path = glowing_orb.riv; sourceTree = "<group>"; };
+		5ED03F559F4A2F374AF86A5C /* glowing_orb.riv */ = {isa = PBXFileReference; path = glowing_orb.riv; sourceTree = "<group>"; };
 		5F90D69A90239DFEC866C703 /* CycleApp.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = CycleApp.entitlements; sourceTree = "<group>"; };
 		60A69777B121E02CCD9ED6FD /* ModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelTests.swift; sourceTree = "<group>"; };
 		61041271C1D1C8B65E70B7D3 /* PersonalGoalsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersonalGoalsView.swift; sourceTree = "<group>"; };
+		61339ED3D814F21B8A7147FD /* CycleStatInfoSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CycleStatInfoSection.swift; sourceTree = "<group>"; };
 		617634D01BB34150AA15DDA2 /* CycleHeroView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CycleHeroView.swift; sourceTree = "<group>"; };
 		6245417E8CDA74DC974841F8 /* Raleway-ExtraLight.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Raleway-ExtraLight.ttf"; sourceTree = "<group>"; };
 		6512D0891C474022446C2D98 /* ValidationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ValidationTests.swift; sourceTree = "<group>"; };
@@ -421,7 +426,7 @@
 		71EF173A08EFFAA9EAF10A56 /* APIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIClient.swift; sourceTree = "<group>"; };
 		73914611D3DF1FFC57B136D1 /* CycleContext+PeriodDetection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "CycleContext+PeriodDetection.swift"; sourceTree = "<group>"; };
 		75C7E1A61DEFAFD83E9FBFDF /* ProfileFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileFeature.swift; sourceTree = "<group>"; };
-		75D6127ECF3EBDD6447B1D46 /* CycleAppLiveActivity.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = CycleAppLiveActivity.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		75D6127ECF3EBDD6447B1D46 /* CycleAppLiveActivity.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = CycleAppLiveActivity.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		75F538CF7F041D15352BB19F /* PersonalBaselineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersonalBaselineTests.swift; sourceTree = "<group>"; };
 		774B022BDFFD276010750F70 /* ValidationFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ValidationFeature.swift; sourceTree = "<group>"; };
 		77AF7095ECA0C1ACF219D733 /* LifestyleRhythmView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LifestyleRhythmView.swift; sourceTree = "<group>"; };
@@ -447,6 +452,7 @@
 		8639299F3EA771681A6A1346 /* TodayFeatureView+Skeletons.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "TodayFeatureView+Skeletons.swift"; sourceTree = "<group>"; };
 		86F8743C2BFA7F8AF8FDB810 /* NyraOrb+Lifecycle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NyraOrb+Lifecycle.swift"; sourceTree = "<group>"; };
 		8706093A21A56ECBA0441334 /* Raleway-Light.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Raleway-Light.ttf"; sourceTree = "<group>"; };
+		878C7C2380B31BEBE82A5F5A /* CycleStatInfoCopy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CycleStatInfoCopy.swift; sourceTree = "<group>"; };
 		879057F02B7EA4DBAB96DE4D /* ChallengeRecord.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChallengeRecord.swift; sourceTree = "<group>"; };
 		897DB2589F5482F282AC30FD /* Raleway-ExtraBold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Raleway-ExtraBold.ttf"; sourceTree = "<group>"; };
 		8AE2EAC774E19BCBC4CB97FF /* CycleInsightsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CycleInsightsView.swift; sourceTree = "<group>"; };
@@ -535,9 +541,11 @@
 		DFB5C69AF9E8C6B3B5A8F50C /* CycleJourneyEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CycleJourneyEngine.swift; sourceTree = "<group>"; };
 		E18F423D65094D75636B3861 /* CalendarDayDetail.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarDayDetail.swift; sourceTree = "<group>"; };
 		E25D139762A5500AA29BBDE1 /* CycleCalendarViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CycleCalendarViews.swift; sourceTree = "<group>"; };
+		E3398A6C9E1190C24A7DFEFD /* CycleStatInfoPersonalReading.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CycleStatInfoPersonalReading.swift; sourceTree = "<group>"; };
 		E394CEC4F5EAC23C77BA5C58 /* CycleJourneyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CycleJourneyView.swift; sourceTree = "<group>"; };
+		E4F6DC96460267F08354100E /* CycleStatInfoHeaderImage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CycleStatInfoHeaderImage.swift; sourceTree = "<group>"; };
 		E55A36BBFC9A9AA9F04DA078 /* JourneyHomeViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JourneyHomeViews.swift; sourceTree = "<group>"; };
-		E687F11BA153A2DF683BD9B0 /* logo_animation.splineswift */ = {isa = PBXFileReference; lastKnownFileType = file; path = logo_animation.splineswift; sourceTree = "<group>"; };
+		E687F11BA153A2DF683BD9B0 /* logo_animation.splineswift */ = {isa = PBXFileReference; path = logo_animation.splineswift; sourceTree = "<group>"; };
 		E7FE49861A2ACC6DD33BED9E /* TodayFeature+Helpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "TodayFeature+Helpers.swift"; sourceTree = "<group>"; };
 		EA867F396B072ED863219115 /* APIError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIError.swift; sourceTree = "<group>"; };
 		EBC86DA5C36E0C18C60DDA86 /* CycleDataDurationRegularity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CycleDataDurationRegularity.swift; sourceTree = "<group>"; };
@@ -738,6 +746,16 @@
 				0329312D9F047305DDD7F6F1 /* ProfileView.swift */,
 			);
 			path = Profile;
+			sourceTree = "<group>";
+		};
+		3368BD3BEE473E356270735D /* Components */ = {
+			isa = PBXGroup;
+			children = (
+				E4F6DC96460267F08354100E /* CycleStatInfoHeaderImage.swift */,
+				E3398A6C9E1190C24A7DFEFD /* CycleStatInfoPersonalReading.swift */,
+				61339ED3D814F21B8A7147FD /* CycleStatInfoSection.swift */,
+			);
+			path = Components;
 			sourceTree = "<group>";
 		};
 		39EDECD8CBB9C242F144765A /* DesignSystem */ = {
@@ -1332,7 +1350,9 @@
 		FA8F547659FC903768529985 /* Sheets */ = {
 			isa = PBXGroup;
 			children = (
+				3368BD3BEE473E356270735D /* Components */,
 				326DDC342BCAFD30926D2D32 /* CycleInsightsShareScreen.swift */,
+				878C7C2380B31BEBE82A5F5A /* CycleStatInfoCopy.swift */,
 				0E8F7A9182B34DF220D8CA33 /* CycleStatInfoDetail.swift */,
 				1A61DBB62B860EA73B54AD8E /* CycleStatsCustomize.swift */,
 			);
@@ -1441,6 +1461,7 @@
 				AEF383D9F05536120F2B291B /* XCRemoteSwiftPackageReference "spline-ios" */,
 				FDE4EA748176C63BCCDC26BB /* XCRemoteSwiftPackageReference "swift-tagged" */,
 			);
+			preferredProjectObjectVersion = 77;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
@@ -1584,7 +1605,11 @@
 				90FB4BB8A9DEF4C4CA35F15F /* CycleRecapGenerator.swift in Sources */,
 				6D92A0F31CAFB8E809A4DEDE /* CycleRecapRecord.swift in Sources */,
 				4D2BE56E939A8525C7E1F104 /* CycleSnapshot.swift in Sources */,
+				C90E8B040CF549927CBCA95D /* CycleStatInfoCopy.swift in Sources */,
 				550083D322D3B2EF0710F00E /* CycleStatInfoDetail.swift in Sources */,
+				1DA06426DAE4FD374031C548 /* CycleStatInfoHeaderImage.swift in Sources */,
+				9A3C5FE0637019AF23814DDE /* CycleStatInfoPersonalReading.swift in Sources */,
+				C37E2D5B42149431B8408414 /* CycleStatInfoSection.swift in Sources */,
 				754815C7DBBC7995D6FC0D72 /* CycleStatsCard.swift in Sources */,
 				87BE01E3E05A3796C5102089 /* CycleStatsCardList.swift in Sources */,
 				8B393324CA4722AE32527A88 /* CycleStatsCustomize.swift in Sources */,
@@ -1760,7 +1785,6 @@
 				CODE_SIGN_ENTITLEMENTS = CycleApp/Resources/CycleApp.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CURRENT_PROJECT_VERSION = 3;
-				DEVELOPMENT_TEAM = AT2NH7U6W7;
 				INFOPLIST_FILE = CycleApp/Resources/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -1794,7 +1818,6 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CURRENT_PROJECT_VERSION = 3;
-				DEVELOPMENT_TEAM = AT2NH7U6W7;
 				INFOPLIST_FILE = CycleApp/CycleAppLiveActivity/Info.plist;
 				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -1820,7 +1843,6 @@
 				CODE_SIGN_ENTITLEMENTS = CycleApp/Resources/CycleApp.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CURRENT_PROJECT_VERSION = 3;
-				DEVELOPMENT_TEAM = AT2NH7U6W7;
 				INFOPLIST_FILE = CycleApp/Resources/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -1837,7 +1859,6 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CURRENT_PROJECT_VERSION = 3;
-				DEVELOPMENT_TEAM = AT2NH7U6W7;
 				INFOPLIST_FILE = CycleApp/CycleAppLiveActivity/Info.plist;
 				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
 				LD_RUNPATH_SEARCH_PATHS = (

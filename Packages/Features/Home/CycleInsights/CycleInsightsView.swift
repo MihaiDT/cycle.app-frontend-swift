@@ -134,7 +134,10 @@ public struct CycleInsightsView: View {
                     CycleStatInfoDetailView(
                         kind: kind,
                         previousValue: previousValueLabel(for: kind),
-                        badge: statBadge(for: kind)
+                        badge: statBadge(for: kind),
+                        cycleLengthDays: cycleAverageDays,
+                        bleedingDays: periodAverageDays,
+                        variationStdDev: variationStdDev
                     )
                 }
             }
