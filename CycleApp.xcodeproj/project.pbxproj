@@ -23,6 +23,7 @@
 		0EAE1313677A62ADCBE84E87 /* WellnessRitualTile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 417471A8B95395E97DC10BF3 /* WellnessRitualTile.swift */; };
 		1065FFFAD7F5AFEABDAD2D3D /* OnboardingProgressBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3B703C3538A4D52237D6E0F /* OnboardingProgressBar.swift */; };
 		10FCC6752A99948427E8D471 /* GlassWeekCalendar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54DF6E09CE0375BAA8B5E8DB /* GlassWeekCalendar.swift */; };
+		126E754FD19BC53F19D7511F /* HeaderArcBackdrop.swift in Sources */ = {isa = PBXBuildFile; fileRef = 76612C878CBB3290323F7096 /* HeaderArcBackdrop.swift */; };
 		1360EDCBDB2D5A84A769B7BA /* HBILocalClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0ED29B7251E0101B748B9266 /* HBILocalClient.swift */; };
 		1444D6F9BB78A27EBB85C57F /* TodayFeaturePresentations.swift in Sources */ = {isa = PBXBuildFile; fileRef = F73CE1B25B180D5655CAF638 /* TodayFeaturePresentations.swift */; };
 		14B669ED4C6D19486ED9F02B /* LensPreviewClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C922515946896A823CCBD6D /* LensPreviewClient.swift */; };
@@ -428,6 +429,7 @@
 		75C7E1A61DEFAFD83E9FBFDF /* ProfileFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileFeature.swift; sourceTree = "<group>"; };
 		75D6127ECF3EBDD6447B1D46 /* CycleAppLiveActivity.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = CycleAppLiveActivity.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		75F538CF7F041D15352BB19F /* PersonalBaselineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersonalBaselineTests.swift; sourceTree = "<group>"; };
+		76612C878CBB3290323F7096 /* HeaderArcBackdrop.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HeaderArcBackdrop.swift; sourceTree = "<group>"; };
 		774B022BDFFD276010750F70 /* ValidationFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ValidationFeature.swift; sourceTree = "<group>"; };
 		77AF7095ECA0C1ACF219D733 /* LifestyleRhythmView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LifestyleRhythmView.swift; sourceTree = "<group>"; };
 		77CC76176EE4EC87FDCD6B34 /* EditPeriodFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditPeriodFeature.swift; sourceTree = "<group>"; };
@@ -754,6 +756,7 @@
 				E4F6DC96460267F08354100E /* CycleStatInfoHeaderImage.swift */,
 				E3398A6C9E1190C24A7DFEFD /* CycleStatInfoPersonalReading.swift */,
 				61339ED3D814F21B8A7147FD /* CycleStatInfoSection.swift */,
+				76612C878CBB3290323F7096 /* HeaderArcBackdrop.swift */,
 			);
 			path = Components;
 			sourceTree = "<group>";
@@ -1651,6 +1654,7 @@
 				4DEC79171C5FC9E37311092F /* HBILocalClient+Baseline.swift in Sources */,
 				1360EDCBDB2D5A84A769B7BA /* HBILocalClient.swift in Sources */,
 				D42760D71EDF9710416528ED /* HBIScore.swift in Sources */,
+				126E754FD19BC53F19D7511F /* HeaderArcBackdrop.swift in Sources */,
 				F3E8A1C0DF9F64E1EBA1CC6F /* HealthPermissionView.swift in Sources */,
 				70CBE4279BD2E036FF633F77 /* HealthRecords.swift in Sources */,
 				C71800F5E63D59A42D2A4716 /* HideCycleDialog.swift in Sources */,

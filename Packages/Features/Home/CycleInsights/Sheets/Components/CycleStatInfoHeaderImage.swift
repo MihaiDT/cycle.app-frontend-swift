@@ -10,12 +10,24 @@ import SwiftUI
 struct CycleStatInfoHeaderImage: View {
     let kind: CycleStatInfoKind
 
+    private let arcDepth: CGFloat = 44
+
     var body: some View {
-        Image(kind.headerAsset)
-            .resizable()
-            .scaledToFit()
-            .frame(maxWidth: .infinity)
-            .accessibilityLabel(kind.headerAccessibilityLabel)
+        ZStack(alignment: .top) {
+            HeaderArcBackdrop(arcDepth: arcDepth)
+
+            Image(kind.headerAsset)
+                .resizable()
+                .scaledToFit()
+                .frame(maxWidth: .infinity)
+                .padding(.horizontal, 16)
+                .padding(.top, 8)
+                // Reserve space for the arc so the illustration stays
+                // clear of the curved bottom edge.
+                .padding(.bottom, arcDepth + 8)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(kind.headerAccessibilityLabel)
     }
 }
 
