@@ -4,10 +4,16 @@ import SwiftUI
 //
 // Full-screen explainer opened from the Normality card's info buttons.
 // Three variants (cycle length / period length / variation) share one
-// layout — editorial title block, a recap card pinned next to a hero
-// image slot, then a quiet flow of sections: "What's typical", "What
-// can shift it", "When to check in". Copy is cycle.app's own voice —
-// warm, present-tense, ACOG-accurate, never diagnostic.
+// editorial layout:
+//   - hero block (eyebrow · title · lead paragraph)
+//   - user's recent value with its clinical badge
+//   - typical-range chip pulled from ACOG windows
+//   - three sign-posted sections ("What's typical", "What can shift
+//     it", "When to check in with a provider")
+//   - quiet disclaimer
+// Copy is the same cycle.app voice (ACOG-accurate, present tense, not
+// diagnostic) — the redesign is purely in the visual + accessibility
+// language.
 
 struct CycleStatInfoDetailView: View {
     let kind: CycleStatInfoKind
@@ -30,107 +36,151 @@ struct CycleStatInfoDetailView: View {
     var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
             VStack(alignment: .leading, spacing: 28) {
-                headerBlock
-                recapBlock
-                normalSection
+                hero
+                recapCard
+                typicalRangeChip
+                sectionDivider
+                typicalSection
                 affectSection
                 doctorSection
                 disclaimer
             }
-            .padding(.horizontal, 22)
-            .padding(.top, 16)
+            .padding(.horizontal, AppLayout.screenHorizontal + 8)
+            .padding(.top, 12)
             .padding(.bottom, 48)
             .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .background { JourneyAnimatedBackground(animated: false) }
+        .background(DesignColors.background.ignoresSafeArea())
         .navigationTitle(kind.title)
         .navigationBarTitleDisplayMode(.inline)
     }
 
-    // MARK: - Header
+    // MARK: - Hero
 
     @ViewBuilder
-    private var headerBlock: some View {
-        VStack(alignment: .leading, spacing: 10) {
+    private var hero: some View {
+        VStack(alignment: .leading, spacing: 12) {
             Text(kind.eyebrow.uppercased())
-                .font(.raleway("SemiBold", size: 11, relativeTo: .caption2))
-                .tracking(1.2)
-                .foregroundStyle(DesignColors.text.opacity(0.75))
+                .font(AppTypography.cardEyebrow)
+                .tracking(AppTypography.cardEyebrowTracking)
+                .foregroundStyle(DesignColors.textSecondary)
 
             Text(kind.title)
                 .font(AppTypography.cardTitlePrimary)
                 .tracking(AppTypography.cardTitlePrimaryTracking)
                 .foregroundStyle(DesignColors.text)
                 .fixedSize(horizontal: false, vertical: true)
+                .accessibilityAddTraits(.isHeader)
 
             Text(copy.intro)
                 .font(.raleway("Regular", size: 16, relativeTo: .body))
                 .foregroundStyle(DesignColors.textSecondary)
+                .lineSpacing(5)
                 .fixedSize(horizontal: false, vertical: true)
-                .lineSpacing(4)
-                .padding(.top, 4)
         }
+        .accessibilityElement(children: .combine)
     }
 
-    // MARK: - Recap + Hero
+    // MARK: - Recap card
 
     @ViewBuilder
-    private var recapBlock: some View {
-        HStack(alignment: .top, spacing: 14) {
-            VStack(alignment: .leading, spacing: 10) {
+    private var recapCard: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(alignment: .firstTextBaseline, spacing: 0) {
                 Text(kind.recapLabel)
-                    .font(.raleway("Medium", size: 12, relativeTo: .footnote))
-                    .foregroundStyle(DesignColors.textSecondary.opacity(0.85))
-
-                Text(previousValue ?? "No data")
-                    .font(.raleway(
-                        previousValue != nil ? "Bold" : "SemiBold",
-                        size: previousValue != nil ? 26 : 17,
-                        relativeTo: .title2
-                    ))
-                    .tracking(-0.4)
-                    .foregroundStyle(
-                        previousValue != nil
-                            ? DesignColors.text
-                            : DesignColors.text.opacity(0.45)
-                    )
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.7)
-
+                    .font(AppTypography.cardLabel)
+                    .tracking(AppTypography.cardLabelTracking)
+                    .foregroundStyle(DesignColors.textSecondary)
+                Spacer(minLength: 8)
                 if let badge {
                     CycleStatusBadgeView(badge: badge)
-                        .padding(.top, 2)
                 }
             }
-            .padding(.horizontal, 18)
-            .padding(.vertical, 18)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .widgetCardStyle(cornerRadius: 22)
 
-            heroImageSlot
-                .frame(width: 124, height: 156)
+            Text(previousValue ?? "No data yet")
+                .font(.raleway("Bold", size: previousValue != nil ? 34 : 22, relativeTo: .largeTitle))
+                .tracking(-0.6)
+                .foregroundStyle(
+                    previousValue != nil
+                        ? DesignColors.text
+                        : DesignColors.text.opacity(0.45)
+                )
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
         }
+        .padding(20)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .widgetCardStyle(cornerRadius: 24)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(recapAccessibilityLabel)
+    }
+
+    private var recapAccessibilityLabel: String {
+        let value = previousValue ?? "No data"
+        let badgeSuffix = badge.map { ", \($0.label.lowercased())" } ?? ""
+        return "\(kind.recapLabel), \(value)\(badgeSuffix)"
+    }
+
+    // MARK: - Typical range chip
+
+    @ViewBuilder
+    private var typicalRangeChip: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "chart.bar.doc.horizontal")
+                .font(.system(size: 13, weight: .medium))
+                .foregroundStyle(DesignColors.accentWarm)
+                .accessibilityHidden(true)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Typical range")
+                    .font(.raleway("Medium", size: 12, relativeTo: .caption))
+                    .foregroundStyle(DesignColors.textSecondary)
+                Text(kind.typicalRangeLabel)
+                    .font(.raleway("SemiBold", size: 15, relativeTo: .subheadline))
+                    .foregroundStyle(DesignColors.text)
+            }
+
+            Spacer(minLength: 0)
+
+            Text(kind.typicalSourceLabel)
+                .font(.raleway("Medium", size: 11, relativeTo: .caption2))
+                .tracking(0.3)
+                .foregroundStyle(DesignColors.textSecondary.opacity(0.8))
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background {
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(DesignColors.accentWarm.opacity(0.06))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .strokeBorder(DesignColors.accentWarm.opacity(0.18), lineWidth: 0.6)
+                }
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Typical range: \(kind.typicalRangeLabel), \(kind.typicalSourceLabel)")
     }
 
     // MARK: - Sections
 
     @ViewBuilder
-    private var normalSection: some View {
+    private var typicalSection: some View {
         sectionBlock(
+            icon: "checkmark.seal",
             title: "What's typical",
             body: copy.typical,
-            highlights: copy.typicalHighlights,
-            image: .inline(asset: copy.inlineImageAsset, height: 168)
+            highlights: copy.typicalHighlights
         )
     }
 
     @ViewBuilder
     private var affectSection: some View {
         sectionBlock(
+            icon: "wind",
             title: "What can shift it",
             body: copy.affectIntro,
             bullets: copy.affectBullets,
-            image: nil,
             footnote: copy.affectFootnote
         )
     }
@@ -138,12 +188,20 @@ struct CycleStatInfoDetailView: View {
     @ViewBuilder
     private var doctorSection: some View {
         sectionBlock(
+            icon: "stethoscope",
             title: "When to check in with a provider",
             body: copy.doctorIntro,
             bullets: copy.doctorBullets,
-            image: .banner(asset: copy.bannerImageAsset, height: 140),
             footnote: copy.doctorFootnote
         )
+    }
+
+    @ViewBuilder
+    private var sectionDivider: some View {
+        Rectangle()
+            .fill(DesignColors.text.opacity(0.08))
+            .frame(height: 0.5)
+            .accessibilityHidden(true)
     }
 
     @ViewBuilder
@@ -158,25 +216,32 @@ struct CycleStatInfoDetailView: View {
 
     // MARK: - Section builder
 
-    private enum InlineImage {
-        case inline(asset: String, height: CGFloat)
-        case banner(asset: String, height: CGFloat)
-    }
-
     @ViewBuilder
     private func sectionBlock(
+        icon: String,
         title: String,
         body: String,
         highlights: [String] = [],
         bullets: [String] = [],
-        image: InlineImage? = nil,
         footnote: String? = nil
     ) -> some View {
         VStack(alignment: .leading, spacing: 14) {
-            Text(title)
-                .font(.raleway("Bold", size: 22, relativeTo: .title2))
-                .tracking(-0.3)
-                .foregroundStyle(DesignColors.text)
+            HStack(alignment: .center, spacing: 10) {
+                Image(systemName: icon)
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundStyle(DesignColors.accentWarm)
+                    .frame(width: 28, height: 28)
+                    .background {
+                        Circle().fill(DesignColors.accentWarm.opacity(0.10))
+                    }
+                    .accessibilityHidden(true)
+
+                Text(title)
+                    .font(AppTypography.cardTitleSecondary)
+                    .tracking(AppTypography.cardTitleSecondaryTracking)
+                    .foregroundStyle(DesignColors.text)
+                    .accessibilityAddTraits(.isHeader)
+            }
 
             Text(body)
                 .font(.raleway("Regular", size: 15, relativeTo: .body))
@@ -184,130 +249,86 @@ struct CycleStatInfoDetailView: View {
                 .lineSpacing(5)
                 .fixedSize(horizontal: false, vertical: true)
 
-            ForEach(highlights, id: \.self) { line in
-                Text(line)
-                    .font(.raleway("Medium", size: 15, relativeTo: .body))
-                    .foregroundStyle(DesignColors.text)
-                    .lineSpacing(5)
-                    .fixedSize(horizontal: false, vertical: true)
+            if !highlights.isEmpty {
+                VStack(alignment: .leading, spacing: 10) {
+                    ForEach(highlights, id: \.self) { line in
+                        highlightBlock(line)
+                    }
+                }
             }
 
             if !bullets.isEmpty {
                 VStack(alignment: .leading, spacing: 10) {
                     ForEach(bullets, id: \.self) { line in
-                        HStack(alignment: .top, spacing: 10) {
-                            Circle()
-                                .fill(DesignColors.accentWarm.opacity(0.7))
-                                .frame(width: 5, height: 5)
-                                .padding(.top, 7)
-                            Text(line)
-                                .font(.raleway("Regular", size: 15, relativeTo: .body))
-                                .foregroundStyle(DesignColors.text.opacity(0.82))
-                                .lineSpacing(4)
-                                .fixedSize(horizontal: false, vertical: true)
-                        }
+                        bulletRow(line)
                     }
                 }
-                .padding(.top, 2)
+                .accessibilityElement(children: .contain)
             }
 
             if let footnote {
                 Text(footnote)
-                    .font(.raleway("Medium", size: 14, relativeTo: .callout))
+                    .font(.raleway("Medium", size: 13, relativeTo: .footnote))
                     .foregroundStyle(DesignColors.textSecondary)
                     .lineSpacing(4)
                     .fixedSize(horizontal: false, vertical: true)
                     .padding(.top, 2)
             }
-
-            if let image {
-                switch image {
-                case let .inline(asset, height):
-                    inlineImageSlot(asset: asset, height: height)
-                        .padding(.top, 6)
-                case let .banner(asset, height):
-                    inlineImageSlot(asset: asset, height: height)
-                        .padding(.top, 6)
-                }
-            }
         }
     }
 
-    // MARK: - Image Slots
-
     @ViewBuilder
-    private var heroImageSlot: some View {
-        imageSlot(asset: kind.heroAsset, aspect: .portrait)
-    }
+    private func highlightBlock(_ text: String) -> some View {
+        HStack(alignment: .top, spacing: 10) {
+            Rectangle()
+                .fill(DesignColors.accentWarm.opacity(0.45))
+                .frame(width: 2.5)
+                .accessibilityHidden(true)
 
-    @ViewBuilder
-    private func inlineImageSlot(asset: String, height: CGFloat) -> some View {
-        imageSlot(asset: asset, aspect: .fixed(height: height))
-    }
-
-    fileprivate enum SlotAspect {
-        case portrait
-        case fixed(height: CGFloat)
-    }
-
-    @ViewBuilder
-    private func imageSlot(asset: String, aspect: SlotAspect) -> some View {
-        let shape = RoundedRectangle(cornerRadius: 20, style: .continuous)
-        let image = UIImage(named: asset)
-
-        ZStack {
-            if let image {
-                Image(uiImage: image)
-                    .resizable()
-                    .scaledToFill()
-            } else {
-                LinearGradient(
-                    colors: [
-                        DesignColors.accentWarm.opacity(0.16),
-                        DesignColors.accentSecondary.opacity(0.10)
-                    ],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-
-                VStack(spacing: 8) {
-                    Image(systemName: "photo.on.rectangle")
-                        .font(.system(size: 22, weight: .light))
-                        .foregroundStyle(DesignColors.text.opacity(0.55))
-                    Text(asset)
-                        .font(.raleway("Medium", size: 10, relativeTo: .caption2))
-                        .tracking(0.4)
-                        .foregroundStyle(DesignColors.text.opacity(0.6))
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.7)
-                        .padding(.horizontal, 10)
-                }
-            }
+            Text(text)
+                .font(.raleway("Medium", size: 14, relativeTo: .callout))
+                .foregroundStyle(DesignColors.text)
+                .lineSpacing(5)
+                .fixedSize(horizontal: false, vertical: true)
         }
-        .modifier(SlotFrameModifier(aspect: aspect))
-        .clipShape(shape)
-        .overlay {
-            shape
-                .stroke(DesignColors.accentWarm.opacity(0.22), lineWidth: 0.8)
-        }
+        .padding(.leading, 2)
     }
 
+    @ViewBuilder
+    private func bulletRow(_ text: String) -> some View {
+        HStack(alignment: .top, spacing: 12) {
+            Circle()
+                .fill(DesignColors.accentWarm)
+                .frame(width: 5, height: 5)
+                .padding(.top, 9)
+                .accessibilityHidden(true)
+
+            Text(text)
+                .font(.raleway("Regular", size: 15, relativeTo: .body))
+                .foregroundStyle(DesignColors.text.opacity(0.82))
+                .lineSpacing(4)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(text)
+    }
 }
 
-// MARK: - Slot frame modifier
+// MARK: - Kind — Typical range
 
-private struct SlotFrameModifier: ViewModifier {
-    let aspect: CycleStatInfoDetailView.SlotAspect
+extension CycleStatInfoKind {
+    var typicalRangeLabel: String {
+        switch self {
+        case .cycleLength:    return "21–35 days"
+        case .periodLength:   return "2–7 days"
+        case .cycleVariation: return "Up to a few days month to month"
+        }
+    }
 
-    func body(content: Content) -> some View {
-        switch aspect {
-        case .portrait:
-            content
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-        case let .fixed(height):
-            content
-                .frame(maxWidth: .infinity)
-                .frame(height: height)
+    var typicalSourceLabel: String {
+        switch self {
+        case .cycleLength, .periodLength: return "ACOG"
+        case .cycleVariation:             return "Clinical norm"
         }
     }
 }
@@ -324,8 +345,6 @@ struct CycleStatInfoCopy {
     let doctorIntro: String
     let doctorBullets: [String]
     let doctorFootnote: String?
-    let inlineImageAsset: String
-    let bannerImageAsset: String
 
     static func `for`(kind: CycleStatInfoKind) -> CycleStatInfoCopy {
         switch kind {
@@ -363,9 +382,7 @@ extension CycleStatInfoCopy {
             "Severe pain that disrupts daily life",
             "Bleeding heavy enough to soak through protection every hour"
         ],
-        doctorFootnote: nil,
-        inlineImageAsset: "stat-info-cycle-length-normal",
-        bannerImageAsset: "stat-info-cycle-length-provider"
+        doctorFootnote: nil
     )
 
     static let periodLength = CycleStatInfoCopy(
@@ -394,9 +411,7 @@ extension CycleStatInfoCopy {
             "Passing clots larger than about 2.5 cm",
             "Feeling faint, weak, breathless, or chest discomfort during or after your period"
         ],
-        doctorFootnote: "Heavy menstrual bleeding, even inside a normal cycle length, can affect quality of life and lead to iron-deficiency anemia over time.",
-        inlineImageAsset: "stat-info-period-length-normal",
-        bannerImageAsset: "stat-info-period-length-provider"
+        doctorFootnote: "Heavy menstrual bleeding, even inside a normal cycle length, can affect quality of life and lead to iron-deficiency anemia over time."
     )
 
     static let cycleVariation = CycleStatInfoCopy(
@@ -422,8 +437,6 @@ extension CycleStatInfoCopy {
             "Variation paired with heavy bleeding, severe pain, or missed periods",
             "Cycles shorter than 21 or longer than 35 days repeating"
         ],
-        doctorFootnote: nil,
-        inlineImageAsset: "stat-info-cycle-variation-normal",
-        bannerImageAsset: "stat-info-cycle-variation-provider"
+        doctorFootnote: nil
     )
 }
