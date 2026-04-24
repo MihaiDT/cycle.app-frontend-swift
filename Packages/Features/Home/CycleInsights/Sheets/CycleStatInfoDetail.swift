@@ -88,20 +88,12 @@ struct CycleStatInfoDetailView: View {
                 .padding(.top, 32)
                 .padding(.bottom, 56)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                // Opaque content column so scrolling up visually covers
-                // the parallaxing header — matches the header plate's
-                // fill so there's no seam where the two meet.
-                .background(DesignColors.background)
-                // Pull content up a touch so its top edge overlaps the
-                // header's arc dip — reads as a "sheet" riding over the
-                // illustration, not stacked below it.
-                .padding(.top, -12)
-                .zIndex(1)
             }
         }
-        // JourneyAnimatedBackground shows at the edges behind the
-        // parallaxing header; content + header plate sit on their own
-        // ivory surface.
+        // Original surface — JourneyAnimatedBackground peach animated
+        // blobs show through the content column. Only the header plate
+        // is ivory, so its arc reads as a distinct silhouette against
+        // the peach behind it.
         .background { JourneyAnimatedBackground(animated: false) }
         .navigationTitle(kind.title)
         .navigationBarTitleDisplayMode(.inline)
