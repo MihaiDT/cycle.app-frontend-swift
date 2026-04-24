@@ -15,12 +15,16 @@ struct HeaderArcShape: Shape {
 
     func path(in rect: CGRect) -> Path {
         var path = Path()
+        // Flat top, straight sides flush to the bottom corners, and
+        // the belly hangs BELOW the corners via a quad curve. Anchors
+        // at the corners (not above them) so content placed immediately
+        // after the plate has no side-gap leaking through.
         path.move(to: CGPoint(x: 0, y: 0))
         path.addLine(to: CGPoint(x: rect.width, y: 0))
-        path.addLine(to: CGPoint(x: rect.width, y: rect.height - arcDepth))
+        path.addLine(to: CGPoint(x: rect.width, y: rect.height))
         path.addQuadCurve(
-            to: CGPoint(x: 0, y: rect.height - arcDepth),
-            control: CGPoint(x: rect.width / 2, y: rect.height + arcDepth)
+            to: CGPoint(x: 0, y: rect.height),
+            control: CGPoint(x: rect.width / 2, y: rect.height + arcDepth * 2)
         )
         path.closeSubpath()
         return path

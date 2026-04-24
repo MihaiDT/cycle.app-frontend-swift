@@ -39,6 +39,18 @@ struct CycleStatInfoDetailView: View {
         ScrollView(.vertical, showsIndicators: false) {
             VStack(alignment: .leading, spacing: 0) {
                 CycleStatInfoHeaderImage(kind: kind)
+                    // Parallax: header scrolls at ~0.5× content speed on
+                    // upward scroll, and stretches-from-top when pulled
+                    // down (the classic Apple photos/Health pattern).
+                    .visualEffect { content, proxy in
+                        let minY = proxy.frame(in: .scrollView).minY
+                        return content
+                            .offset(y: minY > 0 ? -minY : -minY * 0.5)
+                            .scaleEffect(
+                                minY > 0 ? 1 + minY / 400 : 1,
+                                anchor: .top
+                            )
+                    }
 
                 VStack(alignment: .leading, spacing: 40) {
                     CycleStatInfoPersonalReading(
@@ -75,12 +87,21 @@ struct CycleStatInfoDetailView: View {
                 .padding(.horizontal, 24)
                 .padding(.top, 32)
                 .padding(.bottom, 56)
-                .frame(maxWidth: 560, alignment: .leading)
                 .frame(maxWidth: .infinity, alignment: .leading)
+                // Opaque content column so scrolling up visually covers
+                // the parallaxing header — matches the header plate's
+                // fill so there's no seam where the two meet.
+                .background(DesignColors.background)
+                // Pull content up a touch so its top edge overlaps the
+                // header's arc dip — reads as a "sheet" riding over the
+                // illustration, not stacked below it.
+                .padding(.top, -12)
+                .zIndex(1)
             }
         }
-        // Same surface as the Cycle Stats parent screen so the info
-        // reads as a continuation, not a separate modal.
+        // JourneyAnimatedBackground shows at the edges behind the
+        // parallaxing header; content + header plate sit on their own
+        // ivory surface.
         .background { JourneyAnimatedBackground(animated: false) }
         .navigationTitle(kind.title)
         .navigationBarTitleDisplayMode(.inline)
