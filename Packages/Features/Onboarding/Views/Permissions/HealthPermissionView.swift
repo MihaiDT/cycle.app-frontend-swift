@@ -205,6 +205,10 @@ public struct HealthPermissionView: View {
             HKObjectType.quantityType(forIdentifier: .bodyTemperature)!,
             HKObjectType.quantityType(forIdentifier: .basalBodyTemperature)!,
             HKObjectType.quantityType(forIdentifier: .bodyMass)!,
+            // Apple Watch Series 8+ nightly wrist temperature (iOS 16+).
+            // Feeds the Body Signals card on Cycle Stats — the single
+            // strongest biometric signal for ovulation / luteal shifts.
+            HKObjectType.quantityType(forIdentifier: .appleSleepingWristTemperature)!,
 
             // Sleep & recovery
             HKObjectType.categoryType(forIdentifier: .sleepAnalysis)!,

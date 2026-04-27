@@ -20,17 +20,27 @@ extension CycleInsightsView {
     @ViewBuilder
     var rhythmReflection: some View {
         ZStack(alignment: .bottomTrailing) {
-            Text(store.rhythmReflectionCopy)
-                .font(.system(size: 26, weight: .regular, design: .serif))
-                .italic()
-                .tracking(-0.3)
-                .foregroundStyle(DesignColors.accentWarmText)
-                .lineSpacing(4)
-                .multilineTextAlignment(.center)
-                .fixedSize(horizontal: false, vertical: true)
-                .frame(maxWidth: .infinity, alignment: .center)
-                .padding(.horizontal, 26)
-                .padding(.vertical, 56)
+            VStack(spacing: 18) {
+                Text(store.rhythmReflectionCopy)
+                    .font(.system(size: 26, weight: .regular, design: .serif))
+                    .italic()
+                    .tracking(-0.3)
+                    .foregroundStyle(DesignColors.accentWarmText)
+                    .lineSpacing(4)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity, alignment: .center)
+
+                // Quiet attribution so the pull-quote doesn't float
+                // unsigned — anchors the voice as Aria's reading of
+                // the user's data.
+                Text("— Aria")
+                    .font(.raleway("Medium", size: 12, relativeTo: .caption))
+                    .tracking(0.6)
+                    .foregroundStyle(DesignColors.accentWarmText.opacity(0.7))
+            }
+            .padding(.horizontal, 26)
+            .padding(.vertical, 48)
 
             Button {
                 isShareReflectionVisible = true

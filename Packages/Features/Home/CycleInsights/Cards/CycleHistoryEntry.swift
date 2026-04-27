@@ -3,13 +3,23 @@ import SwiftUI
 
 // MARK: - Entry
 
-struct CycleHistoryEntry: View {
+struct CycleHistoryEntry: View, Equatable {
     let timeline: CycleHistoryTimeline
     /// Fired when the user taps the ellipsis menu. The parent card
     /// owns the sheet presentation state — keeping it out of here
     /// avoids the ForEach/fullScreenCover edge cases that silently
     /// cancel inline sheet presentations.
     let onMenuTap: () -> Void
+
+    /// Equatable lets the parent card wrap each entry with
+    /// `.equatable()`, so the per-entry body (which renders ~30
+    /// period dots + 3 reading dot rows = 100+ subviews) doesn't
+    /// re-evaluate when the underlying timeline is unchanged. The
+    /// closure is intentionally excluded — it dispatches into the
+    /// parent card's stable sheet binding.
+    nonisolated static func == (lhs: Self, rhs: Self) -> Bool {
+        lhs.timeline == rhs.timeline
+    }
 
     private static let rangeFormatter: DateFormatter = {
         let f = DateFormatter()
@@ -21,8 +31,14 @@ struct CycleHistoryEntry: View {
         VStack(alignment: .leading, spacing: 12) {
             entryHeader
             CycleHistoryBar(timeline: timeline)
-            CycleHistoryDayScale(length: timeline.length)
-            CycleHistoryDotRows(timeline: timeline)
+            // Energy / Mood / Sleep dots only for cycles with at least
+            // one daily check-in. Empty rows on untracked cycles read
+            // as "you forgot to log" (guilt pattern) when the real
+            // story is usually just "this cycle happened before daily
+            // check-ins existed".
+            if !timeline.reports.isEmpty {
+                CycleHistoryDotRows(timeline: timeline)
+            }
         }
     }
 
@@ -144,65 +160,117 @@ struct CycleHistoryEntry: View {
 struct CycleHistoryBar: View {
     let timeline: CycleHistoryTimeline
 
-    private static let barHeight: CGFloat = 10
-    private static let fertileOvulationMarkerSize: CGFloat = 6
+    private static let dotSize: CGFloat = 8
+    private static let barHeight: CGFloat = 12
 
-    // Canvas replaces a `GeometryReader` + `ZStack` of Capsules +
-    // Circles. Each entry previously had 4+ SwiftUI views just for
-    // the bar, and 4 visible entries meant 16 views per card row;
-    // Canvas draws everything in a single GPU pass so the card
-    // materializes much faster inside a UICollectionView cell.
+    /// One dot per day, drawn in a single `Canvas` pass instead of a
+    /// `ForEach` of `PhaseGlossyDot` views. The original implementation
+    /// instantiated ~30 SwiftUI views per bar (each `PhaseGlossyDot` is
+    /// a tinted gradient + specular sheen overlay = multiple internal
+    /// nodes) — for a 3-cycle history card that meant ~270+ view-graph
+    /// nodes laid out and re-evaluated on every body invocation. Canvas
+    /// draws the whole row in one GPU pass with zero view-graph cost,
+    /// matching the optimization already in place on `CycleHistoryDotRows`.
     var body: some View {
         Canvas { ctx, size in
             let length = max(timeline.length, 1)
-            let dayWidth = size.width / CGFloat(length)
-            let periodWidth = dayWidth * CGFloat(min(timeline.bleedingDays, timeline.length))
-            let fertileX = dayWidth * CGFloat(timeline.fertileWindow.lowerBound - 1)
-            let fertileWidth = dayWidth * CGFloat(timeline.fertileWindow.count)
-            let ovulationCenter = dayWidth * (CGFloat(timeline.ovulationDay) - 0.5)
-            let radius = Self.barHeight / 2
+            let slotWidth = size.width / CGFloat(length)
+            let midY = size.height / 2
+            let radius = Self.dotSize / 2
 
-            // Background capsule
-            let bgRect = CGRect(x: 0, y: 0, width: size.width, height: Self.barHeight)
-            ctx.fill(
-                Path(roundedRect: bgRect, cornerRadius: radius),
-                with: .color(DesignColors.text.opacity(0.06))
-            )
-
-            // Fertile window capsule
-            if fertileWidth > 0 {
-                let fertileRect = CGRect(x: fertileX, y: 0, width: fertileWidth, height: Self.barHeight)
-                ctx.fill(
-                    Path(roundedRect: fertileRect, cornerRadius: radius),
-                    with: .color(CyclePhase.ovulatory.orbitColor.opacity(0.55))
+            for day in 1...length {
+                let cx = slotWidth * (CGFloat(day) - 0.5)
+                let rect = CGRect(
+                    x: cx - radius,
+                    y: midY - radius,
+                    width: Self.dotSize,
+                    height: Self.dotSize
                 )
-            }
+                let path = Path(ellipseIn: rect)
 
-            // Period capsule
-            if periodWidth > 0 {
-                let periodRect = CGRect(x: 0, y: 0, width: periodWidth, height: Self.barHeight)
-                ctx.fill(
-                    Path(roundedRect: periodRect, cornerRadius: radius),
-                    with: .color(CyclePhase.menstrual.orbitColor.opacity(0.95))
-                )
+                switch dayRole(day) {
+                case .period:
+                    ctx.fill(path, with: .color(CyclePhase.menstrual.orbitColor.opacity(0.95)))
+                case .fertile:
+                    ctx.fill(path, with: .color(CyclePhase.ovulatory.orbitColor.opacity(0.55)))
+                case .ovulation:
+                    ctx.fill(path, with: .color(DesignColors.background))
+                    ctx.stroke(path, with: .color(CyclePhase.ovulatory.orbitColor), lineWidth: 1.4)
+                case .neutral:
+                    ctx.fill(path, with: .color(DesignColors.text.opacity(0.10)))
+                }
             }
-
-            // Ovulation marker — inner dot with ring
-            let markerSize = Self.fertileOvulationMarkerSize
-            let innerRect = CGRect(
-                x: ovulationCenter - markerSize / 2,
-                y: Self.barHeight / 2 - markerSize / 2,
-                width: markerSize,
-                height: markerSize
-            )
-            ctx.fill(Path(ellipseIn: innerRect), with: .color(DesignColors.background))
-            ctx.stroke(
-                Path(ellipseIn: innerRect),
-                with: .color(CyclePhase.ovulatory.orbitColor),
-                lineWidth: 1.4
-            )
         }
+        .frame(maxWidth: .infinity)
         .frame(height: Self.barHeight)
+        .accessibilityElement()
+        .accessibilityLabel(accessibilityLabel)
+    }
+
+    private enum DayRole { case period, fertile, ovulation, neutral }
+
+    private func dayRole(_ day: Int) -> DayRole {
+        if day == timeline.ovulationDay { return .ovulation }
+        if day <= timeline.bleedingDays { return .period }
+        if timeline.fertileWindow.contains(day) { return .fertile }
+        return .neutral
+    }
+
+    private var accessibilityLabel: String {
+        "\(timeline.length) day cycle, \(timeline.bleedingDays) period days, ovulation on day \(timeline.ovulationDay)"
+    }
+}
+
+// MARK: - Bar Legend
+//
+// Quiet legend row beneath the per-day dot bar. Without this, the
+// rose / amber / outlined-circle vocabulary reads as decorative —
+// "pretty colors I can't decode" — which is the AI-slop trap. A
+// single subtle row of swatches + labels turns the bar into a
+// readable artifact: each dot earns its meaning at a glance.
+
+struct CycleHistoryBarLegend: View {
+    var body: some View {
+        HStack(spacing: 14) {
+            swatch(
+                label: "Period",
+                tint: CyclePhase.menstrual.orbitColor,
+                fillOpacity: 0.95
+            )
+            swatch(
+                label: "Fertile",
+                tint: CyclePhase.ovulatory.orbitColor,
+                fillOpacity: 0.55
+            )
+            ringSwatch(
+                label: "Ovulation",
+                tint: CyclePhase.ovulatory.orbitColor
+            )
+            Spacer(minLength: 0)
+        }
+        .padding(.top, 2)
+    }
+
+    private func swatch(label: String, tint: Color, fillOpacity: Double) -> some View {
+        HStack(spacing: 6) {
+            PhaseGlossyDot(tint: tint, tintOpacity: fillOpacity)
+            Text(label)
+                .font(.raleway("Medium", size: 10, relativeTo: .caption2))
+                .tracking(0.4)
+                .foregroundStyle(DesignColors.textSecondary.opacity(0.85))
+        }
+    }
+
+    private func ringSwatch(label: String, tint: Color) -> some View {
+        HStack(spacing: 6) {
+            Circle()
+                .stroke(tint, lineWidth: 1.2)
+                .frame(width: 7, height: 7)
+            Text(label)
+                .font(.raleway("Medium", size: 10, relativeTo: .caption2))
+                .tracking(0.4)
+                .foregroundStyle(DesignColors.textSecondary.opacity(0.85))
+        }
     }
 }
 

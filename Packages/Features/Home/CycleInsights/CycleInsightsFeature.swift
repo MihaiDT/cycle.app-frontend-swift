@@ -79,6 +79,16 @@ public struct CycleInsightsFeature: Sendable {
         /// reducer stays the single source of truth.
         public var statsLayout: CycleStatsLayout = .default
 
+        /// Latest Apple Watch biometrics correlated with the user's
+        /// cycle phase. `nil` while the first fetch is in flight; the
+        /// teaser card reads `permission` to decide between the CTA
+        /// state and live readings.
+        public var bodySignals: BodySignalsSnapshot?
+        /// Cached probe read — lets the teaser render the CTA synchronously
+        /// on first paint before the fetch resolves.
+        public var bodySignalsAuth: BodySignalsAuthProbe?
+        public var isLoadingBodySignals: Bool = false
+
         /// True while the customize screen is pushed on the stack.
         /// Kept in reducer state (not View state) so the screen
         /// survives store observations and the parent can coordinate
@@ -118,6 +128,11 @@ public struct CycleInsightsFeature: Sendable {
         /// Broadcast from TodayFeature via HomeFeature — keeps `cycleContext`
         /// fresh when the user edits period data without requiring a re-entry.
         case cycleDataChanged(CycleContext?)
+        // MARK: Body Signals
+        case loadBodySignals
+        case bodySignalsProbed(BodySignalsAuthProbe)
+        case bodySignalsLoaded(Result<BodySignalsSnapshot, BodySignalsError>)
+        case requestBodySignalsPermission
         case delegate(Delegate)
         public enum Delegate: Sendable, Equatable {
             case dismiss
@@ -126,6 +141,7 @@ public struct CycleInsightsFeature: Sendable {
 
     @Dependency(\.menstrualLocal) var menstrualLocal
     @Dependency(\.cycleStatsLayoutClient) var cycleStatsLayoutClient
+    @Dependency(\.healthKitLocal) var healthKitLocal
 
     /// Stable id under which we cancel the debounced layout-save
     /// effect. A fresh `.layoutChanged` cancels the in-flight save
@@ -138,6 +154,10 @@ public struct CycleInsightsFeature: Sendable {
         /// with a fresh one — guarantees the view always settles on
         /// the latest DB state even when edits arrive mid-fetch.
         case refreshStats
+        /// Body signals (HealthKit) fetch — cancelled/replaced on
+        /// re-appear and after a permission request so we never show
+        /// stale readings mid-update.
+        case refreshBodySignals
     }
 
     // MARK: - Derived-copy helpers
@@ -250,7 +270,19 @@ public struct CycleInsightsFeature: Sendable {
                     await send(.insightsLoaded(.success(MenstrualInsightsResponse.mock)))
                 }
                 .cancellable(id: CancelID.refreshStats, cancelInFlight: true)
-                return .merge(loadLayout, loadData)
+
+                // Body Signals fetch is pre-warmed from `HomeFeature.onAppear`
+                // so the data is usually already in state by the time the
+                // user lands here. Only kick a fresh load if we have nothing
+                // and nothing is in flight — otherwise `cancelInFlight: true`
+                // would tear down the pre-warm fetch and restart from zero,
+                // which is exactly the "stuck skeleton" the user reported.
+                let needsBodySignalsLoad = state.bodySignals == nil && !state.isLoadingBodySignals
+                if needsBodySignalsLoad {
+                    return .merge(loadLayout, loadData, .send(.loadBodySignals))
+                } else {
+                    return .merge(loadLayout, loadData)
+                }
 
             case .statsLoaded(.success(let r)):
                 state.isLoadingStats = false
@@ -370,27 +402,88 @@ public struct CycleInsightsFeature: Sendable {
                 // phase accent color, rhythm details) reflect the latest edit
                 // without requiring the user to re-open the sheet.
                 state.cycleContext = newCycle
-                // Stale-while-revalidate: keep the previous aggregates on
-                // screen so the user doesn't see a skeleton, and re-fetch
-                // in the background. The numbers update in place once the
-                // fresh compute finishes — matching how Apple Health
-                // refreshes dashboard aggregates after a data edit.
-                //
-                // We always start a fresh read here (cancelling any
-                // in-flight one under the same id). If a fetch was
-                // already running from `.onAppear`, it may have sampled
-                // SwiftData *before* the write committed — replacing
-                // it guarantees the view settles on post-edit numbers.
+
+                // Drop every aggregate we might be showing on Cycle
+                // Stats so the cards flip to their skeletons while the
+                // refresh runs. Showing the previous numbers in place
+                // (stale-while-revalidate) was confusing after edits —
+                // the screen looked unchanged for a beat and read as
+                // "edit didn't take" until the fresh compute landed.
+                // Skeletons across the board honestly say "refreshing"
+                // and the data fills in within ~100-300ms once the
+                // local fetches complete.
+                state.stats = nil
+                state.journey = nil
+                state.insights = nil
+                state.historyTimelines = []
+                state.bodySignals = nil
                 state.isLoadingStats = true
                 state.isLoadingInsights = true
-                return .run { [menstrualLocal] send in
-                    async let s = Result { try await menstrualLocal.getCycleStats() }
-                    async let j = Result { try await menstrualLocal.getJourneyData() }
-                    await send(.statsLoaded(s))
-                    await send(.journeyLoaded(j))
-                    await send(.insightsLoaded(.success(MenstrualInsightsResponse.mock)))
+                state.isLoadingBodySignals = true
+
+                return .merge(
+                    .run { [menstrualLocal] send in
+                        async let s = Result { try await menstrualLocal.getCycleStats() }
+                        async let j = Result { try await menstrualLocal.getJourneyData() }
+                        await send(.statsLoaded(s))
+                        await send(.journeyLoaded(j))
+                        await send(.insightsLoaded(.success(MenstrualInsightsResponse.mock)))
+                    }
+                    .cancellable(id: CancelID.refreshStats, cancelInFlight: true),
+                    // Body signals depend on phase classification — refetch
+                    // so the per-phase HRV bars and the "vs phase average"
+                    // delta lines align with the user's new cycle context.
+                    .send(.loadBodySignals)
+                )
+
+            // MARK: Body Signals
+
+            case .loadBodySignals:
+                state.isLoadingBodySignals = true
+                return .run { [healthKitLocal] send in
+                    let probe = healthKitLocal.authorizationProbe()
+                    await send(.bodySignalsProbed(probe))
+                    guard probe == .canProceed else { return }
+                    do {
+                        let snapshot = try await healthKitLocal.fetchBodySignals()
+                        await send(.bodySignalsLoaded(.success(snapshot)))
+                    } catch let err as BodySignalsError {
+                        await send(.bodySignalsLoaded(.failure(err)))
+                    } catch {
+                        await send(.bodySignalsLoaded(.failure(.readFailed(error.localizedDescription))))
+                    }
                 }
-                .cancellable(id: CancelID.refreshStats, cancelInFlight: true)
+                .cancellable(id: CancelID.refreshBodySignals, cancelInFlight: true)
+
+            case let .bodySignalsProbed(probe):
+                state.bodySignalsAuth = probe
+                if probe != .canProceed {
+                    // If the probe says we can't fetch, drop the spinner —
+                    // the card flips into its CTA / unavailable state.
+                    state.isLoadingBodySignals = false
+                }
+                return .none
+
+            case let .bodySignalsLoaded(.success(snapshot)):
+                state.isLoadingBodySignals = false
+                state.bodySignals = snapshot
+                return .none
+
+            case .bodySignalsLoaded(.failure):
+                // Keep the previous snapshot on screen if we had one —
+                // transient HealthKit errors (e.g. phone locked briefly)
+                // shouldn't flash the card back into a skeleton.
+                state.isLoadingBodySignals = false
+                return .none
+
+            case .requestBodySignalsPermission:
+                // Fire the system prompt, then re-run the load path so
+                // `bodySignalsAuth` moves from `.needsPrompt` to whatever
+                // the new auth state is and the first fetch runs.
+                return .run { [healthKitLocal] send in
+                    try? await healthKitLocal.requestAuthorization()
+                    await send(.loadBodySignals)
+                }
 
             case .delegate:
                 return .none

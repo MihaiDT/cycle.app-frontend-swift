@@ -2,10 +2,9 @@ import SwiftUI
 
 // MARK: - Personal Reading
 //
-// Under the header illustration, one quiet row pins the reference
-// range (established by the image) to the user's own measurement —
-// label, value, verdict badge. The rules above and below replace a
-// tinted card so the reading stays chrome-free.
+// Hero card on each stat info screen — same Apple Health pattern as
+// the Body Signals detail cards. Caps eyebrow + big primary value +
+// quiet status caption, all wrapped in `widgetCardStyle`.
 
 struct CycleStatInfoPersonalReading: View {
     let kind: CycleStatInfoKind
@@ -13,46 +12,46 @@ struct CycleStatInfoPersonalReading: View {
     let badge: CycleStatusBadge?
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            thinRule
-            HStack(alignment: .firstTextBaseline, spacing: 14) {
-                Text(kind.recapLabel.uppercased())
-                    .font(.raleway("SemiBold", size: 11, relativeTo: .caption2))
-                    .tracking(1.4)
-                    .foregroundStyle(DesignColors.textSecondary)
-                Spacer(minLength: 8)
-            }
-            .padding(.top, 18)
+        VStack(alignment: .leading, spacing: 8) {
+            Text(kind.recapLabel.uppercased())
+                .font(.raleway("SemiBold", size: 11, relativeTo: .caption2))
+                .tracking(1.4)
+                .foregroundStyle(DesignColors.textSecondary)
 
             HStack(alignment: .firstTextBaseline, spacing: 14) {
                 Text(previousValue ?? "No data")
                     .font(.raleway(
                         previousValue != nil ? "Bold" : "SemiBold",
                         size: previousValue != nil ? 30 : 20,
-                        relativeTo: .title
+                        relativeTo: .largeTitle
                     ))
                     .tracking(-0.4)
                     .foregroundStyle(
                         previousValue != nil
                             ? DesignColors.text
-                            : DesignColors.text.opacity(0.45)
+                            : DesignColors.text.opacity(0.5)
                     )
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)
 
+                Spacer(minLength: 8)
+
                 if let badge {
-                    Text(badge.label)
-                        .font(.raleway("SemiBold", size: 12, relativeTo: .caption))
-                        .tracking(0.8)
-                        .textCase(.uppercase)
-                        .foregroundStyle(badgeColor(for: badge.tone))
+                    HStack(spacing: 5) {
+                        Circle()
+                            .fill(badgeDotColor(for: badge.tone))
+                            .frame(width: 6, height: 6)
+                        Text(badge.label.lowercased())
+                            .font(.raleway("Medium", size: 12, relativeTo: .caption))
+                            .tracking(0.4)
+                            .foregroundStyle(badgeTextColor(for: badge.tone))
+                    }
                 }
             }
-            .padding(.top, 4)
-            .padding(.bottom, 18)
-
-            thinRule
         }
+        .padding(20)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .widgetCardStyle(cornerRadius: 24)
         .accessibilityElement(children: .combine)
         .accessibilityLabel(accessibilityLabel)
     }
@@ -63,17 +62,17 @@ struct CycleStatInfoPersonalReading: View {
         return "\(kind.recapLabel), \(value)\(suffix)"
     }
 
-    private func badgeColor(for tone: CycleStatusTone) -> Color {
+    private func badgeDotColor(for tone: CycleStatusTone) -> Color {
         switch tone {
         case .normal:         return DesignColors.statusSuccess
-        case .needsAttention: return DesignColors.accentWarmText
+        case .needsAttention: return DesignColors.accentHoney
         }
     }
 
-    private var thinRule: some View {
-        Rectangle()
-            .fill(DesignColors.text.opacity(0.10))
-            .frame(height: 0.5)
-            .accessibilityHidden(true)
+    private func badgeTextColor(for tone: CycleStatusTone) -> Color {
+        switch tone {
+        case .normal:         return DesignColors.statusSuccess
+        case .needsAttention: return DesignColors.accentHoneyText
+        }
     }
 }

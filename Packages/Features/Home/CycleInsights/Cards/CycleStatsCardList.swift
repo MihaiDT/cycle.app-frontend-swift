@@ -22,6 +22,37 @@ struct CycleStatsCardList<CardID: Hashable & Sendable>: UIViewRepresentable {
     let interItemSpacing: CGFloat
     let cardContent: (CardID) -> AnyView
     let trailingContent: () -> AnyView
+    /// Optional header cell rendered above the first card, scrolling
+    /// with the rest of the list.
+    let leadingContent: (() -> AnyView)?
+    /// Called on every scroll tick with the current contentOffset.y.
+    /// Used by callers that want to parallax a header element.
+    let onScroll: ((CGFloat) -> Void)?
+    /// Bump this when downstream data that any card renders has
+    /// changed but the card identities haven't. UICollectionView
+    /// caches its cells, so without a reconfigure signal the cell's
+    /// hosted SwiftUI view stays on the old closure values.
+    let reconfigureToken: AnyHashable?
+
+    init(
+        cards: [CardID],
+        contentInsets: UIEdgeInsets,
+        interItemSpacing: CGFloat,
+        cardContent: @escaping (CardID) -> AnyView,
+        trailingContent: @escaping () -> AnyView,
+        leadingContent: (() -> AnyView)? = nil,
+        onScroll: ((CGFloat) -> Void)? = nil,
+        reconfigureToken: AnyHashable? = nil
+    ) {
+        self.cards = cards
+        self.contentInsets = contentInsets
+        self.interItemSpacing = interItemSpacing
+        self.cardContent = cardContent
+        self.trailingContent = trailingContent
+        self.leadingContent = leadingContent
+        self.onScroll = onScroll
+        self.reconfigureToken = reconfigureToken
+    }
 
     func makeCoordinator() -> Coordinator {
         Coordinator()
@@ -63,10 +94,20 @@ struct CycleStatsCardList<CardID: Hashable & Sendable>: UIViewRepresentable {
         let coord = context.coordinator
         let newCards = cards.map { AnyHashable($0) }
         let needsReload = coord.lastCards != newCards
+        let tokenChanged = coord.lastReconfigureToken != reconfigureToken
         coord.parent = self
         coord.lastCards = newCards
+        coord.lastReconfigureToken = reconfigureToken
         if needsReload {
             cv.reloadData()
+        } else if tokenChanged {
+            // Re-host every visible cell against the latest closures
+            // without evicting layout. Cheaper than `reloadData()`:
+            // no cell removal, no flash, scroll position preserved.
+            let visible = cv.indexPathsForVisibleItems
+            if !visible.isEmpty {
+                cv.reconfigureItems(at: visible)
+            }
         }
     }
 
@@ -113,10 +154,15 @@ struct CycleStatsCardList<CardID: Hashable & Sendable>: UIViewRepresentable {
         /// Last-seen card identities, used by `updateUIView` to
         /// decide whether `reloadData` is actually needed.
         var lastCards: [AnyHashable] = []
+        /// Last-seen reconfigure token. Triggers `reconfigureItems`
+        /// (not `reloadData`) when downstream card data changes.
+        var lastReconfigureToken: AnyHashable?
 
         func collectionView(_ cv: UICollectionView, numberOfItemsInSection section: Int) -> Int {
             guard let parent else { return 0 }
-            return parent.cards.count + 1 // +1 for trailing "Customize" button row
+            let leading = parent.leadingContent != nil ? 1 : 0
+            // cards + leading header (if any) + trailing "Customize" button row
+            return parent.cards.count + 1 + leading
         }
 
         func collectionView(_ cv: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
@@ -127,13 +173,28 @@ struct CycleStatsCardList<CardID: Hashable & Sendable>: UIViewRepresentable {
 
             guard let parent else { return cell }
 
-            if indexPath.item < parent.cards.count {
-                let card = parent.cards[indexPath.item]
+            let hasLeading = parent.leadingContent != nil
+            let leadingCount = hasLeading ? 1 : 0
+
+            // Index 0 is the leading header, if present.
+            if hasLeading, indexPath.item == 0 {
+                cell.host(parent.leadingContent!())
+                return cell
+            }
+
+            // Cards occupy [leadingCount, leadingCount + cards.count).
+            let cardIndex = indexPath.item - leadingCount
+            if cardIndex < parent.cards.count {
+                let card = parent.cards[cardIndex]
                 cell.host(parent.cardContent(card))
             } else {
                 cell.host(parent.trailingContent())
             }
             return cell
+        }
+
+        func scrollViewDidScroll(_ scrollView: UIScrollView) {
+            parent?.onScroll?(scrollView.contentOffset.y)
         }
     }
 

@@ -15,13 +15,29 @@ import SwiftUI
 
 // MARK: - Card
 
-struct CycleHistoryCard: View {
+struct CycleHistoryCard: View, Equatable {
     let timelines: [CycleHistoryTimeline]
     let hiddenKeys: Set<String>
     let onHide: (String) -> Void
     let onUnhide: (String) -> Void
     let onOpenDetail: (String) -> Void
     let onSeeAll: () -> Void
+
+    /// Equatable lets the call site wrap with `.equatable()` so
+    /// SwiftUI skips body re-evals when neither timelines nor
+    /// hidden keys actually changed. This card was the dominant
+    /// mid-scroll cost — it renders up to 3 entries × ~30 dots ×
+    /// 4 rows (~360+ subviews) per body call, plus `@State` for
+    /// the hide sheet and the hidden drawer kept resetting on
+    /// every reconfigure (`_pendingHide`, `_showingHidden`
+    /// changing in `_printChanges` confirmed this). Closures are
+    /// ignored: they dispatch into a stable parent `historyPath`
+    /// State binding, so closure identity churn has no behavioral
+    /// effect. `nonisolated` because SwiftUI calls `==` outside the
+    /// main actor under Swift 6 strict concurrency.
+    nonisolated static func == (lhs: Self, rhs: Self) -> Bool {
+        lhs.timelines == rhs.timelines && lhs.hiddenKeys == rhs.hiddenKeys
+    }
 
     /// Driving the "Hide cycle" sheet from card-level state instead
     /// of per-entry `@State` sidesteps two SwiftUI quirks:
@@ -67,14 +83,20 @@ struct CycleHistoryCard: View {
             } else if visibleTimelines.isEmpty {
                 hiddenOnlyHint
             } else {
+                // Single legend at card level — naming the dot
+                // vocabulary once is enough; repeating it per entry
+                // would clutter the card.
+                CycleHistoryBarLegend()
                 VStack(spacing: 18) {
                     ForEach(Array(visibleTimelines.enumerated()), id: \.element.id) { idx, timeline in
-                        CycleHistoryEntry(
-                            timeline: timeline,
-                            onMenuTap: { pendingHide = timeline }
-                        )
-                        .contentShape(Rectangle())
-                        .onTapGesture { onOpenDetail(timeline.id) }
+                        Button(action: { onOpenDetail(timeline.id) }) {
+                            CycleHistoryEntry(
+                                timeline: timeline,
+                                onMenuTap: { pendingHide = timeline }
+                            )
+                            .equatable()
+                        }
+                        .buttonStyle(.plain)
 
                         if idx < visibleTimelines.count - 1 {
                             Rectangle()
@@ -125,51 +147,109 @@ struct CycleHistoryCard: View {
 
     @ViewBuilder
     private var header: some View {
-        HStack(alignment: .top) {
-            Text("CYCLE\nHISTORY")
-                .font(AppTypography.cardTitlePrimary)
-                .tracking(AppTypography.cardTitlePrimaryTracking)
-                .foregroundStyle(DesignColors.text)
-                .lineSpacing(-4)
-                .fixedSize(horizontal: false, vertical: true)
+        HStack(alignment: .center) {
+            HStack(spacing: 8) {
+                Image(systemName: "calendar")
+                    .font(.system(size: 13, weight: .regular))
+                    .foregroundStyle(DesignColors.textSecondary)
+                Text("CYCLE HISTORY")
+                    .font(.raleway("SemiBold", size: 11, relativeTo: .caption2))
+                    .tracking(1.4)
+                    .foregroundStyle(DesignColors.textSecondary)
+            }
 
             Spacer(minLength: 10)
 
-            Button(action: onSeeAll) {
-                Text("See all")
-                    .font(.raleway("Medium", size: 13, relativeTo: .subheadline))
-                    .foregroundStyle(DesignColors.text.opacity(0.85))
-                    .padding(.horizontal, AppLayout.screenHorizontal)
-                    .padding(.vertical, 8)
-                    .background { seeAllGlass }
+            // "See all" only makes sense once there's an archive to
+            // open. With zero logged cycles the empty-state preview
+            // is the whole story — surfacing the button would push
+            // users into an empty list screen.
+            if !visibleTimelines.isEmpty || !hiddenTimelines.isEmpty {
+                HeroGlassCapsuleButton("See all", layout: .small, action: onSeeAll)
             }
-            .buttonStyle(.plain)
         }
-    }
-
-    @ViewBuilder
-    private var seeAllGlass: some View {
-        Capsule()
-            .fill(DesignColors.text.opacity(0.05))
-            .overlay {
-                Capsule()
-                    .stroke(DesignColors.text.opacity(0.08), lineWidth: 0.6)
-            }
     }
 
     @ViewBuilder
     private var emptyState: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text("Your archive is still writing itself.")
-                .font(.raleway("SemiBold", size: 15, relativeTo: .body))
-                .foregroundStyle(DesignColors.text)
-            Text("Logged cycles will land here. Each one a small page in the diary.")
-                .font(.raleway("Medium", size: 13, relativeTo: .footnote))
-                .foregroundStyle(DesignColors.textSecondary)
-                .fixedSize(horizontal: false, vertical: true)
-                .lineSpacing(2)
+        ZStack {
+            // Ghost preview: same legend + entry silhouette the user
+            // will see once cycles are logged. Blurred + dimmed so it
+            // reads as "what will appear here", not as real data.
+            // Hit-testing + accessibility are switched off so the
+            // ghost bars don't intercept taps or get announced.
+            VStack(alignment: .leading, spacing: 18) {
+                CycleHistoryBarLegend()
+                VStack(spacing: 18) {
+                    ForEach(Self.mockTimelines) { timeline in
+                        CycleHistoryEntry(
+                            timeline: timeline,
+                            onMenuTap: {}
+                        )
+                    }
+                }
+            }
+            .blur(radius: 4)
+            .opacity(0.55)
+            .allowsHitTesting(false)
+            .accessibilityHidden(true)
+
+            VStack(spacing: 6) {
+                Text("Your archive is still writing itself")
+                    .font(.raleway("SemiBold", size: 15, relativeTo: .body))
+                    .foregroundStyle(DesignColors.text)
+                    .multilineTextAlignment(.center)
+                Text("Logged cycles will land here. Each one a small page in the diary.")
+                    .font(.raleway("Medium", size: 13, relativeTo: .footnote))
+                    .foregroundStyle(DesignColors.textSecondary)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .lineSpacing(2)
+            }
+            .padding(.horizontal, 24)
+            .padding(.vertical, 14)
+            .frame(maxWidth: .infinity)
         }
-        .padding(.vertical, 6)
+    }
+
+    /// Two synthetic timelines used purely to fill the empty-state
+    /// preview. Day counts and fertile windows are picked to look
+    /// like a typical month-on-month rhythm; the blur hides the
+    /// exact values so readers parse the silhouette, not the
+    /// numbers. Dates are anchored on `Date()` so the labels stay
+    /// plausible whenever the screen renders.
+    private static var mockTimelines: [CycleHistoryTimeline] {
+        let cal = Calendar.current
+        let today = cal.startOfDay(for: Date())
+
+        func dateAgo(_ days: Int) -> Date {
+            cal.date(byAdding: .day, value: -days, to: today) ?? today
+        }
+
+        return [
+            CycleHistoryTimeline(
+                id: "__mock-1",
+                startDate: dateAgo(56),
+                endDate: dateAgo(29),
+                length: 28,
+                bleedingDays: 5,
+                ovulationDay: 14,
+                fertileWindow: 11...15,
+                reports: [:],
+                isCurrent: false
+            ),
+            CycleHistoryTimeline(
+                id: "__mock-2",
+                startDate: dateAgo(28),
+                endDate: dateAgo(1),
+                length: 27,
+                bleedingDays: 4,
+                ovulationDay: 13,
+                fertileWindow: 10...14,
+                reports: [:],
+                isCurrent: false
+            )
+        ]
     }
 
     @ViewBuilder

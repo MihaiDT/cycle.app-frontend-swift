@@ -161,6 +161,56 @@ public struct LiquidGlassModifier: ViewModifier {
     }
 }
 
+// MARK: - Hero Glass Capsule
+//
+// White-glass capsule treatment used by the "My cycle" CTA on the
+// CycleHeroView. Reads as polished, light, and editorial on top of
+// warm hero gradients or light card surfaces — unlike `liquidGlassCapsule()`
+// which layers gray + dark tints and goes muddy on white. Includes the
+// soft shadow stack so the button reads the same wherever it lands.
+
+public struct HeroGlassCapsuleModifier: ViewModifier {
+    public init() {}
+
+    public func body(content: Content) -> some View {
+        content
+            .background {
+                ZStack {
+                    Capsule()
+                        .fill(
+                            LinearGradient(
+                                colors: [Color.white.opacity(0.95), Color.white.opacity(0.7)],
+                                startPoint: .top,
+                                endPoint: .bottom
+                            )
+                        )
+                    // Top shine
+                    Capsule()
+                        .fill(
+                            LinearGradient(
+                                colors: [Color.white.opacity(0.9), Color.clear],
+                                startPoint: .top,
+                                endPoint: .center
+                            )
+                        )
+                        .padding(2)
+                    // Border
+                    Capsule()
+                        .strokeBorder(
+                            LinearGradient(
+                                colors: [Color.white.opacity(0.8), DesignColors.accentWarm.opacity(0.3)],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            ),
+                            lineWidth: 1
+                        )
+                }
+            }
+            .shadow(color: .black.opacity(0.08), radius: 4, x: 0, y: 2)
+            .shadow(color: DesignColors.accentWarm.opacity(0.12), radius: 8, x: 0, y: 3)
+    }
+}
+
 // MARK: - View Extensions
 
 extension View {
@@ -170,6 +220,10 @@ extension View {
 
     public func liquidGlassCapsule() -> some View {
         modifier(LiquidGlassModifier(shape: .capsule))
+    }
+
+    public func heroGlassCapsule() -> some View {
+        modifier(HeroGlassCapsuleModifier())
     }
 
     // Keep old names for compatibility

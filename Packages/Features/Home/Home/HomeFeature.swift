@@ -139,6 +139,15 @@ public struct HomeFeature: Sendable {
                 return .merge(
                     .send(.loadUser),
                     .send(.today(.loadDashboard)),
+                    // Pre-warm the HealthKit fetch as soon as we hit
+                    // Home. The first HKQuery on cold start can take
+                    // a few seconds; firing it here means by the time
+                    // the user navigates into Cycle Stats the data is
+                    // already in `cycleInsightsState.bodySignals` and
+                    // the Body Signals card lands populated instead
+                    // of stuck on a skeleton next to fully-loaded
+                    // siblings.
+                    .send(.cycleInsights(.loadBodySignals)),
                     // Silent one-shot repair of any overlapping /
                     // duplicate cycle records left behind by older
                     // edit paths. Runs once per session, off the

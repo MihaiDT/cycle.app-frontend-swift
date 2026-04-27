@@ -31,20 +31,22 @@ private struct SkeletonBlock: View {
 
 struct CycleStatsOverviewSkeleton: View {
     var body: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: 10) {
             cell
             cell
         }
     }
 
     private var cell: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            SkeletonBlock(width: 70, height: 9, radius: 3)
-            SkeletonBlock(width: 60, height: 22)
+        VStack(spacing: 6) {
+            SkeletonBlock(width: 60, height: 8, radius: 3)
+            SkeletonBlock(width: 50, height: 24)
+            SkeletonBlock(width: 36, height: 10, radius: 3)
         }
-        .padding(16)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .widgetCardStyle(cornerRadius: 20)
+        .padding(.vertical, 14)
+        .padding(.horizontal, 10)
+        .frame(maxWidth: .infinity, minHeight: 110)
+        .widgetCardStyle(cornerRadius: 18)
     }
 }
 
@@ -52,20 +54,26 @@ struct CycleStatsOverviewSkeleton: View {
 
 struct CycleNormalitySkeleton: View {
     var body: some View {
-        VStack(alignment: .leading, spacing: 18) {
-            SkeletonBlock(width: 150, height: 20)
-            HStack(spacing: 16) {
-                ForEach(0..<3, id: \.self) { _ in
-                    VStack(alignment: .leading, spacing: 6) {
-                        SkeletonBlock(width: 45, height: 9, radius: 3)
-                        SkeletonBlock(width: 52, height: 20)
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
+        VStack(spacing: 0) {
+            ForEach(0..<3, id: \.self) { idx in
+                HStack(spacing: 12) {
+                    SkeletonBlock(width: 110, height: 14, radius: 3)
+                    Spacer(minLength: 8)
+                    SkeletonBlock(width: 64, height: 14, radius: 3)
+                    SkeletonBlock(width: 8, height: 12, radius: 2)
+                }
+                .padding(.vertical, 14)
+                .frame(minHeight: 48)
+
+                if idx < 2 {
+                    Rectangle()
+                        .fill(DesignColors.text.opacity(DesignColors.dividerOpacity))
+                        .frame(height: 1)
                 }
             }
-            SkeletonBlock(height: 10, radius: 3)
         }
-        .padding(22)
+        .padding(.horizontal, 20)
+        .padding(.vertical, 14)
         .frame(maxWidth: .infinity, alignment: .leading)
         .widgetCardStyle(cornerRadius: 28)
     }

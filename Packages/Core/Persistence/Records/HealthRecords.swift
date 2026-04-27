@@ -26,7 +26,15 @@ public final class SelfReportRecord {
     @Attribute(.allowsCloudEncryption)
     public var notes: String?
 
-    @Attribute(.allowsCloudEncryption)
+    /// Plain `TIMESTAMP` on CloudKit — must NOT carry
+    /// `.allowsCloudEncryption`. The schema was already published with
+    /// the unencrypted shape; sending `ENCRYPTED_TIMESTAMP` triggers
+    /// "Invalid Arguments" on every export and locks the mirror into a
+    /// retry loop that starves the main dispatch queue (causing the
+    /// "Cycle Stats → See all" navigation push to hang for seconds
+    /// while the system keeps trying to recover). Mirrors the existing
+    /// `createdAt` decision on `MenstrualRecords` — see the warning
+    /// comment there.
     public var createdAt: Date = Date.now
 
     public init(
@@ -105,10 +113,16 @@ public final class HBIScoreRecord {
     public var hasHealthKitData: Bool = false
     @Attribute(.allowsCloudEncryption)
     public var hasSelfReport: Bool = true
-    @Attribute(.allowsCloudEncryption)
+    /// Plain `NUMBER_DOUBLE` on CloudKit. Schema was published before
+    /// encryption was added on this field, and bringing it back into
+    /// alignment by stripping the flag is cheaper than re-deploying
+    /// the CloudKit schema (which would need a coordinated container
+    /// version bump). Same logic as `createdAt`'s plain TIMESTAMP.
     public var completenessScore: Double = 50
 
-    @Attribute(.allowsCloudEncryption)
+    /// Plain `TIMESTAMP` on CloudKit — see the matching field on
+    /// `SelfReportRecord` for why `.allowsCloudEncryption` is *not*
+    /// set on this column.
     public var createdAt: Date = Date.now
 
     public init(

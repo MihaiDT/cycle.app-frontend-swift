@@ -2,14 +2,13 @@ import SwiftUI
 
 // MARK: - Cycle Stat Info Section
 //
-// Numbered editorial section used inside each stat info screen.
-// Handles the sign-posted header ("01  What's typical"), body
-// paragraph, optional highlights rendered as serif-italic pull quotes,
-// dot-marker bullets, and a trailing footnote. Typography-led: no
-// icons, no colored chrome.
+// Apple Health–style content card used on each stat info screen.
+// Caps eyebrow header on top, then paragraph + optional pull-quote
+// highlights + dot bullets + footnote. Wrapped in `widgetCardStyle`
+// so each topic reads as its own card on the peach backdrop, just
+// like the metric cards on the Body Signals detail screen.
 
 struct CycleStatInfoSection: View {
-    let number: Int
     let title: String
     let paragraph: String
     var highlights: [String] = []
@@ -17,8 +16,12 @@ struct CycleStatInfoSection: View {
     var footnote: String? = nil
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 18) {
-            heading
+        VStack(alignment: .leading, spacing: 14) {
+            Text(title.uppercased())
+                .font(.raleway("SemiBold", size: 11, relativeTo: .caption2))
+                .tracking(1.4)
+                .foregroundStyle(DesignColors.textSecondary)
+                .accessibilityAddTraits(.isHeader)
 
             Text(paragraph)
                 .font(.raleway("Regular", size: 16, relativeTo: .body))
@@ -48,47 +51,34 @@ struct CycleStatInfoSection: View {
                     .foregroundStyle(DesignColors.textSecondary)
                     .lineSpacing(4)
                     .fixedSize(horizontal: false, vertical: true)
-                    .padding(.top, 6)
+                    .padding(.top, 4)
             }
         }
+        .padding(20)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .widgetCardStyle(cornerRadius: 24)
     }
 
-    private var heading: some View {
-        HStack(alignment: .firstTextBaseline, spacing: 14) {
-            Text(String(format: "%02d", number))
-                .font(.raleway("Medium", size: 13, relativeTo: .footnote))
-                .tracking(0.6)
-                .foregroundStyle(DesignColors.textSecondary)
-                .accessibilityHidden(true)
-
-            Text(title)
-                .font(.raleway("Bold", size: 20, relativeTo: .title3))
-                .tracking(-0.3)
-                .foregroundStyle(DesignColors.text)
-                .fixedSize(horizontal: false, vertical: true)
-                .accessibilityAddTraits(.isHeader)
-        }
-    }
-
-    /// Serif-italic pull paragraph for highlight lines — matches the
-    /// app's only other editorial italic moment (rhythm reflection on
-    /// the stats screen).
+    /// Serif-italic pull paragraph for highlight lines — kept as the
+    /// one editorial moment in an otherwise data-first card so the
+    /// "what's typical" range reads with a softer voice than a bare
+    /// stat row.
     private func pullQuote(_ text: String) -> some View {
         Text(text)
-            .font(.system(size: 17, weight: .regular, design: .serif))
+            .font(.system(size: 16, weight: .regular, design: .serif))
             .italic()
             .tracking(-0.1)
             .foregroundStyle(DesignColors.text.opacity(0.78))
             .lineSpacing(5)
             .fixedSize(horizontal: false, vertical: true)
-            .padding(.leading, 18)
-            .padding(.vertical, 4)
+            .padding(.leading, 14)
+            .padding(.vertical, 2)
     }
 
     /// Dot-marker bullet row — typography carries the scan, no color
     /// on the marker.
     private func bulletRow(_ text: String) -> some View {
-        HStack(alignment: .top, spacing: 14) {
+        HStack(alignment: .top, spacing: 12) {
             Circle()
                 .fill(DesignColors.text.opacity(0.55))
                 .frame(width: 4, height: 4)
@@ -96,7 +86,7 @@ struct CycleStatInfoSection: View {
                 .accessibilityHidden(true)
 
             Text(text)
-                .font(.raleway("Regular", size: 16, relativeTo: .body))
+                .font(.raleway("Regular", size: 15, relativeTo: .body))
                 .foregroundStyle(DesignColors.text.opacity(0.82))
                 .lineSpacing(5)
                 .fixedSize(horizontal: false, vertical: true)

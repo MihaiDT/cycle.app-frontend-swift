@@ -26,6 +26,7 @@ public struct CycleInsightsView: View {
         case detail(String)
         case customize
         case statInfo(CycleStatInfoKind)
+        case bodySignalsDetail
     }
 
     func popLast() {
@@ -48,14 +49,11 @@ public struct CycleInsightsView: View {
             // handles the scroll, and each card's SwiftUI body only
             // runs once when its cell is configured, not per-frame.
             ZStack {
-                JourneyAnimatedBackground(animated: false)
+                AppleHealthBackground()
 
                 if store.statsLayout.visibleOrder.isEmpty {
                     ScrollView {
                         emptyLayoutPrompt
-                            .padding(.horizontal, AppLayout.screenHorizontal)
-                            .padding(.top, AppLayout.spacingL)
-                        customizeEntryPoint
                             .padding(.horizontal, AppLayout.screenHorizontal)
                             .padding(.top, AppLayout.spacingL)
                             .padding(.bottom, AppLayout.spacingXXL)
@@ -70,8 +68,21 @@ public struct CycleInsightsView: View {
                             right: AppLayout.screenHorizontal
                         ),
                         interItemSpacing: AppLayout.spacingL,
-                        cardContent: { card in AnyView(statsCardView(for: card)) },
-                        trailingContent: { AnyView(customizeEntryPoint) }
+                        // `.id(card)` pins each card to its enum case so
+                        // SwiftUI keeps the same identity across the
+                        // `AnyView` wrapping that the collection list
+                        // requires. Without this pin, every reconfigure
+                        // (and every scroll-driven re-host) gave the
+                        // hosted SwiftUI tree a fresh identity, which
+                        // tore down `@State` (window picker, sheet
+                        // state, drawer expansion) and forced full
+                        // re-evaluation of the card body — the dominant
+                        // mid-scroll churn `_printChanges` surfaced.
+                        cardContent: { card in AnyView(statsCardView(for: card).id(card)) },
+                        trailingContent: { AnyView(EmptyView()) },
+                        leadingContent: nil,
+                        onScroll: nil,
+                        reconfigureToken: AnyHashable(cardsReconfigureToken)
                     )
                     // Extend the collection view under both safe areas
                     // so content scrolls under the translucent nav bar
@@ -98,6 +109,17 @@ public struct CycleInsightsView: View {
                             .foregroundStyle(DesignColors.text)
                     }
                     .accessibilityLabel("Back")
+                }
+
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        historyPath.append(.customize)
+                    } label: {
+                        Image(systemName: "slider.horizontal.3")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundStyle(DesignColors.text)
+                    }
+                    .accessibilityLabel("Customize this screen")
                 }
             }
             .navigationDestination(for: HistoryRoute.self) { route in
@@ -139,6 +161,10 @@ public struct CycleInsightsView: View {
                         bleedingDays: periodAverageDays,
                         variationStdDev: variationStdDev
                     )
+                case .bodySignalsDetail:
+                    if let snapshot = store.bodySignals {
+                        BodySignalsDetailView(snapshot: snapshot)
+                    }
                 }
             }
         }
@@ -288,6 +314,7 @@ public struct CycleInsightsView: View {
                     cycleCount: loggedCycleCount,
                     onInfoTap: { kind in historyPath.append(.statInfo(kind)) }
                 )
+                .equatable()
             } else {
                 CycleNormalitySkeleton()
             }
@@ -297,6 +324,11 @@ public struct CycleInsightsView: View {
                     points: trendPoints,
                     averageDays: averageLengthInt
                 )
+                // `.equatable()` short-circuits body re-evals when
+                // points + averageDays are unchanged. Heaviest body
+                // on the screen (GeometryReader + 12+ bars), so the
+                // skip pays off most here.
+                .equatable()
             } else {
                 CycleTrendSkeleton()
             }
@@ -310,61 +342,39 @@ public struct CycleInsightsView: View {
                     onOpenDetail: { id in historyPath.append(.detail(id)) },
                     onSeeAll: { historyPath.append(.allHistory) }
                 )
+                .equatable()
             } else {
                 CycleHistorySkeleton()
             }
+        case .bodySignals:
+            BodySignalsCard(
+                snapshot: store.bodySignals,
+                authProbe: store.bodySignalsAuth,
+                isLoading: store.isLoadingBodySignals,
+                onEnable: { store.send(.requestBodySignalsPermission) },
+                onOpenDetail: { historyPath.append(.bodySignalsDetail) }
+            )
         case .reflection:
             rhythmReflection
-                .drawingGroup(opaque: false)
         }
     }
 
-    /// Entry point at the foot of the stats screen. Styled as a
-    /// quiet tertiary action so it doesn't compete with the cards
-    /// above — just enough affordance to invite exploration.
-    @ViewBuilder
-    var customizeEntryPoint: some View {
-        Button {
-            historyPath.append(.customize)
-        } label: {
-            HStack(spacing: 10) {
-                Image(systemName: "slider.horizontal.3")
-                    .font(.system(size: 14, weight: .semibold))
-                Text("Customize this screen")
-                    .font(.raleway("Medium", size: 14, relativeTo: .callout))
-            }
-            .foregroundStyle(DesignColors.accentWarmText)
-            .padding(.horizontal, 18)
-            .padding(.vertical, 12)
-            .frame(maxWidth: .infinity)
-            .background {
-                Capsule()
-                    .fill(Color.white.opacity(0.55))
-                    .overlay {
-                        Capsule()
-                            .stroke(DesignColors.text.opacity(DesignColors.borderOpacitySubtle), lineWidth: 0.6)
-                    }
-            }
-        }
-        .buttonStyle(.plain)
-        .padding(.top, 12)
-        .accessibilityLabel("Customize this screen")
-    }
-
-    /// Shown when the user has hidden every card. Gives them a
-    /// zero-state pointer back to the customize screen so they're
-    /// never stranded on a blank stats page.
+    /// Shown when the user has hidden every card. Points to the
+    /// toolbar slider so they're never stranded on a blank stats page.
     @ViewBuilder
     var emptyLayoutPrompt: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Your stats screen is empty.")
                 .font(.raleway("SemiBold", size: 15, relativeTo: .subheadline))
                 .foregroundStyle(DesignColors.text)
-            Text("Open customize to bring any card back.")
-                .font(.raleway("Regular", size: 14, relativeTo: .callout))
-                .foregroundStyle(DesignColors.text.opacity(0.75))
-                .lineSpacing(3)
-                .fixedSize(horizontal: false, vertical: true)
+            HStack(spacing: 6) {
+                Text("Tap")
+                Image(systemName: "slider.horizontal.3")
+                    .font(.system(size: 13, weight: .semibold))
+                Text("in the top right to bring any card back.")
+            }
+            .font(.raleway("Regular", size: 14, relativeTo: .callout))
+            .foregroundStyle(DesignColors.text.opacity(0.75))
         }
         .padding(22)
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -456,5 +466,26 @@ public struct CycleInsightsView: View {
     var headerTitle: String { "Cycle Stats" }
 
     var headerEyebrow: String? { "Averages & trends" }
+
+    /// Token bumped whenever downstream data that any card renders
+    /// has changed. When this changes, `CycleStatsCardList` reconfigures
+    /// its visible cells so the hosted SwiftUI views pick up the new
+    /// closure values without a full reload.
+    var cardsReconfigureToken: some Hashable {
+        struct Token: Hashable {
+            let hiddenKeys: Set<String>
+            let statsIdentity: Int
+            let journeyIdentity: Int
+            let insightsIdentity: Int
+            let layoutOrder: [String]
+        }
+        return Token(
+            hiddenKeys: store.hiddenCycleKeys,
+            statsIdentity: store.stats == nil ? 0 : 1,
+            journeyIdentity: store.journey == nil ? 0 : 1,
+            insightsIdentity: store.insights == nil ? 0 : 1,
+            layoutOrder: store.statsLayout.visibleOrder.map(\.rawValue)
+        )
+    }
 }
 

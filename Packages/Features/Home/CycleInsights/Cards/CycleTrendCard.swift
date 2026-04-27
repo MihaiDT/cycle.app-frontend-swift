@@ -9,7 +9,23 @@ import UIKit
 // so the eye lands there first, and the segmented control (6M / 1Y /
 // All) scopes the window.
 
-public struct CycleTrendCard: View {
+public struct CycleTrendCard: View, Equatable {
+    // Equatable lets the call site wrap with `.equatable()` so
+    // SwiftUI short-circuits body re-evaluations when neither the
+    // points nor the average actually changed. This is the dominant
+    // mid-scroll cost: each parent body re-eval (TCA observation,
+    // host VC re-host, etc.) used to spin a fresh chart layout
+    // through GeometryReader + 12+ glossy-bar layers per frame.
+    /// `nonisolated` is required because `View` is implicitly
+    /// `@MainActor`-isolated under Swift 6 strict concurrency.
+    /// SwiftUI's diffing calls `==` off the main actor; the
+    /// compared properties are all value types so the comparison
+    /// is data-race-safe.
+    public nonisolated static func == (lhs: Self, rhs: Self) -> Bool {
+        lhs.points == rhs.points && lhs.averageDays == rhs.averageDays
+    }
+
+
     public struct Point: Equatable, Identifiable {
         public let id: Date
         public let startDate: Date
@@ -40,12 +56,17 @@ public struct CycleTrendCard: View {
     public let averageDays: Int
 
     @State private var window: Window = .sixMonths
-    /// Drives the staggered rise animation — bars render at height 0
-    /// until this flips, then spring up with a per-index delay. Reset
-    /// to false on window change so switching 6M/1Y/All replays the
-    /// same entrance instead of a silent re-layout.
-    @State private var barsRevealed = false
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    /// `nil` until the chart settles on a default — the most recent
+    /// visible cycle. Tracked separately so the user can scroll
+    /// (window changes) without losing their pick when it stays
+    /// visible.
+    @State private var selectedCycleID: Date?
+
+    /// Hard cap on visible bars so columns never collapse into
+    /// hairlines. The card hosts a fit-style chart (no horizontal
+    /// scroll) — anything wider than this and bars start losing
+    /// their pill silhouette.
+    private static let maxVisibleBars: Int = 12
 
     public init(points: [Point], averageDays: Int) {
         self.points = points
@@ -66,13 +87,24 @@ public struct CycleTrendCard: View {
         UISegmentedControl.appearance().setTitleTextAttributes(attrs, for: .selected)
     }
 
+    /// The picker only earns its place once the user has enough cycles
+    /// for the windows (6M / 1Y / All) to show different data. With 1–3
+    /// cycles all three options render the same chart, so the control
+    /// is dead chrome — hide it until N ≥ this threshold.
+    private static let pickerVisibleAtCount: Int = 4
+
     public var body: some View {
         VStack(alignment: .leading, spacing: 22) {
             header
             if visiblePoints.isEmpty {
                 emptyState
             } else {
+                if hasMixedRangeClassifications {
+                    rangeLegend
+                }
                 chart
+                detailDivider
+                detailBlock
             }
         }
         .padding(22)
@@ -80,26 +112,31 @@ public struct CycleTrendCard: View {
         // `rasterize: false` — the native segmented Picker is UIKit-backed
         // and can't be flattened into a Metal bitmap by `.drawingGroup`.
         .widgetCardStyle(cornerRadius: 28, rasterize: false)
-        .onAppear { barsRevealed = true }
-        .onChange(of: window) { _, _ in replayReveal() }
         .accessibilityElement(children: .contain)
+        .onAppear(perform: ensureSelectionInitialized)
+        .onChange(of: visiblePoints.map(\.id)) { _, _ in
+            ensureSelectionInitialized()
+        }
     }
 
-    /// Snap bars to 0 with animations disabled (otherwise the spring on
-    /// the card would interpolate the collapse back into the rise and
-    /// the bars would appear to stand still while only the numbers
-    /// fade). Next runloop, flip `barsRevealed` back on — the per-bar
-    /// `.animation(value: barsRevealed)` catches that change and the
-    /// staggered spring runs clean.
-    private func replayReveal() {
-        guard !reduceMotion else { return }
-        var tx = Transaction()
-        tx.disablesAnimations = true
-        withTransaction(tx) { barsRevealed = false }
-        Task { @MainActor in
-            try? await Task.sleep(for: .milliseconds(60))
-            barsRevealed = true
+    // MARK: - Selection bookkeeping
+    //
+    // Default to the most recent visible cycle. When the user
+    // changes the window (6M → 1Y → All) and their previously
+    // selected cycle disappears from view, fall back to the
+    // newest visible bar instead of leaving the detail block
+    // pinned to a no-longer-visible point.
+
+    private func ensureSelectionInitialized() {
+        let visible = visiblePoints
+        guard !visible.isEmpty else {
+            selectedCycleID = nil
+            return
         }
+        if let current = selectedCycleID, visible.contains(where: { $0.id == current }) {
+            return
+        }
+        selectedCycleID = visible.last?.id
     }
 
     // MARK: - Header
@@ -110,22 +147,26 @@ public struct CycleTrendCard: View {
     private var header: some View {
         HStack(alignment: .top, spacing: 12) {
             VStack(alignment: .leading, spacing: 10) {
-                Text("CYCLE\nTREND")
-                    .font(AppTypography.cardTitlePrimary)
-                    .tracking(AppTypography.cardTitlePrimaryTracking)
-                    .foregroundStyle(DesignColors.text)
-                    .lineSpacing(-2)
-                    .fixedSize(horizontal: false, vertical: true)
+                HStack(spacing: 8) {
+                    Image(systemName: "chart.bar")
+                        .font(.system(size: 13, weight: .regular))
+                        .foregroundStyle(DesignColors.textSecondary)
+                    Text("CYCLE TREND")
+                        .font(.raleway("SemiBold", size: 11, relativeTo: .caption2))
+                        .tracking(1.4)
+                        .foregroundStyle(DesignColors.textSecondary)
+                }
 
                 Text(subtitle)
-                    .font(AppTypography.cardLabel)
-                    .tracking(AppTypography.cardLabelTracking)
-                    .foregroundStyle(DesignColors.textSecondary)
+                    .font(.raleway("SemiBold", size: 17, relativeTo: .body))
+                    .foregroundStyle(DesignColors.text)
                     .contentTransition(.numericText())
                     .transaction { $0.animation = .easeInOut(duration: 0.25) }
             }
             Spacer(minLength: 8)
-            windowPicker
+            if points.count >= Self.pickerVisibleAtCount {
+                windowPicker
+            }
         }
     }
 
@@ -134,6 +175,65 @@ public struct CycleTrendCard: View {
         guard count > 0 else { return "Not enough cycles yet" }
         let noun = count == 1 ? "cycle" : "cycles"
         return "Last \(count) \(noun) · Avg \(averageDays) days"
+    }
+
+    // MARK: - Range Legend
+    //
+    // Names the two-color vocabulary used by the bars: terracotta for
+    // cycles inside the ACOG normal window (21–35 days), honey for
+    // cycles outside it. Always renders so the user learns the system
+    // before they ever see an outside-range bar.
+
+    private var rangeLegend: some View {
+        HStack(spacing: 14) {
+            legendSwatch(label: "IN RANGE", color: DesignColors.accentWarm)
+            legendSwatch(label: "OUTSIDE", color: DesignColors.accentHoney)
+            Spacer(minLength: 0)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Bars in terracotta sit inside the typical cycle range; honey bars sit outside it.")
+    }
+
+    private func legendSwatch(label: String, color: Color) -> some View {
+        HStack(spacing: 6) {
+            Capsule()
+                .fill(color)
+                .frame(width: 14, height: 5)
+            Text(label)
+                .font(.raleway("SemiBold", size: 10, relativeTo: .caption2))
+                .tracking(0.9)
+                .foregroundStyle(DesignColors.textSecondary.opacity(0.85))
+        }
+    }
+
+    // MARK: - Bar tinting
+    //
+    // Uses the same classification as the Normality card so the two
+    // surfaces stay in sync — a "needs attention" cycle on the rows
+    // wears the same hue here on the chart.
+
+    private func tint(for point: Point) -> Color {
+        switch CycleNormality.classifyCycleLength(days: point.days).tone {
+        case .normal:         return DesignColors.accentWarm
+        case .needsAttention: return DesignColors.accentHoney
+        }
+    }
+
+    /// Legend earns its place only when at least one bar of each
+    /// classification is visible — otherwise it's dead chrome
+    /// (e.g. all bars terracotta, "OUTSIDE" swatch promises a contrast
+    /// the chart never delivers).
+    private var hasMixedRangeClassifications: Bool {
+        var hasNormal = false
+        var hasOutside = false
+        for p in visiblePoints {
+            switch CycleNormality.classifyCycleLength(days: p.days).tone {
+            case .normal:         hasNormal = true
+            case .needsAttention: hasOutside = true
+            }
+            if hasNormal && hasOutside { return true }
+        }
+        return false
     }
 
     private var windowPicker: some View {
@@ -151,182 +251,76 @@ public struct CycleTrendCard: View {
 
     // MARK: - Chart
     //
-    // Two layout modes:
-    // - Compact (≤ `fitThreshold` bars): bars + labels share the card
-    //   width, column size resolves via GeometryReader so 2–8 cycles
-    //   always fit edge-to-edge.
-    // - Scrollable (> `fitThreshold` bars): fixed-width columns inside
-    //   a horizontal ScrollView. Labels keep their design size instead
-    //   of shrinking into inconsistent pairs when a few strings are
-    //   longer ("Dec 2") than others ("Jul").
-
-    /// Max width per bar column in compact mode.
-    private static let maxBarWidth: CGFloat = 44
-    /// Fixed width per bar column when scrollable mode kicks in.
-    private static let scrollBarWidth: CGFloat = 38
-    /// Spacing between bar columns when scrollable mode kicks in.
-    private static let scrollSpacing: CGFloat = 10
-    /// Compact mode fits this many cycles without shrinking labels.
-    private static let fitThreshold: Int = 8
-
-    private static func compactLayout(for count: Int, available: CGFloat) -> (barWidth: CGFloat, spacing: CGFloat) {
-        guard count > 0 else { return (maxBarWidth, 10) }
-        let spacing: CGFloat = 10
-        let totalSpacing = spacing * CGFloat(max(count - 1, 0))
-        let raw = (available - totalSpacing) / CGFloat(count)
-        let barWidth = max(20, min(maxBarWidth, raw))
-        return (barWidth, spacing)
-    }
+    // Wraps the reusable `TrendBarChart` from DesignSystem. Each bar
+    // carries the cycle's classification tint so the in-range /
+    // outside-range vocabulary stays visible regardless of which
+    // bar is selected. Tap on a column hands the cycle's `id` down
+    // and the detail block beneath the chart re-keys to it.
 
     private var chart: some View {
         let visible = visiblePoints
-        let range = chartRange(for: visible)
-        return Group {
-            if visible.count > Self.fitThreshold {
-                scrollableChart(visible: visible, range: range)
-            } else {
-                fitChart(visible: visible, range: range)
-            }
-        }
+        return TrendBarChart(
+            items: visible.map { point in
+                TrendBarChart<Date>.Item(
+                    id: point.id,
+                    value: Double(point.days),
+                    xLabel: monthLabel(for: point.startDate),
+                    tint: tint(for: point)
+                )
+            },
+            selectedID: selectedCycleID,
+            onSelect: { id in
+                selectedCycleID = id
+            },
+            yLabelFormatter: { "\(Int($0.rounded()))d" },
+            yTickCount: 4,
+            chartHeight: 180
+        )
         .accessibilityElement(children: .combine)
         .accessibilityLabel(chartAccessibilityLabel(for: visible))
     }
 
-    // MARK: Compact — fits in the card
+    // MARK: - Detail block
+    //
+    // Sub-card beneath the chart that names the selected cycle's
+    // numbers — length, variation vs. average, range classification,
+    // and position within the visible window. Re-keys with the
+    // selection so the numeric content transitions can fire.
 
-    private func fitChart(visible: [Point], range: (lower: Int, upper: Int)) -> some View {
-        GeometryReader { geo in
-            let (barWidth, spacing) = Self.compactLayout(for: visible.count, available: geo.size.width)
-            VStack(spacing: 10) {
-                barsRow(visible: visible, range: range, barWidth: barWidth, spacing: spacing)
-                monthLabels(for: visible, barWidth: barWidth, spacing: spacing)
-            }
-        }
-        .frame(height: 180)
-    }
-
-    // MARK: Scrollable — 9+ cycles
-
-    private func scrollableChart(visible: [Point], range: (lower: Int, upper: Int)) -> some View {
-        let barWidth = Self.scrollBarWidth
-        let spacing = Self.scrollSpacing
-        return ScrollView(.horizontal, showsIndicators: false) {
-            VStack(alignment: .leading, spacing: 10) {
-                barsRow(visible: visible, range: range, barWidth: barWidth, spacing: spacing)
-                monthLabels(for: visible, barWidth: barWidth, spacing: spacing)
-            }
-            // Card has 22pt horizontal padding. Match it on the inner
-            // content so the first and last columns don't kiss the card
-            // edges while scrolled to the ends.
-            .padding(.horizontal, 0)
-        }
-        .frame(height: 180)
-        .defaultScrollAnchor(.trailing)
-    }
-
-    // MARK: Shared rows
-
-    private func barsRow(
-        visible: [Point],
-        range: (lower: Int, upper: Int),
-        barWidth: CGFloat,
-        spacing: CGFloat
-    ) -> some View {
-        let lastIndex = visible.count - 1
-        return HStack(alignment: .bottom, spacing: spacing) {
-            ForEach(Array(visible.enumerated()), id: \.element.id) { index, point in
-                bar(
-                    for: point,
-                    isCurrent: index == lastIndex,
-                    range: range,
-                    width: barWidth,
-                    index: index
-                )
-            }
-        }
-        .frame(maxWidth: .infinity)
-        .frame(height: 150)
-    }
-
-    private func bar(
-        for point: Point,
-        isCurrent: Bool,
-        range: (lower: Int, upper: Int),
-        width: CGFloat,
-        index: Int
-    ) -> some View {
-        let span = max(CGFloat(range.upper - range.lower), 1)
-        let normalized = (CGFloat(point.days - range.lower) / span) * 110 + 24
-        let revealed = barsRevealed
-        let targetHeight = revealed ? normalized : 0
-        // Delay caps at a reasonable ~0.35s so 12+ bars don't stretch
-        // the entrance into a slow crawl.
-        let delay = min(Double(index) * 0.045, 0.35)
-        return VStack(spacing: 6) {
-            Text("\(point.days)")
-                .font(.raleway("SemiBold", size: 11, relativeTo: .caption2))
-                .foregroundStyle(isCurrent ? DesignColors.accentWarmText : DesignColors.textSecondary)
-                .lineLimit(1)
-                .opacity(revealed ? 1 : 0)
-                .animation(.easeOut(duration: 0.2).delay(delay + 0.08), value: revealed)
-
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .fill(isCurrent ? DesignColors.accentWarm : DesignColors.accentWarm.opacity(0.14))
-                .frame(height: targetHeight)
-                .animation(
-                    .spring(response: 0.55, dampingFraction: 0.78).delay(delay),
-                    value: revealed
-                )
-        }
-        .frame(width: width, height: 150, alignment: .bottom)
-    }
-
-    private func monthLabels(for points: [Point], barWidth: CGFloat, spacing: CGFloat) -> some View {
-        // Disambiguate consecutive cycles that start in the same calendar
-        // month (short cycles can fit two starts inside one month) by
-        // promoting the label to "MMM d".
-        let labels = disambiguatedLabels(for: points)
-        let lastIndex = points.count - 1
-        return HStack(spacing: spacing) {
-            ForEach(Array(labels.enumerated()), id: \.offset) { index, label in
-                Text(label)
-                    .font(
-                        .raleway(
-                            index == lastIndex ? "SemiBold" : "Medium",
-                            size: 11,
-                            relativeTo: .caption2
-                        )
-                    )
-                    .foregroundStyle(
-                        index == lastIndex ? DesignColors.text : DesignColors.textSecondary
-                    )
-                    .lineLimit(1)
-                    .fixedSize()
-                    .frame(width: barWidth)
-            }
-        }
-        .frame(maxWidth: .infinity)
-    }
-
-    private func disambiguatedLabels(for points: [Point]) -> [String] {
-        let months = points.map { monthLabel(for: $0.startDate) }
-        return points.enumerated().map { index, point in
-            let thisMonth = months[index]
-            let conflict =
-                (index > 0 && months[index - 1] == thisMonth)
-                || (index < months.count - 1 && months[index + 1] == thisMonth)
-            if conflict {
-                return monthDayLabel(for: point.startDate)
-            }
-            return thisMonth
+    @ViewBuilder
+    private var detailBlock: some View {
+        if let point = selectedPoint, let position = selectedPosition {
+            CycleTrendDetailBlock(
+                cycleLength: point.days,
+                startDate: point.startDate,
+                averageDays: averageDays,
+                positionIndex: position.index,
+                positionTotal: position.total,
+                isInTypicalRange: CycleNormality.classifyCycleLength(days: point.days).tone == .normal
+            )
+            .id(point.id)
+            .transition(.opacity.combined(with: .move(edge: .bottom)))
+            .animation(.spring(response: 0.42, dampingFraction: 0.86), value: point.id)
         }
     }
 
-    private func monthDayLabel(for date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "en_US_POSIX")
-        formatter.dateFormat = "MMM d"
-        return formatter.string(from: date)
+    private var detailDivider: some View {
+        Rectangle()
+            .fill(DesignColors.text.opacity(0.06))
+            .frame(height: 1)
+            .padding(.vertical, 4)
+    }
+
+    private var selectedPoint: Point? {
+        guard let id = selectedCycleID else { return nil }
+        return visiblePoints.first { $0.id == id }
+    }
+
+    private var selectedPosition: (index: Int, total: Int)? {
+        guard let id = selectedCycleID else { return nil }
+        let visible = visiblePoints
+        guard let idx = visible.firstIndex(where: { $0.id == id }) else { return nil }
+        return (idx + 1, visible.count)
     }
 
     // MARK: - Empty state
@@ -345,24 +339,9 @@ public struct CycleTrendCard: View {
 
     private var visiblePoints: [Point] {
         let sorted = points.sorted { $0.startDate < $1.startDate }
-        if let cap = window.maxEntries {
-            return Array(sorted.suffix(cap))
-        }
-        return sorted
-    }
-
-    /// Clamp the chart's numeric range to a roomy band around the data
-    /// so the bars never render at 0 height when all cycles are close
-    /// to each other. Floor/ceiling widen in whole days so the y-scale
-    /// reads stable cycle-to-cycle.
-    private func chartRange(for visible: [Point]) -> (lower: Int, upper: Int) {
-        let lengths = visible.map(\.days) + [averageDays]
-        guard let minValue = lengths.min(), let maxValue = lengths.max() else {
-            return (lower: averageDays - 2, upper: averageDays + 2)
-        }
-        let lower = max(0, minValue - 2)
-        let upper = max(lower + 1, maxValue + 2)
-        return (lower, upper)
+        let windowCap = window.maxEntries ?? Self.maxVisibleBars
+        let cap = min(windowCap, Self.maxVisibleBars)
+        return Array(sorted.suffix(cap))
     }
 
     private func monthLabel(for date: Date) -> String {
@@ -376,7 +355,10 @@ public struct CycleTrendCard: View {
         guard !points.isEmpty else { return "No cycle data yet" }
         let readings = points.enumerated().map { index, point in
             let suffix = index == points.count - 1 ? ", current cycle" : ""
-            return "\(monthLabel(for: point.startDate)) \(point.days) days\(suffix)"
+            let range = CycleNormality.classifyCycleLength(days: point.days).tone == .normal
+                ? "in range"
+                : "outside range"
+            return "\(monthLabel(for: point.startDate)) \(point.days) days, \(range)\(suffix)"
         }
         return readings.joined(separator: ", ")
     }

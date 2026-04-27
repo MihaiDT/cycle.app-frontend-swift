@@ -351,85 +351,40 @@ private struct SparklineFillShape: Shape {
 
 // MARK: - Cycle Stats Overview Row
 //
-// Twin glass boxes that sit above the Average Cycle widget on the
-// Cycle Stats sheet. A quiet, editorial caption ("average cycle
-// length" / "average period length") sits above the numeric value;
-// the hero typography — the capitalized AVERAGE\nCYCLE title — lives
-// in the widget directly below, so these two read as ground-floor
-// data instead of competing for attention.
-//
-// Icon slots accept an asset name so the user can drop in their own
-// stroke-style artwork (SVG/PNG) without this component caring about
-// the shape. `renderingMode(.template)` lets the template ink pick up
-// the app's warm accent on whatever material the surface resolves to.
-
-struct StatOverviewBox: View {
-    let label: String
-    let iconAsset: String
-    let value: String
-    let hasValue: Bool
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            Text(label)
-                .font(AppTypography.cardLabel)
-                .tracking(AppTypography.cardLabelTracking)
-                .foregroundStyle(DesignColors.text.opacity(0.72))
-                .lineLimit(1)
-                .minimumScaleFactor(0.85)
-
-            HStack(spacing: 10) {
-                Image(iconAsset)
-                    .renderingMode(.template)
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 28, height: 28)
-                    .foregroundStyle(DesignColors.text.opacity(0.78))
-
-                Text(value)
-                    .font(.raleway(
-                        hasValue ? "Bold" : "SemiBold",
-                        size: hasValue ? 22 : 17,
-                        relativeTo: .title3
-                    ))
-                    .tracking(hasValue ? -0.3 : 0)
-                    .foregroundStyle(
-                        hasValue
-                            ? DesignColors.text
-                            : DesignColors.text.opacity(0.5)
-                    )
-                    .contentTransition(.numericText())
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.75)
-
-                Spacer(minLength: 0)
-            }
-        }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 16)
-        .frame(maxWidth: .infinity, minHeight: 96, alignment: .leading)
-        .widgetCardStyle(cornerRadius: 22)
-    }
-}
+// Twin hero tiles that sit above the Average Cycle widget on the
+// Cycle Stats sheet. Apple Health-style layout: big bold value with
+// inline unit, soft label underneath, and a `MockRing` in the
+// top-right corner that gives each tile its accent identity. Cycle
+// uses `roseTaupe` (gentler, broad metric) and period uses
+// `accentWarm` (terracotta, ties to period coloring elsewhere) so
+// the two cards read as sibling-but-distinct rather than as a
+// duplicated row.
 
 struct CycleStatsOverviewRow: View {
     let cycleAverageDays: Int?
     let periodAverageDays: Int?
 
     var body: some View {
-        HStack(spacing: 12) {
-            StatOverviewBox(
-                label: "Average cycle length",
-                iconAsset: "icon-average-cycle",
-                value: cycleAverageDays.map { "\($0) days" } ?? "No data",
-                hasValue: cycleAverageDays != nil
+        HStack(spacing: 10) {
+            StatRingTile(
+                label: "Avg cycle",
+                value: cycleAverageDays.map { "\($0)" },
+                unit: "days",
+                ringTint: DesignColors.roseTaupe,
+                ringSize: 48,
+                ringLineWidth: 10
             )
 
-            StatOverviewBox(
-                label: "Average period length",
-                iconAsset: "icon-average-period",
-                value: periodAverageDays.map { "\($0) days" } ?? "No data",
-                hasValue: periodAverageDays != nil
+            StatRingTile(
+                label: "Avg period",
+                value: periodAverageDays.map { "\($0)" },
+                unit: "days",
+                ringTint: DesignColors.calendarPeriodGlyph,
+                ringSize: 48,
+                ringLineWidth: 10,
+                ringTrim: 0.30,
+                ringTrackTint: DesignColors.calendarPeriodGlyph.opacity(0.18),
+                ringTrackTrim: 0.78
             )
         }
     }

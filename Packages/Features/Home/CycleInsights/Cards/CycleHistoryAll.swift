@@ -34,6 +34,20 @@ enum CycleHistoryFilter: Hashable, Identifiable {
         }
     }
 
+    /// Compact label used inside the native segmented picker, which
+    /// divides the row evenly — long phrases like "Last 3 cycles"
+    /// truncate once you add a couple of year pills. Short forms
+    /// preserve scanability when 5+ segments are visible.
+    var shortLabel: String {
+        switch self {
+        case .all:           return "All"
+        case .last3:         return "3"
+        case .last6:         return "6"
+        case .lastYear:      return "1Y"
+        case .year(let y):   return String(y)
+        }
+    }
+
     func apply(to timelines: [CycleHistoryTimeline]) -> [CycleHistoryTimeline] {
         let cal = Calendar.current
         let today = cal.startOfDay(for: Date())
@@ -67,7 +81,14 @@ struct CycleHistoryAllView: View {
 
     @State private var filter: CycleHistoryFilter = .all
     @State private var pendingHide: CycleHistoryTimeline?
-    @Namespace private var filterNamespace
+    /// Deferred content gate. The push animation evaluates this view's
+    /// body synchronously; rendering year sections (each with a Canvas
+    /// dot bar + Canvas mood/energy/sleep rows per cycle) inside that
+    /// pass fights the 60fps slide and produces the "stuck a couple
+    /// seconds" feel on first push. Holding off until after the
+    /// transition lets nav complete cleanly, then content materializes
+    /// below the perceptual threshold.
+    @State private var isHydrated = false
 
     private var filteredTimelines: [CycleHistoryTimeline] {
         // Mirror the main history card: this screen shows *completed*
@@ -103,16 +124,25 @@ struct CycleHistoryAllView: View {
 
     var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
-            VStack(alignment: .leading, spacing: 24) {
+            LazyVStack(alignment: .leading, spacing: 24, pinnedViews: []) {
                 filterRow
                 legendRow
 
-                if yearGroups.isEmpty {
-                    emptyState
-                } else {
-                    VStack(alignment: .leading, spacing: 28) {
-                        ForEach(yearGroups, id: \.year) { group in
-                            yearSection(year: group.year, cycles: group.cycles)
+                if isHydrated {
+                    if yearGroups.isEmpty {
+                        emptyState
+                    } else {
+                        // Lazy + deferred: each year section
+                        // instantiates its `CycleHistoryEntry` views
+                        // (dot bar + Canvas mood/energy/sleep rows)
+                        // only when its row enters the viewport, and
+                        // the whole block waits for `isHydrated` so
+                        // the push animation runs against an empty
+                        // sub-tree first.
+                        LazyVStack(alignment: .leading, spacing: 28, pinnedViews: []) {
+                            ForEach(yearGroups, id: \.year) { group in
+                                yearSection(year: group.year, cycles: group.cycles)
+                            }
                         }
                     }
                 }
@@ -125,6 +155,13 @@ struct CycleHistoryAllView: View {
         .background { JourneyAnimatedBackground(animated: false) }
         .navigationTitle("Cycle history")
         .navigationBarTitleDisplayMode(.inline)
+        .task {
+            // ~80ms is enough for the navigation slide to land on
+            // most devices without becoming visible as a separate
+            // "things popping in" beat.
+            try? await Task.sleep(nanoseconds: 80_000_000)
+            isHydrated = true
+        }
         .sheet(item: $pendingHide) { timeline in
             HideCycleDialog(
                 cycleLabel: Self.sheetCycleLabel(for: timeline),
@@ -178,80 +215,20 @@ struct CycleHistoryAllView: View {
 
     // MARK: - Filter
     //
-    // One unified segmented capsule instead of four floating pills.
-    // The selected option carries a `matchedGeometryEffect` indicator
-    // that slides under taps — the container stays quiet, only the
-    // indicator moves. Matches the editorial restraint of the rest
-    // of the card language.
+    // Native segmented picker — simpler than the custom pill row and
+    // picks up the app-wide Cocoa Dark title attrs already registered
+    // by `CycleTrendCard`. The row divides its width evenly across
+    // options, so `shortLabel` is used to keep things scannable when
+    // several year pills are present.
 
     @ViewBuilder
     private var filterRow: some View {
-        ScrollViewReader { proxy in
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 4) {
-                    ForEach(filterOptions) { option in
-                        filterPill(for: option, proxy: proxy)
-                            .id(option.id)
-                    }
-                }
-                .padding(4)
-                .background {
-                    Capsule()
-                        .fill(Color.white.opacity(0.5))
-                }
-                // Animation is scoped to this HStack so the
-                // `matchedGeometryEffect` indicator slides between
-                // pills, but the year groups below re-render
-                // instantly on filter change — no 400ms transaction
-                // across the whole scroll subtree.
-                .animation(.smooth(duration: 0.22), value: filter)
+        Picker("Filter", selection: $filter) {
+            ForEach(filterOptions) { option in
+                Text(option.shortLabel).tag(option)
             }
-            .scrollBounceBehavior(.basedOnSize)
         }
-    }
-
-    @ViewBuilder
-    private func filterPill(
-        for option: CycleHistoryFilter,
-        proxy: ScrollViewProxy
-    ) -> some View {
-        // Flatten the selected-state chrome to a single capsule fill
-        // plus a hairline stroke. Tap handler sets the new filter
-        // without `withAnimation` so the downstream content (year
-        // groups + glass bars + dot rows) doesn't enter an animation
-        // transaction just because the user switched tabs.
-        let isSelected = filter == option
-        Button {
-            UIImpactFeedbackGenerator(style: .soft).impactOccurred()
-            filter = option
-            proxy.scrollTo(option.id, anchor: .center)
-        } label: {
-            Text(option.label)
-                .font(.raleway("SemiBold", size: 15, relativeTo: .body))
-                .lineLimit(1)
-                .foregroundStyle(
-                    isSelected
-                        ? DesignColors.text
-                        : DesignColors.textSecondary.opacity(0.55)
-                )
-                .padding(.horizontal, 16)
-                .padding(.vertical, 10)
-                .background {
-                    if isSelected {
-                        Capsule()
-                            .fill(Color.white.opacity(0.92))
-                            .overlay {
-                                Capsule()
-                                    .stroke(
-                                        DesignColors.text.opacity(0.06),
-                                        lineWidth: 0.6
-                                    )
-                            }
-                            .matchedGeometryEffect(id: "activeFilter", in: filterNamespace)
-                    }
-                }
-        }
-        .buttonStyle(.plain)
+        .pickerStyle(.segmented)
     }
 
     // MARK: - Legend
@@ -261,10 +238,12 @@ struct CycleHistoryAllView: View {
         HStack(spacing: 16) {
             legendItem(
                 tint: CyclePhase.menstrual.orbitColor,
+                tintOpacity: 0.95,
                 label: "Period"
             )
             legendItem(
-                tint: CyclePhase.ovulatory.orbitColor.opacity(0.55),
+                tint: CyclePhase.ovulatory.orbitColor,
+                tintOpacity: 0.55,
                 label: "Fertile window"
             )
             legendDotItem(
@@ -276,54 +255,12 @@ struct CycleHistoryAllView: View {
     }
 
     @ViewBuilder
-    private func legendItem(tint: Color, label: String) -> some View {
+    private func legendItem(tint: Color, tintOpacity: Double, label: String) -> some View {
         HStack(spacing: 6) {
-            legendGlassCapsule(tint: tint)
-                .frame(width: 18, height: 6)
+            PhaseGlossyDot(tint: tint, size: 8, tintOpacity: tintOpacity)
             Text(label)
                 .font(.raleway("Medium", size: 11, relativeTo: .caption))
                 .foregroundStyle(DesignColors.textSecondary)
-        }
-    }
-
-    /// Miniature of the three-layer glass capsule used on the cycle
-    /// bar — outer halo, tint body gradient, top specular — so the
-    /// legend key visually matches the markers it's naming.
-    @ViewBuilder
-    private func legendGlassCapsule(tint: Color) -> some View {
-        ZStack {
-            Capsule()
-                .fill(tint.opacity(0.32))
-                .frame(width: 21, height: 9)
-                .blur(radius: 1.8)
-
-            Capsule()
-                .fill(
-                    LinearGradient(
-                        colors: [
-                            tint.opacity(0.95),
-                            tint.opacity(0.72),
-                            tint.opacity(0.55)
-                        ],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                )
-
-            Capsule()
-                .fill(
-                    LinearGradient(
-                        colors: [
-                            Color.white.opacity(0.55),
-                            Color.white.opacity(0.0)
-                        ],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                )
-                .frame(width: 15, height: 2.5)
-                .offset(y: -1.4)
-                .blur(radius: 0.4)
         }
     }
 

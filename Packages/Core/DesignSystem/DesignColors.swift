@@ -54,6 +54,17 @@ public enum DesignColors {
     /// standalone icons that require strict WCAG 1.4.11 compliance.
     public static let accentWarmText = Color(hex: 0x8E6052)
 
+    /// Sibling warm accent in the honey/caramel family — used wherever
+    /// the UI needs a second tonal anchor that reads as "different from
+    /// the primary terracotta but still in palette". Currently powers
+    /// the "outside range" bars on the Cycle Trend chart, where the
+    /// primary terracotta is reserved for in-range cycles. Pair with
+    /// `accentHoneyText` for label/icon use on light surfaces.
+    public static let accentHoney = Color(hex: 0xD9A55E)
+    /// Text-safe honey variant for labels/icons rendered in the honey
+    /// hue on ivory surfaces. Same darkening logic as `accentWarmText`.
+    public static let accentHoneyText = Color(hex: 0x9C6F32)
+
     // MARK: - Structure Colors
     public static let structure = Color(hex: 0xDECBC1)  // Warm Sandstone - structura vizuala
     public static let divider = Color(hex: 0xD8D3CB)  // Moonlit Grey - divider/borders subtle

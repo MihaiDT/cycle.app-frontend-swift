@@ -2,11 +2,17 @@ import SwiftUI
 
 // MARK: - Cycle Stat Info Detail
 //
-// Editorial explainer opened from the Normality card's info buttons.
-// This view is a thin coordinator — it composes the header
-// illustration, the personal reading row, and three numbered content
-// sections, all of which live in their own files under `Components/`.
-// Copy lives in `CycleStatInfoCopy.swift`.
+// Apple Health–style explainer opened from the Normality rows on
+// Cycle Stats. No more parallax hero illustration — surfaces are
+// data-first stacked cards with caps eyebrow headers, matching the
+// rest of the Cycle Stats / Body Signals detail screens.
+//
+// Cards stacked on the warm peach screen background:
+//   1. Personal reading — label + big value + status
+//   2. About — what's typical, with optional pull-quote highlights
+//   3. What can shift it — paragraph + bullets
+//   4. When to check in with a provider — paragraph + bullets
+//   5. Disclaimer footer
 
 struct CycleStatInfoDetailView: View {
     let kind: CycleStatInfoKind
@@ -37,70 +43,53 @@ struct CycleStatInfoDetailView: View {
 
     var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
-            VStack(alignment: .leading, spacing: 0) {
-                CycleStatInfoHeaderImage(kind: kind)
+            VStack(spacing: 14) {
+                CycleStatInfoPersonalReading(
+                    kind: kind,
+                    previousValue: previousValue,
+                    badge: badge
+                )
 
-                VStack(alignment: .leading, spacing: 40) {
-                    CycleStatInfoPersonalReading(
-                        kind: kind,
-                        previousValue: previousValue,
-                        badge: badge
-                    )
+                CycleStatInfoSection(
+                    title: "About",
+                    paragraph: copy.typical,
+                    highlights: copy.typicalHighlights
+                )
 
-                    CycleStatInfoSection(
-                        number: 1,
-                        title: "What's typical",
-                        paragraph: copy.typical,
-                        highlights: copy.typicalHighlights
-                    )
+                CycleStatInfoSection(
+                    title: "What can shift it",
+                    paragraph: copy.affectIntro,
+                    bullets: copy.affectBullets,
+                    footnote: copy.affectFootnote
+                )
 
-                    CycleStatInfoSection(
-                        number: 2,
-                        title: "What can shift it",
-                        paragraph: copy.affectIntro,
-                        bullets: copy.affectBullets,
-                        footnote: copy.affectFootnote
-                    )
+                CycleStatInfoSection(
+                    title: "When to check in with a provider",
+                    paragraph: copy.doctorIntro,
+                    bullets: copy.doctorBullets,
+                    footnote: copy.doctorFootnote
+                )
 
-                    CycleStatInfoSection(
-                        number: 3,
-                        title: "When to check in with a provider",
-                        paragraph: copy.doctorIntro,
-                        bullets: copy.doctorBullets,
-                        footnote: copy.doctorFootnote
-                    )
-
-                    disclaimer
-                }
-                .padding(.horizontal, 24)
-                .padding(.top, 32)
-                .padding(.bottom, 56)
-                .frame(maxWidth: .infinity, alignment: .leading)
+                disclaimer
             }
+            .padding(.horizontal, AppLayout.screenHorizontal)
+            .padding(.top, 24)
+            .padding(.bottom, 32)
         }
-        // Original surface — JourneyAnimatedBackground peach animated
-        // blobs show through the content column. Only the header plate
-        // is ivory, so its arc reads as a distinct silhouette against
-        // the peach behind it.
-        .background { JourneyAnimatedBackground(animated: false) }
+        .background(DesignColors.journeyBackground.ignoresSafeArea())
         .navigationTitle(kind.title)
         .navigationBarTitleDisplayMode(.inline)
     }
 
     @ViewBuilder
     private var disclaimer: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            Rectangle()
-                .fill(DesignColors.text.opacity(0.10))
-                .frame(height: 0.5)
-                .accessibilityHidden(true)
-
-            Text("cycle.app is not a diagnostic tool and does not provide medical advice. Everything you read here is for educational context only. For personal concerns, please speak with a licensed healthcare professional.")
-                .font(.raleway("Medium", size: 12, relativeTo: .caption))
-                .foregroundStyle(DesignColors.textSecondary.opacity(0.75))
-                .lineSpacing(4)
-                .fixedSize(horizontal: false, vertical: true)
-        }
-        .padding(.top, 8)
+        Text("cycle.app is not a diagnostic tool and does not provide medical advice. Everything here is for educational context only. For personal concerns, please speak with a licensed healthcare professional.")
+            .font(.raleway("Medium", size: 12, relativeTo: .caption))
+            .foregroundStyle(DesignColors.textSecondary.opacity(0.75))
+            .lineSpacing(4)
+            .fixedSize(horizontal: false, vertical: true)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 4)
+            .padding(.top, 8)
     }
 }

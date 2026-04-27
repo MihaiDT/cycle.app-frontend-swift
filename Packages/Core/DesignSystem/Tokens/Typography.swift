@@ -16,11 +16,16 @@ import SwiftUI
 public enum AppTypography {
     // MARK: Card titles (3-tier scale)
 
-    /// Hero-scale card / screen title. Used on editorial full-width
-    /// cards (Cycle History, Your Phases, Average Cycle) and on
-    /// modal-style detail headers. Usually UPPERCASE and multi-line.
-    public static let cardTitlePrimary: Font = .raleway("Bold", size: 28, relativeTo: .largeTitle)
-    public static let cardTitlePrimaryTracking: CGFloat = -0.4
+    /// Section-marker card title. Used on editorial full-width cards
+    /// (Cycle History, Cycle Trend, Your Body) and on modal-style
+    /// detail headers. UPPERCASE single-line — sized so the title
+    /// stays the chapter marker without competing with the data
+    /// inside the card for visual weight. Larger stacked variants
+    /// were tested at 28pt and read as five mini-magazine covers
+    /// stacked together; this size keeps the editorial voice while
+    /// letting the numbers carry the screen.
+    public static let cardTitlePrimary: Font = .raleway("Bold", size: 20, relativeTo: .title3)
+    public static let cardTitlePrimaryTracking: CGFloat = -0.2
 
     /// Standard card / tile title. Used on mid-density widgets —
     /// Journey destination tiles, Wellness ritual, Live widget,

@@ -13,6 +13,7 @@ public enum CycleStatsCard: String, CaseIterable, Codable, Sendable, Identifiabl
     case normality
     case avgCycle
     case history
+    case bodySignals
     case reflection
 
     public var id: String { rawValue }
@@ -21,11 +22,28 @@ public enum CycleStatsCard: String, CaseIterable, Codable, Sendable, Identifiabl
     /// the stats screen itself – the cards carry their own titles.
     public var displayName: String {
         switch self {
-        case .overview:   return "Averages overview"
-        case .normality:  return "Normality check"
-        case .avgCycle:   return "Cycle trend"
-        case .history:    return "Cycle history"
-        case .reflection: return "Rhythm reflection"
+        case .overview:    return "Averages overview"
+        case .normality:   return "Normality check"
+        case .avgCycle:    return "Cycle trend"
+        case .history:     return "Cycle history"
+        case .bodySignals: return "Body signals"
+        case .reflection:  return "Rhythm reflection"
+        }
+    }
+
+    /// SF Symbol rendered next to each row in the Customize screen
+    /// so the user can scan the list without reading every label.
+    /// Uses outline weights to match the eyebrow icons elsewhere in
+    /// Cycle Stats (Cycle Trend `chart.bar`, Cycle History `calendar`,
+    /// Your Body `heart.text.square`).
+    public var sfSymbol: String {
+        switch self {
+        case .overview:    return "gauge.with.dots.needle.50percent"
+        case .normality:   return "checkmark.seal"
+        case .avgCycle:    return "chart.bar"
+        case .history:     return "calendar"
+        case .bodySignals: return "heart.text.square"
+        case .reflection:  return "text.quote"
         }
     }
 
@@ -42,6 +60,8 @@ public enum CycleStatsCard: String, CaseIterable, Codable, Sendable, Identifiabl
             return "Bar chart of recent cycle lengths with your average overlay."
         case .history:
             return "Scrollable list of past cycles with Energy, Mood, and Sleep dots."
+        case .bodySignals:
+            return "Wrist temperature, HRV, and resting heart rate pulled from your Apple Watch."
         case .reflection:
             return "Editorial quote that reads your rhythm out loud."
         }
@@ -94,7 +114,7 @@ public struct CycleStatsLayout: Equatable, Codable, Sendable {
     /// as the reset target: averages → verdict → chart → history
     /// → editorial close.
     public static let `default` = CycleStatsLayout(
-        order: [.overview, .normality, .avgCycle, .history, .reflection],
+        order: [.overview, .normality, .avgCycle, .bodySignals, .history, .reflection],
         hidden: []
     )
 

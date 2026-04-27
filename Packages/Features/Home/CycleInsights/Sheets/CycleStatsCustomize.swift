@@ -2,17 +2,13 @@ import SwiftUI
 
 // MARK: - Cycle Stats Customize
 //
-// Pushed on top of the Cycle Stats navigation stack. Lets the user
-// reorder the visible cards and toggle any card between shown and
-// hidden. The screen mutates a `CycleStatsLayout` binding; the
-// parent is responsible for persisting the result (debounced in the
-// reducer, so dragging doesn't hammer UserDefaults).
-//
-// Native `List` is used because it gives us free drag-to-reorder
-// with haptics, VoiceOver support, and Dynamic Type without any
-// re-implementation. The surrounding chrome is styled to match the
-// rest of the app — warm journey background, Raleway labels, no
-// iOS-default grey grouped header.
+// Apple Health–style preferences screen pushed on top of the Cycle
+// Stats stack. Two sections (Cycle stats / Hidden), each row is an
+// icon + label + checkbox + drag handle. Bottom anchor: a primary
+// "Done" pill, a quiet "Reset to default" link, and a footer
+// paragraph describing the behaviour. Native `List` carries the
+// drag-to-reorder + VoiceOver wiring; a `safeAreaInset` houses the
+// CTA so the list scrolls under it.
 
 struct CycleStatsCustomizeView: View {
     @Binding var layout: CycleStatsLayout
@@ -28,17 +24,21 @@ struct CycleStatsCustomizeView: View {
 
             list
         }
-        .navigationTitle("Customize stats")
+        .navigationTitle("Customize")
         .navigationBarTitleDisplayMode(.inline)
         .environment(\.editMode, $editMode)
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            bottomAnchor
+        }
     }
+
+    // MARK: - List
 
     @ViewBuilder
     private var list: some View {
         List {
             visibleSection
             hiddenSection
-            resetSection
         }
         .listStyle(.insetGrouped)
         .scrollContentBackground(.hidden)
@@ -56,11 +56,6 @@ struct CycleStatsCustomizeView: View {
             .onMove(perform: move)
         } header: {
             sectionHeader("Cycle stats")
-        } footer: {
-            Text("Drag to reorder. Tap the circle to hide a card.")
-                .font(.raleway("Regular", size: 12, relativeTo: .caption))
-                .foregroundStyle(DesignColors.textSecondary.opacity(0.8))
-                .padding(.top, 6)
         }
     }
 
@@ -86,88 +81,132 @@ struct CycleStatsCustomizeView: View {
         }
     }
 
-    @ViewBuilder
-    private var resetSection: some View {
-        Section {
-            Button {
-                let animation: Animation = reduceMotion ? .linear(duration: 0) : .easeInOut(duration: 0.25)
-                withAnimation(animation) {
-                    layout = .default
-                }
-            } label: {
-                HStack(spacing: 10) {
-                    Image(systemName: "arrow.counterclockwise")
-                        .font(.system(size: 14, weight: .semibold))
-                    Text("Reset to default")
-                        .font(.raleway("Medium", size: 14, relativeTo: .callout))
-                }
-                .foregroundStyle(DesignColors.accentWarmText)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.vertical, 4)
-            }
-            .buttonStyle(.plain)
-            .listRowBackground(rowBackground)
-            .listRowSeparator(.hidden)
-        }
-    }
-
     // MARK: - Row
 
     @ViewBuilder
     private func row(for card: CycleStatsCard, isVisible: Bool) -> some View {
-        HStack(alignment: .center, spacing: 14) {
-            toggleButton(for: card, isVisible: isVisible)
+        HStack(spacing: 14) {
+            checkbox(isOn: isVisible) { toggle(card) }
 
-            VStack(alignment: .leading, spacing: 3) {
-                Text(card.displayName)
-                    .font(.raleway("SemiBold", size: 15, relativeTo: .body))
-                    .foregroundStyle(DesignColors.text)
-                    .lineLimit(1)
+            Image(systemName: card.sfSymbol)
+                .font(.system(size: 14, weight: .regular))
+                .foregroundStyle(DesignColors.text.opacity(0.65))
+                .frame(width: 22)
 
-                Text(card.blurb)
-                    .font(.raleway("Regular", size: 12, relativeTo: .caption))
-                    .foregroundStyle(DesignColors.textSecondary.opacity(0.9))
-                    .lineLimit(2)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
+            Text(card.displayName)
+                .font(.raleway("SemiBold", size: 15, relativeTo: .body))
+                .foregroundStyle(DesignColors.text)
+                .lineLimit(1)
 
             Spacer(minLength: 6)
         }
         .padding(.vertical, 6)
         .listRowBackground(rowBackground)
         .listRowSeparator(.hidden)
-        // Custom toggle button handles add/remove; suppressing the
-        // native delete circle keeps the row visually calm while
-        // leaving the trailing drag grip intact in edit mode.
         .deleteDisabled(true)
         .moveDisabled(!isVisible)
     }
 
     @ViewBuilder
-    private func toggleButton(for card: CycleStatsCard, isVisible: Bool) -> some View {
-        Button {
-            toggle(card)
-        } label: {
-            Image(systemName: isVisible ? "minus.circle.fill" : "plus.circle.fill")
-                .font(.system(size: 22, weight: .regular))
-                .foregroundStyle(isVisible ? DesignColors.accentWarm : DesignColors.statusSuccess)
-                .contentShape(Circle())
+    private func checkbox(isOn: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 6, style: .continuous)
+                    .fill(isOn ? DesignColors.accentWarm : Color.clear)
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 6, style: .continuous)
+                            .stroke(
+                                isOn ? DesignColors.accentWarm : DesignColors.text.opacity(0.25),
+                                lineWidth: isOn ? 0 : 1.4
+                            )
+                    }
+                    .frame(width: 22, height: 22)
+
+                if isOn {
+                    Image(systemName: "checkmark")
+                        .font(.system(size: 12, weight: .bold))
+                        .foregroundStyle(Color.white)
+                }
+            }
+            .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
-        .accessibilityLabel(isVisible
-            ? "Hide \(card.displayName)"
-            : "Show \(card.displayName)")
+        // `.borderless` (NOT `.plain`) is required when a Button lives
+        // inside a List row that's also draggable in edit mode. With
+        // `.plain` the row's drag gesture and the button's tap gesture
+        // both claim the touch, and UIKit crashes on the second drag
+        // session attempt: "attempted to enter new reordering session
+        // whilst an existing session was active". `.borderless` carves
+        // out a button-only hit zone so drag stays on the row chrome.
+        .buttonStyle(.borderless)
+        .accessibilityLabel(isOn ? "Visible" : "Hidden")
     }
 
     @ViewBuilder
     private var rowBackground: some View {
-        RoundedRectangle(cornerRadius: 16, style: .continuous)
-            .fill(Color.white.opacity(0.72))
+        RoundedRectangle(cornerRadius: 14, style: .continuous)
+            .fill(Color.white.opacity(0.7))
             .overlay {
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
                     .stroke(DesignColors.text.opacity(DesignColors.borderOpacitySubtle), lineWidth: 0.6)
             }
             .padding(.vertical, 2)
+    }
+
+    // MARK: - Bottom anchor (Done + Reset + footer)
+
+    @ViewBuilder
+    private var bottomAnchor: some View {
+        VStack(spacing: 12) {
+            doneButton
+
+            Button(action: reset) {
+                Text("Reset to default")
+                    .font(.raleway("Medium", size: 13, relativeTo: .footnote))
+                    .foregroundStyle(DesignColors.accentWarmText)
+            }
+            .buttonStyle(.plain)
+            .accessibilityHint("Restores the default order and shows every card again")
+
+            Text("Hidden cards stay in the layout – bring any back into the stats screen by checking it again here.")
+                .font(.raleway("Regular", size: 12, relativeTo: .caption))
+                .foregroundStyle(DesignColors.textSecondary.opacity(0.85))
+                .multilineTextAlignment(.center)
+                .lineSpacing(3)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.horizontal, 12)
+        }
+        .padding(.horizontal, AppLayout.screenHorizontal)
+        .padding(.top, 14)
+        .padding(.bottom, 10)
+        .background {
+            // Soft fade so list content scrolling under the inset
+            // doesn't visually crash into the CTA. Matches the warm
+            // peach backdrop, not a flat divider.
+            LinearGradient(
+                colors: [
+                    DesignColors.journeyBackground.opacity(0),
+                    DesignColors.journeyBackground.opacity(0.92),
+                    DesignColors.journeyBackground
+                ],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .ignoresSafeArea(edges: .bottom)
+        }
+    }
+
+    @ViewBuilder
+    private var doneButton: some View {
+        Button(action: onDismiss) {
+            Text("Done")
+                .font(.raleway("SemiBold", size: 16, relativeTo: .body))
+                .foregroundStyle(DesignColors.text)
+                .frame(maxWidth: .infinity)
+                .frame(height: 52)
+                .heroGlassCapsule()
+        }
+        .buttonStyle(.plain)
+        .accessibilityHint("Saves changes and closes the customize screen")
     }
 
     // MARK: - Mutations
@@ -194,14 +233,21 @@ struct CycleStatsCustomizeView: View {
         }
     }
 
-    // MARK: - Header
+    private func reset() {
+        let animation: Animation = reduceMotion ? .linear(duration: 0) : .easeInOut(duration: 0.25)
+        withAnimation(animation) {
+            layout = .default
+        }
+    }
+
+    // MARK: - Section header
 
     @ViewBuilder
     private func sectionHeader(_ text: String) -> some View {
         Text(text.uppercased())
-            .font(.raleway("SemiBold", size: 11, relativeTo: .caption))
-            .tracking(1.2)
-            .foregroundStyle(DesignColors.textSecondary.opacity(0.8))
+            .font(.raleway("SemiBold", size: 11, relativeTo: .caption2))
+            .tracking(1.4)
+            .foregroundStyle(DesignColors.textSecondary)
             .padding(.top, 8)
             .padding(.bottom, 2)
     }

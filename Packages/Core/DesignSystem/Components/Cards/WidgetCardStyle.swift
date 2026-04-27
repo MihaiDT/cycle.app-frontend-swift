@@ -21,24 +21,49 @@ public struct WidgetCardStyleModifier: ViewModifier {
     /// `UIViewRepresentable`) — Metal flattening can't render those
     /// subtrees and the runtime falls back to a broken yellow placeholder.
     public let rasterize: Bool
+    /// When true, the iOS 26 glass surface uses `.interactive()` so
+    /// touches drive a press-style ripple. Default false because the
+    /// interactive variant runs a touch-tracking shader on every
+    /// visible card every frame during scroll — that was the
+    /// dominant scroll cost on the stats screen. Opt in only on
+    /// cards that are wrapped in a `Button`, where the bounce is
+    /// part of the tap affordance.
+    public let interactive: Bool
 
-    public init(cornerRadius: CGFloat = 22, rasterize: Bool = true) {
+    public init(
+        cornerRadius: CGFloat = 22,
+        rasterize: Bool = true,
+        interactive: Bool = false
+    ) {
         self.cornerRadius = cornerRadius
         self.rasterize = rasterize
+        self.interactive = interactive
     }
 
+    @ViewBuilder
     public func body(content: Content) -> some View {
-        Group {
-            if rasterize {
-                content.drawingGroup(opaque: false)
-            } else {
-                content
+        let shape = RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+
+        if #available(iOS 26.0, macOS 26.0, *) {
+            // Native Liquid Glass with interactive press feedback by
+            // default — taps anywhere on the card surface get the
+            // first-party bounce animation. The per-frame touch
+            // shader cost was previously the suspected scroll bottle-
+            // neck, but profiling pinned the real culprit elsewhere
+            // (CloudKit recovery loop on mismatched encryption +
+            // unstable closure identity feeding `UIHostingConfiguration`),
+            // so the visual is back on by default.
+            content.glassEffect(.regular.interactive(), in: shape)
+        } else {
+            Group {
+                if rasterize {
+                    content.drawingGroup(opaque: false)
+                } else {
+                    content
+                }
             }
-        }
-        .background {
-            RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                .fill(Color.white)
-                .shadow(color: .black.opacity(0.1), radius: 8, x: 0, y: 3)
+            .background(Color.white)
+            .clipShape(shape)
         }
     }
 }
@@ -49,7 +74,15 @@ public extension View {
     /// not pair with `.background(.ultraThinMaterial)` or an outer
     /// `.clipShape`. Pass `rasterize: false` when the card contains
     /// UIKit-backed subviews (native Picker, Swift Charts).
-    func widgetCardStyle(cornerRadius: CGFloat = 22, rasterize: Bool = true) -> some View {
-        modifier(WidgetCardStyleModifier(cornerRadius: cornerRadius, rasterize: rasterize))
+    func widgetCardStyle(
+        cornerRadius: CGFloat = 22,
+        rasterize: Bool = true,
+        interactive: Bool = false
+    ) -> some View {
+        modifier(WidgetCardStyleModifier(
+            cornerRadius: cornerRadius,
+            rasterize: rasterize,
+            interactive: interactive
+        ))
     }
 }

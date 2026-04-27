@@ -2,11 +2,12 @@ import SwiftUI
 
 // MARK: - Cycle Details
 //
-// Presented as a sheet when the user taps a row in either the
-// compact Cycle History card or the full History archive. Mirrors
-// the information density of Flo/Lively's cycle-details page but in
-// cycle.app's voice and palette — clinical facts without the
-// diagnostic tone.
+// Apple Health–style detail screen pushed when the user taps a row
+// in the compact Cycle History card or the full History archive.
+// Stacked white cards on the warm peach backdrop, each with a caps
+// eyebrow header. The cycle length / period length cards are
+// tappable as a whole — chevron top-right signals drill into the
+// matching explainer sheet, no inline `info.circle` button.
 
 struct CycleDetailsView: View {
     let timeline: CycleHistoryTimeline
@@ -47,20 +48,33 @@ struct CycleDetailsView: View {
         .navigationBarTitleDisplayMode(.inline)
     }
 
-    // MARK: - Summary (date range + bar)
+    // MARK: - Summary
 
     @ViewBuilder
     private var summaryCard: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: 14) {
+            HStack(spacing: 8) {
+                Image(systemName: "calendar")
+                    .font(.system(size: 13, weight: .regular))
+                    .foregroundStyle(DesignColors.textSecondary)
+                Text("DATE RANGE")
+                    .font(.raleway("SemiBold", size: 11, relativeTo: .caption2))
+                    .tracking(1.4)
+                    .foregroundStyle(DesignColors.textSecondary)
+            }
+
             Text(summaryRange)
-                .font(.raleway("SemiBold", size: 17, relativeTo: .headline))
+                .font(.raleway("SemiBold", size: 17, relativeTo: .body))
                 .foregroundStyle(DesignColors.text)
 
             CycleHistoryBar(timeline: timeline)
+                .padding(.top, 4)
+
+            CycleHistoryBarLegend()
         }
-        .padding(22)
+        .padding(20)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .widgetCardStyle(cornerRadius: 28)
+        .widgetCardStyle(cornerRadius: 24)
     }
 
     private var summaryRange: String {
@@ -77,9 +91,15 @@ struct CycleDetailsView: View {
     @ViewBuilder
     private var inProgressCard: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("Cycle in progress")
-                .font(.raleway("SemiBold", size: 15, relativeTo: .subheadline))
-                .foregroundStyle(DesignColors.text)
+            HStack(spacing: 8) {
+                Image(systemName: "hourglass")
+                    .font(.system(size: 13, weight: .regular))
+                    .foregroundStyle(DesignColors.textSecondary)
+                Text("CYCLE IN PROGRESS")
+                    .font(.raleway("SemiBold", size: 11, relativeTo: .caption2))
+                    .tracking(1.4)
+                    .foregroundStyle(DesignColors.textSecondary)
+            }
 
             Text("Length figures appear once this cycle closes. Until then, the numbers would still be a projection.")
                 .font(.raleway("Regular", size: 14, relativeTo: .callout))
@@ -87,17 +107,18 @@ struct CycleDetailsView: View {
                 .lineSpacing(4)
                 .fixedSize(horizontal: false, vertical: true)
         }
-        .padding(22)
+        .padding(20)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .widgetCardStyle(cornerRadius: 28)
+        .widgetCardStyle(cornerRadius: 24)
     }
 
-    // MARK: - Cycle length
+    // MARK: - Stat cards
 
     @ViewBuilder
     private var cycleLengthCard: some View {
         let badge = CycleNormality.classifyCycleLength(days: timeline.length)
         statCard(
+            iconName: "circle.dashed",
             title: "Cycle length",
             value: "\(timeline.length) \(timeline.length == 1 ? "day" : "days")",
             badge: badge,
@@ -115,12 +136,11 @@ struct CycleDetailsView: View {
         }
     }
 
-    // MARK: - Period length
-
     @ViewBuilder
     private var periodLengthCard: some View {
         let badge = CycleNormality.classifyPeriodLength(days: timeline.bleedingDays)
         statCard(
+            iconName: "drop",
             title: "Period length",
             value: "\(timeline.bleedingDays) \(timeline.bleedingDays == 1 ? "day" : "days")",
             badge: badge,
@@ -142,56 +162,79 @@ struct CycleDetailsView: View {
 
     @ViewBuilder
     private func statCard(
+        iconName: String,
         title: String,
         value: String,
         badge: CycleStatusBadge,
         description: String,
         onInfoTap: @escaping () -> Void
     ) -> some View {
-        VStack(alignment: .leading, spacing: 14) {
-            HStack(alignment: .firstTextBaseline) {
-                Text(title)
-                    .font(AppTypography.cardTitleTertiary)
-                    .tracking(AppTypography.cardTitleTertiaryTracking)
-                    .foregroundStyle(DesignColors.textSecondary)
-
-                Spacer(minLength: 8)
-
-                Button(action: onInfoTap) {
-                    Image(systemName: "info.circle")
-                        .font(.system(size: 16, weight: .regular))
-                        .foregroundStyle(DesignColors.textSecondary.opacity(0.7))
-                        .frame(width: 28, height: 28)
-                        .contentShape(Circle())
+        Button(action: onInfoTap) {
+            VStack(alignment: .leading, spacing: 14) {
+                HStack(spacing: 8) {
+                    Image(systemName: iconName)
+                        .font(.system(size: 13, weight: .regular))
+                        .foregroundStyle(DesignColors.textSecondary)
+                    Text(title.uppercased())
+                        .font(.raleway("SemiBold", size: 11, relativeTo: .caption2))
+                        .tracking(1.4)
+                        .foregroundStyle(DesignColors.textSecondary)
+                    Spacer(minLength: 8)
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(DesignColors.textSecondary.opacity(0.55))
                 }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Learn more about \(title.lowercased())")
+
+                HStack(alignment: .firstTextBaseline, spacing: 12) {
+                    Text(value)
+                        .font(.raleway("Bold", size: 30, relativeTo: .largeTitle))
+                        .tracking(-0.5)
+                        .foregroundStyle(DesignColors.text)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
+
+                    Spacer(minLength: 8)
+
+                    HStack(spacing: 5) {
+                        Circle()
+                            .fill(badgeDotColor(for: badge.tone))
+                            .frame(width: 6, height: 6)
+                        Text(badge.label.lowercased())
+                            .font(.raleway("Medium", size: 12, relativeTo: .caption))
+                            .tracking(0.4)
+                            .foregroundStyle(badgeTextColor(for: badge.tone))
+                    }
+                }
+
+                Text(description)
+                    .font(.raleway("Regular", size: 14, relativeTo: .callout))
+                    .foregroundStyle(DesignColors.text.opacity(0.78))
+                    .lineSpacing(4)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.top, 2)
             }
-
-            HStack(alignment: .center, spacing: 12) {
-                Text(value)
-                    .font(.raleway("Bold", size: 28, relativeTo: .title))
-                    .tracking(-0.5)
-                    .foregroundStyle(DesignColors.text)
-
-                Spacer(minLength: 8)
-
-                CycleStatusBadgeView(badge: badge)
-            }
-
-            Rectangle()
-                .fill(DesignColors.text.opacity(DesignColors.dividerOpacity))
-                .frame(height: 0.5)
-
-            Text(description)
-                .font(.raleway("Regular", size: 14, relativeTo: .callout))
-                .foregroundStyle(DesignColors.text.opacity(0.82))
-                .lineSpacing(4)
-                .fixedSize(horizontal: false, vertical: true)
+            .padding(20)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .contentShape(Rectangle())
         }
-        .padding(22)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .widgetCardStyle(cornerRadius: 28)
+        .buttonStyle(.plain)
+        .widgetCardStyle(cornerRadius: 24)
+        .accessibilityLabel("\(title), \(value), \(badge.label.lowercased())")
+        .accessibilityHint("Opens an explainer for \(title.lowercased())")
+    }
+
+    private func badgeDotColor(for tone: CycleStatusTone) -> Color {
+        switch tone {
+        case .normal:         return DesignColors.statusSuccess
+        case .needsAttention: return DesignColors.accentHoney
+        }
+    }
+
+    private func badgeTextColor(for tone: CycleStatusTone) -> Color {
+        switch tone {
+        case .normal:         return DesignColors.statusSuccess
+        case .needsAttention: return DesignColors.accentHoneyText
+        }
     }
 
     // MARK: - Key moments
@@ -199,76 +242,82 @@ struct CycleDetailsView: View {
     @ViewBuilder
     private var momentsCard: some View {
         VStack(alignment: .leading, spacing: 14) {
-            Text("Key moments")
-                .font(AppTypography.cardTitleTertiary)
-                .tracking(AppTypography.cardTitleTertiaryTracking)
-                .foregroundStyle(DesignColors.textSecondary)
+            HStack(spacing: 8) {
+                Image(systemName: "circle.grid.cross")
+                    .font(.system(size: 13, weight: .regular))
+                    .foregroundStyle(DesignColors.textSecondary)
+                Text("KEY MOMENTS")
+                    .font(.raleway("SemiBold", size: 11, relativeTo: .caption2))
+                    .tracking(1.4)
+                    .foregroundStyle(DesignColors.textSecondary)
+            }
 
-            VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: 0) {
                 momentRow(
-                    tint: DesignColors.text,
-                    assetIcon: "icon-period-start",
+                    tint: CyclePhase.menstrual.orbitColor,
+                    label: "Period",
                     text: periodMomentText
                 )
 
-                Rectangle()
-                    .fill(DesignColors.text.opacity(DesignColors.dividerOpacity))
-                    .frame(height: 0.5)
+                Divider()
+                    .background(DesignColors.text.opacity(DesignColors.dividerOpacity))
 
                 momentRow(
-                    tint: DesignColors.text,
-                    assetIcon: "icon-fertile",
-                    iconSize: 32,
+                    tint: CyclePhase.ovulatory.orbitColor.opacity(0.7),
+                    label: "Fertile",
                     text: fertileMomentText
                 )
 
-                Rectangle()
-                    .fill(DesignColors.text.opacity(DesignColors.dividerOpacity))
-                    .frame(height: 0.5)
+                Divider()
+                    .background(DesignColors.text.opacity(DesignColors.dividerOpacity))
 
                 momentRow(
-                    tint: DesignColors.text,
-                    assetIcon: "icon-ovulation",
-                    text: ovulationMomentText
+                    tint: CyclePhase.ovulatory.orbitColor,
+                    label: "Ovulation",
+                    text: ovulationMomentText,
+                    isRing: true
                 )
             }
         }
-        .padding(22)
+        .padding(20)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .widgetCardStyle(cornerRadius: 28)
+        .widgetCardStyle(cornerRadius: 24)
     }
 
     @ViewBuilder
     private func momentRow(
         tint: Color,
-        icon: String? = nil,
-        assetIcon: String? = nil,
-        iconSize: CGFloat = 26,
-        text: String
+        label: String,
+        text: String,
+        isRing: Bool = false
     ) -> some View {
-        HStack(alignment: .center, spacing: 12) {
-            Group {
-                if let assetIcon {
-                    Image(assetIcon)
-                        .renderingMode(.template)
-                        .resizable()
-                        .scaledToFit()
-                        .frame(width: iconSize, height: iconSize)
-                } else if let icon {
-                    Image(systemName: icon)
-                        .font(.system(size: iconSize * 0.77, weight: .semibold))
+        HStack(alignment: .top, spacing: 14) {
+            VStack {
+                if isRing {
+                    Circle()
+                        .stroke(tint, lineWidth: 1.4)
+                        .frame(width: 10, height: 10)
+                } else {
+                    PhaseGlossyDot(tint: tint, size: 10)
                 }
             }
-            .foregroundStyle(tint)
-            .frame(width: 44, height: 44)
+            .frame(width: 14)
+            .padding(.top, 4)
 
-            Text(text)
-                .font(.raleway("Medium", size: 14, relativeTo: .callout))
-                .foregroundStyle(DesignColors.text.opacity(0.88))
-                .lineSpacing(3)
-                .fixedSize(horizontal: false, vertical: true)
-                .frame(maxWidth: .infinity, alignment: .leading)
+            VStack(alignment: .leading, spacing: 4) {
+                Text(label.uppercased())
+                    .font(.raleway("SemiBold", size: 10, relativeTo: .caption2))
+                    .tracking(1.0)
+                    .foregroundStyle(DesignColors.textSecondary)
+                Text(text)
+                    .font(.raleway("Medium", size: 14, relativeTo: .callout))
+                    .foregroundStyle(DesignColors.text.opacity(0.88))
+                    .lineSpacing(3)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
         }
+        .padding(.vertical, 12)
     }
 
     private var periodMomentText: String {
@@ -281,12 +330,12 @@ struct CycleDetailsView: View {
         ) ?? timeline.startDate
         let end = Self.longFormatter.string(from: endDay)
         if timeline.isCurrent {
-            return "Your period started on \(start)."
+            return "Started \(start)."
         }
         if timeline.bleedingDays <= 1 {
-            return "Your period started on \(start)."
+            return "Started \(start)."
         }
-        return "Your period ran from \(start) to \(end)."
+        return "Ran from \(start) to \(end)."
     }
 
     private var fertileMomentText: String {
@@ -304,9 +353,9 @@ struct CycleDetailsView: View {
         let start = Self.longFormatter.string(from: startDay)
         let end = Self.longFormatter.string(from: endDay)
         if timeline.isCurrent {
-            return "Your fertile window is expected between \(start) and \(end)."
+            return "Window expected between \(start) and \(end)."
         }
-        return "Your fertile window likely ran from \(start) to \(end)."
+        return "Window likely ran from \(start) to \(end)."
     }
 
     private var ovulationMomentText: String {
@@ -318,9 +367,8 @@ struct CycleDetailsView: View {
         ) ?? timeline.startDate
         let label = Self.longFormatter.string(from: day)
         if timeline.isCurrent {
-            return "Ovulation is expected around \(label)."
+            return "Expected around \(label)."
         }
-        return "Ovulation was likely on \(label)."
+        return "Likely on \(label)."
     }
 }
-

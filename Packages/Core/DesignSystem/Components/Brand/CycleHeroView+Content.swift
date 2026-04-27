@@ -191,51 +191,7 @@ extension CycleHeroView {
                 }
 
                 if let onEditPeriod {
-                    Button {
-                        UIImpactFeedbackGenerator(style: .light).impactOccurred()
-                        onEditPeriod()
-                    } label: {
-                        Text("My cycle")
-                            .font(.raleway("SemiBold", size: 15, relativeTo: .callout))
-                            .foregroundColor(textOnHeroColor)
-                            .padding(.horizontal, 22)
-                            .padding(.vertical, 10)
-                            .background {
-                                ZStack {
-                                    Capsule()
-                                        .fill(
-                                            LinearGradient(
-                                                colors: [Color.white.opacity(0.95), Color.white.opacity(0.7)],
-                                                startPoint: .top,
-                                                endPoint: .bottom
-                                            )
-                                        )
-                                    // Top shine
-                                    Capsule()
-                                        .fill(
-                                            LinearGradient(
-                                                colors: [Color.white.opacity(0.9), Color.clear],
-                                                startPoint: .top,
-                                                endPoint: .center
-                                            )
-                                        )
-                                        .padding(2)
-                                    // Border
-                                    Capsule()
-                                        .strokeBorder(
-                                            LinearGradient(
-                                                colors: [Color.white.opacity(0.8), DesignColors.accentWarm.opacity(0.3)],
-                                                startPoint: .topLeading,
-                                                endPoint: .bottomTrailing
-                                            ),
-                                            lineWidth: 1
-                                        )
-                                }
-                            }
-                            .shadow(color: .black.opacity(0.08), radius: 4, x: 0, y: 2)
-                            .shadow(color: DesignColors.accentWarm.opacity(0.12), radius: 8, x: 0, y: 3)
-                    }
-                    .buttonStyle(.plain)
+                    HeroGlassCapsuleButton("My cycle", action: onEditPeriod)
                 }
             }
             .padding(.bottom, 14)
