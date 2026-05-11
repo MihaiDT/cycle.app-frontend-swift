@@ -5,120 +5,20 @@ import SwiftUI
 
 @Reducer
 public struct CalendarFeature: Sendable {
-    @ObservableState
-    public struct State: Equatable, Sendable {
-        public var menstrualStatus: MenstrualStatusResponse?
-        public var displayedMonth: Date
-        public var selectedDate: Date
-        public var loggedDays: [String: DayLog] = [:]
-        public var symptomSearchText: String = ""
-        public var isShowingSymptomSheet: Bool = false
-        public var isSavingSymptoms: Bool = false
-        public var symptomsSaved: Bool = false
-        public var showAriaPrompt: Bool = false
-        public var ariaPromptMessage: String = ""
-        public var isLoadingCalendar: Bool = false
-        /// True after pre-loading calendar data at app start
-        public var hasPreloaded: Bool = false
-        public var calendarEntries: [MenstrualCalendarEntry] = []
-
-        // Effective cycle params (may be edited by user)
-        public var cycleStartDate: Date
-        public var cycleLength: Int
-        public var bleedingDays: Int
-
-        /// Unified cycle-derived calendar data — single source of truth.
-        /// `periodDays` / `predictedPeriodDays` / `periodFlowIntensity` /
-        /// `fertileDays` / `ovulationDays` are computed passthroughs into this.
-        public var snapshot: CycleSnapshot = .empty
-
-        // User-marked period days (keys: "yyyy-MM-dd") — confirmed + predicted from server
-        public var periodDays: Set<String> {
-            get { snapshot.periodDays }
-            set { snapshot.periodDays = newValue }
-        }
-        // Server-predicted period days (subset of periodDays) — for dashed/lighter styling
-        public var predictedPeriodDays: Set<String> {
-            get { snapshot.predictedDays }
-            set { snapshot.predictedDays = newValue }
-        }
-        // Flow intensity per period day (keys: "yyyy-MM-dd")
-        public var periodFlowIntensity: [String: FlowIntensity] {
-            get { snapshot.flowIntensity }
-            set { snapshot.flowIntensity = newValue }
-        }
-        // Fertile days with their level (keys: "yyyy-MM-dd")
-        public var fertileDays: [String: FertilityLevel] {
-            get { snapshot.fertileDays }
-            set { snapshot.fertileDays = newValue }
-        }
-        // Ovulation days (keys: "yyyy-MM-dd")
-        public var ovulationDays: Set<String> {
-            get { snapshot.ovulationDays }
-            set { snapshot.ovulationDays = newValue }
-        }
-
-        // Inline edit period mode
-        public var isEditingPeriod: Bool = false
-        public var editPeriodDays: Set<String> = []
-        public var editOriginalPeriodDays: Set<String> = []
-        public var editFlowIntensity: [String: FlowIntensity] = [:]
-        public var isUpdatingPredictions: Bool = false
-        public var predictionsDone: Bool = false
-        /// Bumped after calendar reload to trigger refresh animation
-        public var calendarRefreshTick: Int = 0
-
-        public var hasEditPeriodChanges: Bool {
-            editPeriodDays != editOriginalPeriodDays
-        }
-
-        public struct DayLog: Equatable, Sendable {
-            public var symptoms: [String] = []
-            public var notes: String = ""
-        }
-
-        public init(
-            menstrualStatus: MenstrualStatusResponse? = nil,
-            periodDays: Set<String> = [],
-            predictedPeriodDays: Set<String> = [],
-            fertileDays: [String: FertilityLevel] = [:],
-            ovulationDays: Set<String> = []
-        ) {
-            self.menstrualStatus = menstrualStatus
-            let today = Calendar.current.startOfDay(for: Date())
-            self.selectedDate = today
-            var comps = Calendar.current.dateComponents([.year, .month], from: today)
-            comps.day = 1
-            self.displayedMonth = Calendar.current.date(from: comps) ?? today
-
-            let hasCycleData = menstrualStatus?.hasCycleData ?? false
-            let localCal = Calendar.current
-            if hasCycleData, let serverStart = menstrualStatus?.currentCycle.startDate {
-                let startDate = CalendarFeature.localDate(from: serverStart)
-                self.cycleStartDate = localCal.startOfDay(for: startDate)
-            } else {
-                self.cycleStartDate = localCal.date(byAdding: .year, value: -100, to: today) ?? today
-            }
-            self.cycleLength = menstrualStatus?.profile.avgCycleLength ?? 28
-            self.bleedingDays = menstrualStatus?.currentCycle.bleedingDays ?? 5
-
-            // Pre-populate with already-loaded data for instant display.
-            // Writing into the unified snapshot (computed accessors proxy into it).
-            self.snapshot = CycleSnapshot(
-                periodDays: periodDays,
-                predictedDays: predictedPeriodDays,
-                fertileDays: fertileDays,
-                ovulationDays: ovulationDays
-            )
-        }
-    }
-
     public enum Action: BindableAction, Sendable {
         case binding(BindingAction<State>)
         case dismissTapped
         case daySelected(Date)
         case logSymptomsTapped
+        /// Fired by `SymptomLoggingSheet.task` once it has
+        /// applied `pendingFocusedSymptomRaw` to its tab state,
+        /// so the next sheet opens fresh.
+        case pendingFocusedSymptomCleared
         case symptomToggled(SymptomType)
+        /// Long-press → user picks Mild (1), Moderate (3), or
+        /// Severe (5) for an already-selected symptom. Adds
+        /// the symptom to the day if it isn't there yet.
+        case symptomSeverityChanged(SymptomType, Int)
         case saveSymptomsTapped
         case saveSymptomsDone
         case symptomSheetDismissed
@@ -147,6 +47,11 @@ public struct CalendarFeature: Sendable {
                 periodFlowIntensity: [String: FlowIntensity],
                 bleedingDays: Int
             )
+            /// Symptom log was saved (add / remove / both). Parent
+            /// surfaces that fire `PatternDetector` (BodyPatterns)
+            /// reload off this so the screen reflects fresh data
+            /// the moment the symptom screen dismisses.
+            case symptomsSaved
         }
     }
 
@@ -180,14 +85,32 @@ public struct CalendarFeature: Sendable {
                 state.isShowingSymptomSheet = true
                 return .none
 
+            case .pendingFocusedSymptomCleared:
+                state.pendingFocusedSymptomRaw = nil
+                return .none
+
             case .symptomToggled(let symptom):
                 let key = CalendarFeature.dateKey(state.selectedDate)
                 var log = state.loggedDays[key] ?? State.DayLog()
-                if log.symptoms.contains(symptom.rawValue) {
-                    log.symptoms.removeAll { $0 == symptom.rawValue }
+                let raw = symptom.rawValue
+                if log.symptoms.contains(raw) {
+                    log.symptoms.removeAll { $0 == raw }
+                    log.severities.removeValue(forKey: raw)
                 } else {
-                    log.symptoms.append(symptom.rawValue)
+                    log.symptoms.append(raw)
+                    log.severities[raw] = 3
                 }
+                state.loggedDays[key] = log
+                return .none
+
+            case .symptomSeverityChanged(let symptom, let severity):
+                let key = CalendarFeature.dateKey(state.selectedDate)
+                var log = state.loggedDays[key] ?? State.DayLog()
+                let raw = symptom.rawValue
+                if !log.symptoms.contains(raw) {
+                    log.symptoms.append(raw)
+                }
+                log.severities[raw] = max(1, min(5, severity))
                 state.loggedDays[key] = log
                 return .none
 
@@ -195,13 +118,60 @@ public struct CalendarFeature: Sendable {
                 state.isSavingSymptoms = true
                 state.symptomsSaved = false
                 let key = CalendarFeature.dateKey(state.selectedDate)
-                let symptoms = state.loggedDays[key]?.symptoms ?? []
+                let selected = Set(state.loggedDays[key]?.symptoms ?? [])
+                let severities = state.loggedDays[key]?.severities ?? [:]
                 let date = state.selectedDate
                 return .run { [menstrualLocal] send in
-                    for symptom in symptoms {
-                        try? await menstrualLocal.logSymptom(date, symptom, 3, nil)
-                    }
-                    await send(.saveSymptomsDone, animation: .easeInOut(duration: 0.3))
+                    // Diff against what's currently in the DB so we
+                    // both LOG newly selected symptoms, REMOVE
+                    // un-toggled ones, and UPDATE severity changes
+                    // on symptoms that stayed selected.
+                    //
+                    // Severity update path is "remove + re-add" —
+                    // the local client doesn't expose an in-place
+                    // severity write, and re-adding is cheap on
+                    // SwiftData (sub-millisecond).
+                    //
+                    // Run DB work in parallel with a 700ms minimum
+                    // window so the user sees the pulsing-dot
+                    // phase on `AppDoneButton`. Without this
+                    // floor (writes finish <100ms) the button
+                    // skips straight to success and the feedback
+                    // feels unearned.
+                    async let savingTask: Void = {
+                        let existing = (try? await menstrualLocal.getSymptoms(date)) ?? []
+                        let existingTypes = Set(existing.map(\.symptomType))
+                        let existingSeverity = Dictionary(
+                            uniqueKeysWithValues: existing.map { ($0.symptomType, $0.severity) }
+                        )
+
+                        let toAdd = selected.subtracting(existingTypes)
+                        let toRemove = existingTypes.subtracting(selected)
+                        let toUpdate = selected.intersection(existingTypes).filter { raw in
+                            existingSeverity[raw] != (severities[raw] ?? 3)
+                        }
+
+                        for symptom in toAdd {
+                            let severity = severities[symptom] ?? 3
+                            try? await menstrualLocal.logSymptom(date, symptom, severity, nil)
+                        }
+                        for symptom in toRemove {
+                            try? await menstrualLocal.removeSymptom(date, symptom)
+                        }
+                        for symptom in toUpdate {
+                            try? await menstrualLocal.removeSymptom(date, symptom)
+                            let severity = severities[symptom] ?? 3
+                            try? await menstrualLocal.logSymptom(date, symptom, severity, nil)
+                        }
+                    }()
+                    async let minWait: Void = {
+                        try? await Task.sleep(nanoseconds: 700_000_000)
+                    }()
+
+                    _ = await savingTask
+                    _ = await minWait
+
+                    await send(.saveSymptomsDone, animation: .easeInOut(duration: 0.45))
                 }
 
             case .saveSymptomsDone:
@@ -216,10 +186,17 @@ public struct CalendarFeature: Sendable {
                     bleedingDays: state.bleedingDays
                 )?.phase
                 state.ariaPromptMessage = Self.ariaMessage(symptoms: symptoms, phase: phase)
-                return .run { send in
-                    try? await Task.sleep(nanoseconds: 800_000_000)
-                    await send(.symptomSheetDismissed, animation: .appBalanced)
-                }
+                return .merge(
+                    // Fire-and-forget delegate so parent surfaces
+                    // (BodyPatterns) can re-run PatternDetector
+                    // against the fresh DB the moment the user
+                    // dismisses the symptom screen.
+                    .send(.delegate(.symptomsSaved)),
+                    .run { send in
+                        try? await Task.sleep(nanoseconds: 800_000_000)
+                        await send(.symptomSheetDismissed, animation: .appBalanced)
+                    }
+                )
 
             case .symptomSheetDismissed:
                 let wasSaved = state.symptomsSaved
@@ -271,6 +248,9 @@ public struct CalendarFeature: Sendable {
                 let key = CalendarFeature.dateKey(state.selectedDate)
                 var log = state.loggedDays[key] ?? State.DayLog()
                 log.symptoms = symptoms.map(\.symptomType)
+                log.severities = Dictionary(
+                    uniqueKeysWithValues: symptoms.map { ($0.symptomType, $0.severity) }
+                )
                 state.loggedDays[key] = log
                 return .none
 
@@ -427,10 +407,7 @@ public struct CalendarFeature: Sendable {
                 state.isUpdatingPredictions = false
                 state.predictionsDone = true
                 state.isEditingPeriod = false
-                return .run { send in
-                    try? await Task.sleep(nanoseconds: 1_000_000_000)
-                    await send(.delegate(.periodDataChanged))
-                }
+                return .send(.delegate(.periodDataChanged))
 
             case .binding, .delegate:
                 return .none

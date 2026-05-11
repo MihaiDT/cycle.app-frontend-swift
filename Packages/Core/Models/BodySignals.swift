@@ -40,6 +40,23 @@ public struct BodySignalsSnapshot: Equatable, Sendable {
         self.permission = permission
     }
 
+    /// Returns a copy with the phase overridden — used by Cycle
+    /// Stats so the BodySignals card's phase eyebrow agrees with
+    /// the screen's canonical phase from `CycleContext`. Without
+    /// this, the snapshot's pre-late-flag phase computation can
+    /// disagree with the today header (e.g. "Late luteal" up top
+    /// vs "OVULATORY" on the BodySignals eyebrow).
+    public func withPhase(_ phase: CyclePhase?) -> BodySignalsSnapshot {
+        BodySignalsSnapshot(
+            capturedAt: capturedAt,
+            phase: phase,
+            wristTemperature: wristTemperature,
+            hrv: hrv,
+            restingHR: restingHR,
+            permission: permission
+        )
+    }
+
     /// Tri-state authorization read-out. `.partial` is the common case
     /// when the user grants some types and declines others — we still
     /// render the granted ones and show per-card empty states for the

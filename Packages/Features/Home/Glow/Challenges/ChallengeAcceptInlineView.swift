@@ -30,19 +30,10 @@ struct ChallengeAcceptInlineView: View {
     private var topBar: some View {
         HStack {
             Spacer()
-            Button {
-                onClose()
-            } label: {
-                Image(systemName: "xmark")
-                    .font(.system(size: 14, weight: .bold))
-                    .foregroundStyle(DesignColors.text)
-                    .frame(width: 38, height: 38)
-                    .background(Circle().fill(DesignColors.text.opacity(0.08)))
-                    .frame(minWidth: 44, minHeight: 44)
-                    .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Close challenge")
+            AppCloseButton(
+                accessibilityLabel: "Close challenge",
+                action: onClose
+            )
         }
         .padding(.horizontal, 18)
         .padding(.top, 14)

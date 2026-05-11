@@ -90,18 +90,21 @@ public struct HomeView: View {
                     || isCalendarOpen
                     || store.isCycleInsightsVisible
                     || store.isCycleJourneyVisible
+                    || store.isBodyPatternsVisible
                     || store.isLatestRecapDirectVisible
             )
             .compositingGroup()
-            .offset(x: (isCalendarOpen || store.isCycleInsightsVisible) ? -rootGeo.size.width * 0.22 : 0)
+            .offset(x: (isCalendarOpen || store.isCycleInsightsVisible || store.isBodyPatternsVisible || store.todayState.calendarState.isShowingSymptomSheet) ? -rootGeo.size.width * 0.22 : 0)
             .overlay(
                 Color.black
-                    .opacity((isCalendarOpen || store.isCycleInsightsVisible) ? 0.22 : 0)
+                    .opacity((isCalendarOpen || store.isCycleInsightsVisible || store.isBodyPatternsVisible || store.todayState.calendarState.isShowingSymptomSheet) ? 0.22 : 0)
                     .ignoresSafeArea()
                     .allowsHitTesting(false)
             )
             .animation(.easeInOut(duration: 0.32), value: isCalendarOpen)
             .animation(.easeInOut(duration: 0.32), value: store.isCycleInsightsVisible)
+            .animation(.easeInOut(duration: 0.32), value: store.isBodyPatternsVisible)
+            .animation(.easeInOut(duration: 0.32), value: store.todayState.calendarState.isShowingSymptomSheet)
 
             // Calendar overlay — animation is scoped to this inner
             // ZStack only so the `.transition` of the calendar doesn't
@@ -141,6 +144,54 @@ public struct HomeView: View {
             }
             .animation(.easeInOut(duration: 0.32), value: store.isCycleInsightsVisible)
             .zIndex(3)
+
+            // Body Patterns overlay — same trailing-slide behaviour as
+            // Cycle Insights so the destination feels like a sibling
+            // push rather than a modal. Sits on top of Cycle Insights
+            // (zIndex 4) because it can be reached from Today directly.
+            ZStack {
+                if store.isBodyPatternsVisible {
+                    BodyPatternsView(
+                        store: store.scope(
+                            state: \.bodyPatternsState,
+                            action: \.bodyPatterns
+                        )
+                    )
+                    .background(DesignColors.background.ignoresSafeArea())
+                    .transition(.move(edge: .trailing))
+                }
+            }
+            .offset(x: store.todayState.calendarState.isShowingSymptomSheet ? -rootGeo.size.width * 0.22 : 0)
+            .overlay(
+                Color.black
+                    .opacity(store.todayState.calendarState.isShowingSymptomSheet ? 0.22 : 0)
+                    .ignoresSafeArea()
+                    .allowsHitTesting(false)
+            )
+            .animation(.easeInOut(duration: 0.32), value: store.isBodyPatternsVisible)
+            .animation(.easeInOut(duration: 0.32), value: store.todayState.calendarState.isShowingSymptomSheet)
+            .zIndex(4)
+
+            // Symptom logging overlay — slides in from the right
+            // like Calendar / CycleInsights / BodyPatterns. Lives at
+            // the top of the Home stack so it lays cleanly over any
+            // sibling overlay (so "Log Symptoms" from BodyPatterns
+            // appears above the BodyPatterns overlay rather than
+            // forcing it to dismiss).
+            ZStack {
+                if store.todayState.calendarState.isShowingSymptomSheet {
+                    SymptomLoggingSheet(
+                        store: store.scope(
+                            state: \.todayState.calendarState,
+                            action: \.today.calendar
+                        )
+                    )
+                    .background(Color.white.ignoresSafeArea())
+                    .transition(.move(edge: .trailing))
+                }
+            }
+            .animation(.easeInOut(duration: 0.32), value: store.todayState.calendarState.isShowingSymptomSheet)
+            .zIndex(5)
 
             // Initial profile bootstrap — subtle non-blocking top indicator.
             // Tabs stay interactive; hero already has its own skeleton state.

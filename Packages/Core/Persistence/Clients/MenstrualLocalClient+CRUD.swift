@@ -185,9 +185,15 @@ extension MenstrualLocalClient {
             let context = ModelContext(container)
             let day = Calendar.current.startOfDay(for: date)
 
-            // Determine cycle day
-            let latestCycle = try fetchLatestCycle(context: context)
-            let cycleDay = latestCycle.map {
+            // Find the cycle this symptom belongs to: the most
+            // recent cycle whose startDate is on or before the
+            // symptom date. (Previously this always used the latest
+            // cycle, which produced negative / wildly off cycleDays
+            // when logging symptoms on past dates and broke
+            // PatternDetector aggregation.)
+            let allCycles = try fetchAllCycles(context: context)
+            let owningCycle = allCycles.first { $0.startDate <= day }
+            let cycleDay = owningCycle.map {
                 CycleMath.cycleDay(cycleStart: $0.startDate, date: day)
             }
 
@@ -199,6 +205,30 @@ extension MenstrualLocalClient {
                 cycleDay: cycleDay
             )
             context.insert(symptom)
+            try context.save()
+        }
+    }
+
+    // MARK: removeSymptom
+
+    static func liveRemoveSymptom() -> @Sendable (Date, String) async throws -> Void {
+        return { date, symptomType in
+            let container = CycleDataStore.shared
+            let context = ModelContext(container)
+            let day = Calendar.current.startOfDay(for: date)
+            let nextDay = Calendar.current.date(byAdding: .day, value: 1, to: day) ?? day
+
+            let descriptor = FetchDescriptor<SymptomRecord>(
+                predicate: #Predicate {
+                    $0.symptomDate >= day
+                        && $0.symptomDate < nextDay
+                        && $0.symptomType == symptomType
+                }
+            )
+
+            for record in try context.fetch(descriptor) {
+                context.delete(record)
+            }
             try context.save()
         }
     }

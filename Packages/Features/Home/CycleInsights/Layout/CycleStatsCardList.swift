@@ -99,14 +99,19 @@ struct CycleStatsCardList<CardID: Hashable & Sendable>: UIViewRepresentable {
         coord.lastCards = newCards
         coord.lastReconfigureToken = reconfigureToken
         if needsReload {
-            cv.reloadData()
+            // Same reasoning as `host` below: keep UIKit's implicit
+            // animation block out of the data refresh path so cells
+            // don't slide as they re-lay out.
+            UIView.performWithoutAnimation { cv.reloadData() }
         } else if tokenChanged {
             // Re-host every visible cell against the latest closures
             // without evicting layout. Cheaper than `reloadData()`:
             // no cell removal, no flash, scroll position preserved.
             let visible = cv.indexPathsForVisibleItems
             if !visible.isEmpty {
-                cv.reconfigureItems(at: visible)
+                UIView.performWithoutAnimation {
+                    cv.reconfigureItems(at: visible)
+                }
             }
         }
     }
@@ -217,10 +222,24 @@ struct CycleStatsCardList<CardID: Hashable & Sendable>: UIViewRepresentable {
         required init?(coder: NSCoder) { fatalError("init(coder:) not supported") }
 
         func host<Content: View>(_ content: Content) {
-            contentConfiguration = UIHostingConfiguration {
-                content
+            // `UIHostingConfiguration` is applied through UIKit's
+            // `contentConfiguration` setter, which on iOS 16+ wraps
+            // the underlying view-graph swap in an implicit animation
+            // block. When the cell self-sizes (the compositional
+            // layout uses `.estimated(220)` heights) the size delta
+            // between the estimate and the SwiftUI body's real height
+            // gets fed into that animation — the cell visibly grows
+            // into place from the bottom edge as it enters the
+            // viewport. Wrapping the assignment in
+            // `performWithoutAnimation` short-circuits the UIKit
+            // animation block so the cell snaps to its real frame the
+            // first time it lays out, with no slide-in.
+            UIView.performWithoutAnimation {
+                contentConfiguration = UIHostingConfiguration {
+                    content
+                }
+                .margins(.all, 0)
             }
-            .margins(.all, 0)
         }
 
         override func prepareForReuse() {

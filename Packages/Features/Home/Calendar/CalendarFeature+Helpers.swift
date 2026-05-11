@@ -56,7 +56,10 @@ extension CalendarFeature {
             case "period":
                 serverPeriodDays.insert(key)
             case "predicted_period":
-                serverPeriodDays.insert(key)
+                // Clean separation: predicted-only days never enter periodDays.
+                // Without this, every predicted entry forces isConfirmed=false
+                // even when the day is also genuinely logged, dropping logged
+                // past periods into predictedPeriod stripe rendering.
                 serverPredictedDays.insert(key)
             case "fertile":
                 if let levelStr = entry.fertilityLevel,
@@ -152,10 +155,35 @@ extension CalendarFeature {
         let d = cal.startOfDay(for: date)
         let start = cal.startOfDay(for: cycleStartDate)
         let diff = cal.dateComponents([.day], from: start, to: d).day ?? 0
-        guard diff >= 0 else { return nil }
-        let cycleIndex = diff / cycleLength
-        guard cycleIndex <= 12 else { return nil }
-        let dayInCycle = diff % cycleLength + 1
+
+        // Phase reaches forward up to 12 future cycles (predictions) and backward
+        // up to 12 past cycles. The backward projection assumes a uniform cycle —
+        // not perfectly accurate for variable real-world cycles, but enough to
+        // colour every logged month with the same 4-phase rhythm so the user
+        // can see their pattern across history.
+        let cycleIndex: Int
+        let dayInCycle: Int
+        if diff >= 0 {
+            cycleIndex = diff / cycleLength
+            guard cycleIndex <= 12 else { return nil }
+            dayInCycle = diff % cycleLength + 1
+        } else {
+            let absDiff = -diff
+            cycleIndex = -((absDiff - 1) / cycleLength + 1)
+            guard cycleIndex >= -12 else { return nil }
+            let stepsIntoPrev = (absDiff - 1) % cycleLength + 1
+            dayInCycle = cycleLength - stepsIntoPrev + 1
+        }
+
+        // Phase boundaries follow the medical consensus: luteal phase is fixed at
+        // 14 days (so ovDay = cycleLength - 14), follicular spans from end of
+        // period through 2 days before ovulation, ovulatory is ovDay ± 1 (3-day
+        // peak fertility window centered on the ovulation day), luteal is the rest.
+        // For a standard 28-day cycle with 5-day period this yields:
+        //   menstrual 1-5 (5d) · follicular 6-12 (7d) · ovulatory 13-15 (3d) · luteal 16-28 (13d)
+        // The 3-day ovulatory window matches industry visual conventions (Apple
+        // Health, Clue, Flo all visualize peak fertility as a multi-day band) and
+        // gives the gradient peak room to actually read as a peak.
         let ovDay = cycleLength - 14
         let phase: CyclePhase
         switch dayInCycle {
@@ -164,6 +192,6 @@ extension CalendarFeature {
         case (ovDay - 1)...(ovDay + 1): phase = .ovulatory
         default: phase = .luteal
         }
-        return (phase, dayInCycle, cycleIndex > 0)
+        return (phase, dayInCycle, cycleIndex != 0)
     }
 }

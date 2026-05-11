@@ -166,11 +166,40 @@ extension HealthKitLocalClient {
 
         let granted = [wristResult, hrvResult, rhrResult].compactMap { $0 }
         let permission: BodySignalsSnapshot.PermissionState = {
-            if granted.isEmpty { return .denied }
+            let store = HKHealthStore()
+            let types = Self.readTypes()
+            let allUndetermined = !types.isEmpty && types.allSatisfy {
+                store.authorizationStatus(for: $0) == .notDetermined
+            }
+            // Never seen the prompt → `.undetermined`. Lets the
+            // AccessFlow keep the explainer up.
+            if allUndetermined { return .undetermined }
+
+            // Past the prompt, with at least one type returning a
+            // sample → `.granted` if all three came back with data,
+            // otherwise `.partial` (some metrics granted, others
+            // missing or empty).
             let withData = granted.filter(\.hasData)
             if withData.count == 3 { return .granted }
-            if withData.isEmpty { return .denied }
-            return .partial
+            if !withData.isEmpty { return .partial }
+
+            // Past the prompt but every fetch returned (no errors)
+            // and no metric had data. Apple privacy hides whether
+            // read access was actually allowed — `sharingAuthorized`
+            // is reported regardless of the user's read decision —
+            // so we can't tell "user denied read" from "user
+            // granted but has no Apple Watch samples yet" (fresh
+            // install, no Watch paired, etc.). Treating this as
+            // `.partial` is the truthful default: the card stays
+            // open, surfaces per-metric "No data" rows, and lets
+            // data fill in as it arrives. Routing to Settings here
+            // would punt users who legitimately just don't have
+            // samples yet.
+            if granted.count == 3 { return .partial }
+
+            // Every fetch errored — likely a real permission /
+            // unavailability issue. Settings is the right path.
+            return .denied
         }()
 
         let todayPhase = cycleClassifier?.phase(for: now) ?? nil

@@ -2,6 +2,16 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Per-folder CLAUDE.md (read these too)
+
+This root file covers the project shell — build, top-level architecture, critical rules. **Folder-scoped CLAUDE.md files codify the non-obvious rules that apply only inside that folder.** Read them before working in those areas:
+
+- [`Packages/Features/Home/CycleInsights/CLAUDE.md`](Packages/Features/Home/CycleInsights/CLAUDE.md) — Cycle Stats / Cycle Detail surface (UICollectionView hosting, cell reuse, animation contract, shell layout)
+- [`Packages/Core/DesignSystem/CLAUDE.md`](Packages/Core/DesignSystem/CLAUDE.md) — Tokens (typography, layout, spacing), `widgetCardStyle` contract, glass surfaces, animation rules in shared components
+- [`Packages/Core/Persistence/CLAUDE.md`](Packages/Core/Persistence/CLAUDE.md) — Local-first contract, SwiftData rules, local TCA clients, HealthKit boundary
+
+Style for these files: dense bullets, no prose. Mark non-obvious decisions with the `Uses X, NOT Y` pattern. Lead each rule with the rule, follow with the rationale (a past incident, a constraint, a reference). Add a new per-folder CLAUDE.md when a feature accumulates conventions that aren't visible from the code alone.
+
 ## Project Overview
 
 CycleApp is a premium iOS wellness & menstrual cycle tracking app with an AI companion (Aria). All health data lives exclusively on-device (SwiftData + CloudKit E2E encryption). The Go backend (`dth-backend/`) is a minimal anonymous proxy for Aria chat and Google Places.

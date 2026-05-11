@@ -59,17 +59,10 @@ struct ChallengeJourneyView: View {
     // MARK: - Close Button (shared across non-accept steps)
 
     private var closeButton: some View {
-        Button { store.send(.closeTapped) } label: {
-            Image(systemName: "xmark")
-                .font(.system(size: 14, weight: .bold))
-                .foregroundStyle(DesignColors.text)
-                .frame(width: 38, height: 38)
-                .background(Circle().fill(DesignColors.text.opacity(0.08)))
-                .frame(minWidth: 44, minHeight: 44)
-                .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel("Close challenge")
+        AppCloseButton(
+            accessibilityLabel: "Close challenge",
+            action: { store.send(.closeTapped) }
+        )
     }
 
     // MARK: - Progress Dots

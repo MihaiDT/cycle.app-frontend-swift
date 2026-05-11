@@ -24,6 +24,10 @@
 	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>instagram-stories</string>
+	</array>
 	<key>NSCameraUsageDescription</key>
 	<string>Cycle uses your camera to capture photos for daily challenges.</string>
 	<key>NSPhotoLibraryUsageDescription</key>

@@ -42,76 +42,73 @@ struct CycleHistoryEntry: View, Equatable {
         }
     }
 
+    /// Header collapsed to a single row (May 2026): duration +
+    /// date range + CURRENT badge + eye-slash hide button +
+    /// chevron drill-in. Removed the legacy second row that
+    /// repeated `Period: N days` — that information lives on
+    /// the detail screen one tap away. The eye-slash stays
+    /// visible inline so the hide-cycle utility is still
+    /// discoverable without long-press.
     @ViewBuilder
     private var entryHeader: some View {
-        HStack(alignment: .top, spacing: 8) {
-            VStack(alignment: .leading, spacing: 3) {
-                HStack(alignment: .firstTextBaseline, spacing: 6) {
-                    if timeline.isCurrent {
-                        HStack(alignment: .firstTextBaseline, spacing: 5) {
-                            Text("Day")
-                                .font(.raleway("Medium", size: 12, relativeTo: .footnote))
-                                .foregroundStyle(DesignColors.textSecondary)
-                            Text("\(headerNumber)")
-                                .font(.raleway("SemiBold", size: 17, relativeTo: .headline))
-                                .foregroundStyle(DesignColors.text)
-                        }
-                    } else {
-                        HStack(alignment: .firstTextBaseline, spacing: 6) {
-                            Text("\(headerNumber)")
-                                .font(.raleway("SemiBold", size: 17, relativeTo: .headline))
-                                .foregroundStyle(DesignColors.text)
-                            Text(headerNumber == 1 ? "day" : "days")
-                                .font(.raleway("Medium", size: 12, relativeTo: .footnote))
-                                .foregroundStyle(DesignColors.textSecondary)
-                        }
-                    }
-
-                    Text("·")
-                        .font(.raleway("Medium", size: 12, relativeTo: .footnote))
-                        .foregroundStyle(DesignColors.textSecondary.opacity(0.6))
-
-                    Text(dateRangeLabel)
+        HStack(alignment: .firstTextBaseline, spacing: 6) {
+            if timeline.isCurrent {
+                HStack(alignment: .firstTextBaseline, spacing: 5) {
+                    Text("Day")
                         .font(.raleway("Medium", size: 12, relativeTo: .footnote))
                         .foregroundStyle(DesignColors.textSecondary)
-                        .lineLimit(1)
-
-                    if timeline.isCurrent {
-                        Text("CURRENT")
-                            .font(.raleway("SemiBold", size: 9, relativeTo: .caption2))
-                            .tracking(1.0)
-                            .foregroundStyle(DesignColors.text)
-                            .padding(.horizontal, 7)
-                            .padding(.vertical, 3)
-                            .background {
-                                Capsule()
-                                    .fill(DesignColors.text.opacity(0.08))
-                            }
-                    }
+                    Text("\(headerNumber)")
+                        .font(.raleway("SemiBold", size: 17, relativeTo: .headline))
+                        .foregroundStyle(DesignColors.text)
                 }
-
-                HStack(alignment: .center, spacing: 8) {
-                    Text(periodSubLabel)
-                        .font(.raleway("Medium", size: 11, relativeTo: .caption))
-                        .foregroundStyle(DesignColors.textSecondary.opacity(0.85))
-
-                    Button(action: onMenuTap) {
-                        Image(systemName: "eye.slash")
-                            .font(.system(size: 11, weight: .medium))
-                            .foregroundStyle(DesignColors.textSecondary.opacity(0.7))
-                            .frame(width: 24, height: 24)
-                            .contentShape(Rectangle())
-                    }
-                    .buttonStyle(CycleHistoryPressableButtonStyle())
-                    .accessibilityLabel("Hide this cycle")
-
-                    Spacer(minLength: 4)
-
-                    Image(systemName: "chevron.right")
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(DesignColors.textSecondary.opacity(0.55))
+            } else {
+                HStack(alignment: .firstTextBaseline, spacing: 6) {
+                    Text("\(headerNumber)")
+                        .font(.raleway("SemiBold", size: 17, relativeTo: .headline))
+                        .foregroundStyle(DesignColors.text)
+                    Text(headerNumber == 1 ? "day" : "days")
+                        .font(.raleway("Medium", size: 12, relativeTo: .footnote))
+                        .foregroundStyle(DesignColors.textSecondary)
                 }
             }
+
+            Text("·")
+                .font(.raleway("Medium", size: 12, relativeTo: .footnote))
+                .foregroundStyle(DesignColors.textSecondary.opacity(0.6))
+
+            Text(dateRangeLabel)
+                .font(.raleway("Medium", size: 12, relativeTo: .footnote))
+                .foregroundStyle(DesignColors.textSecondary)
+                .lineLimit(1)
+
+            if timeline.isCurrent {
+                Text("CURRENT")
+                    .font(.raleway("SemiBold", size: 9, relativeTo: .caption2))
+                    .tracking(1.0)
+                    .foregroundStyle(DesignColors.text)
+                    .padding(.horizontal, 7)
+                    .padding(.vertical, 3)
+                    .background {
+                        Capsule()
+                            .fill(DesignColors.text.opacity(0.08))
+                    }
+            }
+
+            Spacer(minLength: 4)
+
+            Button(action: onMenuTap) {
+                Image(systemName: "eye.slash")
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(DesignColors.textSecondary.opacity(0.7))
+                    .frame(width: 28, height: 28)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(CycleHistoryPressableButtonStyle())
+            .accessibilityLabel("Hide this cycle")
+
+            Image(systemName: "chevron.right")
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(DesignColors.textSecondary.opacity(0.55))
         }
     }
 
@@ -340,10 +337,17 @@ struct CycleHistoryDotRows: View {
         }
 
         var tint: Color {
+            // Pulled from the app palette so the rows stay on-brand
+            // (no foreign reds/greens), but spaced far enough across
+            // hue + lightness that they don't blur into a single
+            // warm-earth gradient at the 5pt dot size.
+            //   Energy → honey gold (warm/yellow, "sun")
+            //   Mood   → dusty rose (pink, distinct from gold)
+            //   Sleep  → cocoa dark (deep, "night")
             switch self {
-            case .energy: return DesignColors.accentWarmText
-            case .mood:   return DesignColors.roseTaupe
-            case .sleep:  return DesignColors.text.opacity(0.65)
+            case .energy: return DesignColors.accentHoneyText
+            case .mood:   return DesignColors.accentSecondary
+            case .sleep:  return DesignColors.text
             }
         }
 

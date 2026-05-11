@@ -99,21 +99,32 @@ public struct CycleTrendCard: View, Equatable {
             if visiblePoints.isEmpty {
                 emptyState
             } else {
-                if hasMixedRangeClassifications {
-                    rangeLegend
-                }
+                // Always-visible legend so the band is named even
+                // when every bar is in range (the band is on the
+                // chart whether or not any honey bars are present).
+                // The OUTSIDE swatch hides itself when there are no
+                // out-of-range bars to explain.
+                rangeLegend
                 chart
                 detailDivider
-                detailBlock
+                if visiblePoints.count == 1 {
+                    CycleTrendInviteBlock()
+                } else {
+                    detailBlock
+                }
             }
         }
         .padding(22)
         .frame(maxWidth: .infinity, alignment: .leading)
         // `rasterize: false` — the native segmented Picker is UIKit-backed
         // and can't be flattened into a Metal bitmap by `.drawingGroup`.
-        .widgetCardStyle(cornerRadius: 28, rasterize: false)
+        // `interactive: false` — the chart already owns the motion
+        // vocabulary on this card (bar selection spring, detail block
+        // slide). A glass ripple firing under the finger while the
+        // chart is animating reads as scroll noise, not affordance.
+        .widgetCardStyle(cornerRadius: 28, rasterize: false, interactive: false)
         .accessibilityElement(children: .contain)
-        .onAppear(perform: ensureSelectionInitialized)
+        .onAppear(perform: initializeSelectionWithoutAnimation)
         .onChange(of: visiblePoints.map(\.id)) { _, _ in
             ensureSelectionInitialized()
         }
@@ -139,6 +150,27 @@ public struct CycleTrendCard: View, Equatable {
         selectedCycleID = visible.last?.id
     }
 
+    /// onAppear path. UICollectionView recycles this card's hosting
+    /// cell, so every time the card scrolls back into view the
+    /// `@State` resets to its initial value (`selectedCycleID = nil`)
+    /// and re-running `ensureSelectionInitialized()` would re-fire the
+    /// chart's spring (`TrendBarChart .animation(value: selectedID)`)
+    /// plus the detail block's `.move(edge: .bottom)` transition —
+    /// reading as a phantom "the card just animated in" jolt while
+    /// the user is mid-scroll. Wrapping the seeding in a transaction
+    /// with animations disabled snaps the chart and detail block
+    /// straight to their target state, so the card reads static the
+    /// instant it appears. The user-driven change path
+    /// (`onChange` of `visiblePoints`) deliberately keeps its natural
+    /// animation — that's where motion earns its place.
+    private func initializeSelectionWithoutAnimation() {
+        var transaction = Transaction()
+        transaction.disablesAnimations = true
+        withTransaction(transaction) {
+            ensureSelectionInitialized()
+        }
+    }
+
     // MARK: - Header
     //
     // Mirrors the hero-title treatment used by CycleHistoryCard so the
@@ -147,16 +179,10 @@ public struct CycleTrendCard: View, Equatable {
     private var header: some View {
         HStack(alignment: .top, spacing: 12) {
             VStack(alignment: .leading, spacing: 10) {
-                HStack(spacing: 8) {
-                    Image(systemName: "chart.bar")
-                        .font(.system(size: 13, weight: .regular))
-                        .foregroundStyle(DesignColors.textSecondary)
-                    Text("CYCLE TREND")
-                        .font(.raleway("SemiBold", size: 11, relativeTo: .caption2))
-                        .tracking(1.4)
-                        .foregroundStyle(DesignColors.textSecondary)
-                }
-
+                // Section title moved out — see
+                // `CycleInsightsView.sectionWrap("Cycle trend")`.
+                // Card now opens with the live subtitle so the
+                // chrome stays focused on data.
                 Text(subtitle)
                     .font(.raleway("SemiBold", size: 17, relativeTo: .body))
                     .foregroundStyle(DesignColors.text)
@@ -173,25 +199,36 @@ public struct CycleTrendCard: View, Equatable {
     private var subtitle: String {
         let count = visiblePoints.count
         guard count > 0 else { return "Not enough cycles yet" }
-        let noun = count == 1 ? "cycle" : "cycles"
-        return "Last \(count) \(noun) · Avg \(averageDays) days"
+        // With a single cycle, "average" is mathematically the same
+        // number — printing both would double-print 28d. Lead with
+        // "first cycle" framing so the user reads it as the start of
+        // their rhythm, not a partial summary.
+        if count == 1, let only = visiblePoints.first {
+            return "Your first cycle · \(only.days) days"
+        }
+        return "Last \(count) cycles · Avg \(averageDays) days"
     }
 
     // MARK: - Range Legend
     //
-    // Names the two-color vocabulary used by the bars: terracotta for
-    // cycles inside the ACOG normal window (21–35 days), honey for
-    // cycles outside it. Always renders so the user learns the system
-    // before they ever see an outside-range bar.
+    // Names the two-color vocabulary used by the bars (terracotta in
+    // the ACOG 21–35 day window, honey outside) plus the typical
+    // band itself. The typical band's label used to live in the
+    // chart's top-trailing corner, but a tall trailing bar would
+    // occlude it; promoting it to the legend keeps the chart's bar
+    // canvas clean and gives the band a stable explanation slot.
 
     private var rangeLegend: some View {
         HStack(spacing: 14) {
             legendSwatch(label: "IN RANGE", color: DesignColors.accentWarm)
-            legendSwatch(label: "OUTSIDE", color: DesignColors.accentHoney)
+            if hasMixedRangeClassifications {
+                legendSwatch(label: "OUTSIDE", color: DesignColors.accentHoney)
+            }
+            typicalLegendBadge
             Spacer(minLength: 0)
         }
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("Bars in terracotta sit inside the typical cycle range; honey bars sit outside it.")
+        .accessibilityLabel("Bars in terracotta sit inside the typical \(CycleNormality.cycleLengthNormalMin)–\(CycleNormality.cycleLengthNormalMax) day cycle range; honey bars sit outside it.")
     }
 
     private func legendSwatch(label: String, color: Color) -> some View {
@@ -200,6 +237,31 @@ public struct CycleTrendCard: View, Equatable {
                 .fill(color)
                 .frame(width: 14, height: 5)
             Text(label)
+                .font(.raleway("SemiBold", size: 10, relativeTo: .caption2))
+                .tracking(0.9)
+                .foregroundStyle(DesignColors.textSecondary.opacity(0.85))
+        }
+    }
+
+    private var typicalLegendBadge: some View {
+        HStack(spacing: 6) {
+            // Mini band swatch — same fill + hairline borders as the
+            // chart band itself, scaled down. Reads as "this is the
+            // band you see behind the bars".
+            Rectangle()
+                .fill(DesignColors.accentWarm.opacity(0.07))
+                .overlay(alignment: .top) {
+                    Rectangle()
+                        .fill(DesignColors.accentWarm.opacity(0.28))
+                        .frame(height: 0.6)
+                }
+                .overlay(alignment: .bottom) {
+                    Rectangle()
+                        .fill(DesignColors.accentWarm.opacity(0.28))
+                        .frame(height: 0.6)
+                }
+                .frame(width: 14, height: 8)
+            Text("TYPICAL \(CycleNormality.cycleLengthNormalMin)–\(CycleNormality.cycleLengthNormalMax)d")
                 .font(.raleway("SemiBold", size: 10, relativeTo: .caption2))
                 .tracking(0.9)
                 .foregroundStyle(DesignColors.textSecondary.opacity(0.85))
@@ -269,12 +331,30 @@ public struct CycleTrendCard: View, Equatable {
                 )
             },
             selectedID: selectedCycleID,
+            // Wrapping the assignment in `withAnimation` is what gives
+            // the bar opacity + detail block transition their spring.
+            // Doing it here (imperatively, on a real user tap) instead
+            // of via a scoped `.animation(value:)` modifier means the
+            // viewport re-entry path — where the host seeds selection
+            // inside a `disablesAnimations` transaction — stays silent.
             onSelect: { id in
-                selectedCycleID = id
+                withAnimation(.spring(response: 0.42, dampingFraction: 0.86)) {
+                    selectedCycleID = id
+                }
             },
             yLabelFormatter: { "\(Int($0.rounded()))d" },
             yTickCount: 4,
-            chartHeight: 180
+            chartHeight: 180,
+            // ACOG-recognized typical cycle window. Drawing it as a
+            // soft band behind the bars is what turns the chart from
+            // "ten anonymous numbers" into "your rhythm vs. the
+            // baseline" — the eye reads in/out of band before it ever
+            // reads a digit.
+            normalBand: Double(CycleNormality.cycleLengthNormalMin)...Double(CycleNormality.cycleLengthNormalMax),
+            // Empty inline label — the band is named in the card's
+            // legend (`typicalLegendBadge`). Keeping the label inline
+            // meant a tall trailing bar would occlude the caps text.
+            normalBandLabel: ""
         )
         .accessibilityElement(children: .combine)
         .accessibilityLabel(chartAccessibilityLabel(for: visible))
@@ -289,18 +369,23 @@ public struct CycleTrendCard: View, Equatable {
 
     @ViewBuilder
     private var detailBlock: some View {
-        if let point = selectedPoint, let position = selectedPosition {
+        if let point = selectedPoint {
+            // No `.id(point.id)` and no `.transition(...)` on the
+            // block itself: keeping a stable structural identity is
+            // what lets the inner `.contentTransition(.numericText())`
+            // and `.contentTransition(.opacity)` modifiers animate the
+            // digits and labels in place — the Apple Health "numbers
+            // roll, letters cross-fade" feel — instead of the entire
+            // container fading or sliding when the bar selection
+            // changes. The chart's `onSelect` callback already wraps
+            // the assignment in `withAnimation`, which is what fires
+            // those content transitions.
             CycleTrendDetailBlock(
                 cycleLength: point.days,
                 startDate: point.startDate,
                 averageDays: averageDays,
-                positionIndex: position.index,
-                positionTotal: position.total,
                 isInTypicalRange: CycleNormality.classifyCycleLength(days: point.days).tone == .normal
             )
-            .id(point.id)
-            .transition(.opacity.combined(with: .move(edge: .bottom)))
-            .animation(.spring(response: 0.42, dampingFraction: 0.86), value: point.id)
         }
     }
 
@@ -314,13 +399,6 @@ public struct CycleTrendCard: View, Equatable {
     private var selectedPoint: Point? {
         guard let id = selectedCycleID else { return nil }
         return visiblePoints.first { $0.id == id }
-    }
-
-    private var selectedPosition: (index: Int, total: Int)? {
-        guard let id = selectedCycleID else { return nil }
-        let visible = visiblePoints
-        guard let idx = visible.firstIndex(where: { $0.id == id }) else { return nil }
-        return (idx + 1, visible.count)
     }
 
     // MARK: - Empty state

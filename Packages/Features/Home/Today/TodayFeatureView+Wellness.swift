@@ -92,7 +92,7 @@ extension TodayView {
                 JourneyDestinationTile(
                     kind: .body,
                     stat: bodyPatternsPreview,
-                    onTap: { store.send(.delegate(.openBodyPatterns)) }
+                    onTap: { store.send(.delegate(.openBodyPatternsScreen)) }
                 )
             }
 

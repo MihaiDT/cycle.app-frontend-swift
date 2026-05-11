@@ -212,21 +212,10 @@ public struct TodayView: View {
         // routing through the calendar overlay. Still reads state and
         // dispatches actions via the calendarState scope so the
         // underlying logic is unchanged.
-        .sheet(
-            isPresented: Binding(
-                get: { store.calendarState.isShowingSymptomSheet },
-                set: { if !$0 { store.send(.calendar(.symptomSheetDismissed)) } }
-            )
-        ) {
-            SymptomLoggingSheet(
-                store: store.scope(state: \.calendarState, action: \.calendar)
-            )
-            .presentationDetents([.large])
-            .presentationDragIndicator(.visible)
-            .presentationCornerRadius(AppLayout.cornerRadiusXL)
-            .presentationBackground(.white)
-            .presentationBackgroundInteraction(.disabled)
-        }
+        // Symptom logging is presented as a HomeView ZStack overlay
+        // (slides in from trailing edge with parallax, like Calendar /
+        // CycleInsights / BodyPatterns) instead of a sheet — so it
+        // stacks cleanly over BodyPatterns when triggered from there.
         .sheet(isPresented: Binding(
             get: { store.isNotificationsPanelVisible },
             set: { if !$0 { store.send(.notificationsPanelDismissed) } }

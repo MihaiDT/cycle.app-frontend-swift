@@ -78,10 +78,10 @@ final class YearCollectionContainer: UIView, UICollectionViewDataSource, UIColle
     private func setupCollectionView() {
         let layout = UICollectionViewFlowLayout()
         layout.scrollDirection = .vertical
-        layout.minimumInteritemSpacing = 10
-        layout.minimumLineSpacing = 10
-        layout.sectionInset = UIEdgeInsets(top: 0, left: 16, bottom: 20, right: 16)
-        layout.headerReferenceSize = CGSize(width: 0, height: 40)
+        layout.minimumInteritemSpacing = 2
+        layout.minimumLineSpacing = 0
+        layout.sectionInset = UIEdgeInsets(top: 4, left: 2, bottom: 8, right: 2)
+        layout.headerReferenceSize = CGSize(width: 0, height: 44)
 
         collectionView = UICollectionView(frame: .zero, collectionViewLayout: layout)
         collectionView.backgroundColor = .clear
@@ -170,10 +170,15 @@ final class YearCollectionContainer: UIView, UICollectionViewDataSource, UIColle
     // MARK: - Layout
 
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
-        let insets: CGFloat = 16 + 16
-        let spacing: CGFloat = 10
-        let w = (collectionView.bounds.width - insets - spacing) / 2
-        return CGSize(width: w, height: w * 1.05)
+        // 3-column grid (4 rows × 3 = 12 months per year, matching the
+        // iOS native Calendar Year view). Edge-to-edge layout with
+        // minimal inter-item spacing so each mini-month gets the
+        // maximum possible width — the day circles need every pixel
+        // to read clearly with a 2-digit number.
+        let insets: CGFloat = 2 + 2
+        let spacing: CGFloat = 2 * 2 // 2 gaps between 3 columns
+        let w = (collectionView.bounds.width - insets - spacing) / 3
+        return CGSize(width: w, height: w * 1.1)
     }
 
     // MARK: - Selection
@@ -195,8 +200,11 @@ private final class YearHeaderView: UICollectionReusableView {
 
     override init(frame: CGRect) {
         super.init(frame: frame)
-        label.font = UIFont.raleway("Bold", size: 22, textStyle: .title2)
-        label.textColor = UIColor(DesignColors.text)
+        // Mirrors `AppTypography.displayHeader` for the SwiftUI token
+        // (28pt Raleway Bold, .title text style — UIKit equivalent
+        // is `.title1`).
+        label.font = UIFont.raleway("Bold", size: 28, textStyle: .title1)
+        label.textColor = UIColor(DesignColors.text)    
         label.textAlignment = .center
         addSubview(label)
         label.translatesAutoresizingMaskIntoConstraints = false
@@ -241,7 +249,7 @@ final class MiniMonthCGCell: UICollectionViewCell {
 
 private final class MiniMonthDrawView: UIView {
     private var month = Date()
-    private var grid: [[(day: Int, baseColor: UIColor?, fillOpacity: CGFloat, dashed: Bool, textColor: UIColor, isBold: Bool)?]] = []
+    private var grid: [[(day: Int, baseColor: UIColor?, fillOpacity: CGFloat, dashed: Bool, outlined: Bool, textColor: UIColor, isBold: Bool)?]] = []
     private var monthName = ""
     private var isCurrent = false
 
@@ -249,6 +257,7 @@ private final class MiniMonthDrawView: UIView {
 
     private let periodColor = UIColor(DesignColors.calendarPeriodGlyph)
     private let fertileColor = UIColor(DesignColors.calendarFertileGlyph)
+    private let ovulationColor = UIColor(DesignColors.accentWarmText) // darker terracotta — same warm family, deeper for "peak day"
     private let textColor = UIColor(DesignColors.calendarDayText).withAlphaComponent(0.55)
     private let accentWarm = UIColor(DesignColors.accentWarm)
     private let textMain = UIColor(DesignColors.text)
@@ -263,14 +272,14 @@ private final class MiniMonthDrawView: UIView {
 
     func configure(month: Date, periodDays: Set<String>, predictedPeriodDays: Set<String>, fertileDays: [String: FertilityLevel], ovulationDays: Set<String>, lateWindowKeys: Set<String>) {
         self.month = month
-        self.monthName = DateFormatter.shortMonth.string(from: month)
+        self.monthName = DateFormatter.monthName.string(from: month)
         let now = Date()
         self.isCurrent = cal.component(.month, from: month) == cal.component(.month, from: now) && cal.component(.year, from: month) == cal.component(.year, from: now)
-        self.grid = Self.buildGrid(month: month, periodDays: periodDays, predictedPeriodDays: predictedPeriodDays, fertileDays: fertileDays, ovulationDays: ovulationDays, lateWindowKeys: lateWindowKeys, periodColor: periodColor, fertileColor: fertileColor, textColor: textColor, accentWarm: accentWarm, textMain: textMain, isCurrent: isCurrent)
+        self.grid = Self.buildGrid(month: month, periodDays: periodDays, predictedPeriodDays: predictedPeriodDays, fertileDays: fertileDays, ovulationDays: ovulationDays, lateWindowKeys: lateWindowKeys, periodColor: periodColor, fertileColor: fertileColor, ovulationColor: ovulationColor, textColor: textColor, accentWarm: accentWarm, textMain: textMain, isCurrent: isCurrent)
         setNeedsDisplay()
     }
 
-    private static func buildGrid(month: Date, periodDays: Set<String>, predictedPeriodDays: Set<String>, fertileDays: [String: FertilityLevel], ovulationDays: Set<String>, lateWindowKeys: Set<String>, periodColor: UIColor, fertileColor: UIColor, textColor: UIColor, accentWarm: UIColor, textMain: UIColor, isCurrent: Bool) -> [[(day: Int, baseColor: UIColor?, fillOpacity: CGFloat, dashed: Bool, textColor: UIColor, isBold: Bool)?]] {
+    private static func buildGrid(month: Date, periodDays: Set<String>, predictedPeriodDays: Set<String>, fertileDays: [String: FertilityLevel], ovulationDays: Set<String>, lateWindowKeys: Set<String>, periodColor: UIColor, fertileColor: UIColor, ovulationColor: UIColor, textColor: UIColor, accentWarm: UIColor, textMain: UIColor, isCurrent: Bool) -> [[(day: Int, baseColor: UIColor?, fillOpacity: CGFloat, dashed: Bool, outlined: Bool, textColor: UIColor, isBold: Bool)?]] {
         let cal = Calendar.current
         var comps = cal.dateComponents([.year, .month], from: month)
         comps.day = 1
@@ -282,10 +291,25 @@ private final class MiniMonthDrawView: UIView {
         let fmt = CalendarView.monthIdFormatter
         let ym = fmt.string(from: month)
 
-        var rows: [[(day: Int, baseColor: UIColor?, fillOpacity: CGFloat, dashed: Bool, textColor: UIColor, isBold: Bool)?]] = []
+        // Pre-compute month-vs-today positioning so we can subtly fade
+        // any day after today. "Future" cells render at lower opacity
+        // (text + disc) so the eye lands on past/today first without
+        // making the future invisible.
+        let now = Date()
+        let cellYear = cal.component(.year, from: month)
+        let cellMonth = cal.component(.month, from: month)
+        let todayYear = cal.component(.year, from: now)
+        let todayMonth = cal.component(.month, from: now)
+        let todayDay = cal.component(.day, from: now)
+        let monthIsFuture = cellYear > todayYear || (cellYear == todayYear && cellMonth > todayMonth)
+        let monthIsCurrent = cellYear == todayYear && cellMonth == todayMonth
+        let futureDiscFade: CGFloat = 0.6
+        let futureTextFade: CGFloat = 0.65
+
+        var rows: [[(day: Int, baseColor: UIColor?, fillOpacity: CGFloat, dashed: Bool, outlined: Bool, textColor: UIColor, isBold: Bool)?]] = []
         var day = 1
         for row in 0..<6 {
-            var week: [(day: Int, baseColor: UIColor?, fillOpacity: CGFloat, dashed: Bool, textColor: UIColor, isBold: Bool)?] = []
+            var week: [(day: Int, baseColor: UIColor?, fillOpacity: CGFloat, dashed: Bool, outlined: Bool, textColor: UIColor, isBold: Bool)?] = []
             for col in 0..<7 {
                 let slot = row * 7 + col
                 if slot < offset || day > daysCount {
@@ -294,31 +318,56 @@ private final class MiniMonthDrawView: UIView {
                     let d = day
                     let key = "\(ym)-\(String(format: "%02d", d))"
                     let isInLate = lateWindowKeys.contains(key)
+                    // periodDays now contains only logged entries (predicted_period
+                    // splits cleanly into predictedPeriodDays alone after the
+                    // parseCalendarEntries fix). So isConfirmed = any logged day,
+                    // and isPredPeriod no longer requires isPeriod to be true.
                     let isPeriod = periodDays.contains(key)
                     let isPredicted = predictedPeriodDays.contains(key)
-                    let isConfirmed = isPeriod && !isPredicted
+                    let isConfirmed = isPeriod
                     let isFert = fertileDays[key] != nil && !isInLate
                     let isOv = ovulationDays.contains(key) && !isInLate
                     let isToday = isCurrent && d == today
-                    let isPredPeriod = isPredicted && isPeriod && !isConfirmed
+                    let isPredPeriod = isPredicted && !isConfirmed
 
                     let base: UIColor?
                     let opacity: CGFloat
                     let dashed: Bool
-                    if isConfirmed { base = periodColor; opacity = 0.75; dashed = false }
-                    else if isPredPeriod { base = periodColor; opacity = 0.18; dashed = true }
-                    else if isOv { base = fertileColor; opacity = 0.45; dashed = false }
-                    else if isFert { base = fertileColor; opacity = 0.35; dashed = false }
-                    else { base = nil; opacity = 0; dashed = false }
+                    // `outlined` is repurposed here as the "peak" flag —
+                    // when true the marker gets the small ovum-cell dot
+                    // drawn above the disc so ovulation reads distinct
+                    // from the broader fertile window.
+                    let outlined: Bool
+                    if isConfirmed { base = periodColor; opacity = 0.85; dashed = false; outlined = false }
+                    else if isPredPeriod { base = periodColor; opacity = 0.65; dashed = true; outlined = false }
+                    else if isOv { base = ovulationColor; opacity = 1.0; dashed = false; outlined = true }   // peak: solid disc + dot above
+                    else if isFert { base = fertileColor; opacity = 0.92; dashed = false; outlined = false } // window: solid peach disc
+                    else { base = nil; opacity = 0; dashed = false; outlined = false }
 
                     let tc: UIColor
                     if isConfirmed { tc = .white }
                     else if isPredPeriod { tc = periodColor }
-                    else if isOv || isFert { tc = .white }
+                    else if isOv { tc = .white }              // white on dark terracotta peak disc
+                    else if isFert { tc = textMain }          // dark cocoa on peach — far more legible than white
                     else if isToday { tc = accentWarm }
                     else { tc = textColor }
 
-                    week.append((day: d, baseColor: base, fillOpacity: opacity, dashed: dashed, textColor: tc, isBold: isToday || isConfirmed))
+                    // Subtle fade for any day after today — discs lose
+                    // contrast, plain numbers go a touch lighter. Today
+                    // itself stays full-strength. Predicted-period days
+                    // are *already* tentative (dashed ring) so they skip
+                    // the future fade — double-fading made them invisible.
+                    let isFuture = monthIsFuture || (monthIsCurrent && d > todayDay)
+                    let shouldFade = isFuture && !dashed
+                    // Disc keeps its full colour — only the day number softens for
+                    // future days. Mutating disc opacity would shift the visual
+                    // meaning of the phase colour itself.
+                    let finalOpacity = opacity
+                    let finalText: UIColor = shouldFade
+                        ? tc.withAlphaComponent(futureTextFade * tc.cgColor.alpha)
+                        : tc
+
+                    week.append((day: d, baseColor: base, fillOpacity: finalOpacity, dashed: dashed, outlined: outlined, textColor: finalText, isBold: isToday || isConfirmed))
                     day += 1
                 }
             }
@@ -330,14 +379,14 @@ private final class MiniMonthDrawView: UIView {
 
     override func draw(_ rect: CGRect) {
         guard let ctx = UIGraphicsGetCurrentContext() else { return }
-        let padX: CGFloat = 6
+        let padX: CGFloat = 4
         let padY: CGFloat = 6
         let headerH: CGFloat = 22
         let availW = rect.width - padX * 2
         let colW = availW / 7
         let gridH = rect.height - padY - headerH - 4
         let rowH = grid.isEmpty ? 14 : gridH / CGFloat(grid.count)
-        let cellSize = min(rowH - 2, colW - 2)
+        let cellSize = min(rowH, colW) - 1
 
         // Month name
         let nameFont = UIFont.raleway(isCurrent ? "Bold" : "SemiBold", size: 15, textStyle: .subheadline)
@@ -357,57 +406,52 @@ private final class MiniMonthDrawView: UIView {
                 let r = cellSize / 2
                 let circleRect = CGRect(x: cx - r, y: cy - r, width: cellSize, height: cellSize)
 
-                // Glass circle
+                // Marker rendering. All marked days share a solid disc;
+                // predicted-period days swap to a dashed ring; ovulation
+                // (the `outlined` peak flag) keeps the disc and gains a
+                // small dot above it that reads as an ovum / egg-cell
+                // indicator.
                 if let base = slot.baseColor {
-                    ctx.saveGState()
-                    let path = CGPath(ellipseIn: circleRect, transform: nil)
-                    ctx.addPath(path)
-                    ctx.clip()
+                    let fillColor = base.withAlphaComponent(slot.fillOpacity)
+                    if slot.dashed {
+                        ctx.setStrokeColor(fillColor.cgColor)
+                        ctx.setLineWidth(1.5)
+                        ctx.setLineDash(phase: 0, lengths: [2.5, 1.5])
+                        ctx.strokeEllipse(in: circleRect.insetBy(dx: 0.5, dy: 0.5))
+                        ctx.setLineDash(phase: 0, lengths: [])
+                    } else {
+                        ctx.setFillColor(fillColor.cgColor)
+                        ctx.fillEllipse(in: circleRect)
 
-                    var br: CGFloat = 0, bg: CGFloat = 0, bb: CGFloat = 0, ba: CGFloat = 0
-                    base.getRed(&br, green: &bg, blue: &bb, alpha: &ba)
-
-                    let colorSpace = CGColorSpaceCreateDeviceRGB()
-                    let topC = UIColor(red: min(br + 0.15, 1), green: min(bg + 0.15, 1), blue: min(bb + 0.15, 1), alpha: slot.fillOpacity).cgColor
-                    let botC = UIColor(red: br, green: bg, blue: bb, alpha: slot.fillOpacity).cgColor
-                    if let grad = CGGradient(colorsSpace: colorSpace, colors: [topC, botC] as CFArray, locations: [0, 1]) {
-                        ctx.drawLinearGradient(grad, start: CGPoint(x: cx, y: circleRect.minY), end: CGPoint(x: cx, y: circleRect.maxY), options: [])
+                        if slot.outlined {
+                            // Peak / ovulation indicator — small dot
+                            // sitting in the gap above the disc.
+                            let dotSize: CGFloat = 3
+                            let dotY = circleRect.minY - dotSize - 0.5
+                            let dotRect = CGRect(
+                                x: cx - dotSize / 2,
+                                y: dotY,
+                                width: dotSize,
+                                height: dotSize
+                            )
+                            ctx.setFillColor(fillColor.cgColor)
+                            ctx.fillEllipse(in: dotRect)
+                        }
                     }
-
-                    // Top shine
-                    let shineTop = UIColor.white.withAlphaComponent(0.35).cgColor
-                    let shineBot = UIColor.white.withAlphaComponent(0).cgColor
-                    if let shine = CGGradient(colorsSpace: colorSpace, colors: [shineTop, shineBot] as CFArray, locations: [0, 1]) {
-                        ctx.drawLinearGradient(shine, start: CGPoint(x: cx, y: circleRect.minY + 1), end: CGPoint(x: cx, y: cy), options: [])
-                    }
-                    ctx.restoreGState()
-
-                    // Border
-                    ctx.setStrokeColor(UIColor(red: min(br + 0.1, 1), green: min(bg + 0.1, 1), blue: min(bb + 0.1, 1), alpha: min(slot.fillOpacity + 0.2, 0.8)).cgColor)
-                    ctx.setLineWidth(0.5)
-                    if slot.dashed { ctx.setLineDash(phase: 0, lengths: [2, 2]) }
-                    ctx.strokeEllipse(in: circleRect.insetBy(dx: 0.25, dy: 0.25))
-                    if slot.dashed { ctx.setLineDash(phase: 0, lengths: []) }
                 }
 
-                // Day number
-                let font = UIFont.raleway(slot.isBold ? "Bold" : "Medium", size: 13, textStyle: .caption1)
+                // Day number — kept compact so the marked-day disc reads
+                // larger relative to the digits (matches the iOS native
+                // Year view proportions).
+                let font = UIFont.raleway(slot.isBold ? "Bold" : "Medium", size: 13, textStyle: .caption2)
                 let str = NSAttributedString(string: "\(slot.day)", attributes: [.font: font, .foregroundColor: slot.textColor])
                 let sz = str.size()
                 str.draw(at: CGPoint(x: cx - sz.width / 2, y: cy - sz.height / 2))
             }
         }
 
-        // Border around cell
-        if isCurrent {
-            ctx.setStrokeColor(accentWarm.withAlphaComponent(0.3).cgColor)
-            ctx.setLineWidth(1)
-        } else {
-            ctx.setStrokeColor(UIColor.white.withAlphaComponent(0.08).cgColor)
-            ctx.setLineWidth(0.5)
-        }
-        let borderPath = UIBezierPath(roundedRect: rect.insetBy(dx: 0.5, dy: 0.5), cornerRadius: 12)
-        ctx.addPath(borderPath.cgPath)
-        ctx.strokePath()
+        // No cell border — the current month is signalled solely by
+        // the accent-tinted month name above the grid (matches the
+        // iOS native Year view, which has no per-cell frame either).
     }
 }

@@ -17,10 +17,19 @@ struct CycleStatInfoSection: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            Text(title.uppercased())
-                .font(.raleway("SemiBold", size: 11, relativeTo: .caption2))
-                .tracking(1.4)
-                .foregroundStyle(DesignColors.textSecondary)
+            Text(title)
+                .font(.raleway("SemiBold", size: 18, relativeTo: .title3))
+                .foregroundStyle(
+                    LinearGradient(
+                        colors: [
+                            DesignColors.text,
+                            DesignColors.textPrincipal,
+                            DesignColors.text.opacity(0.85),
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
                 .accessibilityAddTraits(.isHeader)
 
             Text(paragraph)
@@ -59,20 +68,25 @@ struct CycleStatInfoSection: View {
         .widgetCardStyle(cornerRadius: 24)
     }
 
-    /// Serif-italic pull paragraph for highlight lines — kept as the
-    /// one editorial moment in an otherwise data-first card so the
-    /// "what's typical" range reads with a softer voice than a bare
-    /// stat row.
+    /// Pull-quote highlight — Raleway SemiBold replaces the
+    /// previous serif italic so the typography stays inside
+    /// the app's single Raleway family. The leading inset
+    /// keeps it visually distinct from the body paragraph
+    /// without using a foreign typeface.
     private func pullQuote(_ text: String) -> some View {
-        Text(text)
-            .font(.system(size: 16, weight: .regular, design: .serif))
-            .italic()
-            .tracking(-0.1)
-            .foregroundStyle(DesignColors.text.opacity(0.78))
-            .lineSpacing(5)
-            .fixedSize(horizontal: false, vertical: true)
-            .padding(.leading, 14)
-            .padding(.vertical, 2)
+        HStack(alignment: .top, spacing: 12) {
+            Capsule()
+                .fill(DesignColors.accentWarm.opacity(0.55))
+                .frame(width: 3)
+                .accessibilityHidden(true)
+
+            Text(text)
+                .font(.raleway("SemiBold", size: 15, relativeTo: .body))
+                .foregroundStyle(DesignColors.text.opacity(0.85))
+                .lineSpacing(5)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(.vertical, 4)
     }
 
     /// Dot-marker bullet row — typography carries the scan, no color

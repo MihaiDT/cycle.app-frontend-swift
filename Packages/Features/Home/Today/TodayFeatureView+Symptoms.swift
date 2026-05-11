@@ -21,102 +21,77 @@ extension TodayView {
     @ViewBuilder
     var symptomPatternSection: some View {
         VStack(alignment: .leading, spacing: AppLayout.spacingM) {
-            // Section header
+            // Section header — labels the card as today's logging
+            // entry, distinct from the Body Patterns tile in the
+            // Journey carousel above (which routes to the patterns
+            // destination screen).
             HStack(alignment: .firstTextBaseline) {
-                Text("Symptom pattern")
+                Text("Today's symptoms")
                     .font(AppTypography.cardTitleSecondary)
                     .tracking(AppTypography.cardTitleSecondaryTracking)
                     .foregroundStyle(DesignColors.text)
 
                 Spacer()
-
-                Text("Last 7 days".uppercased())
-                    .font(.raleway("Medium", size: 10, relativeTo: .caption2))
-                    .tracking(1.4)
-                    .foregroundStyle(DesignColors.textSecondary.opacity(0.6))
             }
 
-            // Pattern card
-            VStack(alignment: .leading, spacing: AppLayout.spacingM) {
-                Text("No patterns yet")
-                    .font(.raleway("SemiBold", size: 15, relativeTo: .headline))
-                    .foregroundStyle(DesignColors.text)
+            // Logging card — full surface tappable, opens the
+            // calendar symptom sheet for today. Same destination as
+            // the legacy "Log Symptoms" pill so the entry point is a
+            // single recognisable target.
+            Button {
+                UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                store.send(.logSymptomsTapped, animation: .appBalanced)
+            } label: {
+                HStack(alignment: .center, spacing: AppLayout.spacingM) {
+                    // Plus glyph in a soft pill — communicates "add"
+                    // without competing with the chevron drill-in
+                    // language used elsewhere on Today.
+                    ZStack {
+                        Circle()
+                            .fill(DesignColors.accentWarm.opacity(0.12))
+                            .frame(width: 36, height: 36)
+                        Image(systemName: "plus")
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundStyle(DesignColors.accentWarmText)
+                    }
 
-                Text("Log a few symptoms and I'll start noticing how your body shows up across your cycle.")
-                    .font(.raleway("Regular", size: 14, relativeTo: .subheadline))
-                    .foregroundStyle(DesignColors.textSecondary)
-                    .lineSpacing(3)
-                    .fixedSize(horizontal: false, vertical: true)
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Log how you're feeling")
+                            .font(.raleway("SemiBold", size: 15, relativeTo: .headline))
+                            .foregroundStyle(DesignColors.text)
 
-                logSymptomsPill
-                    .padding(.top, AppLayout.spacingS)
+                        Text("Cramps, mood, sleep — anything that shows up today.")
+                            .font(.raleway("Regular", size: 13, relativeTo: .subheadline))
+                            .foregroundStyle(DesignColors.textSecondary)
+                            .lineSpacing(2)
+                            .multilineTextAlignment(.leading)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+
+                    Spacer(minLength: 8)
+
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(DesignColors.text.opacity(0.45))
+                }
+                .padding(AppLayout.spacingL)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(
+                    RoundedRectangle(cornerRadius: AppLayout.cornerRadiusL, style: .continuous)
+                        .fill(Color.white.opacity(0.75))
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: AppLayout.cornerRadiusL, style: .continuous)
+                        .strokeBorder(DesignColors.accentWarm.opacity(0.12), lineWidth: 0.5)
+                )
+                .shadow(color: .black.opacity(0.04), radius: 8, x: 0, y: 2)
+                .contentShape(RoundedRectangle(cornerRadius: AppLayout.cornerRadiusL, style: .continuous))
             }
-            .padding(AppLayout.spacingL)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(
-                RoundedRectangle(cornerRadius: AppLayout.cornerRadiusL, style: .continuous)
-                    .fill(Color.white.opacity(0.75))
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: AppLayout.cornerRadiusL, style: .continuous)
-                    .strokeBorder(DesignColors.accentWarm.opacity(0.12), lineWidth: 0.5)
-            )
-            .shadow(color: .black.opacity(0.04), radius: 8, x: 0, y: 2)
+            .buttonStyle(.plain)
+            .accessibilityLabel("Log today's symptoms")
+            .accessibilityHint("Opens the symptom logging sheet")
         }
         .padding(.horizontal, AppLayout.screenHorizontal)
-    }
-
-    private var logSymptomsPill: some View {
-        Button {
-            UIImpactFeedbackGenerator(style: .light).impactOccurred()
-            store.send(.logSymptomsTapped, animation: .appBalanced)
-        } label: {
-            HStack(spacing: 8) {
-                Image(systemName: "plus")
-                    .font(.system(size: 12, weight: .semibold))
-                Text("Log Symptoms")
-                    .font(.raleway("SemiBold", size: 15, relativeTo: .body))
-            }
-            .foregroundStyle(DesignColors.text)
-            .padding(.horizontal, 22)
-            .padding(.vertical, 11)
-            .fixedSize()
-            .background {
-                ZStack {
-                    Capsule()
-                        .fill(
-                            LinearGradient(
-                                colors: [Color.white.opacity(0.95), Color.white.opacity(0.7)],
-                                startPoint: .top,
-                                endPoint: .bottom
-                            )
-                        )
-                    Capsule()
-                        .fill(
-                            LinearGradient(
-                                colors: [Color.white.opacity(0.9), Color.clear],
-                                startPoint: .top,
-                                endPoint: .center
-                            )
-                        )
-                        .padding(2)
-                    Capsule()
-                        .strokeBorder(
-                            LinearGradient(
-                                colors: [Color.white.opacity(0.8), DesignColors.accentWarm.opacity(0.3)],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            ),
-                            lineWidth: 1
-                        )
-                }
-                .shadow(color: .black.opacity(0.08), radius: 4, x: 0, y: 2)
-                .shadow(color: DesignColors.accentWarm.opacity(0.12), radius: 8, x: 0, y: 3)
-            }
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel("Log symptoms for today")
-        .accessibilityHint("Opens the symptoms sheet")
     }
 
 }

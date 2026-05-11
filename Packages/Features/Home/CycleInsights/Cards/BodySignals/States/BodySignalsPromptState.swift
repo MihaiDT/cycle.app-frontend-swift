@@ -23,15 +23,8 @@ struct BodySignalsPromptState: View {
     private var header: some View {
         HStack(alignment: .center, spacing: 12) {
             VStack(alignment: .leading, spacing: 10) {
-                HStack(spacing: 8) {
-                    Image(systemName: "heart.text.square")
-                        .font(.system(size: 13, weight: .regular))
-                        .foregroundStyle(DesignColors.textSecondary)
-                    Text("YOUR BODY")
-                        .font(.raleway("SemiBold", size: 11, relativeTo: .caption2))
-                        .tracking(1.4)
-                        .foregroundStyle(DesignColors.textSecondary)
-                }
+                // Section title moved out — sectionWrap.
+                EmptyView()
 
                 Text("Connect your Apple Watch")
                     .font(.raleway("SemiBold", size: 17, relativeTo: .body))

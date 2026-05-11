@@ -19,6 +19,7 @@ public struct TodayFeature: Sendable {
         case checkInTapped
         case calendarTapped
         case logSymptomsTapped
+        case logSymptomsForDateTapped(Date, focusedSymptomRaw: String?)
         case calendarDismissed
         case calendarEntriesLoaded(Result<MenstrualCalendarResponse, Error>)
         case checkIn(PresentationAction<DailyCheckInFeature.Action>)
@@ -71,6 +72,12 @@ public struct TodayFeature: Sendable {
             /// section (symptoms & signals). Journey widget's Body
             /// Patterns tile.
             case openBodyPatterns
+            /// Pushes the standalone Body Patterns destination screen
+            /// (recurring-symptom detection over phases). Today's
+            /// `symptomPatternSection` card is the entry point. Distinct
+            /// from `openBodyPatterns` above, which routes into the
+            /// HealthKit BodySignals card on Cycle Stats.
+            case openBodyPatternsScreen
             /// Opens the Journey screen and immediately presents the
             /// recap of the most recent completed cycle. Used by Home's
             /// Latest Story tile — skips the "tap cycle card then tap
@@ -177,6 +184,18 @@ public struct TodayFeature: Sendable {
                 let today = Calendar.current.startOfDay(for: Date())
                 state.calendarState.selectedDate = today
                 return .send(.calendar(.daySelected(today)))
+
+            case let .logSymptomsForDateTapped(date, focusedSymptomRaw):
+                // Same as the generic Log Symptoms entry, but the
+                // sheet opens on the day the user actually logged
+                // the symptom — driven by the recent-logs chips on
+                // Body Patterns ("show me where this came from").
+                // The raw symptom is forwarded so the sheet can
+                // pre-select the matching category tab.
+                let day = Calendar.current.startOfDay(for: date)
+                state.calendarState.selectedDate = day
+                state.calendarState.pendingFocusedSymptomRaw = focusedSymptomRaw
+                return .send(.calendar(.daySelected(day)))
 
             case .checkIn(.presented(.delegate(.didCompleteCheckIn(_)))):
                 return .send(.loadDashboard)

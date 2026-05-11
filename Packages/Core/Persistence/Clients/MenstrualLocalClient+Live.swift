@@ -16,12 +16,16 @@ extension MenstrualLocalClient {
             removePeriodDays: liveRemovePeriodDays(),
             getJourneyData: liveJourneyData(),
             logSymptom: liveLogSymptom(),
+            removeSymptom: liveRemoveSymptom(),
             getSymptoms: liveGetSymptoms(),
             generatePrediction: liveGeneratePrediction(),
             getProfile: liveGetProfile(),
             saveProfile: liveSaveProfile(),
             unviewedRecapMonth: liveUnviewedRecapMonth(),
-            markAllRecapsViewed: liveMarkAllRecapsViewed()
+            markAllRecapsViewed: liveMarkAllRecapsViewed(),
+            detectPatterns: liveDetectPatterns(),
+            recentSymptoms: liveRecentSymptoms(),
+            patternMetrics: livePatternMetrics()
         )
     }
 

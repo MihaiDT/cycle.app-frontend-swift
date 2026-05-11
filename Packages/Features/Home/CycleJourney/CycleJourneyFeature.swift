@@ -15,6 +15,10 @@ public struct CycleJourneyFeature: Sendable {
         public var insight: JourneyInsight?
         public var isLoading: Bool = false
         public var hasAppeared: Bool = false
+        /// Same contract as `CycleInsightsFeature.State.pendingInvalidation`.
+        /// Set when a Period edit lands in Calendar; consumed on the
+        /// next `.onAppear` to force a fresh load with skeletons.
+        public var pendingInvalidation: Bool = false
         public var missedMonths: [MissedMonth] = []
         public var recap: RecapState?
         public var highlightRecapCycle: Bool = false
@@ -73,6 +77,19 @@ public struct CycleJourneyFeature: Sendable {
         Reduce { state, action in
             switch action {
             case .onAppear:
+                // Post-edit invalidation forces a fresh load even if
+                // we'd already appeared once this session. Consuming
+                // the flag here means a back-from-detail re-entry on
+                // unchanged data still short-circuits via the
+                // `hasAppeared` guard below.
+                if state.pendingInvalidation {
+                    state.pendingInvalidation = false
+                    state.summaries = []
+                    state.predictions = []
+                    state.insight = nil
+                    state.missedMonths = []
+                    state.hasAppeared = false
+                }
                 guard !state.hasAppeared else { return .none }
                 state.hasAppeared = true
                 state.isLoading = true
@@ -209,6 +226,9 @@ public struct CycleJourneyFeature: Sendable {
                 // summaries reflect the latest edit. Derived state (summaries,
                 // insight, predictions) rebuilds on the next `.refresh` / `.onAppear`.
                 state.cycleContext = newCycle
+                // Canonical refresh consumes the invalidation flag —
+                // by now the post-edit reload is in motion.
+                state.pendingInvalidation = false
                 return .none
 
             case .delegate:

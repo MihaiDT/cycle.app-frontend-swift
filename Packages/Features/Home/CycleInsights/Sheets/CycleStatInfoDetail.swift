@@ -42,54 +42,57 @@ struct CycleStatInfoDetailView: View {
     }
 
     var body: some View {
-        ScrollView(.vertical, showsIndicators: false) {
-            VStack(spacing: 14) {
-                CycleStatInfoPersonalReading(
-                    kind: kind,
-                    previousValue: previousValue,
-                    badge: badge
-                )
+        ZStack {
+            // Same warm peach surface as Body Patterns / Cycle
+            // Stats / About — keeps the info screens reading
+            // as part of the same surface family rather than a
+            // settings-style modal.
+            AppleHealthBackground()
+                .ignoresSafeArea()
 
-                CycleStatInfoSection(
-                    title: "About",
-                    paragraph: copy.typical,
-                    highlights: copy.typicalHighlights
-                )
+            ScrollView(.vertical, showsIndicators: false) {
+                VStack(spacing: 14) {
+                    CycleStatInfoPersonalReading(
+                        kind: kind,
+                        previousValue: previousValue,
+                        badge: badge
+                    )
 
-                CycleStatInfoSection(
-                    title: "What can shift it",
-                    paragraph: copy.affectIntro,
-                    bullets: copy.affectBullets,
-                    footnote: copy.affectFootnote
-                )
+                    CycleStatInfoSection(
+                        title: "About",
+                        paragraph: copy.typical,
+                        highlights: copy.typicalHighlights
+                    )
 
-                CycleStatInfoSection(
-                    title: "When to check in with a provider",
-                    paragraph: copy.doctorIntro,
-                    bullets: copy.doctorBullets,
-                    footnote: copy.doctorFootnote
-                )
+                    CycleStatInfoSection(
+                        title: "What can shift it",
+                        paragraph: copy.affectIntro,
+                        bullets: copy.affectBullets,
+                        footnote: copy.affectFootnote
+                    )
 
-                disclaimer
+                    CycleStatInfoSection(
+                        title: "When to check in with a provider",
+                        paragraph: copy.doctorIntro,
+                        bullets: copy.doctorBullets,
+                        footnote: copy.doctorFootnote
+                    )
+
+                    MedicalDeviceDisclaimer()
+                }
+                .padding(.horizontal, AppLayout.screenHorizontal)
+                .padding(.top, 24)
+                .padding(.bottom, 32)
             }
-            .padding(.horizontal, AppLayout.screenHorizontal)
-            .padding(.top, 24)
-            .padding(.bottom, 32)
         }
-        .background(DesignColors.journeyBackground.ignoresSafeArea())
         .navigationTitle(kind.title)
         .navigationBarTitleDisplayMode(.inline)
+        .toolbarBackground(.hidden, for: .navigationBar)
     }
 
-    @ViewBuilder
-    private var disclaimer: some View {
-        Text("cycle.app is not a diagnostic tool and does not provide medical advice. Everything here is for educational context only. For personal concerns, please speak with a licensed healthcare professional.")
-            .font(.raleway("Medium", size: 12, relativeTo: .caption))
-            .foregroundStyle(DesignColors.textSecondary.opacity(0.75))
-            .lineSpacing(4)
-            .fixedSize(horizontal: false, vertical: true)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal, 4)
-            .padding(.top, 8)
-    }
+    // Disclaimer is now provided by the shared
+    // `MedicalDeviceDisclaimer` component so the wording +
+    // typography stay identical across every educational
+    // surface (Body Patterns about, When to see a doctor,
+    // stat info screens).
 }

@@ -152,7 +152,12 @@ struct CycleHistoryAllView: View {
             .padding(.bottom, AppLayout.spacingXXL)
             .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .background { JourneyAnimatedBackground(animated: false) }
+        // Match the Cycle Stats / BodyPatterns surface — peach
+        // gradient top + cream extending edge-to-edge under the
+        // nav bar. JourneyAnimatedBackground belonged to the
+        // earlier journey-tab framing that was retired; using it
+        // here made Cycle History feel like a different feature.
+        .background { AppleHealthBackground().ignoresSafeArea() }
         .navigationTitle("Cycle history")
         .navigationBarTitleDisplayMode(.inline)
         .task {
@@ -190,22 +195,7 @@ struct CycleHistoryAllView: View {
 
             HStack {
                 Spacer()
-                Button(action: onDismiss) {
-                    Image(systemName: "xmark")
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(DesignColors.text)
-                        .frame(width: 36, height: 36)
-                        .background {
-                            Circle()
-                                .fill(DesignColors.text.opacity(0.06))
-                        }
-                        .overlay {
-                            Circle()
-                                .stroke(DesignColors.text.opacity(0.08), lineWidth: 0.6)
-                        }
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Close")
+                AppCloseButton(action: onDismiss)
             }
         }
         .padding(.horizontal, 18)

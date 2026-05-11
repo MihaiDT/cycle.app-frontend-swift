@@ -115,14 +115,18 @@ public struct JourneyDestinationTile: View {
         var badge: String {
             switch self {
             case .stats: return "CYCLE STATS"
-            case .body:  return "BODY PATTERNS"
+            // No eyebrow on the body tile — title "Patterns"
+            // already communicates the destination, and the
+            // caps eyebrow above it would have read redundantly
+            // as "BODY PATTERNS / Patterns".
+            case .body:  return ""
             }
         }
 
         var title: String {
             switch self {
             case .stats: return "Averages"
-            case .body:  return "Symptoms"
+            case .body:  return "Patterns"
             }
         }
 
@@ -162,6 +166,14 @@ public struct JourneyDestinationTile: View {
             .padding(18)
             .frame(minHeight: 190)
             .widgetCardStyle()
+            // Explicit clip after `widgetCardStyle` — on iOS 26
+            // `.glassEffect(.regular, in: shape)` clips the glass
+            // surface but does NOT clip its child content, so
+            // offset / negative-padded children (the body dots
+            // grid) painted past the card's rounded edge. This
+            // shape clip enforces visual containment so the
+            // overflow gets actually cropped at the corner.
+            .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
             .overlay(alignment: .topTrailing) {
                 Image(systemName: "arrow.up.right")
                     .font(.system(size: 11, weight: .semibold))
@@ -182,10 +194,12 @@ public struct JourneyDestinationTile: View {
     @ViewBuilder
     private var textBlock: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text(kind.badge)
-                .font(.raleway("SemiBold", size: 11, relativeTo: .caption2))
-                .tracking(0.6)
-                .foregroundStyle(DesignColors.textSecondary)
+            if !kind.badge.isEmpty {
+                Text(kind.badge)
+                    .font(.raleway("SemiBold", size: 11, relativeTo: .caption2))
+                    .tracking(0.6)
+                    .foregroundStyle(DesignColors.textSecondary)
+            }
 
             Text(kind.title)
                 .font(AppTypography.cardTitleSecondary)
@@ -205,6 +219,17 @@ public struct JourneyDestinationTile: View {
 
     @ViewBuilder
     private var bottomRow: some View {
+        switch kind {
+        case .stats:
+            statsBottomRow
+        case .body:
+            bodyDotsPreview
+        }
+    }
+
+    /// Original stats bottom row — big numeric stat ("~28d")
+    /// + chart-bar glyph in a soft accentWarm disc.
+    private var statsBottomRow: some View {
         HStack(alignment: .center) {
             Text(stat)
                 .font(.raleway("Bold", size: 22, relativeTo: .title3))
@@ -223,6 +248,54 @@ public struct JourneyDestinationTile: View {
                     .font(.system(size: 18, weight: .semibold))
                     .foregroundStyle(DesignColors.accentWarm)
                     .accessibilityHidden(true)
+            }
+        }
+    }
+
+    /// Body Patterns mini visualisation — 2-row dot grid that
+    /// echoes the heatmap inside the destination screen. Dots
+    /// run off the trailing edge so the tile feels like a window
+    /// onto a wider chart rather than a closed icon. Last cells
+    /// at very low opacity drift toward the card's rounded edge,
+    /// where `widgetCardStyle`'s clip drops them — same trailing
+    /// fade idiom as the actual `PatternDayHeatmap` mask.
+    ///
+    /// Pattern is hand-designed (not data-driven) — the tile is
+    /// a teaser, not a live readout. Saturation gradient runs
+    /// roughly leading→trailing so the visual weight settles in
+    /// the lower-left corner where the eye lands after reading
+    /// the title block, then trails off to the right as a hint
+    /// to "tap to see the rest".
+    private var bodyDotsPreview: some View {
+        let row1: [Double] = [1.00, 0.85, 0.55, 0.70, 0.25, 0.10]
+        let row2: [Double] = [0.65, 0.95, 0.35, 0.15, 0.45, 0.08]
+        let row3: [Double] = [0.40, 0.50, 0.20, 0.55, 0.12, 0.05]
+
+        return HStack(spacing: 0) {
+            Spacer(minLength: 0)
+            VStack(alignment: .trailing, spacing: 7) {
+                dotRow(row1)
+                dotRow(row2)
+                dotRow(row3)
+            }
+            // Push the grid right (past card's 18pt padding)
+            // AND down (past the card's bottom edge). Both
+            // axes overflow are clipped by `widgetCardStyle`'s
+            // shape — produces a "window onto a wider chart"
+            // reading where dots fall away both right and down.
+            // Same trailing-fade idiom as `PatternDayHeatmap`.
+            .offset(x: 30, y: 22)
+        }
+        .frame(maxWidth: .infinity, alignment: .bottomTrailing)
+        .accessibilityHidden(true)
+    }
+
+    private func dotRow(_ opacities: [Double]) -> some View {
+        HStack(spacing: 7) {
+            ForEach(opacities.indices, id: \.self) { idx in
+                Circle()
+                    .fill(DesignColors.accentWarm.opacity(opacities[idx]))
+                    .frame(width: 18, height: 18)
             }
         }
     }

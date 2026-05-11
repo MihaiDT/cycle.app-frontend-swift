@@ -26,7 +26,11 @@ public struct CycleInsightsView: View {
         case detail(String)
         case customize
         case statInfo(CycleStatInfoKind)
-        case bodySignalsDetail
+        /// Body Signals detail. Optional `focused` deep-links the
+        /// detail screen to a specific metric section — set when
+        /// the user taps an individual tile (wrist temp / HRV /
+        /// resting HR), nil when they tap the header / chevron.
+        case bodySignalsDetail(focused: BodySignalMetric.Kind?)
     }
 
     func popLast() {
@@ -80,7 +84,16 @@ public struct CycleInsightsView: View {
                         // mid-scroll churn `_printChanges` surfaced.
                         cardContent: { card in AnyView(statsCardView(for: card).id(card)) },
                         trailingContent: { AnyView(EmptyView()) },
-                        leadingContent: nil,
+                        // Today anchor — single editorial sentence
+                        // ("Day 22. Luteal phase. Next period in 6
+                        // days.") above the first card. Pins the
+                        // reader to "where am I now" before the
+                        // screen plonges into stats. Hidden when
+                        // cycleContext hasn't loaded yet so the
+                        // first card doesn't shift on appear.
+                        leadingContent: store.cycleContext.map { ctx in
+                            { AnyView(CycleStatsTodayHeader(context: ctx)) }
+                        },
                         onScroll: nil,
                         reconfigureToken: AnyHashable(cardsReconfigureToken)
                     )
@@ -96,6 +109,7 @@ public struct CycleInsightsView: View {
             }
             .navigationTitle(headerTitle)
             .navigationBarTitleDisplayMode(.inline)
+            .toolbarBackground(.hidden, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     Button {
@@ -105,20 +119,24 @@ public struct CycleInsightsView: View {
                         }
                     } label: {
                         Image(systemName: "chevron.left")
-                            .font(.system(size: 17, weight: .semibold))
                             .foregroundStyle(DesignColors.text)
                     }
+                    .glassToolbar()
                     .accessibilityLabel("Back")
                 }
-
+                ToolbarItem(placement: .principal) {
+                    Text(headerTitle)
+                        .font(.raleway("SemiBold", size: 17, relativeTo: .headline))
+                        .foregroundStyle(DesignColors.text)
+                }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
                         historyPath.append(.customize)
                     } label: {
                         Image(systemName: "slider.horizontal.3")
-                            .font(.system(size: 16, weight: .semibold))
                             .foregroundStyle(DesignColors.text)
                     }
+                    .glassToolbar()
                     .accessibilityLabel("Customize this screen")
                 }
             }
@@ -138,7 +156,6 @@ public struct CycleInsightsView: View {
                     if let timeline = historyTimelines.first(where: { $0.id == id }) {
                         CycleDetailsView(
                             timeline: timeline,
-                            onDismiss: { popLast() },
                             onStatInfoTap: { kind in
                                 historyPath.append(.statInfo(kind))
                             }
@@ -161,18 +178,23 @@ public struct CycleInsightsView: View {
                         bleedingDays: periodAverageDays,
                         variationStdDev: variationStdDev
                     )
-                case .bodySignalsDetail:
+                case .bodySignalsDetail(let focused):
                     if let snapshot = store.bodySignals {
-                        BodySignalsDetailView(snapshot: snapshot)
+                        BodySignalsDetailView(
+                            snapshot: snapshot,
+                            focusedMetric: focused
+                        )
                     }
                 }
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .tint(DesignColors.text)
         .task { store.send(.onAppear) }
         .fullScreenCover(isPresented: $isShareReflectionVisible) {
             RhythmReflectionShareScreen(
                 copy: store.rhythmReflectionCopy,
+                phase: store.cycleContext?.currentPhase,
                 onDismiss: { isShareReflectionVisible = false }
             )
         }
@@ -278,6 +300,39 @@ public struct CycleInsightsView: View {
         }
     }
 
+    /// Wraps a card with an editorial section title rendered
+    /// **above** the card surface — same pattern as Body
+    /// Patterns ("Recurring patterns" + carousel below). Pulls
+    /// the title out of the card's own header so the per-card
+    /// chrome stays focused on its data and the typography
+    /// system reads consistently across surfaces.
+    @ViewBuilder
+    func sectionWrap<Content: View>(
+        _ title: String?,
+        @ViewBuilder content: () -> Content
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            if let title {
+                Text(title)
+                    .font(.raleway("SemiBold", size: 18, relativeTo: .title3))
+                    .foregroundStyle(
+                        LinearGradient(
+                            colors: [
+                                DesignColors.text,
+                                DesignColors.textPrincipal,
+                                DesignColors.text.opacity(0.85),
+                            ],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, 4)
+            }
+            content()
+        }
+    }
+
     @ViewBuilder
     func statsCardView(for card: CycleStatsCard) -> some View {
         // `.drawingGroup(opaque: false)` on every card **except** the
@@ -294,18 +349,31 @@ public struct CycleInsightsView: View {
         // and let the style modifier handle rasterization + shadow
         // layering. Applying drawingGroup here too would double-
         // rasterize and re-introduce the clipped-shadow artifact.
+        // Treat `pendingInvalidation` as "skeleton, no matter what
+        // the cached value is". The flag is set the moment a Period
+        // edit lands in Calendar (HomeFeature catches
+        // `editPeriodPredictionsUpdated`), so the very first frame of
+        // Cycle Stats after the edit reads as a skeleton — no chance
+        // for the pre-edit numbers to flash before `.onAppear` clears
+        // them. The flag clears at `.onAppear` after the load kicks
+        // off, and the skeleton stays visible because `store.stats`
+        // is now nil until the fetch returns.
+        let showStatsSkeleton = store.stats == nil || store.pendingInvalidation
+        let showJourneySkeleton = store.journey == nil || store.pendingInvalidation
         switch card {
         case .overview:
-            if store.stats != nil {
+            if showStatsSkeleton {
+                CycleStatsOverviewSkeleton()
+            } else {
                 CycleStatsOverviewRow(
                     cycleAverageDays: cycleAverageDays,
                     periodAverageDays: periodAverageDays
                 )
-            } else {
-                CycleStatsOverviewSkeleton()
             }
         case .normality:
-            if store.stats != nil {
+            if showStatsSkeleton {
+                CycleNormalitySkeleton()
+            } else {
                 CycleNormalityCard(
                     previousCycleLength: previousCycleLength,
                     previousPeriodLength: previousPeriodLength,
@@ -315,47 +383,51 @@ public struct CycleInsightsView: View {
                     onInfoTap: { kind in historyPath.append(.statInfo(kind)) }
                 )
                 .equatable()
-            } else {
-                CycleNormalitySkeleton()
             }
         case .avgCycle:
-            if store.stats != nil {
-                CycleTrendCard(
-                    points: trendPoints,
-                    averageDays: averageLengthInt
-                )
-                // `.equatable()` short-circuits body re-evals when
-                // points + averageDays are unchanged. Heaviest body
-                // on the screen (GeometryReader + 12+ bars), so the
-                // skip pays off most here.
-                .equatable()
-            } else {
-                CycleTrendSkeleton()
+            sectionWrap("Cycle trend") {
+                if showStatsSkeleton {
+                    CycleTrendSkeleton()
+                } else {
+                    CycleTrendCard(
+                        points: trendPoints,
+                        averageDays: averageLengthInt
+                    )
+                    .equatable()
+                }
             }
         case .history:
-            if store.journey != nil {
-                CycleHistoryCard(
-                    timelines: historyTimelines,
-                    hiddenKeys: store.hiddenCycleKeys,
-                    onHide: { key in store.send(.hideCycle(key)) },
-                    onUnhide: { key in store.send(.unhideCycle(key)) },
-                    onOpenDetail: { id in historyPath.append(.detail(id)) },
-                    onSeeAll: { historyPath.append(.allHistory) }
-                )
-                .equatable()
-            } else {
-                CycleHistorySkeleton()
+            sectionWrap("Cycle history") {
+                if showJourneySkeleton {
+                    CycleHistorySkeleton()
+                } else {
+                    CycleHistoryCard(
+                        timelines: historyTimelines,
+                        hiddenKeys: store.hiddenCycleKeys,
+                        onHide: { key in store.send(.hideCycle(key)) },
+                        onUnhide: { key in store.send(.unhideCycle(key)) },
+                        onOpenDetail: { id in historyPath.append(.detail(id)) },
+                        onSeeAll: { historyPath.append(.allHistory) }
+                    )
+                    .equatable()
+                }
             }
         case .bodySignals:
-            BodySignalsCard(
-                snapshot: store.bodySignals,
-                authProbe: store.bodySignalsAuth,
-                isLoading: store.isLoadingBodySignals,
-                onEnable: { store.send(.requestBodySignalsPermission) },
-                onOpenDetail: { historyPath.append(.bodySignalsDetail) }
-            )
+            sectionWrap("Your body") {
+                BodySignalsCard(
+                    snapshot: store.bodySignals,
+                    authProbe: store.bodySignalsAuth,
+                    isLoading: store.isLoadingBodySignals,
+                    onEnable: { store.send(.requestBodySignalsPermission) },
+                    onOpenDetail: { focused in
+                        historyPath.append(.bodySignalsDetail(focused: focused))
+                    }
+                )
+            }
         case .reflection:
-            rhythmReflection
+            sectionWrap("Rhythm reflection") {
+                rhythmReflection
+            }
         }
     }
 
@@ -431,24 +503,7 @@ public struct CycleInsightsView: View {
 
             HStack {
                 Spacer()
-                Button {
-                    store.send(.dismissTapped)
-                } label: {
-                    Image(systemName: "xmark")
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(DesignColors.text)
-                        .frame(width: 36, height: 36)
-                        .background {
-                            Circle()
-                                .fill(DesignColors.text.opacity(0.06))
-                        }
-                        .overlay {
-                            Circle()
-                                .stroke(DesignColors.text.opacity(0.08), lineWidth: 0.6)
-                        }
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Close")
+                AppCloseButton(action: { store.send(.dismissTapped) })
             }
         }
         .padding(.horizontal, 18)

@@ -11,38 +11,88 @@ import SwiftUI
 
 struct BodySignalsDataState: View {
     let snapshot: BodySignalsSnapshot
-    let onOpenDetail: () -> Void
+    /// Per-metric tap routing. `nil` means the user tapped the
+    /// header (or the card chrome) and wants the full detail
+    /// surface from the top; a specific `Kind` means the user
+    /// tapped that tile and wants the detail screen scrolled to
+    /// the matching section.
+    let onOpenDetail: (BodySignalMetric.Kind?) -> Void
 
     var body: some View {
-        Button(action: onOpenDetail) {
-            VStack(alignment: .leading, spacing: 14) {
-                BodySignalsSectionHeader(phase: snapshot.phase, showsChevron: true)
+        VStack(alignment: .leading, spacing: 14) {
+            // Section header + chevron removed (May 2026): the
+            // "tap to see all metrics" destination duplicated
+            // what the per-tile taps already do (each tile
+            // routes to its own focused screen). The "Your
+            // body" title is owned by `sectionWrap` in
+            // CycleInsightsView; this card just renders the
+            // tile row + its empty-state footer.
+            tiles
 
-                tiles
+            // Soft footer that appears only when all three
+            // tiles render empty ("Soon"). Without it, three
+            // greyed-out tiles read as broken; with it, the
+            // user understands their Watch is collecting and
+            // numbers will appear. Doesn't push to Settings —
+            // honours the deliberate `.partial` state design
+            // (see CLAUDE.md "BodySignals card · Permission flow").
+            if allTilesEmpty {
+                Text("Apple Watch is collecting. Numbers appear after a few nights.")
+                    .font(.raleway("Medium", size: 12, relativeTo: .caption))
+                    .foregroundStyle(DesignColors.textSecondary.opacity(0.85))
+                    .padding(.top, 2)
             }
         }
-        .buttonStyle(.plain)
-        .accessibilityAddTraits(.isButton)
+        .accessibilityElement(children: .contain)
         .accessibilityLabel(accessibilityLabel)
-        .accessibilityHint("Opens your body signals detail")
     }
 
     // MARK: - Tiles
+    //
+    // Each tile is its own button so taps route to the matching
+    // section in `BodySignalsDetailView`. Wrapping the row in a
+    // single Button (the previous behaviour) collapsed all three
+    // tiles into the same destination, which read as broken once
+    // the user noticed each metric had its own dedicated section
+    // on the detail screen.
 
     private var tiles: some View {
         HStack(spacing: 10) {
-            BodySignalsMetricTile(
+            tileButton(
                 metric: snapshot.wristTemperature,
                 kind: .wristTemperature
             )
-            BodySignalsMetricTile(
+            tileButton(
                 metric: snapshot.hrv,
                 kind: .hrv
             )
-            BodySignalsMetricTile(
+            tileButton(
                 metric: snapshot.restingHR,
                 kind: .restingHR
             )
+        }
+    }
+
+    @ViewBuilder
+    private func tileButton(
+        metric: BodySignalMetric?,
+        kind: BodySignalMetric.Kind
+    ) -> some View {
+        Button(action: { onOpenDetail(kind) }) {
+            BodySignalsMetricTile(metric: metric, kind: kind)
+        }
+        .buttonStyle(.plain)
+    }
+
+    /// True when no metric has any usable data — surfaces the
+    /// "your Watch is collecting" footer. Mirrors `hasValue` in
+    /// `BodySignalsMetricTile` so the empty signal stays consistent
+    /// across both layers.
+    private var allTilesEmpty: Bool {
+        let metrics = [snapshot.wristTemperature, snapshot.hrv, snapshot.restingHR]
+        return metrics.allSatisfy { metric in
+            guard let metric, metric.latest != nil, metric.hasData else { return true }
+            return false
         }
     }
 

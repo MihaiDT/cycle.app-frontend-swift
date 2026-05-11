@@ -148,17 +148,10 @@ struct CycleHistoryCard: View, Equatable {
     @ViewBuilder
     private var header: some View {
         HStack(alignment: .center) {
-            HStack(spacing: 8) {
-                Image(systemName: "calendar")
-                    .font(.system(size: 13, weight: .regular))
-                    .foregroundStyle(DesignColors.textSecondary)
-                Text("CYCLE HISTORY")
-                    .font(.raleway("SemiBold", size: 11, relativeTo: .caption2))
-                    .tracking(1.4)
-                    .foregroundStyle(DesignColors.textSecondary)
-            }
-
-            Spacer(minLength: 10)
+            // Section title moved out — see
+            // `CycleInsightsView.sectionWrap("Cycle history")`.
+            // Header keeps only the trailing "See all" affordance.
+            Spacer(minLength: 0)
 
             // "See all" only makes sense once there's an archive to
             // open. With zero logged cycles the empty-state preview

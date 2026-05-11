@@ -50,6 +50,16 @@ public struct CycleInsightsFeature: Sendable {
         public var hiddenCycleKeys: Set<String> = []
         public var isLoadingStats: Bool = false
         public var isLoadingInsights: Bool = false
+        /// Set the moment a Period edit lands in Calendar (caught by
+        /// `HomeFeature` and forwarded here). Consumed on the next
+        /// `.onAppear` to force a clean re-fetch with skeletons —
+        /// without it the user re-enters the screen on stale numbers
+        /// for ~1s while Calendar's prediction-settle wait runs and
+        /// the canonical broadcast catches up. Stays `false` while
+        /// the user is just navigating in/out of the screen normally,
+        /// so back-from-detail re-entries don't flash a skeleton on
+        /// data that didn't change.
+        public var pendingInvalidation: Bool = false
         public var activeDetail: DetailSection?
         public var isDetailOpen: Bool = false
         public var isCycleStoryOpen: Bool = false
@@ -237,6 +247,23 @@ public struct CycleInsightsFeature: Sendable {
                     state.activeDetail = pending
                     state.isDetailOpen = true
                 }
+
+                // Consume the post-edit invalidation flag. When the
+                // user edited Period in Calendar between visits, this
+                // clears stale aggregates so `.onAppear` lands on a
+                // nil state and the skeleton branch picks up. Plain
+                // re-entry (back from a pushed detail screen, or just
+                // re-opening Cycle Stats with no edits between) leaves
+                // the flag false and the cached numbers stay on
+                // screen — no gratuitous skeleton flash.
+                if state.pendingInvalidation {
+                    state.pendingInvalidation = false
+                    state.stats = nil
+                    state.journey = nil
+                    state.insights = nil
+                    state.historyTimelines = []
+                    state.bodySignals = nil
+                }
                 state.hiddenCycleKeys = HiddenCyclesStore.load()
 
                 // Hydrate the card layout once per screen entry. Kept
@@ -261,11 +288,29 @@ public struct CycleInsightsFeature: Sendable {
                 if state.insights == nil {
                     state.isLoadingInsights = true
                 }
+                let needsSkeletonFloor = state.stats == nil
                 let loadData = Effect<Action>.run { [menstrualLocal] send in
                     async let s = Result { try await menstrualLocal.getCycleStats() }
                     async let j = Result { try await menstrualLocal.getJourneyData() }
-                    await send(.statsLoaded(s))
-                    await send(.journeyLoaded(j))
+                    // Floor the skeleton display at 400ms when we
+                    // entered the screen with no cached aggregates
+                    // (first appear, or post-`cycleDataChanged`
+                    // invalidation). Local SwiftData fetches finish
+                    // in under 100ms, so without the floor the
+                    // skeletons flash for a single frame and the
+                    // numbers "pop in" without context — reads as a
+                    // glitch, not as a load. We don't apply the
+                    // floor when stats are already cached: that path
+                    // doesn't show a skeleton at all and adding a
+                    // pause would just feel slow.
+                    let minDisplay: Task<Void, Never>? = needsSkeletonFloor
+                        ? Task { try? await Task.sleep(for: .milliseconds(400)) }
+                        : nil
+                    let stats = await s
+                    let journey = await j
+                    _ = await minDisplay?.value
+                    await send(.statsLoaded(stats))
+                    await send(.journeyLoaded(journey))
                     // Insights derived from stats locally — no separate API needed
                     await send(.insightsLoaded(.success(MenstrualInsightsResponse.mock)))
                 }
@@ -403,6 +448,22 @@ public struct CycleInsightsFeature: Sendable {
                 // without requiring the user to re-open the sheet.
                 state.cycleContext = newCycle
 
+                // The canonical refresh consumes the invalidation flag —
+                // by the time this lands, fresh data is on the way (or
+                // already mid-load), so the next `.onAppear` shouldn't
+                // skeleton-flash again.
+                state.pendingInvalidation = false
+
+                // If a refresh is already in flight (just-entered the
+                // screen on nil state, fetch is mid-load with the
+                // 400ms floor), don't null aggregates again — the in-
+                // flight fetch will write fresh data when it returns,
+                // and a second nil → skeleton → fetch would flash a
+                // duplicate skeleton on the same visit.
+                if state.isLoadingStats {
+                    return .none
+                }
+
                 // Drop every aggregate we might be showing on Cycle
                 // Stats so the cards flip to their skeletons while the
                 // refresh runs. Showing the previous numbers in place
@@ -425,8 +486,17 @@ public struct CycleInsightsFeature: Sendable {
                     .run { [menstrualLocal] send in
                         async let s = Result { try await menstrualLocal.getCycleStats() }
                         async let j = Result { try await menstrualLocal.getJourneyData() }
-                        await send(.statsLoaded(s))
-                        await send(.journeyLoaded(j))
+                        // Same skeleton floor as `.onAppear` — see
+                        // the comment there for the rationale. Post-
+                        // edit refreshes always show skeletons (we
+                        // just nil'd everything above), so they
+                        // always need the floor.
+                        let minDisplay = Task { try? await Task.sleep(for: .milliseconds(400)) }
+                        let stats = await s
+                        let journey = await j
+                        _ = await minDisplay.value
+                        await send(.statsLoaded(stats))
+                        await send(.journeyLoaded(journey))
                         await send(.insightsLoaded(.success(MenstrualInsightsResponse.mock)))
                     }
                     .cancellable(id: CancelID.refreshStats, cancelInFlight: true),

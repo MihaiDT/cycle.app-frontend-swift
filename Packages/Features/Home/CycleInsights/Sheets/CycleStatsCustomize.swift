@@ -40,9 +40,23 @@ struct CycleStatsCustomizeView: View {
             visibleSection
             hiddenSection
         }
-        .listStyle(.insetGrouped)
+        // `.plain` (NOT `.insetGrouped`). InsetGrouped wraps each
+        // section in an iOS-owned background that rounds top corners
+        // on the first row and bottom corners on the last row but
+        // keeps the in-between joints square. That section chrome
+        // sits underneath our custom `listRowBackground`'s rounded
+        // rectangle and clips its corners on first/last rows — so
+        // the top of the first card and the bottom of the last card
+        // read as half-rounded. Plain style strips the section
+        // container, every row owns its full pill.
+        .listStyle(.plain)
         .scrollContentBackground(.hidden)
         .background(Color.clear)
+        // Plain style spans rows edge-to-edge. Pull them in to the
+        // app's editorial column (`AppLayout.screenHorizontal`, 14pt)
+        // so this screen sits in the same gutter as Cycle Stats /
+        // Cycle Detail / Today.
+        .padding(.horizontal, AppLayout.screenHorizontal)
     }
 
     // MARK: - Sections
@@ -88,11 +102,6 @@ struct CycleStatsCustomizeView: View {
         HStack(spacing: 14) {
             checkbox(isOn: isVisible) { toggle(card) }
 
-            Image(systemName: card.sfSymbol)
-                .font(.system(size: 14, weight: .regular))
-                .foregroundStyle(DesignColors.text.opacity(0.65))
-                .frame(width: 22)
-
             Text(card.displayName)
                 .font(.raleway("SemiBold", size: 15, relativeTo: .body))
                 .foregroundStyle(DesignColors.text)
@@ -116,19 +125,31 @@ struct CycleStatsCustomizeView: View {
                     .overlay {
                         RoundedRectangle(cornerRadius: 6, style: .continuous)
                             .stroke(
-                                isOn ? DesignColors.accentWarm : DesignColors.text.opacity(0.25),
-                                lineWidth: isOn ? 0 : 1.4
+                                isOn ? Color.clear : DesignColors.text.opacity(0.25),
+                                lineWidth: 1.4
                             )
                     }
                     .frame(width: 22, height: 22)
 
-                if isOn {
-                    Image(systemName: "checkmark")
-                        .font(.system(size: 12, weight: .bold))
-                        .foregroundStyle(Color.white)
-                }
+                // Checkmark always in the tree, faded + scaled when
+                // off. Conditional `if isOn` rebuilds the subtree on
+                // every toggle, which can't ride a smooth crossfade —
+                // the glyph would pop in only after the parent's
+                // animation finishes, reading as a delayed flip.
+                Image(systemName: "checkmark")
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundStyle(Color.white)
+                    .opacity(isOn ? 1 : 0)
+                    .scaleEffect(isOn ? 1.0 : 0.5)
             }
             .contentShape(Rectangle())
+            // Explicit snappy spring scoped to the checkbox subtree so
+            // the tick/fill flip is crisp and runs independently of
+            // the parent `withAnimation(.easeInOut(0.22))` that drives
+            // the List's section move. Without this, the checkbox
+            // gets dragged along by the slower ambient transaction
+            // and feels lazy.
+            .animation(reduceMotion ? .linear(duration: 0) : .spring(response: 0.26, dampingFraction: 0.7), value: isOn)
         }
         // `.borderless` (NOT `.plain`) is required when a Button lives
         // inside a List row that's also draggable in edit mode. With

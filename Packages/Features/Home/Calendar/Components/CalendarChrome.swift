@@ -94,31 +94,9 @@ struct CalendarEmptyStateCard: View {
                         .lineSpacing(3)
                 }
 
-                Button {
+                WarmCapsuleButton("Log my first period", icon: "plus") {
                     onLogTapped()
-                } label: {
-                    HStack(spacing: 6) {
-                        Image(systemName: "plus")
-                            .font(.system(size: 12, weight: .semibold))
-                        Text("Log my first period")
-                            .font(.raleway("SemiBold", size: 14, relativeTo: .body))
-                    }
-                    .foregroundColor(.white)
-                    .padding(.horizontal, 20)
-                    .padding(.vertical, 11)
-                    .background {
-                        Capsule()
-                            .fill(
-                                LinearGradient(
-                                    colors: [DesignColors.accentWarm, DesignColors.accentSecondary],
-                                    startPoint: .leading,
-                                    endPoint: .trailing
-                                )
-                            )
-                            .shadow(color: DesignColors.accentWarm.opacity(0.35), radius: 10, x: 0, y: 3)
-                    }
                 }
-                .buttonStyle(.plain)
                 .accessibilityHint("Opens edit-period mode to mark your first period days")
                 .padding(.top, 2)
             }

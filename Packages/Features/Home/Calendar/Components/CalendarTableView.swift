@@ -13,6 +13,8 @@ struct CalendarTableView: UIViewRepresentable {
     let isLate: Bool
     let predictedDate: Date?
     let cycleLength: Int
+    let cycleStartDate: Date
+    let bleedingDays: Int
     let loggedDays: [String: CalendarFeature.State.DayLog]
     let isEditingPeriod: Bool
     let editPeriodDays: Set<String>
@@ -101,8 +103,8 @@ struct CalendarTableView: UIViewRepresentable {
         func tableView(_ tv: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
             let month = parent.months[indexPath.row]
             let rows = MonthGridRenderer.rowCount(for: month)
-            // header(36) + grid(rows * 64) + bottom padding(28)
-            return 36 + CGFloat(rows) * 64 + 28
+            // header(36) + grid(rows * 56) + bottom padding(28)
+            return 36 + CGFloat(rows) * 56 + 28
         }
 
         func tableView(_ tv: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
@@ -167,8 +169,12 @@ private final class MonthCell: UITableViewCell {
             headerLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
             headerLabel.heightAnchor.constraint(equalToConstant: 20),
             gridView.topAnchor.constraint(equalTo: headerLabel.bottomAnchor, constant: 8),
-            gridView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
-            gridView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
+            // gridView spans the full content width — pills that continue across week
+            // breaks use this extra margin to bleed past the day-label grid into the
+            // screen edge. Internal padding (matching the SwiftUI WeekdayLabelsRow) is
+            // applied inside MonthGridDrawView via `horizontalInset`.
+            gridView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 0),
+            gridView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: 0),
             gridView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -20),
         ])
     }
@@ -183,215 +189,6 @@ private final class MonthCell: UITableViewCell {
     }
 }
 
-// MARK: - CoreGraphics Month Grid
-
-private final class MonthGridDrawView: UIView {
-    private var month = Date()
-    private var periodDays: Set<String> = []
-    private var predictedPeriodDays: Set<String> = []
-    private var fertileDays: [String: FertilityLevel] = [:]
-    private var ovulationDays: Set<String> = []
-    private var selectedDate: Date?
-    private var loggedDays: [String: CalendarFeature.State.DayLog] = [:]
-    private var isLate = false
-    private var predictedDate: Date?
-    private var cycleLength = 28
-    private var isEditingPeriod = false
-    private var editPeriodDays: Set<String> = []
-    private var onDaySelected: ((Date) -> Void)?
-    private var onEditDayTapped: ((Date) -> Void)?
-
-    private let cal = Calendar.current
-    private let periodColor = UIColor(DesignColors.calendarPeriodGlyph)
-    private let fertileColor = UIColor(DesignColors.calendarFertileGlyph)
-    private let textColor = UIColor(DesignColors.calendarDayText).withAlphaComponent(0.55)
-    private let todayColor = UIColor(DesignColors.calendarTodayRing)
-
-    /// Draws a glass liquid circle with a gradient body, top shine, and border
-    private func drawGlassCircle(_ ctx: CGContext, rect: CGRect, color: UIColor, fillOpacity: CGFloat, borderOpacity: CGFloat, dashed: Bool = false) {
-        ctx.saveGState()
-
-        // 1. Body gradient fill (lighter at top → base color at bottom)
-        let path = CGPath(ellipseIn: rect, transform: nil)
-        ctx.addPath(path)
-        ctx.clip()
-
-        var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
-        color.getRed(&r, green: &g, blue: &b, alpha: &a)
-
-        let colorSpace = CGColorSpaceCreateDeviceRGB()
-        let topColor = UIColor(red: min(r + 0.15, 1), green: min(g + 0.15, 1), blue: min(b + 0.15, 1), alpha: fillOpacity).cgColor
-        let bottomColor = UIColor(red: r, green: g, blue: b, alpha: fillOpacity).cgColor
-        if let gradient = CGGradient(colorsSpace: colorSpace, colors: [topColor, bottomColor] as CFArray, locations: [0, 1]) {
-            ctx.drawLinearGradient(gradient, start: CGPoint(x: rect.midX, y: rect.minY), end: CGPoint(x: rect.midX, y: rect.maxY), options: [])
-        }
-
-        // 2. Top shine highlight
-        let shineRect = rect.insetBy(dx: 3, dy: 3).offsetBy(dx: 0, dy: -2)
-        let shineTop = UIColor.white.withAlphaComponent(0.45).cgColor
-        let shineBot = UIColor.white.withAlphaComponent(0.0).cgColor
-        if let shine = CGGradient(colorsSpace: colorSpace, colors: [shineTop, shineBot] as CFArray, locations: [0, 1]) {
-            ctx.drawLinearGradient(shine, start: CGPoint(x: shineRect.midX, y: shineRect.minY), end: CGPoint(x: shineRect.midX, y: shineRect.midY), options: [])
-        }
-
-        ctx.restoreGState()
-
-        // 3. Border stroke
-        ctx.setStrokeColor(UIColor(red: min(r + 0.1, 1), green: min(g + 0.1, 1), blue: min(b + 0.1, 1), alpha: borderOpacity).cgColor)
-        ctx.setLineWidth(1)
-        if dashed { ctx.setLineDash(phase: 0, lengths: [3, 3]) }
-        ctx.strokeEllipse(in: rect.insetBy(dx: 0.5, dy: 0.5))
-        if dashed { ctx.setLineDash(phase: 0, lengths: []) }
-    }
-
-    override init(frame: CGRect) {
-        super.init(frame: frame)
-        backgroundColor = .clear
-        isOpaque = false
-        addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(tapped(_:))))
-    }
-    required init?(coder: NSCoder) { fatalError() }
-
-    func configure(month: Date, parent: CalendarTableView) {
-        self.month = month
-        self.periodDays = parent.periodDays
-        self.predictedPeriodDays = parent.predictedPeriodDays
-        self.fertileDays = parent.fertileDays
-        self.ovulationDays = parent.ovulationDays
-        self.selectedDate = parent.selectedDate
-        self.loggedDays = parent.loggedDays
-        self.isLate = parent.isLate
-        self.predictedDate = parent.predictedDate
-        self.cycleLength = parent.cycleLength
-        self.isEditingPeriod = parent.isEditingPeriod
-        self.editPeriodDays = parent.editPeriodDays
-        self.onDaySelected = parent.onDaySelected
-        self.onEditDayTapped = parent.onEditDayTapped
-        setNeedsDisplay()
-    }
-
-    override func draw(_ rect: CGRect) {
-        guard let ctx = UIGraphicsGetCurrentContext() else { return }
-        let info = MonthGridRenderer.gridInfo(for: month)
-        let cellW = bounds.width / 7
-        let cellH: CGFloat = 64
-        let r: CGFloat = 20
-        let today = cal.startOfDay(for: Date())
-
-        for day in 1...info.daysInMonth {
-            let slot = info.offset + day - 1
-            let cx = CGFloat(slot % 7) * cellW + cellW / 2
-            let cy = CGFloat(slot / 7) * cellH + cellH / 2
-            let key = info.keyPrefix + String(format: "%02d", day)
-            guard let date = cal.date(byAdding: .day, value: day - 1, to: info.firstOfMonth) else { continue }
-            let d = cal.startOfDay(for: date)
-
-            let isConfirmed = periodDays.contains(key) && !predictedPeriodDays.contains(key)
-            let isPredicted = predictedPeriodDays.contains(key)
-            let isInLate: Bool = {
-                guard isLate, let pred = predictedDate else { return false }
-                guard let diff = cal.dateComponents([.day], from: cal.startOfDay(for: pred), to: d).day else { return false }
-                return diff >= -1 && diff < cycleLength
-            }()
-            let isOvulation = !isInLate && ovulationDays.contains(key)
-            let isFertile = !isInLate && fertileDays[key] != nil
-            let isToday = d == today
-            let hasLog = !(loggedDays[key]?.symptoms.isEmpty ?? true)
-            let circleRect = CGRect(x: cx - r, y: cy - r, width: r * 2, height: r * 2)
-
-            // Fill — hide predictions/fertile in edit mode
-            if isConfirmed {
-                drawGlassCircle(ctx, rect: circleRect, color: periodColor, fillOpacity: 0.75, borderOpacity: 0.5)
-            } else if !isEditingPeriod {
-                if isPredicted {
-                    drawGlassCircle(ctx, rect: circleRect, color: periodColor, fillOpacity: 0.18, borderOpacity: 0.4, dashed: true)
-                } else if isOvulation {
-                    drawGlassCircle(ctx, rect: circleRect, color: fertileColor, fillOpacity: 0.45, borderOpacity: 0.7)
-                } else if isFertile {
-                    drawGlassCircle(ctx, rect: circleRect, color: fertileColor, fillOpacity: 0.35, borderOpacity: 0.5, dashed: d > today)
-                }
-            }
-
-            if isToday {
-                ctx.setStrokeColor(todayColor.cgColor)
-                ctx.setLineWidth(1.5); ctx.setLineDash(phase: 0, lengths: [4, 3])
-                ctx.strokeEllipse(in: circleRect); ctx.setLineDash(phase: 0, lengths: [])
-            }
-
-            // Text
-            let tColor: UIColor = isConfirmed ? .white : (isToday ? todayColor : textColor)
-            let font = UIFont.raleway(isToday || isConfirmed ? "Bold" : "SemiBold", size: 16, textStyle: .body)
-            let str = NSAttributedString(string: "\(day)", attributes: [.font: font, .foregroundColor: tColor])
-            let sz = str.size()
-            str.draw(at: CGPoint(x: cx - sz.width / 2, y: cy - sz.height / 2))
-
-            // Edit mode: checkbox indicator
-            let editCutoff = cal.date(byAdding: .day, value: 7, to: today) ?? today
-            if isEditingPeriod && d <= editCutoff {
-                let isEditDay = editPeriodDays.contains(key)
-                let checkY = cy + r + 9
-                let checkR: CGFloat = 8
-                let checkRect = CGRect(x: cx - checkR, y: checkY - checkR, width: checkR * 2, height: checkR * 2)
-                if isEditDay {
-                    ctx.setFillColor(periodColor.cgColor)
-                    ctx.fillEllipse(in: checkRect)
-                    // Checkmark
-                    ctx.setStrokeColor(UIColor.white.cgColor)
-                    ctx.setLineWidth(2)
-                    ctx.beginPath()
-                    ctx.move(to: CGPoint(x: cx - 4, y: checkY))
-                    ctx.addLine(to: CGPoint(x: cx - 1, y: checkY + 3))
-                    ctx.addLine(to: CGPoint(x: cx + 5, y: checkY - 3))
-                    ctx.strokePath()
-                } else {
-                    ctx.setStrokeColor(UIColor(DesignColors.structure).withAlphaComponent(0.5).cgColor)
-                    ctx.setLineWidth(1)
-                    ctx.strokeEllipse(in: checkRect)
-                }
-            }
-            // Normal mode: symptom dot / Today / Fertile label
-            else if isToday {
-                let label = NSAttributedString(string: "Today", attributes: [
-                    .font: UIFont.raleway("Bold", size: 8, textStyle: .caption2),
-                    .foregroundColor: todayColor
-                ])
-                let ls = label.size()
-                label.draw(at: CGPoint(x: cx - ls.width / 2, y: cy + r + 1))
-            } else if isOvulation && !isEditingPeriod {
-                let label = NSAttributedString(string: "Fertile", attributes: [
-                    .font: UIFont.raleway("Bold", size: 8, textStyle: .caption2),
-                    .foregroundColor: fertileColor
-                ])
-                let ls = label.size()
-                label.draw(at: CGPoint(x: cx - ls.width / 2, y: cy + r + 1))
-            } else if hasLog && !isEditingPeriod {
-                ctx.setFillColor(todayColor.cgColor)
-                ctx.fillEllipse(in: CGRect(x: cx - 2, y: cy + r + 3, width: 4, height: 4))
-            }
-        }
-    }
-
-    @objc private func tapped(_ g: UITapGestureRecognizer) {
-        let loc = g.location(in: self)
-        let info = MonthGridRenderer.gridInfo(for: month)
-        let cellW = bounds.width / 7
-        let slot = Int(loc.y / 64) * 7 + Int(loc.x / cellW)
-        let day = slot - info.offset + 1
-        guard day >= 1, day <= info.daysInMonth else { return }
-        guard let date = cal.date(byAdding: .day, value: day - 1, to: info.firstOfMonth) else { return }
-        let d = cal.startOfDay(for: date)
-        let today = cal.startOfDay(for: Date())
-        if isEditingPeriod {
-            // Allow tapping up to 7 days in future for edit mode
-            let cutoff = cal.date(byAdding: .day, value: 7, to: today) ?? today
-            guard d <= cutoff else { return }
-            onEditDayTapped?(date)
-        } else {
-            guard d <= today else { return }
-            onDaySelected?(date)
-        }
-    }
-}
 
 // MARK: - Grid Math
 

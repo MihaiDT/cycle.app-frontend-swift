@@ -1,4 +1,5 @@
 import ComposableArchitecture
+import SwiftData
 import SwiftUI
 
 // MARK: - Profile View (Me tab — placeholder)
@@ -9,6 +10,10 @@ import SwiftUI
 
 public struct ProfileView: View {
     @Bindable var store: StoreOf<ProfileFeature>
+
+    #if DEBUG
+    @State private var seedStatus: String?
+    #endif
 
     public init(store: StoreOf<ProfileFeature>) {
         self.store = store
@@ -51,6 +56,10 @@ public struct ProfileView: View {
                 }
                 .buttonStyle(.plain)
 
+                #if DEBUG
+                debugSeedSection
+                #endif
+
                 Spacer(minLength: 0)
             }
             .padding(.horizontal, AppLayout.screenHorizontal)
@@ -71,6 +80,87 @@ public struct ProfileView: View {
         }
     }
 }
+
+#if DEBUG
+extension ProfileView {
+    /// Dev-only block. Seeds 60 days of `SelfReportRecord` with
+    /// values that fluctuate by cycle phase, so the dot rows on
+    /// Cycle History (Energy, Mood, Sleep) actually have something
+    /// to render. Stripped out of release builds.
+    @ViewBuilder
+    fileprivate var debugSeedSection: some View {
+        VStack(spacing: AppLayout.spacingS) {
+            Button {
+                Task { await seedSelfReports() }
+            } label: {
+                Text("Seed 60 days of check-ins")
+                    .font(.raleway("Medium", size: 14, relativeTo: .footnote))
+                    .frame(maxWidth: .infinity, minHeight: 40)
+                    .background {
+                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                            .stroke(DesignColors.text.opacity(0.18), lineWidth: 0.8)
+                    }
+                    .foregroundStyle(DesignColors.text.opacity(0.7))
+            }
+            .buttonStyle(.plain)
+
+            if let status = seedStatus {
+                Text(status)
+                    .font(.raleway("Medium", size: 11, relativeTo: .caption2))
+                    .foregroundStyle(DesignColors.textSecondary)
+            }
+        }
+        .padding(.top, AppLayout.spacingL)
+    }
+
+    /// Inserts (or upserts) 60 daily self-reports backdated from
+    /// today, with energy/mood/stress/sleep nudged by a sine wave on
+    /// `dayOffset` so the resulting dot rows actually look like a
+    /// rhythm rather than flat lines. Each existing report on the
+    /// same day is replaced — safe to tap repeatedly.
+    fileprivate func seedSelfReports() async {
+        let container = CycleDataStore.shared
+        let context = ModelContext(container)
+        let cal = Calendar.current
+        let today = cal.startOfDay(for: Date())
+        let totalDays = 60
+        var inserted = 0
+
+        for offset in 0..<totalDays {
+            guard let date = cal.date(byAdding: .day, value: -offset, to: today) else { continue }
+            let phase = Double(offset) / Double(totalDays) * .pi * 4 // ~2 cycles
+            let energy = clampedLikert(3.0 + sin(phase) * 1.4 + .random(in: -0.3...0.3))
+            let mood = clampedLikert(3.0 + sin(phase + 0.6) * 1.2 + .random(in: -0.3...0.3))
+            let sleep = clampedLikert(3.5 + cos(phase) * 1.0 + .random(in: -0.4...0.4))
+            let stress = clampedLikert(3.0 - sin(phase) * 1.0 + .random(in: -0.3...0.3))
+
+            let descriptor = FetchDescriptor<SelfReportRecord>(
+                predicate: #Predicate { $0.reportDate == date }
+            )
+            if let existing = try? context.fetch(descriptor).first {
+                context.delete(existing)
+            }
+            context.insert(
+                SelfReportRecord(
+                    reportDate: date,
+                    energyLevel: energy,
+                    stressLevel: stress,
+                    sleepQuality: sleep,
+                    moodLevel: mood
+                )
+            )
+            inserted += 1
+        }
+
+        try? context.save()
+        seedStatus = "Seeded \(inserted) reports. Pull to refresh Cycle Stats."
+    }
+
+    fileprivate func clampedLikert(_ value: Double) -> Int {
+        max(1, min(5, Int(value.rounded())))
+    }
+}
+#endif
 
 #Preview {
     NavigationStack {

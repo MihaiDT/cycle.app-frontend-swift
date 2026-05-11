@@ -17,6 +17,7 @@ public struct CalendarView: View {
     @State private var scrollTarget: String?
     @State private var isCurrentMonthVisible: Bool = true
     @State private var scrollTrigger: Int = 0
+    @State private var isShowingYearLegend: Bool = false
 
     enum CalendarViewMode: String, CaseIterable {
         case month = "Month"
@@ -44,15 +45,19 @@ public struct CalendarView: View {
     }
 
     public var body: some View {
+        NavigationStack {
         ZStack {
-            JourneyAnimatedBackground()
+            AppleHealthBackground()
+                .ignoresSafeArea()
 
             ZStack(alignment: .top) {
                     ZStack {
-                        // Month view — UIKit native scroll
+                        // Month view — UIKit native scroll, sits below the
+                        // native NavigationStack toolbar.
                         VStack(spacing: 0) {
-                            // Spacer for header + weekday row
-                            Color.clear.frame(height: 80)
+                            WeekdayLabelsRow()
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 6)
 
                             CalendarTableView(
                                 months: Self.months,
@@ -64,6 +69,8 @@ public struct CalendarView: View {
                                 isLate: store.menstrualStatus?.nextPrediction?.isLate == true,
                                 predictedDate: store.menstrualStatus?.nextPrediction?.predictedDate,
                                 cycleLength: store.cycleLength,
+                                cycleStartDate: store.cycleStartDate,
+                                bleedingDays: store.bleedingDays,
                                 loggedDays: store.loggedDays,
                                 isEditingPeriod: store.isEditingPeriod,
                                 editPeriodDays: store.editPeriodDays,
@@ -189,29 +196,9 @@ public struct CalendarView: View {
                 .allowsHitTesting(true)
             }
 
-            // Header overlay — pinned to top, content scrolls behind blur
-            VStack(spacing: 0) {
-                FeedTopBar(store: store, viewMode: $viewMode, isCurrentMonthVisible: isCurrentMonthVisible, onTodayTapped: {
-                    var c = Calendar.current.dateComponents([.year, .month], from: Date())
-                    c.day = 1
-                    let today = Calendar.current.date(from: c) ?? Date()
-                    store.send(.binding(.set(\.displayedMonth, today)))
-                    scrollTrigger += 1
-                    if viewMode == .year {
-                        withAnimation(.easeOut(duration: 0.3)) {
-                            viewMode = .month
-                        }
-                    }
-                })
-
-                if viewMode == .month {
-                    WeekdayLabelsRow()
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 6)
-                }
-            }
-            .background(.ultraThinMaterial)
-            .frame(maxHeight: .infinity, alignment: .top)
+            // Header chrome lives in the NavigationStack toolbar at
+            // the bottom of this view (close, Month/Year picker, Today),
+            // matching the BodyPatterns / CycleInsights pattern.
 
             // Floating buttons
             VStack {
@@ -229,6 +216,87 @@ public struct CalendarView: View {
             }
             .animation(.easeInOut(duration: 0.25), value: store.isEditingPeriod)
         }
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbarBackground(.hidden, for: .navigationBar)
+        .toolbar {
+            ToolbarItem(placement: .topBarLeading) {
+                Button {
+                    UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                    if store.isEditingPeriod {
+                        store.send(.editPeriodToggled, animation: .appBalanced)
+                    } else {
+                        store.send(.dismissTapped)
+                    }
+                } label: {
+                    Image(systemName: store.isEditingPeriod ? "chevron.left" : "xmark")
+                        .foregroundStyle(DesignColors.text)
+                }
+                .glassToolbar()
+                .accessibilityLabel(store.isEditingPeriod ? "Back" : "Close")
+            }
+            ToolbarItem(placement: .principal) {
+                Group {
+                    if store.isEditingPeriod {
+                        Text("Tap days to mark your period")
+                            .font(.raleway("Medium", size: 14, relativeTo: .body))
+                            .foregroundStyle(DesignColors.textSecondary)
+                            .transition(.opacity)
+                    } else {
+                        Picker("", selection: Binding(
+                            get: { viewMode },
+                            set: { newValue in
+                                withAnimation(.easeOut(duration: 0.3)) {
+                                    viewMode = newValue
+                                }
+                            }
+                        )) {
+                            ForEach(CalendarView.CalendarViewMode.allCases, id: \.self) { mode in
+                                Text(mode.rawValue).tag(mode)
+                            }
+                        }
+                        .pickerStyle(.segmented)
+                        .frame(width: 160)
+                        .transition(.opacity)
+                    }
+                }
+                .animation(.easeInOut(duration: 0.25), value: store.isEditingPeriod)
+            }
+            // Trailing slot is mutually exclusive between Today (Month
+            // mode) and the legend info button (Year mode) so the
+            // principal picker always stays centered — adding two
+            // trailing items shoves the picker off-axis.
+            if !store.isEditingPeriod && viewMode == .month && !isCurrentMonthVisible {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                        var c = Calendar.current.dateComponents([.year, .month], from: Date())
+                        c.day = 1
+                        let today = Calendar.current.date(from: c) ?? Date()
+                        store.send(.binding(.set(\.displayedMonth, today)))
+                        scrollTrigger += 1
+                    } label: {
+                        Text("Today")
+                            .font(.raleway("SemiBold", size: 13, relativeTo: .caption))
+                            .foregroundStyle(DesignColors.text)
+                    }
+                    .glassToolbar()
+                }
+            }
+            if viewMode == .year && !store.isEditingPeriod {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                        isShowingYearLegend = true
+                    } label: {
+                        Image(systemName: "info.circle")
+                            .foregroundStyle(DesignColors.text)
+                    }
+                    .glassToolbar()
+                    .accessibilityLabel("Legend")
+                    .accessibilityHint("Explains what each day marker means")
+                }
+            }
+        }
         .animation(.easeInOut(duration: 0.25), value: store.isLoadingCalendar)
         .sheet(isPresented: $isShowingDayDetail) {
             DayDetailPanel(store: store)
@@ -240,19 +308,12 @@ public struct CalendarView: View {
                 .presentationCornerRadius(28)
                 .presentationBackground(.ultraThinMaterial)
         }
-        .sheet(
-            isPresented: $store.isShowingSymptomSheet,
-            onDismiss: {
-                store.send(.symptomSheetDismissed)
-            }
-        ) {
-            SymptomLoggingSheet(store: store)
-                .presentationDetents([.large])
-                .presentationDragIndicator(.visible)
-                .presentationCornerRadius(AppLayout.cornerRadiusXL)
-                .presentationBackground(.white)
-                .presentationBackgroundInteraction(.disabled)
-        }
+        // Symptom logging is presented as a HomeView ZStack
+        // overlay (slide-from-trailing) so it works equally well
+        // from Calendar tab, Today tab, and BodyPatterns. Removing
+        // this local `.sheet` prevents it from firing in addition
+        // to the overlay (which produced the "two screens at once"
+        // bug after the migration).
         .sheet(isPresented: Binding(
             get: { store.showAriaPrompt },
             set: { if !$0 { store.send(.ariaPromptDismissed) } }
@@ -268,6 +329,15 @@ public struct CalendarView: View {
             .presentationCornerRadius(AppLayout.cornerRadiusL)
             .presentationBackground(DesignColors.background)
         }
+        .sheet(isPresented: $isShowingYearLegend) {
+            CalendarYearLegendSheet()
+                .presentationDetents([.height(460)])
+                .presentationDragIndicator(.visible)
+                .presentationCornerRadius(AppLayout.cornerRadiusL)
+                .presentationBackground(DesignColors.background)
+        }
+        }
+        .tint(DesignColors.text)
     }
 
     // MARK: - Calendar Refresh Pill (subtle top indicator for idempotent reloads)
@@ -305,42 +375,9 @@ public struct CalendarView: View {
         // keep only Edit Period here so the calendar bottom bar stays
         // focused on period editing.
         HStack(spacing: 12) {
-            Button {
-                UIImpactFeedbackGenerator(style: .light).impactOccurred()
+            WarmCapsuleButton("Edit Period", icon: "drop.fill") {
                 store.send(.editPeriodToggled, animation: .appBalanced)
-            } label: {
-                HStack(spacing: 6) {
-                    Image(systemName: "drop.fill")
-                        .font(.system(size: 12, weight: .medium))
-                    Text("Edit Period")
-                        .font(.raleway("SemiBold", size: 15, relativeTo: .body))
-                }
-                .foregroundColor(.white)
-                .padding(.horizontal, 22)
-                .padding(.vertical, 10)
-                .background {
-                    Capsule()
-                        .fill(
-                            LinearGradient(
-                                colors: [DesignColors.accentWarm, DesignColors.accentSecondary],
-                                startPoint: .leading,
-                                endPoint: .trailing
-                            )
-                        )
-                        .overlay {
-                            Capsule()
-                                .fill(
-                                    LinearGradient(
-                                        colors: [Color.white.opacity(0.2), Color.clear],
-                                        startPoint: .top,
-                                        endPoint: .center
-                                    )
-                                )
-                        }
-                        .shadow(color: DesignColors.accentWarm.opacity(0.4), radius: 12, x: 0, y: 4)
-                }
             }
-            .buttonStyle(.plain)
         }
         .padding(.horizontal, 24)
         .padding(.bottom, 32)
@@ -351,73 +388,18 @@ public struct CalendarView: View {
     private var editPeriodBottomBar: some View {
         HStack(spacing: 12) {
             if store.hasEditPeriodChanges && !store.isUpdatingPredictions {
-                Button {
-                    UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                WarmCapsuleButton("Save Period", prominence: .primary) {
                     store.send(.editPeriodSaveTapped, animation: .easeInOut(duration: 0.3))
-                } label: {
-                    Text("Save Period")
-                        .font(.raleway("Bold", size: 15, relativeTo: .body))
-                        .foregroundStyle(.white)
-                        .padding(.horizontal, 28)
-                        .padding(.vertical, 14)
-                        .background {
-                            Capsule()
-                                .fill(
-                                    LinearGradient(
-                                        colors: [DesignColors.accentWarm, DesignColors.accentSecondary],
-                                        startPoint: .leading,
-                                        endPoint: .trailing
-                                    )
-                                )
-                                .overlay {
-                                    Capsule()
-                                        .fill(
-                                            LinearGradient(
-                                                colors: [Color.white.opacity(0.2), Color.clear],
-                                                startPoint: .top,
-                                                endPoint: .center
-                                            )
-                                        )
-                                }
-                                .shadow(color: DesignColors.accentWarm.opacity(0.4), radius: 12, x: 0, y: 4)
-                        }
                 }
-                .buttonStyle(.plain)
                 .transition(.opacity)
             }
 
-            Button {
-                UIImpactFeedbackGenerator(style: .light).impactOccurred()
+            WarmCapsuleButton(
+                store.hasEditPeriodChanges ? "Cancel" : "Done",
+                prominence: .primary
+            ) {
                 store.send(.editPeriodToggled, animation: .appBalanced)
-            } label: {
-                Text(store.hasEditPeriodChanges ? "Cancel" : "Done")
-                    .font(.raleway("SemiBold", size: 15, relativeTo: .body))
-                    .foregroundColor(.white)
-                    .padding(.horizontal, 22)
-                    .padding(.vertical, 14)
-                    .background {
-                        Capsule()
-                            .fill(
-                                LinearGradient(
-                                    colors: [DesignColors.accentWarm, DesignColors.accentSecondary],
-                                    startPoint: .leading,
-                                    endPoint: .trailing
-                                )
-                            )
-                            .overlay {
-                                Capsule()
-                                    .fill(
-                                        LinearGradient(
-                                            colors: [Color.white.opacity(0.2), Color.clear],
-                                            startPoint: .top,
-                                            endPoint: .center
-                                        )
-                                    )
-                            }
-                            .shadow(color: DesignColors.accentWarm.opacity(0.4), radius: 12, x: 0, y: 4)
-                    }
             }
-            .buttonStyle(.plain)
         }
         .padding(.horizontal, 24)
         .padding(.bottom, 32)

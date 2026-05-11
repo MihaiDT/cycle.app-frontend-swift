@@ -12,15 +12,19 @@ struct HRVPhaseSection: View {
     let phase: CyclePhase?
 
     var body: some View {
-        BodySignalsChartCard(
-            title: "Heart rate variability",
-            iconName: BodySignalMetric.Kind.hrv.outlineSymbol,
-            value: valueText,
-            delta: deltaText,
-            footnote: "HRV shifts with your cycle – higher in follicular, usually lower in luteal. Bigger bar = calmer nervous system for that phase.",
-            infoCopy: "HRV is the time variation between your heartbeats, measured in milliseconds (ms). Higher numbers usually mean a calmer, more recovered nervous system; lower can signal stress or under-recovery. The chart shows your average HRV for each cycle phase, with a dashed line marking your overall average across the four phases."
-        ) {
-            chartContent
+        VStack(alignment: .leading, spacing: 20) {
+            BodySignalsReadingSection(kind: .hrv, metric: metric)
+
+            BodySignalsChartCard(
+                title: "Heart rate variability",
+                iconName: BodySignalMetric.Kind.hrv.outlineSymbol,
+                value: valueText,
+                delta: deltaText,
+                footnote: "HRV shifts with your cycle – higher in follicular, usually lower in luteal. Bigger bar = calmer nervous system for that phase.",
+                infoCopy: "HRV is the time variation between your heartbeats, measured in milliseconds (ms) by your Apple Watch. Higher numbers usually mean a calmer, more recovered nervous system; lower can signal stress or under-recovery. The chart shows your average HRV for each cycle phase, with a dashed line marking your overall average across the four phases. cycle.app reads this directly from Apple Health and never sends it anywhere."
+            ) {
+                chartContent
+            }
         }
     }
 

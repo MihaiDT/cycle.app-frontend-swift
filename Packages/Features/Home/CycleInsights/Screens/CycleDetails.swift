@@ -6,12 +6,12 @@ import SwiftUI
 // in the compact Cycle History card or the full History archive.
 // Stacked white cards on the warm peach backdrop, each with a caps
 // eyebrow header. The cycle length / period length cards are
-// tappable as a whole — chevron top-right signals drill into the
-// matching explainer sheet, no inline `info.circle` button.
+// tappable as a whole — `info.circle` top-right signals "open
+// explainer" (not "drill into a sibling page"), since the tap
+// opens a copy sheet about the metric, not another row in a list.
 
 struct CycleDetailsView: View {
     let timeline: CycleHistoryTimeline
-    let onDismiss: () -> Void
     let onStatInfoTap: (CycleStatInfoKind) -> Void
 
     private static let rangeFormatter: DateFormatter = {
@@ -27,24 +27,40 @@ struct CycleDetailsView: View {
     }()
 
     var body: some View {
-        ScrollView(.vertical, showsIndicators: false) {
-            VStack(alignment: .leading, spacing: AppLayout.spacingL) {
-                summaryCard
-                if timeline.isCurrent {
-                    inProgressCard
-                } else {
-                    cycleLengthCard
-                    periodLengthCard
+        // Same shell as Cycle Stats: warm peach `AppleHealthBackground`
+        // edge-to-edge behind the cards (under nav bar + home indicator),
+        // ScrollView inside the safe area so the first card sits cleanly
+        // below the nav bar instead of slipping under it. Cycle Stats
+        // gets away with `.ignoresSafeArea` on its scroll surface because
+        // `UICollectionView` auto-pads the top by the nav bar height —
+        // SwiftUI's `ScrollView` doesn't, and content disappears behind
+        // the translucent header if you try the same trick here.
+        ZStack {
+            AppleHealthBackground()
+                .ignoresSafeArea()
+
+            ScrollView(.vertical, showsIndicators: false) {
+                VStack(alignment: .leading, spacing: AppLayout.spacingL) {
+                    summaryCard
+                    if timeline.isCurrent {
+                        inProgressCard
+                    } else {
+                        cycleLengthCard
+                        periodLengthCard
+                    }
+                    if !timeline.reports.isEmpty {
+                        CycleDetailsCheckInsCard(timeline: timeline)
+                    }
+                    momentsCard
                 }
-                momentsCard
+                .padding(.horizontal, AppLayout.screenHorizontal)
+                .padding(.top, AppLayout.spacingL)
+                .padding(.bottom, AppLayout.spacingXXL)
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .padding(.horizontal, AppLayout.screenHorizontal)
-            .padding(.top, AppLayout.spacingL)
-            .padding(.bottom, AppLayout.spacingXXL)
-            .frame(maxWidth: .infinity, alignment: .leading)
+            .scrollContentBackground(.hidden)
         }
-        .background { JourneyAnimatedBackground(animated: false) }
-        .navigationTitle("Cycle details")
+        .navigationTitle("Cycle Details")
         .navigationBarTitleDisplayMode(.inline)
     }
 
@@ -74,7 +90,7 @@ struct CycleDetailsView: View {
         }
         .padding(20)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .widgetCardStyle(cornerRadius: 24)
+        .widgetCardStyle(cornerRadius: 28)
     }
 
     private var summaryRange: String {
@@ -109,7 +125,7 @@ struct CycleDetailsView: View {
         }
         .padding(20)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .widgetCardStyle(cornerRadius: 24)
+        .widgetCardStyle(cornerRadius: 28)
     }
 
     // MARK: - Stat cards
@@ -180,9 +196,13 @@ struct CycleDetailsView: View {
                         .tracking(1.4)
                         .foregroundStyle(DesignColors.textSecondary)
                     Spacer(minLength: 8)
-                    Image(systemName: "chevron.right")
-                        .font(.system(size: 12, weight: .semibold))
-                        .foregroundStyle(DesignColors.textSecondary.opacity(0.55))
+                    // The card opens an explainer sheet, not a drill-
+                    // down list — info glyph reads more honestly than
+                    // a chevron right (which signals "navigate to a
+                    // sibling page").
+                    Image(systemName: "info.circle")
+                        .font(.system(size: 15, weight: .regular))
+                        .foregroundStyle(DesignColors.textSecondary.opacity(0.7))
                 }
 
                 HStack(alignment: .firstTextBaseline, spacing: 12) {
@@ -218,7 +238,7 @@ struct CycleDetailsView: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .widgetCardStyle(cornerRadius: 24)
+        .widgetCardStyle(cornerRadius: 28)
         .accessibilityLabel("\(title), \(value), \(badge.label.lowercased())")
         .accessibilityHint("Opens an explainer for \(title.lowercased())")
     }
@@ -281,7 +301,7 @@ struct CycleDetailsView: View {
         }
         .padding(20)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .widgetCardStyle(cornerRadius: 24)
+        .widgetCardStyle(cornerRadius: 28)
     }
 
     @ViewBuilder

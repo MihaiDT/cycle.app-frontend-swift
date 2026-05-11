@@ -53,6 +53,7 @@ targets:
       - path: CycleApp
         excludes:
           - "CycleAppLiveActivity"
+          - "**/CLAUDE.md"
       - path: Packages/Core
         excludes:
           - "Package.swift"
@@ -60,6 +61,7 @@ targets:
           - ".build"
           - ".swiftpm"
           - "Sources"
+          - "**/CLAUDE.md"
       - path: Packages/Features
         excludes:
           - "Package.swift"
@@ -67,6 +69,7 @@ targets:
           - ".build"
           - ".swiftpm"
           - "Sources"
+          - "**/CLAUDE.md"
     resources:
       - path: CycleApp/Resources/logo_animation.splineswift
       - path: CycleApp/Resources/glowing_orb.riv

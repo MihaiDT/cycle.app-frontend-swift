@@ -308,53 +308,48 @@ public struct CycleNormalityCard: View, Equatable {
     private var coachingFooter: some View {
         let target = CycleNormality.minimumCyclesForVariation
         let current = max(0, min(cycleCount, target))
+        let progress = Double(current) / Double(target)
+
         VStack(alignment: .leading, spacing: 10) {
-            HStack(alignment: .firstTextBaseline, spacing: 8) {
-                Text("Richer insights ahead")
-                    .font(.raleway("SemiBold", size: 13, relativeTo: .footnote))
-                    .foregroundStyle(DesignColors.text)
+            HStack(alignment: .lastTextBaseline, spacing: 8) {
+                HStack(alignment: .lastTextBaseline, spacing: 4) {
+                    Text("\(current)")
+                        .font(.raleway("Bold", size: 22, relativeTo: .title3))
+                        .tracking(-0.3)
+                        .foregroundStyle(DesignColors.text)
+                        .contentTransition(.numericText())
+                    Text("of \(target) cycles")
+                        .font(.raleway("Medium", size: 13, relativeTo: .footnote))
+                        .foregroundStyle(DesignColors.textSecondary)
+                }
                 Spacer(minLength: 8)
-                Text("\(current) / \(target) cycles")
+                Text("Richer insights at \(target)")
                     .font(.raleway("Medium", size: 11, relativeTo: .caption2))
-                    .tracking(0.4)
-                    .foregroundStyle(DesignColors.textSecondary.opacity(0.85))
-                    .contentTransition(.numericText())
+                    .foregroundStyle(DesignColors.textSecondary.opacity(0.75))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.85)
             }
 
-            milestoneBar(filled: current, total: target)
-
-            Text("Variation, range, and cycle-to-cycle deltas unlock once you've logged \(target) full cycles.")
-                .font(.raleway("Medium", size: 12, relativeTo: .caption))
-                .foregroundStyle(DesignColors.textSecondary.opacity(0.85))
-                .fixedSize(horizontal: false, vertical: true)
-                .lineSpacing(2)
+            progressLine(progress: progress)
         }
         .padding(.top, 14)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(current) of \(target) cycles logged. Richer insights unlock at \(target).")
     }
 
-    /// Milestone strip — three small slots, filled in warm rose when
-    /// the user has reached that step. Reads at a glance: "I'm 1/3
-    /// of the way there", not "more lecturing about logging."
-    private func milestoneBar(filled: Int, total: Int) -> some View {
-        HStack(spacing: 6) {
-            ForEach(0..<total, id: \.self) { index in
+    /// Single hairline track with a warm-rose fill that scales to the
+    /// current progress. Reads as "where you are vs where you're going"
+    /// without the visual ceremony of segmented capsules.
+    private func progressLine(progress: Double) -> some View {
+        GeometryReader { geo in
+            ZStack(alignment: .leading) {
                 Capsule()
-                    .fill(
-                        index < filled
-                            ? AnyShapeStyle(
-                                LinearGradient(
-                                    colors: [
-                                        DesignColors.accentWarm.opacity(0.85),
-                                        DesignColors.accentWarm.opacity(0.55)
-                                    ],
-                                    startPoint: .leading,
-                                    endPoint: .trailing
-                                )
-                            )
-                            : AnyShapeStyle(DesignColors.text.opacity(0.10))
-                    )
-                    .frame(height: 5)
+                    .fill(DesignColors.text.opacity(0.08))
+                Capsule()
+                    .fill(DesignColors.accentWarm.opacity(0.85))
+                    .frame(width: max(0, min(1, progress)) * geo.size.width)
             }
         }
+        .frame(height: 3)
     }
 }

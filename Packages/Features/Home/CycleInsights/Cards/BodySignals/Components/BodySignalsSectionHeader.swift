@@ -2,33 +2,19 @@ import SwiftUI
 
 // MARK: - Section Header
 //
-// Apple Health–style header — small outline icon + caps eyebrow on
-// the left, optional phase badge on the right. Same 11pt eyebrow
-// scale as Cycle Trend / Cycle History so the three Cycle Stats
-// section markers read as siblings rather than one loud title in a
-// row of quieter ones.
+// Trailing chevron-only header. Section title is owned by
+// `CycleInsightsView.sectionWrap("Your body")`; the phase badge
+// that used to live here was removed (May 2026) — the canonical
+// phase is already named on the today header at the top of the
+// screen, repeating it on the BodySignals row read as duplicate
+// chrome and made the section feel busier than its peers.
 
 struct BodySignalsSectionHeader: View {
-    let phase: CyclePhase?
     var showsChevron: Bool = false
 
     var body: some View {
         HStack(alignment: .center, spacing: 10) {
-            HStack(spacing: 8) {
-                Image(systemName: "heart.text.square")
-                    .font(.system(size: 13, weight: .regular))
-                    .foregroundStyle(DesignColors.textSecondary)
-                Text("YOUR BODY")
-                    .font(.raleway("SemiBold", size: 11, relativeTo: .caption2))
-                    .tracking(1.4)
-                    .foregroundStyle(DesignColors.textSecondary)
-            }
-
             Spacer(minLength: 4)
-
-            if let phase {
-                BodySignalsPhaseBadge(phase: phase)
-            }
 
             if showsChevron {
                 Image(systemName: "chevron.right")

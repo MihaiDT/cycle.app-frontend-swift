@@ -170,35 +170,17 @@ struct YourDayView: View {
     @ViewBuilder
     private var dotsIndicator: some View {
         if store.previews.count > 1 {
-            HStack(spacing: 6) {
-                ForEach(store.previews) { preview in
-                    let isActive = preview.id == visibleID
-                    Capsule()
-                        .fill(
-                            isActive
-                                ? DesignColors.accentWarm
-                                : DesignColors.structure.opacity(0.25)
-                        )
-                        .frame(width: isActive ? 20 : 7, height: 7)
-                        .animation(.spring(response: 0.35, dampingFraction: 0.75), value: visibleID)
-                        .onTapGesture {
-                            // Tap-to-jump — matches accessibility intent of
-                            // the carousel for users who can't easily swipe.
-                            withAnimation(.spring(response: 0.4, dampingFraction: 0.82)) {
-                                visibleID = preview.id
-                            }
-                        }
-                        .accessibilityLabel("Preview \(indexOf(preview) + 1) of \(store.previews.count)")
-                        .accessibilityAddTraits(isActive ? [.isSelected] : [.isButton])
+            AppPageDots(
+                ids: store.previews.map(\.id),
+                focusedID: visibleID,
+                topPadding: 0,
+                onTap: { id in
+                    visibleID = id
                 }
-            }
+            )
         } else {
             EmptyView()
         }
-    }
-
-    private func indexOf(_ preview: LensPreview) -> Int {
-        store.previews.firstIndex(where: { $0.id == preview.id }) ?? 0
     }
 
     // MARK: Skeleton

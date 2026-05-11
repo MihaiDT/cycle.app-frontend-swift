@@ -19,45 +19,20 @@ extension CycleInsightsView {
 
     @ViewBuilder
     var rhythmReflection: some View {
-        ZStack(alignment: .bottomTrailing) {
-            VStack(spacing: 18) {
-                Text(store.rhythmReflectionCopy)
-                    .font(.system(size: 26, weight: .regular, design: .serif))
-                    .italic()
-                    .tracking(-0.3)
-                    .foregroundStyle(DesignColors.accentWarmText)
-                    .lineSpacing(4)
-                    .multilineTextAlignment(.center)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .frame(maxWidth: .infinity, alignment: .center)
+        CycleRhythmReflectionCard(
+            copy: store.rhythmReflectionCopy,
+            phase: currentCyclePhase,
+            onShare: { isShareReflectionVisible = true }
+        )
+    }
 
-                // Quiet attribution so the pull-quote doesn't float
-                // unsigned — anchors the voice as Aria's reading of
-                // the user's data.
-                Text("— Aria")
-                    .font(.raleway("Medium", size: 12, relativeTo: .caption))
-                    .tracking(0.6)
-                    .foregroundStyle(DesignColors.accentWarmText.opacity(0.7))
-            }
-            .padding(.horizontal, 26)
-            .padding(.vertical, 48)
-
-            Button {
-                isShareReflectionVisible = true
-            } label: {
-                Image(systemName: "square.and.arrow.up")
-                    .font(.system(size: 16, weight: .regular))
-                    .foregroundStyle(DesignColors.accentWarmText)
-                    .frame(width: 40, height: 40)
-                    .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-            .padding(.trailing, 10)
-            .padding(.bottom, 10)
-            .accessibilityLabel("Share reflection")
-        }
-        .frame(maxWidth: .infinity)
-        .widgetCardStyle(cornerRadius: 28)
+    /// Resolve the user's current cycle phase from the cached cycle
+    /// context. `CycleContext.currentPhase` is already strongly
+    /// typed; we just unwrap. Falls back to nil when the user has no
+    /// logged cycles yet — the card uses a neutral peach palette in
+    /// that case.
+    private var currentCyclePhase: CyclePhase? {
+        store.cycleContext?.currentPhase
     }
 
     // MARK: - Customize layout plumbing

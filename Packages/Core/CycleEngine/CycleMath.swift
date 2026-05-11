@@ -52,15 +52,6 @@ public enum CycleMath {
         return sqrt(variance)
     }
 
-    /// Weighted average with corresponding weights.
-    public static func weightedAverage(_ values: [Double], weights: [Double]) -> Double {
-        guard values.count == weights.count, !values.isEmpty else { return 0 }
-        let totalWeight = weights.reduce(0, +)
-        guard totalWeight > 0 else { return 0 }
-        let weightedSum = zip(values, weights).reduce(0.0) { $0 + $1.0 * $1.1 }
-        return weightedSum / totalWeight
-    }
-
     // MARK: Cycle Phase Detection
 
     /// Current cycle phase based on day within cycle.
@@ -195,6 +186,10 @@ public enum CycleMath {
 
     /// Basic fertile window estimate: ovulation = cycleLength - 14.
     /// Used when < 3 cycles of data.
+    /// Window is 6 days: ovDay-5 through ovDay (inclusive). Anchored on the
+    /// biological reality that sperm survives up to 5 days and the ovum survives
+    /// up to 24h — so conception is only possible in the 5 days before ovulation
+    /// and the day of ovulation itself.
     public static func simpleFertileWindow(
         cycleStart: Date,
         cycleLength: Int
@@ -202,7 +197,7 @@ public enum CycleMath {
         let ovulationDay = max(10, cycleLength - 14)
         let start = addDays(cycleStart, ovulationDay - 5 - 1) // -1 for 0-index
         let peak = addDays(cycleStart, ovulationDay - 1)
-        let end = addDays(cycleStart, ovulationDay + 1 - 1)
+        let end = peak
         return FertileWindow(start: start, peak: peak, end: end)
     }
 
@@ -222,13 +217,14 @@ public enum CycleMath {
         var fertileStartDay = max(1, shortest - 18)
         var fertileEndDay = longest - 11
         if fertileEndDay < fertileStartDay {
-            fertileEndDay = fertileStartDay + 6
+            fertileEndDay = fertileStartDay + 5
         }
-        // Cap window to 8 days centered on ovulation to avoid visual clutter
+        // Cap window to 6 days ending on ovulation — biologically the only window
+        // where conception is possible (sperm 5d + ovum 24h survival).
         let windowSize = fertileEndDay - fertileStartDay + 1
-        if windowSize > 8 {
+        if windowSize > 6 {
             fertileStartDay = max(1, ovulationDay - 5)
-            fertileEndDay = ovulationDay + 2
+            fertileEndDay = ovulationDay
         }
 
         let start = addDays(cycleStart, fertileStartDay - 1)

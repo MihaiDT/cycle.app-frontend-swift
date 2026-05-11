@@ -25,6 +25,12 @@ public struct HomeFeature: Sendable {
         public var isCycleJourneyVisible: Bool = false
         public var shouldReopenJourney: Bool = false
 
+        // Body Patterns destination screen — pushed from Today's
+        // symptom-pattern card. Lives as a sibling cover on Home,
+        // same lifecycle pattern as Cycle Insights / Cycle Journey.
+        public var bodyPatternsState: BodyPatternsFeature.State = BodyPatternsFeature.State()
+        public var isBodyPatternsVisible: Bool = false
+
         /// Deep-link path for Home's "Latest Story" tile. We load Journey
         /// data silently, then present `AriaRecapStories` directly as a
         /// cover on Home — skipping the Journey screen entirely so the
@@ -91,6 +97,7 @@ public struct HomeFeature: Sendable {
         case profile(ProfileFeature.Action)
         case cycleInsights(CycleInsightsFeature.Action)
         case cycleJourney(CycleJourneyFeature.Action)
+        case bodyPatterns(BodyPatternsFeature.Action)
 
 
         case delegate(Delegate)
@@ -126,6 +133,10 @@ public struct HomeFeature: Sendable {
 
         Scope(state: \.cycleJourneyState, action: \.cycleJourney) {
             CycleJourneyFeature()
+        }
+
+        Scope(state: \.bodyPatternsState, action: \.bodyPatterns) {
+            BodyPatternsFeature()
         }
 
         Reduce { state, action in
@@ -246,6 +257,34 @@ public struct HomeFeature: Sendable {
                 state.isCycleInsightsVisible = true
                 return .send(.cycleInsights(.onAppear))
 
+            case .today(.delegate(.openBodyPatternsScreen)):
+                // Today's symptom-pattern card → Body Patterns
+                // destination screen. Reset state on entry so the
+                // detector re-runs against the freshest cycle data
+                // (mock fixture in Phase 1).
+                state.bodyPatternsState = BodyPatternsFeature.State()
+                state.isBodyPatternsVisible = true
+                return .none
+
+            case .bodyPatterns(.delegate(.dismiss)):
+                state.isBodyPatternsVisible = false
+                return .none
+
+            case .bodyPatterns(.delegate(.logSymptoms)):
+                // The symptom screen is a full-screen cover so it
+                // presents cleanly even when BodyPatterns is still
+                // mounted on the ZStack overlay. No dismiss needed.
+                return .send(.today(.logSymptomsTapped))
+
+            case let .bodyPatterns(.delegate(.logSymptomsForDate(date, symptomRaw))):
+                // Tap on a recent-logs chip — same destination as
+                // the primary CTA but the calendar opens on the
+                // exact day the entry was logged, so the user lands
+                // where the data lives instead of "today". The raw
+                // symptom is forwarded so the sheet can pre-select
+                // its category tab to match.
+                return .send(.today(.logSymptomsForDateTapped(date, focusedSymptomRaw: symptomRaw)))
+
             case .cycleInsights(.delegate(.dismiss)):
                 // Cache stats for entry card sparkline on Today tab
                 state.todayState.cachedCycleStats = state.cycleInsightsState.stats
@@ -337,10 +376,44 @@ public struct HomeFeature: Sendable {
                     .send(.cycleJourney(.cycleDataChanged(cycle)))
                 )
 
+            // Mark sibling aggregates as stale the instant a Period
+            // edit lands in Calendar — well before Calendar's 1s
+            // prediction-settle wait + Today's reload + the canonical
+            // `cycleDataUpdated` broadcast. The flag is consumed on
+            // each sibling's next `.onAppear`, so a user who re-opens
+            // Cycle Stats / Journey *after* an edit lands on
+            // skeletons + a fresh fetch instead of a flash of pre-
+            // edit numbers. Plain navigation (back from a pushed
+            // detail screen, or re-entering with no edits between)
+            // leaves the flag false, so cached aggregates stay on
+            // screen and no spurious skeleton flash happens.
+            case .today(.calendar(.editPeriodPredictionsUpdated)):
+                state.cycleInsightsState.pendingInvalidation = true
+                state.cycleJourneyState.pendingInvalidation = true
+                return .none
+
+            // Symptom log saved — refresh BodyPatterns
+            // immediately so the detector + recent-logs strip
+            // re-run against the fresh DB.
+            //
+            // We dispatch the reload regardless of whether
+            // BodyPatterns is currently on screen: the guard
+            // on `isBodyPatternsVisible` was wrong because
+            // BodyPatterns' own `onAppear` is gated by
+            // `hasAppeared`, so once the screen had been opened
+            // once it never reloaded again — newly logged
+            // symptoms from the calendar never surfaced in
+            // "Recently logged" until the user logged out and
+            // back in. Reloading is cheap (~100ms SwiftData
+            // read), so do it on every save.
+            case .today(.calendar(.delegate(.symptomsSaved))):
+                return .send(.bodyPatterns(.loadPatterns))
+
+
             case .profile(.delegate(.didLogout)):
                 return .send(.logoutTapped)
 
-            case .today, .chat, .profile, .cycleInsights, .cycleJourney, .delegate:
+            case .today, .chat, .profile, .cycleInsights, .cycleJourney, .bodyPatterns, .delegate:
                 return .none
             }
         }

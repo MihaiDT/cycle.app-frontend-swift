@@ -37,6 +37,15 @@ public struct TrendBarChart<ID: Hashable>: View {
     public let yTickCount: Int
     public let chartHeight: CGFloat
     public let dimmedOpacity: Double
+    /// When set, draws a soft horizontal band across the chart between
+    /// these y-axis values. Used by the cycle trend chart to mark the
+    /// 21–35 day "typical" range — bars inside read as in-band, bars
+    /// outside punch through. Pass `nil` (default) to skip the band.
+    public let normalBand: ClosedRange<Double>?
+    /// Caps label rendered at the trailing edge of the band (default
+    /// "TYPICAL"). The band stays unlabeled if this is set to an empty
+    /// string.
+    public let normalBandLabel: String
 
     public init(
         items: [Item],
@@ -45,7 +54,9 @@ public struct TrendBarChart<ID: Hashable>: View {
         yLabelFormatter: @escaping (Double) -> String = { String(Int($0.rounded())) },
         yTickCount: Int = 5,
         chartHeight: CGFloat = 200,
-        dimmedOpacity: Double = 0.32
+        dimmedOpacity: Double = 0.32,
+        normalBand: ClosedRange<Double>? = nil,
+        normalBandLabel: String = "TYPICAL"
     ) {
         self.items = items
         self.selectedID = selectedID
@@ -54,6 +65,8 @@ public struct TrendBarChart<ID: Hashable>: View {
         self.yTickCount = yTickCount
         self.chartHeight = chartHeight
         self.dimmedOpacity = dimmedOpacity
+        self.normalBand = normalBand
+        self.normalBandLabel = normalBandLabel
     }
 
     public var body: some View {
@@ -72,17 +85,43 @@ public struct TrendBarChart<ID: Hashable>: View {
     /// Padded range so bars never bottom out at the floor and a row
     /// of near-identical values still reads as bars rather than
     /// stripes pinned to the top.
+    ///
+    /// **With `normalBand`:** the chart's lower edge is pinned to the
+    /// band's lower bound (or below, if a cycle dips beneath it).
+    /// Otherwise the bars would float at e.g. y=20 while the band
+    /// started at y=21 — the user reads two parallel baselines and
+    /// can't tell which one is "the floor". Aligning them makes a
+    /// 35-day bar visibly fill the typical band from edge to edge.
+    /// Top side keeps a small breathing pad so the tallest bar isn't
+    /// kissing the chart ceiling.
     private var range: (lower: Double, upper: Double) {
         let values = items.map(\.value)
+        let bandLow = normalBand?.lowerBound
+        let bandHigh = normalBand?.upperBound
+
         guard let minV = values.min(), let maxV = values.max() else {
+            if let lo = bandLow, let hi = bandHigh, lo < hi {
+                let pad = max((hi - lo) * 0.1, 1)
+                return (max(0, lo), hi + pad)
+            }
             return (0, 1)
         }
-        if minV == maxV {
-            return (max(0, minV - 1), maxV + 1)
+
+        let lowSeed = min(minV, bandLow ?? minV)
+        let highSeed = max(maxV, bandHigh ?? maxV)
+
+        if lowSeed == highSeed {
+            return (max(0, lowSeed - 1), highSeed + 1)
         }
-        let span = maxV - minV
+        let span = highSeed - lowSeed
+        if bandLow != nil {
+            // Zero bottom pad: bars and band share a baseline.
+            let topPad = max(span * 0.1, 1)
+            return (max(0, lowSeed), highSeed + topPad)
+        }
+        // No band — symmetric pad, the original behavior.
         let pad = max(span * 0.18, 1)
-        return (max(0, minV - pad), maxV + pad)
+        return (max(0, lowSeed - pad), highSeed + pad)
     }
 
     private var yTicks: [Double] {
@@ -95,13 +134,21 @@ public struct TrendBarChart<ID: Hashable>: View {
     // MARK: - Y-axis gutter
 
     private var yAxis: some View {
-        VStack(alignment: .trailing, spacing: 0) {
-            ForEach(Array(yTicks.enumerated().reversed()), id: \.offset) { index, tick in
-                Text(yLabelFormatter(tick))
+        // Tight ranges (e.g. a single bar at 28d, a chart where every
+        // bar landed on the same day) generate ticks that round to
+        // identical labels — "29d, 28d, 28d, 27d". We hide the
+        // duplicates instead of dropping them so the spacers between
+        // tick rows stay even and the gridline rhythm doesn't shift
+        // when the data widens.
+        let entries = yAxisEntries
+        return VStack(alignment: .trailing, spacing: 0) {
+            ForEach(Array(entries.enumerated().reversed()), id: \.offset) { index, entry in
+                Text(entry.label)
                     .font(.raleway("Medium", size: 10, relativeTo: .caption2))
                     .foregroundStyle(DesignColors.textSecondary.opacity(0.7))
                     .lineLimit(1)
                     .fixedSize()
+                    .opacity(entry.isVisible ? 1 : 0)
                 if index > 0 {
                     Spacer(minLength: 0)
                 }
@@ -111,15 +158,83 @@ public struct TrendBarChart<ID: Hashable>: View {
         .accessibilityHidden(true)
     }
 
+    private var yAxisEntries: [(label: String, isVisible: Bool)] {
+        var seen: Set<String> = []
+        var result: [(label: String, isVisible: Bool)] = []
+        for tick in yTicks {
+            let label = yLabelFormatter(tick)
+            if seen.contains(label) {
+                result.append((label, false))
+            } else {
+                seen.insert(label)
+                result.append((label, true))
+            }
+        }
+        return result
+    }
+
     // MARK: - Bars
 
     private var bars: some View {
-        HStack(alignment: .bottom, spacing: 8) {
-            ForEach(items) { item in
-                barColumn(for: item)
+        ZStack(alignment: .bottom) {
+            if let band = normalBand {
+                normalBandLayer(for: band)
+            }
+
+            HStack(alignment: .bottom, spacing: 8) {
+                ForEach(items) { item in
+                    barColumn(for: item)
+                }
             }
         }
         .frame(height: chartHeight, alignment: .bottom)
+    }
+
+    // MARK: - Normal range band
+    //
+    // Apple-Health-style horizontal band that names the "typical"
+    // y-axis window without dominating the chart. Soft fill plus
+    // hairline borders on both edges so the eye can land on the
+    // band's footprint instantly; the trailing-side caps label
+    // ("TYPICAL") tells the user what they're looking at without
+    // stealing real estate from the bars.
+
+    @ViewBuilder
+    private func normalBandLayer(for band: ClosedRange<Double>) -> some View {
+        let (lo, hi) = range
+        let span = max(hi - lo, 0.0001)
+        let usable = max(chartHeight - 6, 1)
+        let bottomY = max(0, min(1, (band.lowerBound - lo) / span)) * usable
+        let topY = max(0, min(1, (band.upperBound - lo) / span)) * usable
+        let bandHeight = max(0, topY - bottomY)
+
+        if bandHeight > 1 {
+            Rectangle()
+                .fill(DesignColors.accentWarm.opacity(0.07))
+                .overlay(alignment: .top) {
+                    Rectangle()
+                        .fill(DesignColors.accentWarm.opacity(0.22))
+                        .frame(height: 0.6)
+                }
+                .overlay(alignment: .bottom) {
+                    Rectangle()
+                        .fill(DesignColors.accentWarm.opacity(0.22))
+                        .frame(height: 0.6)
+                }
+                .overlay(alignment: .topTrailing) {
+                    if !normalBandLabel.isEmpty {
+                        Text(normalBandLabel)
+                            .font(.raleway("SemiBold", size: 9, relativeTo: .caption2))
+                            .tracking(1.0)
+                            .foregroundStyle(DesignColors.accentWarmText.opacity(0.55))
+                            .padding(.trailing, 6)
+                            .padding(.top, 4)
+                    }
+                }
+                .frame(height: bandHeight)
+                .padding(.bottom, bottomY)
+                .accessibilityHidden(true)
+        }
     }
 
     private func barColumn(for item: Item) -> some View {
@@ -146,7 +261,13 @@ public struct TrendBarChart<ID: Hashable>: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .animation(.spring(response: 0.42, dampingFraction: 0.86), value: selectedID)
+        // No `.animation(value: selectedID)` here — that's a scoped
+        // animation that overrides any ambient transaction, including
+        // the `disablesAnimations` transaction the host card uses to
+        // seed selection silently when its cell is recycled mid-scroll.
+        // The host now wraps user-driven taps in `withAnimation` so the
+        // spring still fires on intentional selection, just not on
+        // viewport re-entry.
         .accessibilityLabel("\(item.xLabel), \(yLabelFormatter(item.value))")
         .accessibilityAddTraits(isSelected ? [.isSelected, .isButton] : [.isButton])
     }

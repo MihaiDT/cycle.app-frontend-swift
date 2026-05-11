@@ -86,8 +86,22 @@ struct BodySignalsChartCard<Chart: View>: View {
             }
         }
         .buttonStyle(.plain)
-        .widgetCardStyle(cornerRadius: 24, rasterize: false, interactive: true)
-        .disabled(infoCopy == nil)
+        // The watermark SF Symbol is offset past the top-trailing
+        // edge to read as a backdrop motif. Without an explicit clip
+        // it bleeds out of the card silhouette — `widgetCardStyle`'s
+        // glass effect masks the surface but doesn't crop child
+        // content. Pre-clipping at the button label boundary keeps
+        // the watermark inside the card's rounded rectangle.
+        .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+        // `interactive` only when there's something to tap into — a
+        // glass ripple on a card that does nothing is just noise.
+        .widgetCardStyle(cornerRadius: 24, rasterize: false, interactive: infoCopy != nil)
+        // `allowsHitTesting` instead of `.disabled` — `.disabled`
+        // applies SwiftUI's standard "disabled" tint to every child
+        // (the corner heart icon ended up looking greyed-out on cards
+        // without `infoCopy`). `allowsHitTesting(false)` blocks taps
+        // without recoloring anything.
+        .allowsHitTesting(infoCopy != nil)
         .sheet(isPresented: $showingInfo) {
             BodySignalInfoSheet(
                 title: title,
@@ -177,19 +191,24 @@ private struct BodySignalInfoSheet: View {
             Spacer(minLength: 0)
         }
         .padding(.horizontal, 26)
-        .padding(.top, 28)
+        // Generous top inset so the title clears the drag indicator
+        // — iOS adds the indicator inside the sheet's safe area, so
+        // a small top padding leaves the heading kissing the bar.
+        .padding(.top, 56)
         .padding(.bottom, 32)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(alignment: .topTrailing) {
-            // Oversized SF Symbol painted at very low opacity in the
-            // top-right corner — reads as watermark texture, not as
-            // an interactive control. Pushed slightly past the sheet
-            // edge so it feels like a backdrop motif rather than a
-            // measured icon. Ignored by accessibility.
+            // SF Symbol painted at very low opacity in the top-right
+            // corner — reads as watermark texture, not as an
+            // interactive control. Smaller than the in-card variant
+            // (60pt vs 100pt) so on the compact sheet it sits as a
+            // subtle motif instead of dominating the title row.
+            // Ignored by accessibility.
             Image(systemName: iconName)
-                .font(.system(size: 100, weight: .ultraLight))
-                .foregroundStyle(DesignColors.text.opacity(0.08))
-                .offset(x: 24, y: -18)
+                .font(.system(size: 60, weight: .ultraLight))
+                .foregroundStyle(DesignColors.text.opacity(0.10))
+                .padding(.trailing, 22)
+                .padding(.top, 16)
                 .accessibilityHidden(true)
         }
         .clipped()

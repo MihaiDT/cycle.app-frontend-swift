@@ -9,7 +9,7 @@ import SwiftUI
 struct BodySignalsUnavailableState: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            BodySignalsSectionHeader(phase: nil)
+            BodySignalsSectionHeader()
             Text("Body signals need an iPhone with Apple Health, which isn't available on this device.")
                 .font(.raleway("Medium", size: 13, relativeTo: .subheadline))
                 .foregroundStyle(DesignColors.textSecondary)

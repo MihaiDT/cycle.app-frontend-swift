@@ -25,18 +25,16 @@ struct BodySignalsMetricTile: View {
 
             valueBlock
         }
-        .padding(.vertical, 14)
-        .padding(.horizontal, 10)
+        .padding(.vertical, 18)
+        .padding(.horizontal, 12)
         .frame(maxWidth: .infinity)
-        .frame(minHeight: 96)
-        .background {
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(DesignColors.text.opacity(0.025))
-                .overlay {
-                    RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        .stroke(DesignColors.text.opacity(DesignColors.borderOpacitySubtle), lineWidth: 0.6)
-                }
-        }
+        .frame(minHeight: 110)
+        // Each tile is now a full-fledged card — same
+        // `widgetCardStyle` recipe as the rest of the screen,
+        // so the three tiles read as siblings of the bigger
+        // cards above instead of huddling inside an outer
+        // wrapper. Replaces the inner subtle stroke + fill.
+        .widgetCardStyle(cornerRadius: 22)
         .accessibilityElement(children: .combine)
         .accessibilityLabel(accessibilityLabel)
     }
@@ -57,7 +55,12 @@ struct BodySignalsMetricTile: View {
                     .lineLimit(1)
             }
         } else {
-            Text("No Data")
+            // Softer than "No Data" — wellness voice. Tells the
+            // user "your Watch is collecting" without alarming
+            // them that something's missing. Pairs with the
+            // contextual footer in `BodySignalsDataState` when
+            // all three tiles are empty (see `allEmpty` branch).
+            Text("Soon")
                 .font(.raleway("SemiBold", size: 13, relativeTo: .footnote))
                 .foregroundStyle(DesignColors.textSecondary)
                 .lineLimit(1)

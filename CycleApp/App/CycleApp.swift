@@ -29,6 +29,23 @@ struct CycleApp: App {
         // Match window background to app background (prevents white in safe areas)
         UIWindow.appearance().backgroundColor = Self.ivoryBackground
 
+        // Tint every navigation bar's title + back chevron in
+        // the app's deep cocoa text colour so toolbar chrome
+        // reads warm across the surface family instead of
+        // landing on the iOS-default near-black or system blue.
+        // Applies to standard, scroll-edge, and compact bar
+        // configurations so a screen with a hidden background
+        // still inherits the tint.
+        let cocoa = UIColor(DesignColors.text)
+        let appearance = UINavigationBarAppearance()
+        appearance.configureWithTransparentBackground()
+        appearance.titleTextAttributes = [.foregroundColor: cocoa]
+        appearance.largeTitleTextAttributes = [.foregroundColor: cocoa]
+        UINavigationBar.appearance().standardAppearance = appearance
+        UINavigationBar.appearance().scrollEdgeAppearance = appearance
+        UINavigationBar.appearance().compactAppearance = appearance
+        UINavigationBar.appearance().tintColor = cocoa
+
         // Load InjectionIII bundle for hot reload
         #if DEBUG
             Bundle(path: "/Applications/InjectionIII.app/Contents/Resources/iOSInjection.bundle")?.load()

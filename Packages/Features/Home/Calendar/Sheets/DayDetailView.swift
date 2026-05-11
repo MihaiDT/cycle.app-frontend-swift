@@ -23,37 +23,40 @@ struct DayDetailView: View {
     }
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 0) {
-                header
-                    .padding(.horizontal, 22)
-                    .padding(.top, 12)
-                    .padding(.bottom, 20)
+        ZStack {
+            AppleHealthBackground()
 
-                heroPhrase
-                    .padding(.horizontal, 22)
-                    .padding(.bottom, 28)
-
-                checkInSection
-                    .padding(.horizontal, 22)
-                    .padding(.bottom, 20)
-
-                momentSection
-                    .padding(.horizontal, 22)
-                    .padding(.bottom, 20)
-
-                wellnessSection
-                    .padding(.horizontal, 22)
-                    .padding(.bottom, 28)
-
-                if onOpenRecap != nil {
-                    recapLink
+            ScrollView {
+                VStack(alignment: .leading, spacing: 0) {
+                    header
                         .padding(.horizontal, 22)
-                        .padding(.bottom, 32)
+                        .padding(.top, 12)
+                        .padding(.bottom, 20)
+
+                    heroPhrase
+                        .padding(.horizontal, 22)
+                        .padding(.bottom, 28)
+
+                    checkInSection
+                        .padding(.horizontal, 22)
+                        .padding(.bottom, 20)
+
+                    momentSection
+                        .padding(.horizontal, 22)
+                        .padding(.bottom, 20)
+
+                    wellnessSection
+                        .padding(.horizontal, 22)
+                        .padding(.bottom, 28)
+
+                    if onOpenRecap != nil {
+                        recapLink
+                            .padding(.horizontal, 22)
+                            .padding(.bottom, 32)
+                    }
                 }
             }
         }
-        .background(DesignColors.background)
     }
 
     // MARK: Header
@@ -61,26 +64,17 @@ struct DayDetailView: View {
     @ViewBuilder
     private var header: some View {
         HStack(alignment: .center) {
-            Button(action: onDismiss) {
-                Image(systemName: "xmark")
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(DesignColors.text)
-                    .frame(width: 32, height: 32)
-                    .background(Circle().fill(DesignColors.text.opacity(0.06)))
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Close")
-
+            AppCloseButton(action: onDismiss)
             Spacer()
         }
         .overlay(alignment: .center) {
             VStack(spacing: 2) {
                 Text(dateHeading)
-                    .font(.raleway("Bold", size: 15, relativeTo: .headline))
+                    .font(AppTypography.modalHeader)
                     .foregroundStyle(DesignColors.text)
                 Text("CYCLE \(payload.cycleNumber) · DAY \(payload.cycleDay) · \(payload.phase.displayName.uppercased())")
-                    .font(.raleway("SemiBold", size: 10, relativeTo: .caption2))
-                    .tracking(1.2)
+                    .font(AppTypography.cardEyebrow)
+                    .tracking(AppTypography.cardEyebrowTracking)
                     .foregroundStyle(DesignColors.textSecondary)
             }
         }
@@ -91,9 +85,8 @@ struct DayDetailView: View {
     @ViewBuilder
     private var heroPhrase: some View {
         Text("\u{201C}\(payload.phrase).\u{201D}")
-            .font(.raleway("Bold", size: 30, relativeTo: .title))
-            .italic()
-            .tracking(-0.4)
+            .font(AppTypography.heroDisplay)
+            .tracking(AppTypography.heroDisplayTracking)
             .foregroundStyle(DesignColors.text)
             .multilineTextAlignment(.leading)
             .fixedSize(horizontal: false, vertical: true)
@@ -113,7 +106,7 @@ struct DayDetailView: View {
                 }
             } else {
                 Text("No check-in logged this day.")
-                    .font(.raleway("Medium", size: 13, relativeTo: .body))
+                    .font(AppTypography.bodyMedium)
                     .foregroundStyle(DesignColors.textSecondary)
             }
         }
@@ -130,7 +123,7 @@ struct DayDetailView: View {
     private func levelRow(label: String, value: Int?) -> some View {
         HStack(alignment: .center) {
             Text(label)
-                .font(.raleway("SemiBold", size: 13, relativeTo: .subheadline))
+                .font(AppTypography.cardLabel)
                 .foregroundStyle(DesignColors.text)
 
             Spacer()
@@ -148,8 +141,8 @@ struct DayDetailView: View {
                     .foregroundStyle(DesignColors.textSecondary)
                     .monospacedDigit()
             } else {
-                Text("—")
-                    .font(.raleway("Regular", size: 13, relativeTo: .body))
+                Text("–")
+                    .font(AppTypography.bodyMedium)
                     .foregroundStyle(DesignColors.textSecondary.opacity(0.6))
             }
         }
@@ -166,7 +159,7 @@ struct DayDetailView: View {
 
                     VStack(alignment: .leading, spacing: 4) {
                         Text(moment.title)
-                            .font(.raleway("Bold", size: 15, relativeTo: .headline))
+                            .font(AppTypography.modalHeader)
                             .foregroundStyle(DesignColors.text)
                             .lineLimit(2)
                         Text(categoryLabel(moment.category))
@@ -185,7 +178,7 @@ struct DayDetailView: View {
                 }
             } else {
                 Text("No moment logged this day.")
-                    .font(.raleway("Medium", size: 13, relativeTo: .body))
+                    .font(AppTypography.bodyMedium)
                     .foregroundStyle(DesignColors.textSecondary)
             }
         }
@@ -233,20 +226,20 @@ struct DayDetailView: View {
                 VStack(alignment: .leading, spacing: 6) {
                     HStack(alignment: .firstTextBaseline, spacing: 4) {
                         Text("\(Int(hbi.rounded()))")
-                            .font(.raleway("Black", size: 36, relativeTo: .title))
-                            .tracking(-0.8)
+                            .font(AppTypography.statDisplay)
+                            .tracking(AppTypography.statDisplayTracking)
                             .foregroundStyle(DesignColors.text)
                         Text("%")
                             .font(.raleway("Bold", size: 16, relativeTo: .title3))
                             .foregroundStyle(DesignColors.textSecondary)
                     }
                     Text(trendLabel)
-                        .font(.raleway("Medium", size: 13, relativeTo: .subheadline))
+                        .font(AppTypography.bodyMedium)
                         .foregroundStyle(DesignColors.textSecondary)
                 }
             } else {
                 Text("No wellness score recorded.")
-                    .font(.raleway("Medium", size: 13, relativeTo: .body))
+                    .font(AppTypography.bodyMedium)
                     .foregroundStyle(DesignColors.textSecondary)
             }
         }
@@ -299,23 +292,19 @@ struct DayDetailView: View {
     ) -> some View {
         VStack(alignment: .leading, spacing: 14) {
             Text(title)
-                .font(.raleway("SemiBold", size: 11, relativeTo: .caption2))
-                .tracking(1.5)
+                .font(AppTypography.cardEyebrow)
+                .tracking(AppTypography.cardEyebrowTracking)
                 .foregroundStyle(DesignColors.textSecondary)
 
             content()
         }
         .padding(20)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(
-            RoundedRectangle(cornerRadius: 22, style: .continuous)
-                .fill(Color.white)
-        )
+        .widgetCardStyle(cornerRadius: 22, interactive: false)
         .overlay {
             RoundedRectangle(cornerRadius: 22, style: .continuous)
                 .strokeBorder(DesignColors.text.opacity(0.06), lineWidth: 1)
         }
-        .shadow(color: .black.opacity(0.04), radius: 10, y: 4)
     }
 
     // MARK: - Formatting

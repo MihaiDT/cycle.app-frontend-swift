@@ -4,13 +4,16 @@ import SwiftUI
 //
 // Preview cover the user lands on after tapping share on the Cycle
 // Stats reflection card. Shows the exact card the image will become,
-// framed on a warm background, with only a back button and a share
-// trigger. Deliberately no "Instagram Story" shortcut — the
-// reflection copy is editorial, not social-post punchy, and a story
-// button pushes the tone in the wrong direction.
+// framed on a warm background, with a back chevron, a top-right
+// share trigger (full system sheet) and a phase-tinted "Share to
+// Instagram Story" pill at the foot — the one-tap path users reach
+// for first. The pill takes its colour from the phase palette so
+// the affordance reads as an extension of the card it's sharing,
+// not a stock CTA bolted on.
 
 struct RhythmReflectionShareScreen: View {
     let copy: String
+    let phase: CyclePhase?
     let onDismiss: () -> Void
 
     /// Pre-rendered export image. We render once at the full
@@ -23,26 +26,53 @@ struct RhythmReflectionShareScreen: View {
     @State private var renderedImage: UIImage?
 
     var body: some View {
-        ZStack {
-            GradientBackground()
-                .ignoresSafeArea()
+        // Wrapped in `NavigationStack` so the back chevron and share
+        // glyph render as native toolbar buttons — same point size,
+        // same hit area, same tint as every other pushed screen on
+        // Cycle Stats. The previous custom glass capsules were
+        // off-spec next to the rest of the app's chrome.
+        NavigationStack {
+            ZStack {
+                // Same warm peach surface as Cycle Stats / Cycle
+                // Detail so the share preview reads as part of the
+                // same flow, not a separate post-composer.
+                AppleHealthBackground()
+                    .ignoresSafeArea()
 
-            VStack(spacing: 32) {
-                topBar
-                    .padding(.horizontal, 20)
-                    .padding(.top, 8)
+                VStack(spacing: 28) {
+                    Spacer(minLength: 0)
 
-                Spacer(minLength: 0)
+                    previewCard
+                        .padding(.horizontal, 28)
 
-                previewCard
-                    .padding(.horizontal, 28)
+                    Spacer(minLength: 0)
 
-                Spacer(minLength: 0)
+                    instagramStoryButton
+                        .padding(.horizontal, 28)
+                        .padding(.bottom, 16)
+                }
             }
-        }
-        .task {
-            if renderedImage == nil {
-                renderedImage = Self.renderImage(copy: copy)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button(action: onDismiss) {
+                        Image(systemName: "chevron.left")
+                    }
+                    .tint(DesignColors.text)
+                    .accessibilityLabel("Close")
+                }
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button(action: share) {
+                        Image(systemName: "square.and.arrow.up")
+                    }
+                    .tint(DesignColors.text)
+                    .accessibilityLabel("Share")
+                }
+            }
+            .task {
+                if renderedImage == nil {
+                    renderedImage = Self.renderImage(copy: copy, phase: phase)
+                }
             }
         }
     }
@@ -67,34 +97,83 @@ struct RhythmReflectionShareScreen: View {
         }
     }
 
-    @ViewBuilder
-    private var topBar: some View {
-        HStack {
-            circleButton(systemName: "chevron.left", label: "Close", action: onDismiss)
-            Spacer()
-            circleButton(systemName: "square.and.arrow.up", label: "Share", action: share)
-        }
-    }
+    // MARK: - Instagram story pill
+    //
+    // One-tap hand-off to Instagram Stories. Uses the documented
+    // `instagram-stories://share` URL scheme + `UIPasteboard` sticker
+    // payload, so the rendered card lands as the story background and
+    // the user can re-position, caption, or post immediately. Visual
+    // is the app-wide white `glassEffectCapsule()` — same surface as
+    // `GlassButton` / DailyCheckIn / Onboarding CTAs — so the
+    // affordance reads as cycle.app's standard primary action, not a
+    // bespoke share-screen widget.
 
     @ViewBuilder
-    private func circleButton(systemName: String, label: String, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Image(systemName: systemName)
-                .font(.system(size: 17, weight: .semibold))
-                .foregroundStyle(DesignColors.text)
-                .frame(width: 44, height: 44)
-                .background { Circle().fill(.ultraThinMaterial) }
-                .overlay { Circle().stroke(DesignColors.text.opacity(0.08), lineWidth: 0.6) }
+    private var instagramStoryButton: some View {
+        Button(action: shareToInstagramStory) {
+            HStack(spacing: 12) {
+                Image("Instagram")
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(width: 22, height: 22)
+                Text("Share to Instagram Story")
+                    .font(.system(size: 17, weight: .semibold))
+                    .foregroundStyle(DesignColors.text)
+            }
+            .padding(.horizontal, 24)
+            .padding(.vertical, 14)
+            .frame(maxWidth: .infinity, minHeight: 55)
+            .glassEffectCapsule()
+            .shadow(color: .black.opacity(0.1), radius: 2, x: 0, y: 0)
+            .shadow(color: .black.opacity(0.1), radius: 8, x: 0, y: 1)
         }
         .buttonStyle(.plain)
-        .accessibilityLabel(label)
+        .accessibilityLabel("Share to Instagram Story")
+    }
+
+    @MainActor
+    private func shareToInstagramStory() {
+        // Render lazily if the user taps before `.task` finished —
+        // tiny window, but the pill must never silently no-op.
+        let image = renderedImage ?? Self.renderImage(copy: copy, phase: phase)
+        guard let image, let imageData = image.pngData() else { return }
+
+        guard let url = URL(string: "instagram-stories://share?source_application=\(Bundle.main.bundleIdentifier ?? "app.cycle.ios")") else { return }
+        guard UIApplication.shared.canOpenURL(url) else {
+            // Instagram not installed (or scheme not whitelisted in
+            // Info.plist's `LSApplicationQueriesSchemes`) — fall back
+            // to the system share sheet so the user still has a path
+            // off this screen.
+            share()
+            return
+        }
+
+        // Pass the card as a *sticker* on a peach gradient backdrop —
+        // not as `backgroundImage`. backgroundImage gets Instagram's
+        // editor vignette painted over it (the whole canvas dims so
+        // their UI chrome reads), which crushes the card's gradient
+        // and turns the serif copy nearly black-on-black. Sticker
+        // mode keeps the card untouched and lets us own the
+        // surrounding colour with the two bg-colour keys, matching
+        // the Cycle Stats peach surface.
+        let pasteboardItems: [String: Any] = [
+            "com.instagram.sharedSticker.stickerImage": imageData,
+            "com.instagram.sharedSticker.backgroundTopColor": "#F8E6D2",
+            "com.instagram.sharedSticker.backgroundBottomColor": "#EDC8AC"
+        ]
+        UIPasteboard.general.setItems(
+            [pasteboardItems],
+            options: [.expirationDate: Date().addingTimeInterval(60 * 5)]
+        )
+
+        UIApplication.shared.open(url)
     }
 
     @MainActor
     private func share() {
         // Reuse the already-rendered preview image so the user
         // shares the exact same pixels they saw on screen.
-        let image = renderedImage ?? Self.renderImage(copy: copy)
+        let image = renderedImage ?? Self.renderImage(copy: copy, phase: phase)
         let items: [Any] = image.map { [$0] } ?? [copy]
         let activity = UIActivityViewController(
             activityItems: items,
@@ -108,9 +187,9 @@ struct RhythmReflectionShareScreen: View {
     }
 
     @MainActor
-    private static func renderImage(copy: String) -> UIImage? {
+    private static func renderImage(copy: String, phase: CyclePhase?) -> UIImage? {
         let renderer = ImageRenderer(
-            content: RhythmReflectionShareView(copy: copy)
+            content: RhythmReflectionShareView(copy: copy, phase: phase)
                 .frame(width: 1080, height: 1350)
         )
         renderer.scale = UIScreen.main.scale
@@ -126,36 +205,202 @@ struct RhythmReflectionShareScreen: View {
 
 struct RhythmReflectionShareView: View {
     let copy: String
+    let phase: CyclePhase?
+
+    private var palette: SharePalette {
+        SharePalette.forPhase(phase)
+    }
 
     var body: some View {
-        ZStack {
-            Color.white
-
-            VStack(spacing: 0) {
-                Spacer(minLength: 0)
-
-                Text(copy)
-                    .font(.system(size: 62, weight: .regular, design: .serif))
-                    .italic()
-                    .tracking(-0.6)
-                    .foregroundStyle(DesignColors.accentWarmText)
-                    .lineSpacing(12)
-                    .multilineTextAlignment(.center)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .padding(.horizontal, 80)
-
-                Spacer(minLength: 0)
-
-                // Wordmark – lower-case lockup, Raleway Bold, muted
-                // warm tone. Reads as signature, not as logo shout.
-                Text("cycle")
-                    .font(.raleway("Bold", size: 44, relativeTo: .largeTitle))
-                    .tracking(-0.6)
-                    .foregroundStyle(DesignColors.accentWarmText.opacity(0.85))
-                    .padding(.bottom, 72)
-            }
-            .padding(.top, 72)
+        ZStack(alignment: .topLeading) {
+            backdrop
+            watermark
+            content
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
+
+    // MARK: - Backdrop
+
+    /// Same three-layer composition as `CycleRhythmReflectionCard` —
+    /// diagonal phase gradient + top-trailing radial highlight +
+    /// bottom veil. Sized for the 1080×1350 export, so radius +
+    /// offset numbers are scaled up vs. the in-app card.
+    private var backdrop: some View {
+        ZStack {
+            LinearGradient(
+                colors: palette.gradient,
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+
+            RadialGradient(
+                colors: [
+                    Color.white.opacity(0.45),
+                    Color.white.opacity(0.0)
+                ],
+                center: .init(x: 0.92, y: 0.05),
+                startRadius: 20,
+                endRadius: 1100
+            )
+            .blendMode(.softLight)
+
+            LinearGradient(
+                colors: [
+                    Color.white.opacity(0.0),
+                    Color.white.opacity(0.10)
+                ],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+        }
+    }
+
+    private var watermark: some View {
+        Image(systemName: palette.symbolName)
+            .font(.system(size: 920, weight: .ultraLight))
+            .foregroundStyle(palette.deep.opacity(0.05))
+            .blur(radius: 90)
+            .offset(x: 360, y: 250)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
+            .clipped()
+    }
+
+    // MARK: - Content
+
+    private var content: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Spacer(minLength: 0)
+
+            Text(formattedCopy)
+                .font(.system(size: 62, weight: .regular, design: .serif))
+                .italic()
+                .tracking(-0.6)
+                .foregroundStyle(palette.deep)
+                .lineSpacing(12)
+                .multilineTextAlignment(.leading)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.horizontal, 96)
+
+            Spacer(minLength: 0)
+
+            footer
+                .padding(.horizontal, 96)
+                .padding(.bottom, 96)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+    }
+
+    /// Hard line break after every sentence — see the in-app card
+    /// for why. The export image inherits the same rule so the
+    /// preview, the in-app card and the Instagram sticker all break
+    /// at the same places.
+    private var formattedCopy: String {
+        copy
+            .replacingOccurrences(of: ". ", with: ".\n")
+            .replacingOccurrences(of: "? ", with: "?\n")
+            .replacingOccurrences(of: "! ", with: "!\n")
+    }
+
+    /// Wordmark on the left, attribution removed — the export keeps
+    /// just the cycle.app signature.
+    private var footer: some View {
+        HStack(alignment: .lastTextBaseline) {
+            Text("cycle")
+                .font(.raleway("Bold", size: 64, relativeTo: .largeTitle))
+                .tracking(-1.0)
+                .foregroundStyle(palette.deep.opacity(0.85))
+
+            Spacer(minLength: 0)
+        }
+    }
+
+    // MARK: - Phase palette
+    //
+    // Mirrors `CycleRhythmReflectionCard.PhasePalette` so the in-app
+    // card and the exported image share the same colour vocabulary.
+
+    fileprivate struct SharePalette {
+        let gradient: [Color]
+        let accent: Color
+        let deep: Color
+        let symbolName: String
+
+        static func forPhase(_ phase: CyclePhase?) -> SharePalette {
+            switch phase {
+            case .menstrual:
+                return SharePalette(
+                    gradient: [
+                        DesignColors.recapMenstrualStart.opacity(0.55),
+                        DesignColors.calendarPeriodGlyph.opacity(0.30),
+                        DesignColors.accent.opacity(0.55),
+                        DesignColors.background
+                    ],
+                    accent: DesignColors.calendarPeriodGlyph,
+                    deep: DesignColors.text,
+                    symbolName: "drop.fill"
+                )
+            case .follicular:
+                return SharePalette(
+                    gradient: [
+                        DesignColors.accentSecondary.opacity(0.55),
+                        DesignColors.accent.opacity(0.65),
+                        DesignColors.heroCreamBottom,
+                        DesignColors.background
+                    ],
+                    accent: DesignColors.accentSecondary,
+                    deep: DesignColors.accentWarmText,
+                    symbolName: "leaf.fill"
+                )
+            case .ovulatory:
+                return SharePalette(
+                    gradient: [
+                        DesignColors.accentHoney.opacity(0.55),
+                        DesignColors.accent.opacity(0.55),
+                        DesignColors.heroCreamBottom,
+                        DesignColors.background
+                    ],
+                    accent: DesignColors.accentHoneyText,
+                    deep: DesignColors.accentHoneyText,
+                    symbolName: "sun.max.fill"
+                )
+            case .luteal:
+                return SharePalette(
+                    gradient: [
+                        DesignColors.roseTaupe.opacity(0.55),
+                        DesignColors.roseTaupeLight.opacity(0.65),
+                        DesignColors.cardWarm,
+                        DesignColors.background
+                    ],
+                    accent: DesignColors.roseTaupe,
+                    deep: DesignColors.accentWarmText,
+                    symbolName: "moon.stars.fill"
+                )
+            case .late:
+                return SharePalette(
+                    gradient: [
+                        DesignColors.accentHoney.opacity(0.50),
+                        DesignColors.roseTaupeLight.opacity(0.55),
+                        DesignColors.cardWarm,
+                        DesignColors.background
+                    ],
+                    accent: DesignColors.accentHoneyText,
+                    deep: DesignColors.accentWarmText,
+                    symbolName: "clock.fill"
+                )
+            case .none:
+                return SharePalette(
+                    gradient: [
+                        DesignColors.accent.opacity(0.40),
+                        DesignColors.heroCreamBottom,
+                        DesignColors.background
+                    ],
+                    accent: DesignColors.accentWarm,
+                    deep: DesignColors.accentWarmText,
+                    symbolName: "sparkle"
+                )
+            }
+        }
+    }
 }
+

@@ -112,6 +112,13 @@ public enum DesignColors {
     public static let calendarDayText = Color(red: 0.36, green: 0.29, blue: 0.23)
     /// Terracotta accent used to ring the "today" cell in the calendar.
     public static let calendarTodayRing = Color(red: 0.76, green: 0.56, blue: 0.49)
+    /// Sage-cream used to fill follicular phase pills — a yellow-green-leaning
+    /// neutral that reads clearly distinct from both the rose-tinted period pill
+    /// and the pink-peach ovulatory band sitting on either side.
+    public static let calendarFollicularGlyph = Color(red: 0.83, green: 0.87, blue: 0.72)
+    /// Amber-gold used to fill luteal phase pills — saturated orange-warm so it
+    /// sits clearly apart from the pink-peach ovulatory peak that precedes it.
+    public static let calendarLutealGlyph = Color(red: 0.88, green: 0.66, blue: 0.30)
 
     // MARK: - Aria Recap (story page gradients)
     public static let recapMenstrualStart = Color(red: 0.72, green: 0.36, blue: 0.40)
@@ -173,7 +180,6 @@ public enum DesignColors {
 
     // MARK: - Legacy/Compatibility (mapped to palette)
     public static let link = Color(hex: 0x7A5F50)  // Deep Cocoa
-    public static let accentLight = Color(hex: 0xD6A59A)  // Dusty Rose
     public static let periodPink = Color(hex: 0xC8ADA7)  // Rose Taupe
     public static let periodPinkLight = Color(hex: 0xD6C5C0)  // Rose Taupe Light
     public static let progressBackground = Color(hex: 0xDECBC1)  // Warm Sandstone

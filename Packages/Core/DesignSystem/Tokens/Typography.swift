@@ -56,4 +56,44 @@ public enum AppTypography {
     /// `.foregroundStyle(DesignColors.textSecondary)`.
     public static let cardEyebrow: Font = .raleway("SemiBold", size: 11, relativeTo: .caption2)
     public static let cardEyebrowTracking: CGFloat = 1.2
+
+    // MARK: Display
+
+    /// Editorial hero quote / pull-phrase used at the top of modal
+    /// detail screens (Day Detail, recap stories) where a single line
+    /// of italic copy carries the emotional weight of the screen.
+    /// Pair with `.tracking(heroDisplayTracking)`.
+    public static let heroDisplay: Font = .raleway("BoldItalic", size: 30, relativeTo: .title)
+    public static let heroDisplayTracking: CGFloat = -0.4
+
+    /// Non-italic display header used for short numeric / textual
+    /// titles that anchor the top of a screen — e.g. the "2026" year
+    /// title in the Calendar Year view. Sits between `cardTitlePrimary`
+    /// (20pt section markers) and `statDisplay` (36pt pull-stats).
+    /// Pair with `.tracking(displayHeaderTracking)`.
+    public static let displayHeader: Font = .raleway("Bold", size: 28, relativeTo: .title)
+    public static let displayHeaderTracking: CGFloat = -0.3
+
+    /// Big numeric value (HBI score, percentage, count) used as the
+    /// hero number on detail screens. Black weight + tight tracking
+    /// gives it the editorial weight of a magazine pull-stat. Pair
+    /// with `.tracking(statDisplayTracking)`.
+    public static let statDisplay: Font = .raleway("Black", size: 36, relativeTo: .title)
+    public static let statDisplayTracking: CGFloat = -0.8
+
+    // MARK: Modal header
+
+    /// Sheet/modal header title. Used inline at the top of presented
+    /// detail views (e.g. the date row at the top of Day Detail).
+    /// Smaller than card titles because the modal frame already
+    /// signals importance — the header just labels the scope.
+    public static let modalHeader: Font = .raleway("Bold", size: 15, relativeTo: .headline)
+
+    // MARK: Body
+
+    /// Standard editorial body copy used inside cards and modals
+    /// for descriptive sentences, empty-state hints, and inline
+    /// labels. Slightly tighter than `.body` so dense detail screens
+    /// stay readable without crowding the data.
+    public static let bodyMedium: Font = .raleway("Medium", size: 13, relativeTo: .body)
 }
