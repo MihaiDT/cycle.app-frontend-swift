@@ -18,7 +18,7 @@ public struct HomeFeature: Sendable {
         // Child features
         public var todayState: TodayFeature.State = TodayFeature.State()
         public var chatState: ChatFeature.State = ChatFeature.State()
-        public var profileState: ProfileFeature.State = ProfileFeature.State()
+        public var meState: MeFeature.State = MeFeature.State()
         public var cycleInsightsState: CycleInsightsFeature.State = CycleInsightsFeature.State()
         public var isCycleInsightsVisible: Bool = false
         public var cycleJourneyState: CycleJourneyFeature.State = CycleJourneyFeature.State()
@@ -94,7 +94,7 @@ public struct HomeFeature: Sendable {
         // Child features
         case today(TodayFeature.Action)
         case chat(ChatFeature.Action)
-        case profile(ProfileFeature.Action)
+        case me(MeFeature.Action)
         case cycleInsights(CycleInsightsFeature.Action)
         case cycleJourney(CycleJourneyFeature.Action)
         case bodyPatterns(BodyPatternsFeature.Action)
@@ -123,8 +123,8 @@ public struct HomeFeature: Sendable {
             ChatFeature()
         }
 
-        Scope(state: \.profileState, action: \.profile) {
-            ProfileFeature()
+        Scope(state: \.meState, action: \.me) {
+            MeFeature()
         }
 
         Scope(state: \.cycleInsightsState, action: \.cycleInsights) {
@@ -410,10 +410,10 @@ public struct HomeFeature: Sendable {
                 return .send(.bodyPatterns(.loadPatterns))
 
 
-            case .profile(.delegate(.didLogout)):
+            case .me(.delegate(.didLogout)):
                 return .send(.logoutTapped)
 
-            case .today, .chat, .profile, .cycleInsights, .cycleJourney, .bodyPatterns, .delegate:
+            case .today, .chat, .me, .cycleInsights, .cycleJourney, .bodyPatterns, .delegate:
                 return .none
             }
         }

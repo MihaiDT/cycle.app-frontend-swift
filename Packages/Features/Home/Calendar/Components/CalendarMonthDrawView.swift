@@ -39,13 +39,23 @@ final class MonthGridDrawView: UIView {
     let follicularColor = UIColor(DesignColors.calendarFollicularGlyph)
     let ovulatoryColor = UIColor(DesignColors.calendarFertileGlyph)
     let lutealColor = UIColor(DesignColors.calendarLutealGlyph)
-    let lateColor = UIColor(DesignColors.textPlaceholder)
+    /// Warm rose tied back to the period palette — late-period dashed pills now
+    /// read as "tentative period" instead of "missing data" against the new warm
+    /// tonal wheel. Previously used a cold `textPlaceholder` grey that sat off-palette.
+    let lateColor = UIColor(DesignColors.calendarPeriodGlyph)
 
     /// Renders a single phase pill: solid fill for most styles, horizontal gradient for ovulatory
     /// peaked on the ovulation day so saturation rises into ovulation and fades out either side.
     /// `continuesLeft`/`continuesRight` strip the rounded caps on the side where the same phase
     /// continues into the previous/next week so the run reads as one capsule split by week breaks.
-    private func drawPill(_ ctx: CGContext, rect: CGRect, style: PillStyle, peakX: CGFloat?, continuesLeft: Bool, continuesRight: Bool) {
+    /// `futureStartX` is the absolute x of the first future day's left edge inside this segment;
+    /// the portion of the pill from that x onward gets a soft white future-fade overlay so
+    /// predicted days read as tentative without losing pill identity. Nil = no future portion.
+    /// `futureFadeSmooth` toggles a smooth gradient transition into the wash (used when the
+    /// past→future boundary sits inside this row) vs a uniform wash (segment is fully future,
+    /// no in-row boundary to smooth). The smooth variant kills the visible seam that would
+    /// otherwise sit at today's right edge.
+    private func drawPill(_ ctx: CGContext, rect: CGRect, style: PillStyle, peakX: CGFloat?, continuesLeft: Bool, continuesRight: Bool, futureStartX: CGFloat?, futureFadeSmooth: Bool) {
         let radius = rect.height / 2
         var corners: UIRectCorner = []
         if !continuesLeft { corners.insert(.topLeft); corners.insert(.bottomLeft) }
@@ -63,7 +73,7 @@ final class MonthGridDrawView: UIView {
         // confirmed" without competing visually with logged or predicted period rose.
         if style == .latePeriod {
             ctx.saveGState()
-            ctx.setStrokeColor(lateColor.withAlphaComponent(0.55).cgColor)
+            ctx.setStrokeColor(lateColor.withAlphaComponent(0.45).cgColor)
             ctx.setLineWidth(1.5)
             ctx.setLineDash(phase: 0, lengths: [4, 3])
             ctx.addPath(path)
@@ -93,7 +103,7 @@ final class MonthGridDrawView: UIView {
             // exhaustive switch checking.
             break
         case .follicular:
-            ctx.setFillColor(follicularColor.withAlphaComponent(0.70).cgColor)
+            ctx.setFillColor(follicularColor.withAlphaComponent(0.78).cgColor)
             ctx.fill(rect)
         case .luteal:
             ctx.setFillColor(lutealColor.withAlphaComponent(0.55).cgColor)
@@ -120,10 +130,43 @@ final class MonthGridDrawView: UIView {
                 }
             } else {
                 // No peak in this segment (ovulation day is in another row of the
-                // same fertile window) — keep alpha close to the gradient edge so
-                // the visual feel of the peach band stays consistent across rows.
-                ctx.setFillColor(ovulatoryColor.withAlphaComponent(0.42).cgColor)
+                // same fertile window) — match the standard phase-pill alpha so the
+                // fertile band still reads distinctly from adjacent luteal mauve
+                // instead of fading into it at the row break.
+                ctx.setFillColor(ovulatoryColor.withAlphaComponent(0.55).cgColor)
                 ctx.fill(rect)
+            }
+        }
+
+        // Future-fade overlay — soft white wash on the portion of the pill that
+        // sits past `today`. Clipped to the pill path so rounded caps survive.
+        // 0.30 desaturates predicted days enough to register as tentative without
+        // erasing the phase identity. When the past→future boundary lives inside
+        // this row (`futureFadeSmooth`), the wash fades in over ~one cell width so
+        // there's no visible vertical seam at today's right edge. Fully-future
+        // segments use a uniform wash (the row break already breaks visual continuity).
+        if let fx = futureStartX, fx < rect.maxX {
+            let clamped = max(rect.minX, fx)
+            let washRect = CGRect(x: clamped, y: rect.minY, width: rect.maxX - clamped, height: rect.height)
+            let washColor = UIColor.white.withAlphaComponent(0.30).cgColor
+            if futureFadeSmooth && washRect.width > 1 {
+                let cs = CGColorSpaceCreateDeviceRGB()
+                let clearColor = UIColor.white.withAlphaComponent(0.0).cgColor
+                let transitionWidth: CGFloat = 44
+                let transitionEnd = min(1.0, transitionWidth / washRect.width)
+                let colors: [CGColor] = [clearColor, washColor, washColor]
+                let locations: [CGFloat] = [0.0, transitionEnd, 1.0]
+                if let g = CGGradient(colorsSpace: cs, colors: colors as CFArray, locations: locations) {
+                    ctx.drawLinearGradient(
+                        g,
+                        start: CGPoint(x: washRect.minX, y: washRect.midY),
+                        end: CGPoint(x: washRect.maxX, y: washRect.midY),
+                        options: []
+                    )
+                }
+            } else {
+                ctx.setFillColor(washColor)
+                ctx.fill(washRect)
             }
         }
 
@@ -240,13 +283,43 @@ final class MonthGridDrawView: UIView {
                     : horizontalInset + CGFloat(seg.endCol + 1) * cellW - rightMargin
                 let y = CGFloat(row) * cellH + pillVPad
                 let pillRect = CGRect(x: xStart, y: y, width: xEnd - xStart, height: pillH)
+                // First future day's left-edge x inside this segment, if any. drawPill
+                // uses it to paint a soft white wash on the future portion so predicted
+                // periods (and any phase extending past today) read as tentative. When
+                // the past→future boundary lives mid-segment (today is somewhere inside
+                // this row), `futureFadeSmooth` triggers a gradient fade-in so there's
+                // no visible vertical seam at today's right edge. Segments that are
+                // already-future from their first column use a uniform wash — the row
+                // break before them already provides the natural visual transition.
+                var futureStartX: CGFloat? = nil
+                var futureFadeSmooth = false
+                for c in seg.startCol...seg.endCol {
+                    let slot = row * 7 + c
+                    let dayN = slot - info.offset + 1
+                    guard dayN >= 1, dayN <= info.daysInMonth,
+                          let dt = cal.date(byAdding: .day, value: dayN - 1, to: info.firstOfMonth) else { continue }
+                    if cal.startOfDay(for: dt) > today {
+                        if c == seg.startCol {
+                            futureStartX = seg.continuesLeft
+                                ? 0
+                                : horizontalInset + CGFloat(c) * cellW
+                            futureFadeSmooth = false
+                        } else {
+                            futureStartX = horizontalInset + CGFloat(c) * cellW
+                            futureFadeSmooth = true
+                        }
+                        break
+                    }
+                }
                 drawPill(
                     ctx,
                     rect: pillRect,
                     style: seg.style,
                     peakX: seg.peakAbsX,
                     continuesLeft: seg.continuesLeft,
-                    continuesRight: seg.continuesRight
+                    continuesRight: seg.continuesRight,
+                    futureStartX: futureStartX,
+                    futureFadeSmooth: futureFadeSmooth
                 )
             }
         }
@@ -269,6 +342,12 @@ final class MonthGridDrawView: UIView {
             let isToday = d == today
             let hasLog = !(loggedDays[key]?.symptoms.isEmpty ?? true)
             let isOvulation = ovulationDays.contains(key)
+            // A day sits on a fertile gradient when it's the ovulation peak or any
+            // day in the 6-day fertile window. The gradient peak alpha is high enough
+            // (0.75 peach) that the muted day-text and the rose todayColor (which is
+            // the *same hue* as calendarFertileGlyph) both vanish into the background.
+            // Detect it here so we can swap to a high-contrast deep brown below.
+            let isOnFertilePill = ovulationDays.contains(key) || fertileDays[key] != nil
 
             // Today: subtle dashed ring sitting on top of any pill — kept inset from
             // the pill edges (38pt → 32pt) so it reads as a focus ring, not a border.
@@ -282,12 +361,24 @@ final class MonthGridDrawView: UIView {
             }
 
             // Day number
-            // Future days get a faded number/label only — the pill colour stays
-            // full saturation so the phase palette reads consistently across
-            // past/today/future. The fade signals "predicted, not yet here".
-            let isFuture = d > today
-            let baseTColor: UIColor = isPeriodPill ? .white : (isToday ? todayColor : textColor)
-            let tColor: UIColor = isFuture ? baseTColor.withAlphaComponent(0.35) : baseTColor
+            // Future-tentativeness is communicated by the pill's own future-fade wash
+            // (Pass 1 inside drawPill). Text stays at full alpha so numbers remain
+            // legible on the washed pill background; layering a second text-alpha fade
+            // on top dropped contrast below AA on the lighter phase pills.
+            // Fertile pill needs the deep day-text colour at full opacity. The
+            // standard textColor (×0.55) and todayColor both share hue with the
+            // peach gradient and dissolve into it.
+            let fertileTextColor = UIColor(DesignColors.calendarDayText)
+            let tColor: UIColor
+            if isPeriodPill {
+                tColor = .white
+            } else if isOnFertilePill {
+                tColor = fertileTextColor
+            } else if isToday {
+                tColor = todayColor
+            } else {
+                tColor = textColor
+            }
             let font = UIFont.raleway(isToday || isPeriodPill ? "Bold" : "SemiBold", size: 18, textStyle: .body)
             let str = NSAttributedString(string: "\(day)", attributes: [.font: font, .foregroundColor: tColor])
             let sz = str.size()

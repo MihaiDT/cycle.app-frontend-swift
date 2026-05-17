@@ -55,8 +55,8 @@ public struct HomeView: View {
 
                 // Me Tab
                 NavigationStack {
-                    ProfileView(
-                        store: store.scope(state: \.profileState, action: \.profile)
+                    MeView(
+                        store: store.scope(state: \.meState, action: \.me)
                     )
                 }
                 .tabItem {
@@ -94,10 +94,17 @@ public struct HomeView: View {
                     || store.isLatestRecapDirectVisible
             )
             .compositingGroup()
-            .offset(x: (isCalendarOpen || store.isCycleInsightsVisible || store.isBodyPatternsVisible || store.todayState.calendarState.isShowingSymptomSheet) ? -rootGeo.size.width * 0.22 : 0)
+            .offset(x: (isCalendarOpen || store.isCycleInsightsVisible || store.isBodyPatternsVisible || store.todayState.calendarState.isShowingSymptomSheet || store.meState.addBond != nil || store.meState.bondReading != nil || store.meState.bondHistory != nil || store.meState.insightHistory != nil || store.meState.meReading != nil) ? -rootGeo.size.width * 0.22 : 0)
             .overlay(
+                // MeReading is intentionally excluded — that
+                // flow now slides in as a native right-to-left
+                // push, and the parent dim made it read as a
+                // fade behind the slide. Other overlays
+                // (calendar, bond flows, insight history) keep
+                // the 0.22 dim so they read as modal-style
+                // takeovers rather than navigation.
                 Color.black
-                    .opacity((isCalendarOpen || store.isCycleInsightsVisible || store.isBodyPatternsVisible || store.todayState.calendarState.isShowingSymptomSheet) ? 0.22 : 0)
+                    .opacity((isCalendarOpen || store.isCycleInsightsVisible || store.isBodyPatternsVisible || store.todayState.calendarState.isShowingSymptomSheet || store.meState.addBond != nil || store.meState.bondReading != nil || store.meState.bondHistory != nil || store.meState.insightHistory != nil) ? 0.22 : 0)
                     .ignoresSafeArea()
                     .allowsHitTesting(false)
             )
@@ -105,6 +112,10 @@ public struct HomeView: View {
             .animation(.easeInOut(duration: 0.32), value: store.isCycleInsightsVisible)
             .animation(.easeInOut(duration: 0.32), value: store.isBodyPatternsVisible)
             .animation(.easeInOut(duration: 0.32), value: store.todayState.calendarState.isShowingSymptomSheet)
+            .animation(.easeInOut(duration: 0.32), value: store.meState.addBond != nil)
+            .animation(.easeInOut(duration: 0.32), value: store.meState.bondReading != nil)
+            .animation(.easeInOut(duration: 0.32), value: store.meState.bondHistory != nil)
+            .animation(.easeInOut(duration: 0.32), value: store.meState.insightHistory != nil || store.meState.meReading != nil)
 
             // Calendar overlay — animation is scoped to this inner
             // ZStack only so the `.transition` of the calendar doesn't
@@ -192,6 +203,117 @@ public struct HomeView: View {
             }
             .animation(.easeInOut(duration: 0.32), value: store.todayState.calendarState.isShowingSymptomSheet)
             .zIndex(5)
+
+            // Bond History overlay — opens from the BondsCard
+            // arrow chip. Sits *below* AddBond (zIndex 7) and
+            // BondReading (zIndex 8) so that when a history row
+            // is tapped (or "Add a bond" inside history is
+            // pressed) the destination overlay slides in OVER
+            // this one and history dismisses underneath after the
+            // slide — no flash of Home between the two screens.
+            ZStack {
+                if let historyStore = store.scope(
+                    state: \.meState.bondHistory,
+                    action: \.me.bondHistory.presented
+                ) {
+                    BondHistoryView(store: historyStore)
+                        .background(DesignColors.background.ignoresSafeArea())
+                        .transition(.move(edge: .trailing))
+                }
+            }
+            .animation(.easeInOut(duration: 0.32), value: store.meState.bondHistory != nil)
+            .zIndex(6)
+
+            // Insight History overlay — opens from the Daily
+            // Insight card's arrow chip (or full-card tap). Same
+            // trailing-slide treatment as BondHistory, sitting at
+            // the same zIndex because the two overlays are
+            // mutually exclusive (different cards trigger them).
+            ZStack {
+                if let insightStore = store.scope(
+                    state: \.meState.insightHistory,
+                    action: \.me.insightHistory.presented
+                ) {
+                    InsightHistoryView(store: insightStore)
+                        .background(DesignColors.background.ignoresSafeArea())
+                        .transition(.move(edge: .trailing))
+                }
+            }
+            .animation(.easeInOut(duration: 0.32), value: store.meState.insightHistory != nil)
+            .zIndex(6)
+
+            // Add Bond overlay — Me tab's "+ Add bond" flow. Same
+            // trailing-slide pattern as the other in-Home overlays
+            // so it covers the tab bar and the underlying Me screen
+            // parallaxes with everything else. The state lives on
+            // MeFeature (`meState.addBond`) so the scope reaches in
+            // via `\.meState.addBond` + `\.me.addBond.presented`.
+            ZStack {
+                if let addBondStore = store.scope(
+                    state: \.meState.addBond,
+                    action: \.me.addBond.presented
+                ) {
+                    AddBondView(
+                        store: addBondStore,
+                        onDismiss: { store.send(.me(.dismissAddBond)) }
+                    )
+                    .background(DesignColors.background.ignoresSafeArea())
+                    .transition(.move(edge: .trailing))
+                }
+            }
+            .animation(.easeInOut(duration: 0.32), value: store.meState.addBond != nil)
+            .zIndex(7)
+
+            // Bond Reading overlay — opens when a bond is tapped
+            // (or whenever `meState.bondReading` is set). Sits at
+            // the top of the overlay stack (zIndex 8) so it sits
+            // over AddBond and BondHistory cleanly.
+            //
+            // Uses a cross-fade (opacity + a hair of scale) rather
+            // than the trailing slide the other overlays use. The
+            // reading is typically opened *after* the Generating
+            // screen has filled the canvas with a warm curtain;
+            // fading in inside that curtain reads as the reading
+            // "materialising" out of it, while a slide-from-right
+            // would feel like an unrelated push across it.
+            // BondHistory → Reading also goes through this fade,
+            // which is gentler than a hard slide for a back-stack
+            // forward push.
+            ZStack {
+                if let readingStore = store.scope(
+                    state: \.meState.bondReading,
+                    action: \.me.bondReading.presented
+                ) {
+                    BondReadingView(store: readingStore)
+                        .background(DesignColors.background.ignoresSafeArea())
+                        .transition(
+                            .opacity.combined(
+                                with: .scale(scale: 1.015, anchor: .center)
+                            )
+                        )
+                }
+            }
+            .animation(.easeInOut(duration: 0.42), value: store.meState.bondReading != nil)
+            .zIndex(8)
+
+            // Me Reading overlay — user's personal reading flow
+            // opened from the StoryHeroCard "decode" chevron.
+            // Slides in from the trailing edge so it reads as a
+            // native right-to-left push instead of the previous
+            // cross-fade — the chevron itself telegraphs forward
+            // navigation, and the fade was disorienting.
+            ZStack {
+                if let meReadingStore = store.scope(
+                    state: \.meState.meReading,
+                    action: \.me.meReading.presented
+                ) {
+                    MeReadingView(store: meReadingStore)
+                        .background(DesignColors.background.ignoresSafeArea())
+                        .transition(.move(edge: .trailing))
+                }
+            }
+            .animation(.easeInOut(duration: 0.32), value: store.meState.meReading != nil)
+            .zIndex(9)
 
             // Initial profile bootstrap — subtle non-blocking top indicator.
             // Tabs stay interactive; hero already has its own skeleton state.
