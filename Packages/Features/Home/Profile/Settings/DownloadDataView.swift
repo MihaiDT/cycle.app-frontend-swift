@@ -134,17 +134,17 @@ struct DownloadDataView: View {
     }
 
     private func includedRow(asset: String, tint: Color, text: String) -> some View {
-        HStack(spacing: AppLayout.spacingS) {
+        HStack(spacing: AppLayout.spacingM) {
             ZStack {
                 Circle().fill(tint.opacity(0.16))
                 Image(asset)
                     .renderingMode(.template)
                     .resizable()
                     .scaledToFit()
-                    .frame(width: 18, height: 18)
+                    .frame(width: 28, height: 28)
                     .foregroundStyle(tint)
             }
-            .frame(width: 34, height: 34)
+            .frame(width: 48, height: 48)
 
             Text(text)
                 .font(.raleway("Medium", size: 15, relativeTo: .subheadline))
@@ -153,14 +153,14 @@ struct DownloadDataView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
         .padding(.horizontal, AppLayout.spacingM)
-        .padding(.vertical, 10)
+        .padding(.vertical, 12)
     }
 
     private var divider: some View {
         Rectangle()
             .fill(DesignColors.textSecondary.opacity(0.10))
             .frame(height: 0.5)
-            .padding(.leading, AppLayout.spacingM + 34 + AppLayout.spacingS)
+            .padding(.leading, AppLayout.spacingM + 48 + AppLayout.spacingM)
     }
 
     // MARK: - Privacy
