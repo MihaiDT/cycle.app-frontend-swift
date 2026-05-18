@@ -56,6 +56,7 @@ struct DataExportReadyView: View {
         .toolbar(.hidden, for: .tabBar)
         .navigationBarBackButtonHidden(true)
         .toolbar { backToolbarItem(dismiss: dismiss) }
+        .safeAreaInset(edge: .bottom, spacing: 0) { footer }
         .task { await hydrateEmailIfNeeded() }
         .onDisappear { relockTask?.cancel() }
         .sheet(item: $shareItem) { item in
@@ -75,23 +76,20 @@ struct DataExportReadyView: View {
     // MARK: - Content
 
     private var content: some View {
-        VStack(spacing: 0) {
-            ScrollView {
-                VStack(spacing: AppLayout.spacingL) {
-                    heroIcon
-                    titleBlock
-                    copyBlock
-                    referenceCodeRow
-                    emailInputRow
-                }
-                .padding(.horizontal, AppLayout.screenHorizontal)
-                .padding(.top, AppLayout.spacingL)
-                .padding(.bottom, AppLayout.spacingXL)
+        ScrollView {
+            VStack(spacing: AppLayout.spacingL) {
+                heroIcon
+                titleBlock
+                copyBlock
+                referenceCodeRow
+                emailInputRow
+                privacyCallout
             }
-            .scrollIndicators(.hidden)
-
-            footer
+            .padding(.horizontal, AppLayout.screenHorizontal)
+            .padding(.top, AppLayout.spacingM)
+            .padding(.bottom, AppLayout.spacingXL)
         }
+        .scrollIndicators(.hidden)
     }
 
     // MARK: - Hero
@@ -138,29 +136,19 @@ struct DataExportReadyView: View {
     @ViewBuilder
     private var copyBlock: some View {
         if let sent = sentSummary {
-            VStack(spacing: AppLayout.spacingM) {
-                Text("Your export is on its way to \(sent.email). It may take a minute to arrive — check spam if you don't see it.")
-                    .font(AppTypography.bodyMedium)
-                    .foregroundStyle(DesignColors.textSecondary)
-                    .multilineTextAlignment(.center)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            .padding(.horizontal, AppLayout.spacingXS)
+            Text("Your encrypted archive is on its way to \(sent.email). It may take a minute to arrive. If you don't see it, check spam.")
+                .font(AppTypography.bodyMedium)
+                .foregroundStyle(DesignColors.textSecondary)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.horizontal, AppLayout.spacingS)
         } else {
-            VStack(spacing: AppLayout.spacingM) {
-                Text("We've bundled every cycle, symptom, check-in, prediction, and HBI score into a single JSON file. It stays on this device until you send it.")
-                    .font(AppTypography.bodyMedium)
-                    .foregroundStyle(DesignColors.textSecondary)
-                    .multilineTextAlignment(.center)
-                    .fixedSize(horizontal: false, vertical: true)
-
-                Text("Enter your email below and we'll send it as an attachment. Your data passes through our server only to compose the message — we don't store it.")
-                    .font(AppTypography.bodyMedium)
-                    .foregroundStyle(DesignColors.textSecondary)
-                    .multilineTextAlignment(.center)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            .padding(.horizontal, AppLayout.spacingXS)
+            Text("Add your email and we'll send the encrypted archive as an attachment.")
+                .font(AppTypography.bodyMedium)
+                .foregroundStyle(DesignColors.textSecondary)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.horizontal, AppLayout.spacingS)
         }
     }
 
@@ -182,7 +170,7 @@ struct DataExportReadyView: View {
                         .contentTransition(.opacity)
                     Text(isCodeRevealed
                         ? "Auto-locks in a few seconds. Tap to copy."
-                        : "Protected by Face ID — tap to reveal.")
+                        : "Protected by Face ID. Tap to reveal.")
                         .font(.raleway("Regular", size: 12, relativeTo: .caption))
                         .foregroundStyle(DesignColors.textSecondary.opacity(0.75))
                 }
@@ -242,21 +230,49 @@ struct DataExportReadyView: View {
         }
     }
 
+    // MARK: - Privacy callout
+
+    @ViewBuilder
+    private var privacyCallout: some View {
+        if sentSummary == nil {
+            HStack(alignment: .top, spacing: AppLayout.spacingS) {
+                Image(systemName: "lock.shield.fill")
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundStyle(DesignColors.accentWarm)
+                    .frame(width: 24)
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Stays under your control")
+                        .font(.raleway("SemiBold", size: 14, relativeTo: .subheadline))
+                        .foregroundStyle(DesignColors.text)
+                    Text("Your archive passes briefly through our server to compose the email. Nothing is stored on our end.")
+                        .font(AppTypography.bodyMedium)
+                        .foregroundStyle(DesignColors.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            .padding(.horizontal, AppLayout.spacingM)
+            .padding(.vertical, 14)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .widgetCardStyle(cornerRadius: AppLayout.cornerRadiusL)
+        }
+    }
+
     // MARK: - Footer
 
     @ViewBuilder
     private var footer: some View {
         if sentSummary != nil {
-            VStack(spacing: AppLayout.spacingS) {
-                WarmCapsuleButton(
-                    "Done",
-                    prominence: .primary,
-                    isFullWidth: true,
-                    action: { dismiss() }
-                )
-            }
+            WarmCapsuleButton(
+                "Done",
+                prominence: .primary,
+                isFullWidth: true,
+                action: { dismiss() }
+            )
             .padding(.horizontal, AppLayout.screenHorizontal)
-            .padding(.bottom, AppLayout.spacingL)
+            .padding(.top, AppLayout.spacingL)
+            .padding(.bottom, AppLayout.spacingS)
+            .background { footerBackground }
         } else {
             VStack(spacing: AppLayout.spacingS) {
                 WarmCapsuleButton(
@@ -279,8 +295,41 @@ struct DataExportReadyView: View {
                 .disabled(isSending)
             }
             .padding(.horizontal, AppLayout.screenHorizontal)
-            .padding(.bottom, AppLayout.spacingL)
+            .padding(.top, AppLayout.spacingL)
+            .padding(.bottom, AppLayout.spacingS)
+            .background { footerBackground }
         }
+    }
+
+    // Frosted blur + warm peach ramp, identical to the one used
+    // on DownloadDataView. Mirrors the header's AppleHealthBackground
+    // tint so the two ends of the screen feel symmetric. The
+    // background bleeds through the bottom safe area; the button
+    // padding keeps the CTAs above the home indicator.
+    private var footerBackground: some View {
+        ZStack {
+            Rectangle()
+                .fill(.ultraThinMaterial)
+                .mask {
+                    LinearGradient(
+                        colors: [.clear, .black.opacity(0.6), .black, .black],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                }
+
+            LinearGradient(
+                colors: [
+                    .clear,
+                    DesignColors.accentWarm.opacity(0.08),
+                    DesignColors.accentWarm.opacity(0.16),
+                ],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+        }
+        .ignoresSafeArea(.container, edges: .bottom)
+        .allowsHitTesting(false)
     }
 
     // MARK: - Derived
