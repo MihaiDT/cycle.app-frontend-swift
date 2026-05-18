@@ -265,7 +265,11 @@ public struct DataExporter {
 
     // MARK: - Helpers
 
-    private static let iso8601: ISO8601DateFormatter = {
+    // `ISO8601DateFormatter` is documented thread-safe since iOS 10
+    // but doesn't conform to `Sendable`. `nonisolated(unsafe)` lets
+    // every section helper format dates off any isolation domain
+    // without ferrying a fresh formatter through every call.
+    nonisolated(unsafe) private static let iso8601: ISO8601DateFormatter = {
         let f = ISO8601DateFormatter()
         f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
         f.timeZone = TimeZone(secondsFromGMT: 0)
@@ -285,7 +289,11 @@ public struct DataExporter {
 // at the moment of export so the on-disk dict is stable for the
 // life of the archive.
 
-public struct ExportablePreferences: Sendable {
+// Not `Sendable`: the underlying `[String: Any]` can't be checked
+// for sendability. Built and consumed on @MainActor in the same
+// tick (DataExportReadyView → DataExporter.exportAll), so no cross-
+// actor passing happens.
+public struct ExportablePreferences {
     public let dictionary: [String: Any]
 
     public init(dictionary: [String: Any]) {
