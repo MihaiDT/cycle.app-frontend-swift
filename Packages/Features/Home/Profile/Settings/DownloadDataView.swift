@@ -133,12 +133,12 @@ struct DownloadDataView: View {
     private func includedRow(asset: String, tint: Color, text: String) -> some View {
         HStack(spacing: AppLayout.spacingM) {
             ZStack {
-                Circle().fill(tint.opacity(0.16))
+                Circle().fill(tint.opacity(0.22))
                 Image(asset)
                     .renderingMode(.template)
                     .resizable()
                     .scaledToFit()
-                    .frame(width: 28, height: 28)
+                    .frame(width: 32, height: 32)
                     .foregroundStyle(tint)
             }
             .frame(width: 48, height: 48)
