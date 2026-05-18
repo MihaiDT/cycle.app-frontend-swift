@@ -44,6 +44,7 @@
 		1685302181A439FADBE058C1 /* MeReadingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4EBB145E9A2E198B8352A963 /* MeReadingView.swift */; };
 		16CE8AE3FAED3EC29E5AE77A /* CycleHistory.swift in Sources */ = {isa = PBXBuildFile; fileRef = A149FDA7148BEAA1EB014121 /* CycleHistory.swift */; };
 		177F9C3A98CACFA40AEFF374 /* SymptomIconCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 717C7DB59F4FE3D082C436BA /* SymptomIconCard.swift */; };
+		181A0F7BC5DB9E891EF31684 /* AppLanguage.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5F09CE7AB5304CDD60C4B03 /* AppLanguage.swift */; };
 		1851604735C0ED67DC1B51F8 /* CycleMath.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5E9E5A48055F02165B8992B /* CycleMath.swift */; };
 		189F03DD82CC3530BEBE441E /* HBICalculatorExtendedTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0BEC06F59B8B9180DB00A6C4 /* HBICalculatorExtendedTests.swift */; };
 		191A6F43EC1D6766801AC90D /* MenstrualLocalClient+CRUD.swift in Sources */ = {isa = PBXBuildFile; fileRef = 172ACA5B70544F69C08564D0 /* MenstrualLocalClient+CRUD.swift */; };
@@ -105,6 +106,7 @@
 		42E86CD50BC38D6B618F5FA6 /* AddBondIntroView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 924B91FDD9F7DD4BDED20B34 /* AddBondIntroView.swift */; };
 		430068D1D377E581ED6E1563 /* ProfilePrivacyCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C4D8CDE3FD845537C442F55 /* ProfilePrivacyCard.swift */; };
 		43871BC7610359114EBD9DF7 /* SplineIntroView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4674CEEA6B50FCAB809318E6 /* SplineIntroView.swift */; };
+		43F3CBA07229D2377D5B1A93 /* LanguagePickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A899BB80927CABAC122FF4B2 /* LanguagePickerView.swift */; };
 		44095A2D9518176592A5BE27 /* AppCloseButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0372EA857D62830F09101BF /* AppCloseButton.swift */; };
 		4470D37CB33676E2E6D815EA /* GradientBackground.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0FEB82B376B0E1476E5ECD98 /* GradientBackground.swift */; };
 		44E021EDE4D2D22854A7F140 /* HBICalculator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42B1B55C9A99AA93CDC456BD /* HBICalculator.swift */; };
@@ -768,6 +770,7 @@
 		A6356FA90BCE7FF949EB8A6D /* AppView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppView.swift; sourceTree = "<group>"; };
 		A7D6ACC188EBBFD2476180C4 /* GlowProfileSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlowProfileSnapshot.swift; sourceTree = "<group>"; };
 		A7F659D52D829FD3E897024C /* DailyCheckInRitualView+Aria.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DailyCheckInRitualView+Aria.swift"; sourceTree = "<group>"; };
+		A899BB80927CABAC122FF4B2 /* LanguagePickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LanguagePickerView.swift; sourceTree = "<group>"; };
 		A92A0FCA4E1CB208FC65AEBE /* MenstrualStatus.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenstrualStatus.swift; sourceTree = "<group>"; };
 		A9F92020D22B78FA3C3A2C1A /* PatternStatTile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PatternStatTile.swift; sourceTree = "<group>"; };
 		AA6CF9EAC8B1BE81002A584A /* XPProgressBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = XPProgressBar.swift; sourceTree = "<group>"; };
@@ -815,6 +818,7 @@
 		C583F02AC2453EA8B7C971D2 /* ConsentAnimation.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = ConsentAnimation.json; sourceTree = "<group>"; };
 		C5A85763969BCB435C83D29C /* AppDoneButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDoneButton.swift; sourceTree = "<group>"; };
 		C5D38B91778F5025F8CC4271 /* CycleDataView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CycleDataView.swift; sourceTree = "<group>"; };
+		C5F09CE7AB5304CDD60C4B03 /* AppLanguage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLanguage.swift; sourceTree = "<group>"; };
 		C641F81C00379601AA6D1CEE /* PlacesAutocompleteTextField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlacesAutocompleteTextField.swift; sourceTree = "<group>"; };
 		C6B54AC07A5EB6607719B4F1 /* HealthRecords.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthRecords.swift; sourceTree = "<group>"; };
 		C767C08B9C224D8BF734F177 /* CalendarFeature+Helpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "CalendarFeature+Helpers.swift"; sourceTree = "<group>"; };
@@ -1792,6 +1796,7 @@
 		A14F6F3EC9F431B662A6BFE1 /* Settings */ = {
 			isa = PBXGroup;
 			children = (
+				EC6FEECE33EE44513F6FDF12 /* Language */,
 				728A869E962EC5DC325601F8 /* Theme */,
 				7D127BFC2DD6F80BEB0DFD88 /* Units */,
 				3D2B05C65917ABA84E9D317E /* DataExportReadyView.swift */,
@@ -2100,6 +2105,15 @@
 			name = Frameworks;
 			sourceTree = "<group>";
 		};
+		EC6FEECE33EE44513F6FDF12 /* Language */ = {
+			isa = PBXGroup;
+			children = (
+				C5F09CE7AB5304CDD60C4B03 /* AppLanguage.swift */,
+				A899BB80927CABAC122FF4B2 /* LanguagePickerView.swift */,
+			);
+			path = Language;
+			sourceTree = "<group>";
+		};
 		ECE17BBA9598FE27AC5219C8 /* Cards */ = {
 			isa = PBXGroup;
 			children = (
@@ -2390,6 +2404,7 @@
 				44095A2D9518176592A5BE27 /* AppCloseButton.swift in Sources */,
 				9ABF69342B1A36DCB7FD9BDB /* AppDoneButton.swift in Sources */,
 				B98CDCDE2F0F8E0ED67FAC40 /* AppFeature.swift in Sources */,
+				181A0F7BC5DB9E891EF31684 /* AppLanguage.swift in Sources */,
 				00D3654EB3B389037B123410 /* AppLockView.swift in Sources */,
 				19FA53471A70ED83B5E5F370 /* AppPageDots.swift in Sources */,
 				A19E1EE8291CBA65A89F7F83 /* AppScreenHeader.swift in Sources */,
@@ -2610,6 +2625,7 @@
 				284635BECF5B9B66C9F94D8A /* JourneyHomeViews.swift in Sources */,
 				7A775A86E5868AADE9EC5ED9 /* KeyDayExtractor.swift in Sources */,
 				8E7BC7D07FE0A66C1C432D26 /* KeychainClient.swift in Sources */,
+				43F3CBA07229D2377D5B1A93 /* LanguagePickerView.swift in Sources */,
 				3DD5F64D427F4ED1639CE319 /* Layout.swift in Sources */,
 				D8C64C1BF56DDBC0AD5151F2 /* LensPreview.swift in Sources */,
 				C85C8F6E49BF8E54F5185F9D /* LensPreviewCard.swift in Sources */,

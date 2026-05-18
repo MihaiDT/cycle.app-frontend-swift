@@ -24,6 +24,7 @@ struct SettingsView: View {
     @State private var isShowingDownloadData: Bool = false
     @State private var isShowingTheme: Bool = false
     @State private var isShowingUnits: Bool = false
+    @State private var isShowingLanguage: Bool = false
 
     var body: some View {
         ZStack {
@@ -48,6 +49,9 @@ struct SettingsView: View {
         }
         .navigationDestination(isPresented: $isShowingUnits) {
             UnitsView()
+        }
+        .navigationDestination(isPresented: $isShowingLanguage) {
+            LanguagePickerView()
         }
     }
 
@@ -92,9 +96,7 @@ struct SettingsView: View {
             VStack(alignment: .leading, spacing: 0) {
                 navRow(title: "Theme") { isShowingTheme = true }
                 divider
-                navRow(title: "Language", isExternal: true) {
-                    openSystemSettings()
-                }
+                navRow(title: "Language") { isShowingLanguage = true }
                 divider
                 navRow(title: "Units") { isShowingUnits = true }
             }
@@ -106,7 +108,6 @@ struct SettingsView: View {
 
     private func navRow(
         title: String,
-        isExternal: Bool = false,
         action: @escaping () -> Void
     ) -> some View {
         Button(action: action) {
@@ -115,14 +116,7 @@ struct SettingsView: View {
                     .font(AppTypography.rowTitle)
                     .foregroundStyle(DesignColors.text)
                 Spacer(minLength: 0)
-                if isExternal {
-                    Image(systemName: "arrow.up.right.square")
-                        .font(.system(size: 16, weight: .semibold))
-                        .foregroundStyle(DesignColors.textSecondary)
-                        .frame(width: 26, height: 26)
-                } else {
-                    ProfileNavChip()
-                }
+                ProfileNavChip()
             }
             .padding(.horizontal, AppLayout.spacingM)
             .padding(.vertical, 14)
@@ -195,12 +189,6 @@ struct SettingsView: View {
         )
     }
 
-    // MARK: - Actions
-
-    private func openSystemSettings() {
-        guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
-        UIApplication.shared.open(url)
-    }
 }
 
 // MARK: - Storage Keys
