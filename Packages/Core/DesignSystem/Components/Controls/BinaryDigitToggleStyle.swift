@@ -1,0 +1,89 @@
+import SwiftUI
+
+// MARK: - Binary Digit Toggle Style
+//
+// Replaces the system Toggle visual with a track that shows "1"
+// when the toggle is on and "0" when it's off. The digit lives in
+// the EMPTY half of the track — opposite the thumb — so the state
+// reads instantly without needing colour discrimination, and the
+// thumb position confirms the same answer.
+//
+// Applied app-wide from `AppView` via `.toggleStyle(.binaryDigit)`
+// so every `Toggle` across Profile, Settings, Tracking, etc. picks
+// it up automatically.
+//
+// Design notes:
+// - Track dimensions match Apple's stock toggle (51×31) so it sits
+//   nicely next to system rows without throwing off the spacing.
+// - On state uses DesignColors.accentWarm to stay on-brand; off
+//   state is a muted neutral built from textSecondary so it reads
+//   as "inactive" on both light and dark surfaces.
+// - The digit font is monospaced semibold so "1" and "0" share the
+//   same advance width — no jitter when the value flips.
+// - Tap target is the full HStack (label + switch) per Apple's
+//   accessibility guidance.
+
+public struct BinaryDigitToggleStyle: ToggleStyle {
+    public init() {}
+
+    public func makeBody(configuration: Configuration) -> some View {
+        HStack(spacing: 12) {
+            configuration.label
+            Spacer(minLength: 0)
+            BinaryDigitSwitch(isOn: configuration.isOn)
+        }
+        .contentShape(Rectangle())
+        .onTapGesture {
+            withAnimation(.spring(response: 0.32, dampingFraction: 0.72)) {
+                configuration.isOn.toggle()
+            }
+            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+        }
+    }
+}
+
+public extension ToggleStyle where Self == BinaryDigitToggleStyle {
+    /// Brand toggle: shows `1` in the on-state's empty track half,
+    /// `0` in the off-state's empty track half. Pair with the
+    /// system Toggle initialiser unchanged at the callsite.
+    static var binaryDigit: BinaryDigitToggleStyle { BinaryDigitToggleStyle() }
+}
+
+// MARK: - Switch primitive
+
+private struct BinaryDigitSwitch: View {
+    let isOn: Bool
+
+    private let trackWidth: CGFloat = 51
+    private let trackHeight: CGFloat = 31
+    private let thumbInset: CGFloat = 2
+
+    private var thumbSize: CGFloat { trackHeight - thumbInset * 2 }
+    private var thumbTravel: CGFloat { (trackWidth - trackHeight) / 2 }
+
+    var body: some View {
+        ZStack {
+            Capsule()
+                .fill(isOn ? DesignColors.accentWarm : DesignColors.textSecondary.opacity(0.28))
+                .frame(width: trackWidth, height: trackHeight)
+
+            // The digit lives on the side OPPOSITE the thumb so it
+            // never gets covered by the white circle.
+            Text(isOn ? "1" : "0")
+                .font(.system(size: 13, weight: .bold, design: .monospaced))
+                .foregroundStyle(Color.white.opacity(isOn ? 0.95 : 0.88))
+                .frame(width: thumbSize, height: thumbSize)
+                .offset(x: isOn ? -thumbTravel : thumbTravel)
+                .contentTransition(.numericText())
+
+            // Thumb
+            Circle()
+                .fill(Color.white)
+                .frame(width: thumbSize, height: thumbSize)
+                .shadow(color: .black.opacity(0.18), radius: 1.5, x: 0, y: 1)
+                .offset(x: isOn ? thumbTravel : -thumbTravel)
+        }
+        .frame(width: trackWidth, height: trackHeight)
+        .accessibilityHidden(true) // The parent Toggle handles a11y.
+    }
+}
