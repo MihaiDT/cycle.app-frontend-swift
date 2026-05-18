@@ -363,6 +363,7 @@
 		D051A60DE921309CA5E4D07F /* PatternDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = B68EB2EEECA2D9EFE76C2B35 /* PatternDetector.swift */; };
 		D0CED79C497095F415736E36 /* CycleJourneyEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = DFB5C69AF9E8C6B3B5A8F50C /* CycleJourneyEngine.swift */; };
 		D10E1FB23572C9DB2655E214 /* MenstrualPredictorExtendedTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA99FC1013CD2777B5E38A3A /* MenstrualPredictorExtendedTests.swift */; };
+		D110D2BB94374220934236F8 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = D334A2CA179D218BB3C9D31B /* Localizable.xcstrings */; };
 		D12221DCA1CB784957490FAA /* CycleContext+PeriodDetection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 73914611D3DF1FFC57B136D1 /* CycleContext+PeriodDetection.swift */; };
 		D16B7E5795C2F09949557796 /* DailyCheckInFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = B808B9F8628CE30FFF432E0E /* DailyCheckInFeature.swift */; };
 		D1CF7852379A9A2B365FCE80 /* User.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2DF4BFD7D70E092655588F9 /* User.swift */; };
@@ -838,6 +839,7 @@
 		D18616966EB4ABFB98E7A053 /* GlowCardBackground.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlowCardBackground.swift; sourceTree = "<group>"; };
 		D18E0EC9AA9C993BA773E63D /* MedicalDeviceDisclaimer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MedicalDeviceDisclaimer.swift; sourceTree = "<group>"; };
 		D2E5D19873109125F2AD9BCD /* StoryHeroCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoryHeroCard.swift; sourceTree = "<group>"; };
+		D334A2CA179D218BB3C9D31B /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
 		D449D0B2060B6D39F2364C2B /* CycleHeroView+Content.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "CycleHeroView+Content.swift"; sourceTree = "<group>"; };
 		D5AE75B0D3D5C86361250150 /* ChallengeJourneyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChallengeJourneyView.swift; sourceTree = "<group>"; };
 		D5E9E5A48055F02165B8992B /* CycleMath.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CycleMath.swift; sourceTree = "<group>"; };
@@ -1535,6 +1537,7 @@
 				5ED03F559F4A2F374AF86A5C /* glowing_orb.riv */,
 				CA84224FE7398C7FF08D5BB5 /* GoogleService-Info.plist */,
 				F78183272EA1538F9B855ED3 /* Info.plist */,
+				D334A2CA179D218BB3C9D31B /* Localizable.xcstrings */,
 				E687F11BA153A2DF683BD9B0 /* logo_animation.splineswift */,
 			);
 			path = Resources;
@@ -2330,6 +2333,7 @@
 				F553D5D7D1563E6D5DC62F51 /* ConsentPrivacy.json in Resources */,
 				E4C19FFEAC2D7621F9000453 /* CycleDetailsHeader.json in Resources */,
 				3D4939F89A63F1F49930037A /* GoogleService-Info.plist in Resources */,
+				D110D2BB94374220934236F8 /* Localizable.xcstrings in Resources */,
 				FD106B325B0DCD2350FCE058 /* Raleway-Black.ttf in Resources */,
 				C14D38E7246D896515FCACF5 /* Raleway-BlackItalic.ttf in Resources */,
 				1E3B4EC0E761F7ACF8F91F84 /* Raleway-Bold.ttf in Resources */,
@@ -2806,9 +2810,11 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MARKETING_VERSION = 1.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = app.cycle.ios;
 				SDKROOT = iphoneos;
+				SWIFT_EMIT_LOC_STRINGS = YES;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Release;
@@ -2864,9 +2870,11 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MARKETING_VERSION = 1.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = app.cycle.ios;
 				SDKROOT = iphoneos;
+				SWIFT_EMIT_LOC_STRINGS = YES;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Debug;

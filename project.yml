@@ -75,6 +75,7 @@ targets:
       - path: CycleApp/Resources/glowing_orb.riv
       - path: CycleApp/Resources/ConsentPrivacy.json
       - path: CycleApp/Resources/CycleDetailsHeader.json
+      - path: CycleApp/Resources/Localizable.xcstrings
       - path: Packages/Core/CycleEngine/Resources/challenge_templates.json
     dependencies:
       - package: ComposableArchitecture
@@ -107,6 +108,10 @@ targets:
         CURRENT_PROJECT_VERSION: "3"
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+        # Auto-extract every SwiftUI `Text("literal")` + `String(localized:)`
+        # call into Localizable.xcstrings at build time. Xcode 15+ feature.
+        LOCALIZATION_PREFERS_STRING_CATALOGS: YES
+        SWIFT_EMIT_LOC_STRINGS: YES
 
   CycleAppLiveActivity:
     type: app-extension

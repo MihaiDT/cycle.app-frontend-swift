@@ -38,6 +38,17 @@
 	<string>Cycle can log your cycle data to Apple Health, keeping all your health information in one place.</string>
 	<key>NSFaceIDUsageDescription</key>
 	<string>Cycle uses Face ID to protect the password that unlocks your encrypted data exports.</string>
+	<key>CFBundleLocalizations</key>
+	<array>
+		<string>en</string>
+		<string>es</string>
+		<string>zh-Hans</string>
+		<string>zh-Hant</string>
+		<string>vi</string>
+		<string>tl</string>
+		<string>ko</string>
+		<string>fr</string>
+	</array>
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<key>NSAllowsArbitraryLoads</key>
