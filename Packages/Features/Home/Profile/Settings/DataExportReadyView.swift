@@ -17,13 +17,15 @@ import SwiftUI
 // @Attribute(.allowsCloudEncryption). First export captures it,
 // subsequent exports pre-fill the TextField.
 //
-// Layout (top → bottom):
-// - Hero icon disc + status (loading / success / idle)
-// - Title + descriptive copy
-// - Reference code block (tap to copy; embedded in
-//   manifest.referenceCode of the JSON file)
-// - Email TextField with cached value (persisted on send)
-// - Primary CTA "Email me a copy" + secondary "Other ways to share"
+// File split (per CLAUDE.md §7, under 500-line threshold):
+// - This file:               struct + state + body shell + content.
+// - +Sections.swift:         section view builders + footer chrome
+//                            + derived presentation helpers.
+// - +Actions.swift:          send / share / reveal pipelines + static
+//                            factories + cooldown helpers.
+// State properties are declared without `private` so the extensions
+// in sibling files can read them; nothing inside the module should
+// touch them anyway — the convention is enforced by SwiftUI itself.
 
 struct DataExportReadyView: View {
     /// Closure fired when the user taps "Done" on the success state.
@@ -32,22 +34,22 @@ struct DataExportReadyView: View {
     /// at a time. When nil, falls back to a plain `dismiss()`.
     var onComplete: (() -> Void)? = nil
 
-    @Environment(\.dismiss) private var dismiss
-    @Dependency(\.apiClient) private var apiClient
-    @Dependency(\.userProfileLocal) private var userProfileLocal
+    @Environment(\.dismiss) var dismiss
+    @Dependency(\.apiClient) var apiClient
+    @Dependency(\.userProfileLocal) var userProfileLocal
 
-    @State private var referenceCode: String = DataExportReadyView.generateReferenceCode()
-    @State private var isCodeRevealed: Bool = false
-    @State private var didCopy: Bool = false
-    @State private var relockTask: Task<Void, Never>?
+    @State var referenceCode: String = DataExportReadyView.generateReferenceCode()
+    @State var isCodeRevealed: Bool = false
+    @State var didCopy: Bool = false
+    @State var relockTask: Task<Void, Never>?
 
-    @State private var email: String = ""
-    @State private var didHydrateEmail: Bool = false
+    @State var email: String = ""
+    @State var didHydrateEmail: Bool = false
 
-    @State private var shareItem: ExportShareItem?
-    @State private var exportError: String?
-    @State private var isSending: Bool = false
-    @State private var sentSummary: SentSummary?
+    @State var shareItem: ExportShareItem?
+    @State var exportError: String?
+    @State var isSending: Bool = false
+    @State var sentSummary: SentSummary?
 
     /// Wall-clock timestamp (Unix epoch) of the most recent
     /// successful email send. Compared against
@@ -55,13 +57,12 @@ struct DataExportReadyView: View {
     /// button so a user can't spam the backend (and the recipient)
     /// while their previous link is still valid. Lives in
     /// `@AppStorage` so the cooldown survives app relaunches.
-    @AppStorage(DataExportReadyView.lastSentAtKey)
-    private var lastSentAtRaw: Double = 0
+    @AppStorage(DataExportReadyView.lastSentAtKey) var lastSentAtRaw: Double = 0
 
     /// Re-drives the cooldown copy ("expires in 41h") at minute
     /// granularity. Lighter than a 1s timer; the countdown text
     /// rounds to hours anyway.
-    @State private var cooldownTickerTrigger: Int = 0
+    @State var cooldownTickerTrigger: Int = 0
 
     var body: some View {
         ZStack {
@@ -91,9 +92,7 @@ struct DataExportReadyView: View {
         }
     }
 
-    // MARK: - Content
-
-    private var content: some View {
+    var content: some View {
         ScrollView {
             VStack(spacing: AppLayout.spacingL) {
                 heroIcon
@@ -109,519 +108,10 @@ struct DataExportReadyView: View {
         }
         .scrollIndicators(.hidden)
     }
-
-    // MARK: - Hero
-
-    private var heroIcon: some View {
-        ZStack {
-            Circle()
-                .fill(DesignColors.accentWarm.opacity(0.14))
-                .frame(width: 132, height: 132)
-
-            if sentSummary != nil {
-                Image(systemName: "checkmark.circle.fill")
-                    .font(.system(size: 64, weight: .regular))
-                    .foregroundStyle(DesignColors.accentWarm)
-                    .transition(.opacity)
-            } else if isSending {
-                ProgressView()
-                    .progressViewStyle(.circular)
-                    .tint(DesignColors.accentWarm)
-                    .controlSize(.large)
-            } else {
-                Image(systemName: "tray.and.arrow.down.fill")
-                    .font(.system(size: 52, weight: .regular))
-                    .foregroundStyle(DesignColors.accentWarm)
-                    .transition(.opacity)
-            }
-        }
-        .animation(.easeInOut(duration: 0.25), value: sentSummary?.email)
-        .animation(.easeInOut(duration: 0.25), value: isSending)
-        .padding(.top, AppLayout.spacingM)
-    }
-
-    // MARK: - Text
-
-    private var titleBlock: some View {
-        Text(sentSummary != nil ? "Email sent" : "Your data is ready")
-            .font(AppTypography.displayHeader)
-            .foregroundStyle(DesignColors.text)
-            .multilineTextAlignment(.center)
-            .fixedSize(horizontal: false, vertical: true)
-            .padding(.horizontal, AppLayout.spacingS)
-    }
-
-    @ViewBuilder
-    private var copyBlock: some View {
-        if let sent = sentSummary {
-            (
-                Text("We sent a download link to ")
-                + Text(sent.email)
-                    .fontWeight(.semibold)
-                    .foregroundColor(DesignColors.text)
-                + Text(". The link works once and expires in 72 hours. Check spam if you don't see it within a minute.")
-            )
-            .font(AppTypography.bodyMedium)
-            .foregroundStyle(DesignColors.textSecondary)
-            .multilineTextAlignment(.center)
-            .fixedSize(horizontal: false, vertical: true)
-            .padding(.horizontal, AppLayout.spacingS)
-        } else {
-            Text("Add your email and we'll send a one-shot download link. It works once and expires in 72 hours.")
-                .font(AppTypography.bodyMedium)
-                .foregroundStyle(DesignColors.textSecondary)
-                .multilineTextAlignment(.center)
-                .fixedSize(horizontal: false, vertical: true)
-                .padding(.horizontal, AppLayout.spacingS)
-        }
-    }
-
-    // MARK: - Reference code
-
-    private var referenceCodeRow: some View {
-        Button(action: handleReferenceCodeTap) {
-            HStack(spacing: AppLayout.spacingS) {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Archive password")
-                        .font(AppTypography.cardEyebrow)
-                        .tracking(AppTypography.cardEyebrowTracking)
-                        .foregroundStyle(DesignColors.textSecondary)
-                    Text(isCodeRevealed ? referenceCode : Self.redactedCode)
-                        .font(.system(.body, design: .monospaced).weight(.semibold))
-                        .foregroundStyle(DesignColors.accent)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.6)
-                        .contentTransition(.opacity)
-                    Text(isCodeRevealed
-                        ? "Auto-locks in a few seconds. Tap to copy."
-                        : "Protected by Face ID. Tap to reveal.")
-                        .font(AppTypography.caption)
-                        .foregroundStyle(DesignColors.textSecondary.opacity(0.75))
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-
-                Image(systemName: trailingIconName)
-                    .font(.system(size: 18, weight: .semibold))
-                    .foregroundStyle(trailingIconColor)
-                    .contentTransition(.symbolEffect(.replace))
-            }
-            .padding(.horizontal, AppLayout.spacingM)
-            .padding(.vertical, 14)
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .widgetCardStyle(cornerRadius: AppLayout.cornerRadiusL)
-    }
-
-    private var trailingIconName: String {
-        if didCopy { return "checkmark" }
-        return isCodeRevealed ? "doc.on.doc" : "faceid"
-    }
-
-    private var trailingIconColor: Color {
-        if didCopy { return DesignColors.accentWarm }
-        return isCodeRevealed ? DesignColors.textSecondary : DesignColors.accent
-    }
-
-    private static let redactedCode = "••••–••••–••••–••••"
-
-    // MARK: - Email input
-
-    @ViewBuilder
-    private var emailInputRow: some View {
-        if sentSummary == nil {
-            VStack(alignment: .leading, spacing: 6) {
-                Text("Send to")
-                    .font(AppTypography.cardEyebrow)
-                    .tracking(AppTypography.cardEyebrowTracking)
-                    .foregroundStyle(DesignColors.textSecondary)
-                    .padding(.horizontal, AppLayout.spacingM)
-                    .padding(.top, 14)
-
-                TextField("you@example.com", text: $email)
-                    .font(AppTypography.rowTitle)
-                    .foregroundStyle(DesignColors.text)
-                    .textInputAutocapitalization(.never)
-                    .autocorrectionDisabled()
-                    .keyboardType(.emailAddress)
-                    .textContentType(.emailAddress)
-                    .disabled(isSending)
-                    .padding(.horizontal, AppLayout.spacingM)
-                    .padding(.bottom, 14)
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .widgetCardStyle(cornerRadius: AppLayout.cornerRadiusL)
-        }
-    }
-
-    // MARK: - Privacy callout
-
-    @ViewBuilder
-    private var privacyCallout: some View {
-        if sentSummary == nil {
-            HStack(alignment: .top, spacing: AppLayout.spacingS) {
-                Image(systemName: "lock.shield.fill")
-                    .font(.system(size: 18, weight: .semibold))
-                    .foregroundStyle(DesignColors.accentWarm)
-                    .frame(width: 24)
-
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Stays under your control")
-                        .font(AppTypography.cardLabel)
-                        .foregroundStyle(DesignColors.text)
-                    Text("Your encrypted archive is held on our server for up to 72 hours so the email link can fetch it. We delete it the moment you download, or sooner if the link expires. Only your device has the password.")
-                        .font(AppTypography.bodyMedium)
-                        .foregroundStyle(DesignColors.textSecondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-            }
-            .padding(.horizontal, AppLayout.spacingM)
-            .padding(.vertical, 14)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .widgetCardStyle(cornerRadius: AppLayout.cornerRadiusL)
-        }
-    }
-
-    // MARK: - Footer
-
-    @ViewBuilder
-    private var footer: some View {
-        if sentSummary != nil {
-            WarmCapsuleButton(
-                "Done",
-                prominence: .primary,
-                isFullWidth: true,
-                action: { (onComplete ?? { dismiss() })() }
-            )
-            .padding(.horizontal, AppLayout.screenHorizontal)
-            .padding(.top, AppLayout.spacingL)
-            .padding(.bottom, AppLayout.spacingS)
-            .background { footerBackground }
-        } else {
-            VStack(spacing: AppLayout.spacingS) {
-                if isInCooldown {
-                    Text(cooldownText)
-                        .font(AppTypography.bodyMedium)
-                        .foregroundStyle(DesignColors.textSecondary)
-                        .multilineTextAlignment(.center)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .padding(.horizontal, AppLayout.spacingS)
-                }
-
-                WarmCapsuleButton(
-                    emailButtonTitle,
-                    prominence: .primary,
-                    isFullWidth: true,
-                    action: { Task { await sendViaBackend() } }
-                )
-                .disabled(isSending || !isEmailValid || isInCooldown)
-
-                Button(action: shareFile) {
-                    Text("Other ways to share")
-                        .font(AppTypography.linkLabel)
-                        .foregroundStyle(DesignColors.textSecondary)
-                        .underline(true, color: DesignColors.textSecondary.opacity(0.6))
-                        .padding(.vertical, 6)
-                        .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-                .disabled(isSending)
-            }
-            .padding(.horizontal, AppLayout.screenHorizontal)
-            .padding(.top, AppLayout.spacingL)
-            .padding(.bottom, AppLayout.spacingS)
-            .background { footerBackground }
-        }
-    }
-
-    // Frosted blur + warm peach ramp, identical to the one used
-    // on DownloadDataView. Mirrors the header's AppleHealthBackground
-    // tint so the two ends of the screen feel symmetric. The
-    // background bleeds through the bottom safe area; the button
-    // padding keeps the CTAs above the home indicator.
-    private var footerBackground: some View {
-        ZStack {
-            Rectangle()
-                .fill(.ultraThinMaterial)
-                .mask {
-                    LinearGradient(
-                        colors: [.clear, .black.opacity(0.6), .black, .black],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                }
-
-            LinearGradient(
-                colors: [
-                    .clear,
-                    DesignColors.accentWarm.opacity(0.08),
-                    DesignColors.accentWarm.opacity(0.16),
-                ],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-        }
-        .ignoresSafeArea(.container, edges: .bottom)
-        .allowsHitTesting(false)
-    }
-
-    // MARK: - Derived
-
-    private var emailButtonTitle: String {
-        if isSending { return "Sending…" }
-        if isInCooldown { return "Wait for the previous link" }
-        return "Email me a copy"
-    }
-
-    private var isEmailValid: Bool {
-        Self.isLikelyValidEmail(email)
-    }
-
-    private var exportErrorBinding: Binding<Bool> {
-        Binding(
-            get: { exportError != nil },
-            set: { if !$0 { exportError = nil } }
-        )
-    }
-
-    // MARK: - Lifecycle
-
-    private func hydrateEmailIfNeeded() async {
-        guard !didHydrateEmail else { return }
-        didHydrateEmail = true
-
-        do {
-            if let snapshot = try await userProfileLocal.getProfile(),
-               let cached = snapshot.email, !cached.isEmpty {
-                email = cached
-            }
-        } catch {
-            // Non-fatal — the user can still type it manually.
-        }
-    }
-
-    // MARK: - Actions
-
-    private func handleReferenceCodeTap() {
-        if isCodeRevealed {
-            copyToClipboard()
-        } else {
-            Task { await unlockReferenceCode() }
-        }
-    }
-
-    private func unlockReferenceCode() async {
-        // `.deviceOwnerAuthentication` allows passcode fallback when
-        // biometrics fail or aren't enrolled (simulator, older device).
-        // `.deviceOwnerAuthenticationWithBiometrics` is stricter but
-        // can lock the user out if they can't enroll Face ID.
-        let context = LAContext()
-        context.localizedFallbackTitle = "Use passcode"
-
-        var policyError: NSError?
-        guard context.canEvaluatePolicy(.deviceOwnerAuthentication, error: &policyError) else {
-            // No biometrics + no passcode set. Fall back to revealing
-            // without auth — the device itself has no lock surface.
-            withAnimation(.easeInOut(duration: 0.25)) {
-                isCodeRevealed = true
-            }
-            scheduleAutoRelock()
-            return
-        }
-
-        do {
-            let success = try await context.evaluatePolicy(
-                .deviceOwnerAuthentication,
-                localizedReason: "Reveal the password that unlocks your encrypted export."
-            )
-            guard success else { return }
-
-            withAnimation(.easeInOut(duration: 0.25)) {
-                isCodeRevealed = true
-            }
-            UIImpactFeedbackGenerator(style: .light).impactOccurred()
-            copyToClipboard()
-            scheduleAutoRelock()
-        } catch {
-            // User cancelled or auth failed — leave code locked.
-        }
-    }
-
-    private func copyToClipboard() {
-        UIPasteboard.general.string = referenceCode
-        UIImpactFeedbackGenerator(style: .soft).impactOccurred()
-        withAnimation(.easeInOut(duration: 0.2)) { didCopy = true }
-        Task { @MainActor in
-            try? await Task.sleep(for: .seconds(1.8))
-            withAnimation(.easeInOut(duration: 0.2)) { didCopy = false }
-        }
-    }
-
-    private func scheduleAutoRelock() {
-        relockTask?.cancel()
-        relockTask = Task { @MainActor in
-            try? await Task.sleep(for: .seconds(20))
-            guard !Task.isCancelled else { return }
-            withAnimation(.easeInOut(duration: 0.25)) {
-                isCodeRevealed = false
-            }
-        }
-    }
-
-    private func sendViaBackend() async {
-        guard !isSending, isEmailValid else { return }
-        let trimmed = email.trimmingCharacters(in: .whitespacesAndNewlines)
-        email = trimmed
-        isSending = true
-
-        defer { isSending = false }
-
-        do {
-            let payload = try buildExportData()
-            let fileName = Self.exportFileName()
-            let request = DataExportEmailRequest(
-                to: trimmed,
-                referenceCode: referenceCode,
-                payloadB64: payload.base64EncodedString(),
-                filename: fileName
-            )
-            let endpoint = try Endpoint.sendDataExportEmail(body: request)
-            let _: DataExportEmailResponse = try await apiClient.send(endpoint)
-
-            await persistEmail(trimmed)
-
-            // Engage the 72h cooldown so the user can't re-send
-            // while their previous link is still valid. Stored as
-            // a Unix timestamp in @AppStorage so it survives
-            // relaunches and view re-mounts.
-            lastSentAtRaw = Date.now.timeIntervalSince1970
-            startCooldownTicker()
-
-            withAnimation(.easeInOut(duration: 0.3)) {
-                sentSummary = SentSummary(email: trimmed)
-            }
-            UIImpactFeedbackGenerator(style: .light).impactOccurred()
-        } catch {
-            exportError = error.localizedDescription
-        }
-    }
-
-    private func shareFile() {
-        guard !isSending else { return }
-        do {
-            let url = try buildExportFile()
-            shareItem = ExportShareItem(url: url)
-        } catch {
-            exportError = error.localizedDescription
-        }
-    }
-
-    // MARK: - Export pipeline
-
-    private func buildExportData() throws -> Data {
-        let info = Bundle.main.infoDictionary ?? [:]
-        let appVersion = (info["CFBundleShortVersionString"] as? String) ?? "0.0.0"
-        let buildNumber = (info["CFBundleVersion"] as? String) ?? "0"
-
-        return try DataExporter().exportAll(
-            appVersion: appVersion,
-            buildNumber: buildNumber,
-            preferences: ExportablePreferences.snapshot(),
-            referenceCode: referenceCode
-        )
-    }
-
-    private func buildExportFile() throws -> URL {
-        let data = try buildExportData()
-        let fileName = Self.exportFileName()
-        let url = FileManager.default.temporaryDirectory
-            .appendingPathComponent(fileName)
-        try data.write(to: url, options: .atomic)
-        return url
-    }
-
-    private func persistEmail(_ value: String) async {
-        do {
-            guard var snapshot = try await userProfileLocal.getProfile(),
-                  snapshot.email != value else { return }
-            snapshot.email = value
-            try await userProfileLocal.saveProfile(snapshot)
-        } catch {
-            // Best-effort cache — silent if it can't write. Guest
-            // users (no profile yet) simply re-type next time.
-        }
-    }
-
-    // MARK: - Helpers
-
-    // MARK: - Cooldown
-
-    fileprivate static let lastSentAtKey = "cycle.app.dataExport.lastSentAt"
-    private static let cooldownSeconds: TimeInterval = 72 * 60 * 60
-
-    /// Seconds remaining until a fresh export email can be sent.
-    /// Zero (or negative) when no cooldown is active. Reads
-    /// `cooldownTickerTrigger` so the value re-evaluates whenever
-    /// the ticker fires.
-    private var cooldownRemaining: TimeInterval {
-        _ = cooldownTickerTrigger
-        guard lastSentAtRaw > 0 else { return 0 }
-        let elapsed = Date.now.timeIntervalSince1970 - lastSentAtRaw
-        return max(0, Self.cooldownSeconds - elapsed)
-    }
-
-    private var isInCooldown: Bool { cooldownRemaining > 0 }
-
-    private var cooldownText: String {
-        let remaining = cooldownRemaining
-        guard remaining > 0 else { return "" }
-        let hours = Int(remaining / 3600)
-        if hours >= 1 {
-            return "Your previous link is still active. You can send a new one in about \(hours)h."
-        }
-        let minutes = max(1, Int(remaining / 60))
-        return "Your previous link is still active. You can send a new one in about \(minutes) min."
-    }
-
-    private func startCooldownTicker() {
-        cooldownTickerTrigger &+= 1
-        // No timer publisher needed for now — re-evaluation is
-        // driven by the view rebuilding on relevant @State changes
-        // (sending, email edits, app foreground). For a more
-        // precise countdown we could swap in a TimelineView(.periodic),
-        // but a minute resolution would be overkill since the copy
-        // rounds to hours.
-    }
-
-    private static func exportFileName() -> String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy-MM-dd-HHmmss"
-        formatter.locale = Locale(identifier: "en_US_POSIX")
-        formatter.timeZone = TimeZone(secondsFromGMT: 0)
-        return "cycleapp-export-\(formatter.string(from: .now)).json"
-    }
-
-    private static func isLikelyValidEmail(_ value: String) -> Bool {
-        let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { return false }
-        let pattern = #"^[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$"#
-        return trimmed.range(of: pattern, options: .regularExpression) != nil
-    }
-
-    // MARK: - Reference code generation
-
-    private static func generateReferenceCode() -> String {
-        let alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
-        let raw = (0..<16).compactMap { _ in alphabet.randomElement() }
-        let chunks = stride(from: 0, to: raw.count, by: 4).map { i -> String in
-            String(raw[i..<min(i + 4, raw.count)])
-        }
-        return chunks.joined(separator: "-")
-    }
 }
 
 // MARK: - Sent Summary
 
-private struct SentSummary: Equatable {
+struct SentSummary: Equatable {
     let email: String
 }
