@@ -27,7 +27,7 @@ public struct ProfilePrivacyCard: View {
 
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Health data (Apple Health)")
-                            .font(.raleway("Medium", size: 17, relativeTo: .headline))
+                            .font(AppTypography.rowTitle)
                             .foregroundStyle(DesignColors.text)
                         Text(probeSubtitle)
                             .font(AppTypography.bodyMedium)

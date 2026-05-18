@@ -181,7 +181,7 @@ extension PatternReading {
             // Mock LoggingActionCard slot below
             VStack(alignment: .leading, spacing: 14) {
                 Text("TODAY · THURSDAY")
-                    .font(.raleway("SemiBold", size: 11, relativeTo: .caption2))
+                    .font(AppTypography.cardEyebrow)
                     .tracking(1.4)
                     .foregroundStyle(DesignColors.textSecondary)
                 Text("How are you feeling?")

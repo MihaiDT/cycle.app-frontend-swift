@@ -37,7 +37,7 @@ public struct ProfileAppPreferencesCard: View {
         Button(action: action) {
             HStack(spacing: 0) {
                 Text(title)
-                    .font(.raleway("Medium", size: 17, relativeTo: .headline))
+                    .font(AppTypography.rowTitle)
                     .foregroundStyle(DesignColors.text)
                 Spacer(minLength: 0)
                 ProfileNavChip()

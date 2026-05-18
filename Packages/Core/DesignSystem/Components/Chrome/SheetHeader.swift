@@ -74,7 +74,7 @@ public struct SheetHeader: View {
                         .foregroundStyle(DesignColors.textSecondary)
                 }
                 Text(title)
-                    .font(.raleway("Bold", size: 17, relativeTo: .headline))
+                    .font(AppTypography.cardTitleTertiary)
                     .foregroundStyle(DesignColors.text)
             }
         }

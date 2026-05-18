@@ -63,7 +63,7 @@ public struct InsightHistoryView: View {
                 }
                 ToolbarItem(placement: .principal) {
                     Text("Saved insights")
-                        .font(.raleway("SemiBold", size: 17, relativeTo: .headline))
+                        .font(AppTypography.rowTitleEmphasized)
                         .foregroundStyle(DesignColors.text)
                 }
             }
@@ -177,7 +177,7 @@ public struct InsightHistoryView: View {
 
             VStack(spacing: 8) {
                 Text("Nothing saved yet")
-                    .font(.raleway("Bold", size: 22, relativeTo: .title2))
+                    .font(AppTypography.cardTitleSecondary)
                     .foregroundStyle(DesignColors.textPrincipal)
 
                 Text("Tap the heart on a daily insight and it'll land here, ready to revisit.")

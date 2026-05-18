@@ -93,7 +93,7 @@ public struct StatRingTile: View {
         if let value, !value.isEmpty {
             HStack(alignment: .firstTextBaseline, spacing: 4) {
                 Text(value)
-                    .font(.raleway("Bold", size: 28, relativeTo: .title))
+                    .font(AppTypography.displayHeader)
                     .tracking(-0.5)
                     .foregroundStyle(DesignColors.text)
                     .contentTransition(.numericText())

@@ -53,7 +53,7 @@ struct WhenToSeeDoctorScreen: View {
         .toolbar {
             ToolbarItem(placement: .principal) {
                 Text("Body Patterns")
-                    .font(.raleway("SemiBold", size: 17, relativeTo: .headline))
+                    .font(AppTypography.rowTitleEmphasized)
                     .foregroundStyle(DesignColors.text)
             }
         }

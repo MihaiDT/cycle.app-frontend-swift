@@ -83,7 +83,7 @@ struct CalendarEmptyStateCard: View {
 
                 VStack(spacing: 6) {
                     Text("No cycle data yet")
-                        .font(.raleway("Bold", size: 17, relativeTo: .headline))
+                        .font(AppTypography.cardTitleTertiary)
                         .foregroundStyle(DesignColors.text)
                         .multilineTextAlignment(.center)
 

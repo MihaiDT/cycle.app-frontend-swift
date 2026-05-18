@@ -60,7 +60,7 @@ public struct ProfileAccountCard: View {
                 .foregroundStyle(tint.opacity(0.85))
                 .frame(width: 24)
             Text(label)
-                .font(.raleway("Medium", size: 17, relativeTo: .headline))
+                .font(AppTypography.rowTitle)
                 .foregroundStyle(tint)
             Spacer()
         }

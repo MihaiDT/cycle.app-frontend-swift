@@ -47,7 +47,7 @@ public struct ProfileIdentityHeader: View {
                             .lineLimit(1)
                     }
                     Text("Member since \(Self.memberFormatter.string(from: memberSince))")
-                        .font(.raleway("Regular", size: 12, relativeTo: .caption))
+                        .font(AppTypography.caption)
                         .foregroundStyle(DesignColors.textSecondary.opacity(0.7))
                 }
                 Spacer(minLength: 0)

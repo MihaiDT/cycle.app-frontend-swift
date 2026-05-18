@@ -163,7 +163,7 @@ private struct GoalCard: View {
                         .foregroundColor(DesignColors.text)
 
                     Text(goal.subtitle)
-                        .font(.raleway("Regular", size: 12, relativeTo: .caption))
+                        .font(AppTypography.caption)
                         .foregroundColor(DesignColors.text.opacity(isSelected ? 0.6 : 0.4))
                 }
                 .padding(.leading, 16)

@@ -189,7 +189,7 @@ struct CycleHistoryAllView: View {
     private var sheetNav: some View {
         ZStack {
             Text("Cycle history")
-                .font(.raleway("Bold", size: 17, relativeTo: .headline))
+                .font(AppTypography.cardTitleTertiary)
                 .tracking(-0.2)
                 .foregroundStyle(DesignColors.text)
 
@@ -276,7 +276,7 @@ struct CycleHistoryAllView: View {
     private func yearSection(year: Int, cycles: [CycleHistoryTimeline]) -> some View {
         VStack(alignment: .leading, spacing: 16) {
             Text(String(year))
-                .font(.raleway("Bold", size: 22, relativeTo: .title2))
+                .font(AppTypography.cardTitleSecondary)
                 .tracking(-0.4)
                 .foregroundStyle(DesignColors.text)
 
@@ -352,7 +352,7 @@ struct CycleHistoryAllView: View {
     private var emptyState: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text("Nothing here yet.")
-                .font(.raleway("SemiBold", size: 17, relativeTo: .headline))
+                .font(AppTypography.rowTitleEmphasized)
                 .foregroundStyle(DesignColors.text)
             Text("Once you log a period, cycles will collect here by year.")
                 .font(.raleway("Medium", size: 13, relativeTo: .footnote))

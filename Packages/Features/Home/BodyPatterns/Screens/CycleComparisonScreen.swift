@@ -120,7 +120,7 @@ struct CycleComparisonScreen: View {
             )
 
             Text(dateRangeLabel)
-                .font(.raleway("Medium", size: 14, relativeTo: .footnote))
+                .font(AppTypography.linkLabel)
                 .foregroundStyle(DesignColors.textSecondary)
                 .padding(.top, -18)
 
@@ -188,7 +188,7 @@ struct CycleComparisonScreen: View {
     private var medicalDisclaimerFooter: some View {
         HStack(spacing: 6) {
             Text("NOT A MEDICAL DEVICE")
-                .font(.raleway("SemiBold", size: 11, relativeTo: .caption2))
+                .font(AppTypography.cardEyebrow)
                 .tracking(1.2)
             Image(systemName: "chevron.down")
                 .font(.system(size: 10, weight: .semibold))
@@ -231,7 +231,7 @@ private struct ChangeItemCard: View {
                 VStack(alignment: .leading, spacing: 8) {
                     if let phase = meta?.phaseDisplay {
                         Text(phase.uppercased())
-                            .font(.raleway("SemiBold", size: 11, relativeTo: .caption2))
+                            .font(AppTypography.cardEyebrow)
                             .tracking(1.4)
                             .foregroundStyle(DesignColors.textSecondary)
                     }

@@ -189,7 +189,7 @@ extension DailyCheckInRitualView {
         default: keyword = ""
         }
         return Text(keyword)
-            .font(.raleway("Bold", size: 15, relativeTo: .headline))
+            .font(AppTypography.modalHeader)
             .italic()
             .foregroundStyle(DesignColors.text)
     }

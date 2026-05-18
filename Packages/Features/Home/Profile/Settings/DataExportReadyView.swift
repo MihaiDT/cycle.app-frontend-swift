@@ -126,7 +126,7 @@ struct DataExportReadyView: View {
 
     private var titleBlock: some View {
         Text(sentSummary != nil ? "Email sent" : "Your data is ready")
-            .font(.raleway("Bold", size: 24, relativeTo: .title2))
+            .font(AppTypography.displayHeader)
             .foregroundStyle(DesignColors.text)
             .multilineTextAlignment(.center)
             .fixedSize(horizontal: false, vertical: true)
@@ -171,7 +171,7 @@ struct DataExportReadyView: View {
                     Text(isCodeRevealed
                         ? "Auto-locks in a few seconds. Tap to copy."
                         : "Protected by Face ID. Tap to reveal.")
-                        .font(.raleway("Regular", size: 12, relativeTo: .caption))
+                        .font(AppTypography.caption)
                         .foregroundStyle(DesignColors.textSecondary.opacity(0.75))
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -215,7 +215,7 @@ struct DataExportReadyView: View {
                     .padding(.top, 14)
 
                 TextField("you@example.com", text: $email)
-                    .font(.raleway("Medium", size: 17, relativeTo: .headline))
+                    .font(AppTypography.rowTitle)
                     .foregroundStyle(DesignColors.text)
                     .textInputAutocapitalization(.never)
                     .autocorrectionDisabled()
@@ -243,7 +243,7 @@ struct DataExportReadyView: View {
 
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Stays under your control")
-                        .font(.raleway("SemiBold", size: 14, relativeTo: .subheadline))
+                        .font(AppTypography.cardLabel)
                         .foregroundStyle(DesignColors.text)
                     Text("Your archive passes briefly through our server to compose the email. Nothing is stored on our end.")
                         .font(AppTypography.bodyMedium)
@@ -285,7 +285,7 @@ struct DataExportReadyView: View {
 
                 Button(action: shareFile) {
                     Text("Other ways to share")
-                        .font(.raleway("Medium", size: 14, relativeTo: .footnote))
+                        .font(AppTypography.linkLabel)
                         .foregroundStyle(DesignColors.textSecondary)
                         .underline(true, color: DesignColors.textSecondary.opacity(0.6))
                         .padding(.vertical, 6)

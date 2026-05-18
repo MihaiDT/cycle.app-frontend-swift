@@ -63,7 +63,7 @@ public struct WellnessDetailView: View {
                 .frame(width: 36, height: 36)
 
             Text("Wellness")
-                .font(.raleway("Bold", size: 17, relativeTo: .headline))
+                .font(AppTypography.cardTitleTertiary)
                 .tracking(-0.2)
                 .foregroundStyle(DesignColors.text)
 
@@ -263,7 +263,7 @@ private struct PhaseBreakdownRow: View {
                 }
             } else {
                 Text("—")
-                    .font(.raleway("Bold", size: 17, relativeTo: .headline))
+                    .font(AppTypography.cardTitleTertiary)
                     .foregroundStyle(DesignColors.textSecondary)
             }
         }

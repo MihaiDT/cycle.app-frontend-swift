@@ -35,7 +35,7 @@ struct EducationalSection: View {
 
             if let title {
                 Text(title)
-                    .font(.raleway("Bold", size: 20, relativeTo: .title3))
+                    .font(AppTypography.cardTitlePrimary)
                     .foregroundStyle(DesignColors.text)
                     .padding(.bottom, 2)
                     .fixedSize(horizontal: false, vertical: true)

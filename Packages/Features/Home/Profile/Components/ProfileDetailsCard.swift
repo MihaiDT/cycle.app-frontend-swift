@@ -56,7 +56,7 @@ public struct ProfileDetailsCard: View {
         Button(action: onEdit) {
             HStack {
                 Text(label)
-                    .font(.raleway("Medium", size: 17, relativeTo: .headline))
+                    .font(AppTypography.rowTitle)
                     .foregroundStyle(DesignColors.text)
                 Spacer()
             }

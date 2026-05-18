@@ -23,7 +23,7 @@ public struct SectionHeader<Trailing: View>: View {
     public var body: some View {
         HStack(alignment: .lastTextBaseline, spacing: 12) {
             Text(title)
-                .font(.raleway("Bold", size: 22, relativeTo: .title2))
+                .font(AppTypography.cardTitleSecondary)
                 .tracking(-0.3)
                 .foregroundStyle(DesignColors.text)
                 .accessibilityAddTraits(.isHeader)

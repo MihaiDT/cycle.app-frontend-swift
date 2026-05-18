@@ -63,7 +63,7 @@ struct YearOverviewView: View {
                     ForEach(Self.allMonths, id: \.year) { yearData in
                         VStack(spacing: 8) {
                             Text(String(yearData.year))
-                                .font(.raleway("Bold", size: 22, relativeTo: .title2))
+                                .font(AppTypography.cardTitleSecondary)
                                 .foregroundStyle(DesignColors.text)
                                 .frame(maxWidth: .infinity, alignment: .center)
                                 .id("year-\(yearData.year)")

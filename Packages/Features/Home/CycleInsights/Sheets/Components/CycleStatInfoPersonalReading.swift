@@ -14,7 +14,7 @@ struct CycleStatInfoPersonalReading: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(kind.recapLabel.uppercased())
-                .font(.raleway("SemiBold", size: 11, relativeTo: .caption2))
+                .font(AppTypography.cardEyebrow)
                 .tracking(1.4)
                 .foregroundStyle(DesignColors.textSecondary)
 

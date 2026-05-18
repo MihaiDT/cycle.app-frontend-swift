@@ -79,7 +79,7 @@ struct LevelUpOverlay: View {
                     .accessibilityHidden(true)
 
                 Text("LEVEL UP!")
-                    .font(.raleway("Bold", size: 28, relativeTo: .title))
+                    .font(AppTypography.displayHeader)
                     .foregroundStyle(DesignColors.accentWarm)
                     .opacity(reduceMotion ? 1 : textOpacity)
 

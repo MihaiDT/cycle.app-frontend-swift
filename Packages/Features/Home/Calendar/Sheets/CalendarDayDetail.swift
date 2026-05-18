@@ -171,7 +171,7 @@ struct FertilityInfoCard: View {
             VStack(alignment: .leading, spacing: 3) {
                 HStack(spacing: 6) {
                     Text(isOvulationDay ? "Peak Fertility" : "Fertile Window")
-                        .font(.raleway("SemiBold", size: 14, relativeTo: .subheadline))
+                        .font(AppTypography.cardLabel)
                         .foregroundStyle(DesignColors.text)
                     Text(level.displayName)
                         .font(.raleway("Medium", size: 10, relativeTo: .caption2))

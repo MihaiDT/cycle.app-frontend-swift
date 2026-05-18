@@ -64,7 +64,7 @@ struct CycleDiffCard: View {
 
     private var eyebrow: some View {
         Text("SINCE LAST CYCLE")
-            .font(.raleway("SemiBold", size: 11, relativeTo: .caption2))
+            .font(AppTypography.cardEyebrow)
             .tracking(1.4)
             .foregroundStyle(DesignColors.textSecondary)
     }
@@ -397,7 +397,7 @@ extension CycleDiffSummary {
         VStack(alignment: .leading, spacing: 22) {
             VStack(alignment: .leading, spacing: 14) {
                 Text("TODAY · THURSDAY")
-                    .font(.raleway("SemiBold", size: 11, relativeTo: .caption2))
+                    .font(AppTypography.cardEyebrow)
                     .tracking(1.4)
                     .foregroundStyle(DesignColors.textSecondary)
                 Text("How are you feeling?")

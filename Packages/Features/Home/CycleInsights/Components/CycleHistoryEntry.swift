@@ -58,13 +58,13 @@ struct CycleHistoryEntry: View, Equatable {
                         .font(.raleway("Medium", size: 12, relativeTo: .footnote))
                         .foregroundStyle(DesignColors.textSecondary)
                     Text("\(headerNumber)")
-                        .font(.raleway("SemiBold", size: 17, relativeTo: .headline))
+                        .font(AppTypography.rowTitleEmphasized)
                         .foregroundStyle(DesignColors.text)
                 }
             } else {
                 HStack(alignment: .firstTextBaseline, spacing: 6) {
                     Text("\(headerNumber)")
-                        .font(.raleway("SemiBold", size: 17, relativeTo: .headline))
+                        .font(AppTypography.rowTitleEmphasized)
                         .foregroundStyle(DesignColors.text)
                     Text(headerNumber == 1 ? "day" : "days")
                         .font(.raleway("Medium", size: 12, relativeTo: .footnote))

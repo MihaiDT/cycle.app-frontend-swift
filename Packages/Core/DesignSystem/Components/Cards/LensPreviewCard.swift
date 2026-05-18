@@ -86,7 +86,7 @@ public struct LensPreviewCard: View {
     @ViewBuilder
     private var teaser: some View {
         Text(preview.teaser)
-            .font(.raleway("Medium", size: 13, relativeTo: .body))
+            .font(AppTypography.bodyMedium)
             .foregroundStyle(DesignColors.text.opacity(0.72))
             .lineSpacing(3)
             .lineLimit(3)

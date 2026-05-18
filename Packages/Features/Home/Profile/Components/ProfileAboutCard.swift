@@ -33,7 +33,7 @@ public struct ProfileAboutCard: View {
         Button(action: { onOpenURL(url) }) {
             HStack(spacing: AppLayout.spacingS) {
                 Text(label)
-                    .font(.raleway("Medium", size: 17, relativeTo: .headline))
+                    .font(AppTypography.rowTitle)
                     .foregroundStyle(DesignColors.text)
                 Spacer()
                 ProfileNavChip()

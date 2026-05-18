@@ -68,7 +68,7 @@ public struct JourneyDestinationCard: View {
     private var meta: some View {
         HStack(spacing: 8) {
             Text("JOURNEY")
-                .font(.raleway("SemiBold", size: 11, relativeTo: .caption2))
+                .font(AppTypography.cardEyebrow)
                 .tracking(0.6)
                 .foregroundStyle(DesignColors.textSecondary)
 
@@ -196,7 +196,7 @@ public struct JourneyDestinationTile: View {
         VStack(alignment: .leading, spacing: 6) {
             if !kind.badge.isEmpty {
                 Text(kind.badge)
-                    .font(.raleway("SemiBold", size: 11, relativeTo: .caption2))
+                    .font(AppTypography.cardEyebrow)
                     .tracking(0.6)
                     .foregroundStyle(DesignColors.textSecondary)
             }

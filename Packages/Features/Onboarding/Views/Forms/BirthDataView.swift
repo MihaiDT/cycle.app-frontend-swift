@@ -182,7 +182,7 @@ private struct AgeRestrictionAlertView: View {
 
                 // Title
                 Text("Not 13 yet?")
-                    .font(.raleway("Bold", size: 22, relativeTo: .title2))
+                    .font(AppTypography.cardTitleSecondary)
                     .foregroundColor(DesignColors.text)
                     .accessibilityAddTraits(.isHeader)
 

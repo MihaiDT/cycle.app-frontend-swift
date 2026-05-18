@@ -63,7 +63,7 @@ public struct CycleLengthEditorView: View {
             }
             ToolbarItem(placement: .principal) {
                 Text("Cycle length")
-                    .font(.raleway("SemiBold", size: 17, relativeTo: .headline))
+                    .font(AppTypography.rowTitleEmphasized)
                     .foregroundStyle(DesignColors.text)
             }
         }
@@ -121,11 +121,11 @@ public struct CycleLengthEditorView: View {
             case .recommended:
                 HStack {
                     Text("Average from your cycles")
-                        .font(.raleway("Medium", size: 17, relativeTo: .headline))
+                        .font(AppTypography.rowTitle)
                         .foregroundStyle(DesignColors.text)
                     Spacer()
                     Text("\(store.computedValue) days")
-                        .font(.raleway("SemiBold", size: 17, relativeTo: .headline))
+                        .font(AppTypography.rowTitleEmphasized)
                         .foregroundStyle(DesignColors.textSecondary)
                 }
                 .padding(.horizontal, AppLayout.spacingM)
@@ -163,7 +163,7 @@ public struct CycleLengthEditorView: View {
             HStack {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(label)
-                        .font(.raleway("Medium", size: 17, relativeTo: .headline))
+                        .font(AppTypography.rowTitle)
                         .foregroundStyle(DesignColors.text)
                     Text(hint)
                         .font(AppTypography.bodyMedium)
@@ -212,7 +212,7 @@ public struct CycleLengthEditorView: View {
                         .transition(.scale.combined(with: .opacity))
                 }
                 Text(saveButtonLabel)
-                    .font(.raleway("SemiBold", size: 17, relativeTo: .headline))
+                    .font(AppTypography.rowTitleEmphasized)
                     .foregroundStyle(.white)
                     .contentTransition(.opacity)
             }

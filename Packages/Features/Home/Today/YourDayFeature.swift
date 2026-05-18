@@ -201,10 +201,10 @@ struct YourDayView: View {
         VStack(spacing: 14) {
             VStack(spacing: 6) {
                 Text("We couldn't load today's previews")
-                    .font(.raleway("Bold", size: 15, relativeTo: .headline))
+                    .font(AppTypography.modalHeader)
                     .foregroundStyle(DesignColors.text)
                 Text("A quick hiccup. Let's try again.")
-                    .font(.raleway("Medium", size: 13, relativeTo: .body))
+                    .font(AppTypography.bodyMedium)
                     .foregroundStyle(DesignColors.textSecondary)
             }
             .multilineTextAlignment(.center)

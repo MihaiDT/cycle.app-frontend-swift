@@ -73,7 +73,7 @@ struct CycleTrendDetailBlock: View, Equatable {
     /// same Apple-Health-style transition as the headline number.
     private var summarySentence: some View {
         Text(summaryCopy)
-            .font(.raleway("Medium", size: 14, relativeTo: .footnote))
+            .font(AppTypography.linkLabel)
             .tracking(-0.1)
             .foregroundStyle(DesignColors.textSecondary)
             .lineSpacing(2)

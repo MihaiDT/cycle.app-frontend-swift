@@ -76,7 +76,7 @@ public struct BondHistoryView: View {
     private var navHeader: some View {
         ZStack {
             Text("Your bonds")
-                .font(.raleway("SemiBold", size: 17, relativeTo: .headline))
+                .font(AppTypography.rowTitleEmphasized)
                 .foregroundStyle(DesignColors.text)
 
             HStack {
@@ -269,7 +269,7 @@ public struct BondHistoryView: View {
 
             VStack(spacing: 8) {
                 Text("Nothing here yet")
-                    .font(.raleway("Bold", size: 22, relativeTo: .title2))
+                    .font(AppTypography.cardTitleSecondary)
                     .foregroundStyle(DesignColors.textPrincipal)
 
                 Text("Add your first bond and we'll start mapping the rhythms between you.")

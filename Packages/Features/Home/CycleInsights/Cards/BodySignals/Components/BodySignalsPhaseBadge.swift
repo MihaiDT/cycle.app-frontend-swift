@@ -17,7 +17,7 @@ struct BodySignalsPhaseBadge: View {
             // flat circle here and a glossy circle there.
             PhaseGlossyDot(tint: phase.orbitColor)
             Text(phase.displayName.uppercased())
-                .font(.raleway("SemiBold", size: 11, relativeTo: .caption2))
+                .font(AppTypography.cardEyebrow)
                 .tracking(1.2)
                 .foregroundStyle(DesignColors.textSecondary)
         }

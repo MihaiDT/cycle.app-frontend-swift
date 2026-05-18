@@ -126,7 +126,7 @@ public struct CycleInsightsView: View {
                 }
                 ToolbarItem(placement: .principal) {
                     Text(headerTitle)
-                        .font(.raleway("SemiBold", size: 17, relativeTo: .headline))
+                        .font(AppTypography.rowTitleEmphasized)
                         .foregroundStyle(DesignColors.text)
                 }
                 ToolbarItem(placement: .topBarTrailing) {
@@ -497,7 +497,7 @@ public struct CycleInsightsView: View {
     var sheetNav: some View {
         ZStack {
             Text(headerTitle)
-                .font(.raleway("Bold", size: 17, relativeTo: .headline))
+                .font(AppTypography.cardTitleTertiary)
                 .tracking(-0.2)
                 .foregroundStyle(DesignColors.text)
 

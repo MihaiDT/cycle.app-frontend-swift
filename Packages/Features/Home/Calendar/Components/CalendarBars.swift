@@ -52,12 +52,12 @@ struct EditPeriodPredictionBanner: View {
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(isDone ? "Predictions updated" : "Updating predictions")
-                    .font(.raleway("SemiBold", size: 14, relativeTo: .subheadline))
+                    .font(AppTypography.cardLabel)
                     .foregroundStyle(DesignColors.text)
                     .contentTransition(.numericText())
 
                 Text(isDone ? "Your calendar is up to date" : "Analyzing your cycle patterns...")
-                    .font(.raleway("Regular", size: 12, relativeTo: .caption))
+                    .font(AppTypography.caption)
                     .foregroundStyle(DesignColors.textSecondary)
                     .contentTransition(.numericText())
             }

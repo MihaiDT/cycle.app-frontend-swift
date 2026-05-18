@@ -108,7 +108,7 @@ struct RegularityOptionButton: View {
 
                     // Animated subtitle
                     Text(regularity.description)
-                        .font(.raleway("Regular", size: 12, relativeTo: .caption))
+                        .font(AppTypography.caption)
                         .foregroundColor(DesignColors.text.opacity(isSelected ? 0.6 : 0))
                         .frame(height: isSelected ? nil : 0, alignment: .top)
                         .clipped()

@@ -18,7 +18,7 @@ public struct ProfileHealthCard: View {
         Button(action: onEdit) {
             HStack {
                 Text("Cycle data")
-                    .font(.raleway("Medium", size: 17, relativeTo: .headline))
+                    .font(AppTypography.rowTitle)
                     .foregroundStyle(DesignColors.text)
                 Spacer()
             }

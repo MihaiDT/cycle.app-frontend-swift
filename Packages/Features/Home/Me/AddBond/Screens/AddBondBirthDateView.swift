@@ -137,7 +137,7 @@ struct AddBondBirthDateView: View {
                 .offset(y: eyebrowIn ? 0 : 10)
 
             Text("When were\nthey born?")
-                .font(.raleway("Bold", size: 28, relativeTo: .title))
+                .font(AppTypography.displayHeader)
                 .tracking(-0.5)
                 .foregroundStyle(DesignColors.textPrincipal)
                 .multilineTextAlignment(.center)

@@ -16,7 +16,7 @@ extension CycleHeroView {
             HStack(spacing: 0) {
                 // Left-aligned month meta tag.
                 Text(monthLabel.uppercased())
-                    .font(.raleway("SemiBold", size: 11, relativeTo: .caption2))
+                    .font(AppTypography.cardEyebrow)
                     .tracking(1.8)
                     .foregroundColor(textOnHeroColor.opacity(0.55))
                     .padding(.leading, 16)

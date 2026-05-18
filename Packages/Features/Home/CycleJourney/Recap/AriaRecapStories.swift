@@ -194,7 +194,7 @@ struct AriaRecapStories: View {
                 .foregroundStyle(.white.opacity(0.5))
 
             Text("Your Body")
-                .font(.raleway("Bold", size: 28, relativeTo: .title))
+                .font(AppTypography.displayHeader)
                 .foregroundStyle(.white)
 
             Text(recap.bodyText.cleanedAIText)
@@ -224,7 +224,7 @@ struct AriaRecapStories: View {
                 .foregroundStyle(.white.opacity(0.5))
 
             Text("Heart & Mind")
-                .font(.raleway("Bold", size: 28, relativeTo: .title))
+                .font(AppTypography.displayHeader)
                 .foregroundStyle(.white)
 
             Text(recap.heartMindText.cleanedAIText)
@@ -253,7 +253,7 @@ struct AriaRecapStories: View {
                 .foregroundStyle(.white.opacity(0.5))
 
             Text("Your Rhythm")
-                .font(.raleway("Bold", size: 28, relativeTo: .title))
+                .font(AppTypography.displayHeader)
                 .foregroundStyle(.white)
 
             Text(recap.rhythmText.cleanedAIText)
@@ -288,7 +288,7 @@ struct AriaRecapStories: View {
                 .foregroundStyle(.white.opacity(0.5))
 
             Text("Key Days")
-                .font(.raleway("Bold", size: 28, relativeTo: .title))
+                .font(AppTypography.displayHeader)
                 .foregroundStyle(.white)
 
             if recap.keyDays.isEmpty {
@@ -379,12 +379,12 @@ struct AriaRecapStories: View {
                     .frame(width: 64, height: 64)
 
                 Text("A")
-                    .font(.raleway("Bold", size: 28, relativeTo: .title))
+                    .font(AppTypography.displayHeader)
                     .foregroundStyle(.white)
             }
 
             Text("What's Coming")
-                .font(.raleway("Bold", size: 28, relativeTo: .title))
+                .font(AppTypography.displayHeader)
                 .foregroundStyle(.white)
 
             Text(recap.whatsComingText.cleanedAIText)
@@ -399,7 +399,7 @@ struct AriaRecapStories: View {
             } label: {
                 HStack(spacing: 10) {
                     Text("Talk about this cycle")
-                        .font(.raleway("SemiBold", size: 17, relativeTo: .headline))
+                        .font(AppTypography.rowTitleEmphasized)
                     Image(systemName: "arrow.right")
                         .font(.system(size: 14, weight: .semibold))
                 }

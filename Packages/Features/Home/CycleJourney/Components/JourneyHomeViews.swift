@@ -38,7 +38,7 @@ public struct NotificationsPanel: View {
                                             )
                                             .frame(width: 40, height: 40)
                                         Text("A")
-                                            .font(.raleway("Bold", size: 17, relativeTo: .headline))
+                                            .font(AppTypography.cardTitleTertiary)
                                             .foregroundStyle(.white)
                                     }
 
@@ -49,7 +49,7 @@ public struct NotificationsPanel: View {
                                                 .foregroundStyle(DesignColors.accentWarm)
                                             Spacer()
                                             Text("New")
-                                                .font(.raleway("SemiBold", size: 11, relativeTo: .caption2))
+                                                .font(AppTypography.cardEyebrow)
                                                 .foregroundStyle(.white)
                                                 .padding(.horizontal, 8)
                                                 .padding(.vertical, 3)
@@ -208,7 +208,7 @@ public struct AriaRecapSheet: View {
                         )
                         .frame(width: 40, height: 40)
                     Text("A")
-                        .font(.raleway("Bold", size: 17, relativeTo: .headline))
+                        .font(AppTypography.cardTitleTertiary)
                         .foregroundStyle(.white)
                 }
                 Text("Aria")
@@ -238,7 +238,7 @@ public struct AriaRecapSheet: View {
                 Button(action: { (onAction ?? onViewRecap)?() }) {
                     HStack(spacing: 8) {
                         Text(buttonTitle)
-                            .font(.raleway("SemiBold", size: 17, relativeTo: .headline))
+                            .font(AppTypography.rowTitleEmphasized)
                         Image(systemName: "chevron.right")
                             .font(.system(size: 12, weight: .semibold))
                     }
@@ -325,7 +325,7 @@ public struct JourneyPreviewSection: View {
             VStack(spacing: AppLayout.spacingM) {
                 HStack {
                     Text("Your Journey")
-                        .font(.raleway("SemiBold", size: 17, relativeTo: .headline))
+                        .font(AppTypography.rowTitleEmphasized)
                         .foregroundStyle(DesignColors.text)
                     Spacer()
                     HStack(spacing: 4) {
@@ -363,7 +363,7 @@ public struct JourneyPreviewSection: View {
 
                 if let missed = missedMonth {
                     Text("\(missed.name) is missing — tap to complete your story")
-                        .font(.raleway("Regular", size: 12, relativeTo: .caption))
+                        .font(AppTypography.caption)
                         .foregroundStyle(DesignColors.accentWarm)
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }

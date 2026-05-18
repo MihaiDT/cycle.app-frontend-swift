@@ -136,12 +136,12 @@ public struct EditPeriodView: View {
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(isDone ? "Predictions updated" : "Updating predictions")
-                    .font(.raleway("SemiBold", size: 14, relativeTo: .subheadline))
+                    .font(AppTypography.cardLabel)
                     .foregroundColor(DesignColors.text)
                     .contentTransition(.numericText())
 
                 Text(isDone ? "Your calendar is up to date" : "Analyzing your cycle patterns...")
-                    .font(.raleway("Regular", size: 12, relativeTo: .caption))
+                    .font(AppTypography.caption)
                     .foregroundColor(DesignColors.textSecondary)
                     .contentTransition(.numericText())
             }
@@ -334,7 +334,7 @@ public struct EditPeriodView: View {
                 store.send(.saveTapped, animation: .easeInOut(duration: 0.3))
             } label: {
                 Text("Save Period")
-                    .font(.raleway("Bold", size: 17, relativeTo: .headline))
+                    .font(AppTypography.cardTitleTertiary)
                     .foregroundColor(.white)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 16)

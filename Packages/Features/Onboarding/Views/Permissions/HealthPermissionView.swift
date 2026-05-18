@@ -57,7 +57,7 @@ public struct HealthPermissionView: View {
                     // Title section
                     VStack(spacing: 16) {
                         Text("Connect Apple Health")
-                            .font(.raleway("Bold", size: 28, relativeTo: .title))
+                            .font(AppTypography.displayHeader)
                             .foregroundColor(DesignColors.text)
                             .multilineTextAlignment(.center)
                             .opacity(animateIn ? 1 : 0)
@@ -136,7 +136,7 @@ public struct HealthPermissionView: View {
                                 .font(.system(size: 10))
                                 .accessibilityHidden(true)
                             Text("Your data stays on your device")
-                                .font(.raleway("Regular", size: 12, relativeTo: .caption))
+                                .font(AppTypography.caption)
                         }
                         .foregroundColor(DesignColors.text)
                         .accessibilityElement(children: .combine)

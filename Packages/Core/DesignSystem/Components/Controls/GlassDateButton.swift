@@ -91,7 +91,7 @@ public struct DatePickerSheet: View {
             .toolbar {
                 ToolbarItem(placement: .principal) {
                     Text(title)
-                        .font(.raleway("SemiBold", size: 17, relativeTo: .headline))
+                        .font(AppTypography.rowTitleEmphasized)
                         .foregroundColor(DesignColors.text)
                 }
                 ToolbarItem(placement: .confirmationAction) {
@@ -99,7 +99,7 @@ public struct DatePickerSheet: View {
                         isPresented = false
                     } label: {
                         Text("Done")
-                            .font(.raleway("SemiBold", size: 17, relativeTo: .headline))
+                            .font(AppTypography.rowTitleEmphasized)
                             .foregroundColor(DesignColors.link)
                     }
                 }

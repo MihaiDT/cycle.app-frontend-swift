@@ -152,7 +152,7 @@ extension PatternReading {
             // focus stays on the new Reading section.
             VStack(alignment: .leading, spacing: 8) {
                 Text("MENSTRUAL PHASE")
-                    .font(.raleway("SemiBold", size: 11, relativeTo: .caption2))
+                    .font(AppTypography.cardEyebrow)
                     .tracking(1.4)
                     .foregroundStyle(DesignColors.textSecondary)
                 Text("Bloating")
@@ -195,7 +195,7 @@ extension PatternReading {
             // Mock disclaimer
             HStack(spacing: 6) {
                 Text("NOT A MEDICAL DEVICE")
-                    .font(.raleway("SemiBold", size: 11, relativeTo: .caption2))
+                    .font(AppTypography.cardEyebrow)
                     .tracking(1.2)
                 Image(systemName: "chevron.down")
                     .font(.system(size: 10, weight: .semibold))

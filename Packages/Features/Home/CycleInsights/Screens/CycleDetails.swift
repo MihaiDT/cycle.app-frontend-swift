@@ -74,7 +74,7 @@ struct CycleDetailsView: View {
                     .font(.system(size: 13, weight: .regular))
                     .foregroundStyle(DesignColors.textSecondary)
                 Text("DATE RANGE")
-                    .font(.raleway("SemiBold", size: 11, relativeTo: .caption2))
+                    .font(AppTypography.cardEyebrow)
                     .tracking(1.4)
                     .foregroundStyle(DesignColors.textSecondary)
             }
@@ -112,7 +112,7 @@ struct CycleDetailsView: View {
                     .font(.system(size: 13, weight: .regular))
                     .foregroundStyle(DesignColors.textSecondary)
                 Text("CYCLE IN PROGRESS")
-                    .font(.raleway("SemiBold", size: 11, relativeTo: .caption2))
+                    .font(AppTypography.cardEyebrow)
                     .tracking(1.4)
                     .foregroundStyle(DesignColors.textSecondary)
             }
@@ -192,7 +192,7 @@ struct CycleDetailsView: View {
                         .font(.system(size: 13, weight: .regular))
                         .foregroundStyle(DesignColors.textSecondary)
                     Text(title.uppercased())
-                        .font(.raleway("SemiBold", size: 11, relativeTo: .caption2))
+                        .font(AppTypography.cardEyebrow)
                         .tracking(1.4)
                         .foregroundStyle(DesignColors.textSecondary)
                     Spacer(minLength: 8)
@@ -267,7 +267,7 @@ struct CycleDetailsView: View {
                     .font(.system(size: 13, weight: .regular))
                     .foregroundStyle(DesignColors.textSecondary)
                 Text("KEY MOMENTS")
-                    .font(.raleway("SemiBold", size: 11, relativeTo: .caption2))
+                    .font(AppTypography.cardEyebrow)
                     .tracking(1.4)
                     .foregroundStyle(DesignColors.textSecondary)
             }

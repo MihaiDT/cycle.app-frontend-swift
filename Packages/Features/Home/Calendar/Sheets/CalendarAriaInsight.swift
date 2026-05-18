@@ -288,7 +288,7 @@ struct AriaPromptOverlay: View {
                                 .font(.raleway("Bold", size: 16, relativeTo: .headline))
                                 .foregroundStyle(DesignColors.text)
                             Text("Your AI companion")
-                                .font(.raleway("Regular", size: 12, relativeTo: .caption))
+                                .font(AppTypography.caption)
                                 .foregroundStyle(DesignColors.textSecondary)
                         }
 

@@ -96,4 +96,30 @@ public enum AppTypography {
     /// labels. Slightly tighter than `.body` so dense detail screens
     /// stay readable without crowding the data.
     public static let bodyMedium: Font = .raleway("Medium", size: 13, relativeTo: .body)
+
+    // MARK: Row + helper text
+
+    /// Primary text inside a list / settings row (Profile rows,
+    /// toggle labels, list item text, TextField content). Sits
+    /// between `cardLabel` (form labels) and `cardTitleTertiary`
+    /// (inner section headers) — heavier than body, but Medium
+    /// weight so a stack of rows doesn't read as a wall of bold.
+    public static let rowTitle: Font = .raleway("Medium", size: 17, relativeTo: .headline)
+
+    /// Same metrics as `rowTitle` but SemiBold — for emphasized
+    /// rows (selected state, "How it works" section labels above
+    /// cards, the right-aligned value next to a `cardLabel`).
+    public static let rowTitleEmphasized: Font = .raleway("SemiBold", size: 17, relativeTo: .headline)
+
+    /// Quiet helper text under a row or inside a card — Face ID
+    /// hint, "Auto-locks in a few seconds", "Coming soon" subtitles.
+    /// Sits one step below `bodyMedium` so supporting info reads as
+    /// secondary, not primary copy.
+    public static let caption: Font = .raleway("Regular", size: 12, relativeTo: .caption)
+
+    /// Inline text link / secondary CTA ("Other ways to share",
+    /// "View privacy policy"). Sized smaller than the primary
+    /// capsule button so it reads as an alternate path rather than
+    /// a peer action, but still tappable comfortably.
+    public static let linkLabel: Font = .raleway("Medium", size: 14, relativeTo: .footnote)
 }

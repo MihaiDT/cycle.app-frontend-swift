@@ -104,7 +104,7 @@ public struct ChatView: View {
             Spacer()
             HStack(spacing: 6) {
                 Text("Aria")
-                    .font(.raleway("SemiBold", size: 17, relativeTo: .headline))
+                    .font(AppTypography.rowTitleEmphasized)
                     .foregroundColor(DesignColors.text)
                 // Streaming signal (while Aria types) takes priority over the plain connection dot.
                 if store.isStreaming {
@@ -173,7 +173,7 @@ public struct ChatView: View {
                         .frame(width: 64, height: 64)
 
                     Text("A")
-                        .font(.raleway("Bold", size: 28, relativeTo: .title))
+                        .font(AppTypography.displayHeader)
                         .foregroundColor(.white)
                 }
 

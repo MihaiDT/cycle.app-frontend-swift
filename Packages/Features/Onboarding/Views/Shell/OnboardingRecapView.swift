@@ -220,7 +220,7 @@ public struct OnboardingRecapView: View {
                                                         .font(.raleway("SemiBold", size: 15, relativeTo: .body))
                                                         .foregroundColor(DesignColors.text)
                                                     Text(goal.subtitle)
-                                                        .font(.raleway("Regular", size: 12, relativeTo: .caption))
+                                                        .font(AppTypography.caption)
                                                         .foregroundColor(DesignColors.textSecondary)
                                                 }
 

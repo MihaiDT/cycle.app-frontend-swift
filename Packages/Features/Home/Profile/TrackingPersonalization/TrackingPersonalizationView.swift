@@ -106,7 +106,7 @@ struct TrackingPersonalizationView: View {
     private var masterToggleCard: some View {
         Toggle(isOn: masterBinding) {
             Text("All categories")
-                .font(.raleway("SemiBold", size: 17, relativeTo: .headline))
+                .font(AppTypography.rowTitleEmphasized)
                 .foregroundStyle(DesignColors.text)
         }
         .tint(DesignColors.accentWarm)
@@ -122,7 +122,7 @@ struct TrackingPersonalizationView: View {
             iconDisc(for: category)
 
             Text(category.rawValue)
-                .font(.raleway("Medium", size: 17, relativeTo: .headline))
+                .font(AppTypography.rowTitle)
                 .foregroundStyle(DesignColors.text)
 
             Spacer(minLength: 0)

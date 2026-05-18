@@ -55,7 +55,7 @@ public struct NotificationPermissionView: View {
 
                     // Title
                     Text("Daily Check-in")
-                        .font(.raleway("Bold", size: 28, relativeTo: .title))
+                        .font(AppTypography.displayHeader)
                         .foregroundColor(DesignColors.text)
                         .opacity(animateIn ? 1 : 0)
                         .accessibilityAddTraits(.isHeader)

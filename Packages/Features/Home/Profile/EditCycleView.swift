@@ -46,7 +46,7 @@ public struct EditCycleView: View {
             }
             ToolbarItem(placement: .principal) {
                 Text("Cycle data")
-                    .font(.raleway("SemiBold", size: 17, relativeTo: .headline))
+                    .font(AppTypography.rowTitleEmphasized)
                     .foregroundStyle(DesignColors.text)
             }
         }
@@ -121,7 +121,7 @@ public struct EditCycleView: View {
             .widgetCardStyle(cornerRadius: AppLayout.cornerRadiusL)
 
             Text("The fertile window is the number of days leading up to ovulation, including the potential ovulation day. This is an estimate and should not be used as a method of contraception or conception. We recommend disabling the fertile window if you currently use contraception or hormone-based medication.")
-                .font(.raleway("Regular", size: 13, relativeTo: .footnote))
+                .font(AppTypography.bodyMedium)
                 .foregroundStyle(DesignColors.textSecondary)
                 .padding(.horizontal, AppLayout.spacingXS)
                 .padding(.top, AppLayout.spacingXS)
@@ -133,7 +133,7 @@ public struct EditCycleView: View {
     private func toggleRow(label: String, isOn: Binding<Bool>) -> some View {
         HStack(spacing: 0) {
             Text(label)
-                .font(.raleway("Medium", size: 17, relativeTo: .headline))
+                .font(AppTypography.rowTitle)
                 .foregroundStyle(DesignColors.text)
             Spacer()
             Toggle("", isOn: isOn)
@@ -152,11 +152,11 @@ public struct EditCycleView: View {
     ) -> some View {
         HStack(spacing: 0) {
             Text(label)
-                .font(.raleway("Medium", size: 17, relativeTo: .headline))
+                .font(AppTypography.rowTitle)
                 .foregroundStyle(DesignColors.text)
             Spacer()
             Text(value)
-                .font(.raleway("SemiBold", size: 17, relativeTo: .headline))
+                .font(AppTypography.rowTitleEmphasized)
                 .foregroundStyle(DesignColors.textSecondary)
                 .padding(.trailing, AppLayout.spacingM)
             if interactive {

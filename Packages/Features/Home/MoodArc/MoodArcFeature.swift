@@ -189,7 +189,7 @@ public struct MoodArcView: View {
                             .tint(.white)
                     }
                     Text(store.isSubmitting ? "Saving..." : "Continue")
-                        .font(.raleway("SemiBold", size: 17, relativeTo: .headline))
+                        .font(AppTypography.rowTitleEmphasized)
                     if !store.isSubmitting {
                         Image(systemName: "arrow.right")
                             .font(.system(size: 15, weight: .semibold))

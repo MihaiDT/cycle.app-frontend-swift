@@ -86,7 +86,7 @@ public struct WellnessWidget: View {
                         // top of the card. Moves it off the section header
                         // so the card is self-contained — no duplication.
                         Text(meta.uppercased())
-                            .font(.raleway("SemiBold", size: 11, relativeTo: .caption2))
+                            .font(AppTypography.cardEyebrow)
                             .tracking(0.6)
                             .foregroundStyle(DesignColors.textSecondary)
                             .padding(.bottom, 12)
@@ -161,7 +161,7 @@ public struct WellnessWidget: View {
 
             if let meta = phaseMetaText {
                 Text(meta)
-                    .font(.raleway("SemiBold", size: 11, relativeTo: .caption2))
+                    .font(AppTypography.cardEyebrow)
                     .tracking(0.2)
                     .foregroundStyle(DesignColors.textSecondary)
             }

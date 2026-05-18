@@ -104,7 +104,7 @@ struct SettingsView: View {
         Button(action: action) {
             HStack(spacing: 0) {
                 Text(title)
-                    .font(.raleway("Medium", size: 17, relativeTo: .headline))
+                    .font(AppTypography.rowTitle)
                     .foregroundStyle(DesignColors.text)
                 Spacer(minLength: 0)
                 if isExternal {
@@ -126,7 +126,7 @@ struct SettingsView: View {
     private func toggleRow(title: String, binding: Binding<Bool>) -> some View {
         Toggle(isOn: binding) {
             Text(title)
-                .font(.raleway("Medium", size: 17, relativeTo: .headline))
+                .font(AppTypography.rowTitle)
                 .foregroundStyle(DesignColors.text)
         }
         .tint(DesignColors.accentWarm)

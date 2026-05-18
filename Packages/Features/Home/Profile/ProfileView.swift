@@ -47,7 +47,7 @@ public struct ProfileView: View {
                     .controlSize(.large)
 
                 Text("Saving")
-                    .font(.raleway("SemiBold", size: 15, relativeTo: .subheadline))
+                    .font(AppTypography.cardLabel)
                     .foregroundStyle(DesignColors.text)
             }
             .padding(.horizontal, AppLayout.spacingL)
@@ -88,7 +88,7 @@ public struct ProfileView: View {
                 }
                 ToolbarItem(placement: .principal) {
                     Text("Profile")
-                        .font(.raleway("SemiBold", size: 17, relativeTo: .headline))
+                        .font(AppTypography.rowTitleEmphasized)
                         .foregroundStyle(DesignColors.text)
                 }
             }

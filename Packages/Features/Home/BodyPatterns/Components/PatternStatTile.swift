@@ -103,7 +103,7 @@ struct PatternStatTile: View {
                 .minimumScaleFactor(0.6)
             if let unit {
                 Text(unit)
-                    .font(.raleway("SemiBold", size: 14, relativeTo: .subheadline))
+                    .font(AppTypography.cardLabel)
                     .foregroundStyle(DesignColors.textSecondary)
                     .lineLimit(1)
             }

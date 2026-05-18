@@ -160,7 +160,7 @@ public struct PlacesAutocompleteTextField: View {
 
                                     if !result.secondaryText.isEmpty {
                                         Text(result.secondaryText)
-                                            .font(.raleway("Regular", size: 12, relativeTo: .caption))
+                                            .font(AppTypography.caption)
                                             .foregroundColor(DesignColors.textSecondary)
                                             .lineLimit(1)
                                     }

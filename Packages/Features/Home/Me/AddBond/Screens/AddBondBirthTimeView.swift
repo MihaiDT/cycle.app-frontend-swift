@@ -108,7 +108,7 @@ struct AddBondBirthTimeView: View {
                 .offset(y: eyebrowIn ? 0 : 10)
 
             Text("What hour\ndid they arrive?")
-                .font(.raleway("Bold", size: 28, relativeTo: .title))
+                .font(AppTypography.displayHeader)
                 .tracking(-0.5)
                 .foregroundStyle(DesignColors.textPrincipal)
                 .multilineTextAlignment(.center)

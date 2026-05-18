@@ -189,7 +189,7 @@ struct CycleStatsCustomizeView: View {
             .accessibilityHint("Restores the default order and shows every card again")
 
             Text("Hidden cards stay in the layout – bring any back into the stats screen by checking it again here.")
-                .font(.raleway("Regular", size: 12, relativeTo: .caption))
+                .font(AppTypography.caption)
                 .foregroundStyle(DesignColors.textSecondary.opacity(0.85))
                 .multilineTextAlignment(.center)
                 .lineSpacing(3)
@@ -266,7 +266,7 @@ struct CycleStatsCustomizeView: View {
     @ViewBuilder
     private func sectionHeader(_ text: String) -> some View {
         Text(text.uppercased())
-            .font(.raleway("SemiBold", size: 11, relativeTo: .caption2))
+            .font(AppTypography.cardEyebrow)
             .tracking(1.4)
             .foregroundStyle(DesignColors.textSecondary)
             .padding(.top, 8)

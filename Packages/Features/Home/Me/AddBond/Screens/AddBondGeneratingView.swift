@@ -401,7 +401,7 @@ struct AddBondGeneratingView: View {
 
             ZStack {
                 Text(statusStages[statusIndex])
-                    .font(.raleway("Bold", size: 22, relativeTo: .title2))
+                    .font(AppTypography.cardTitleSecondary)
                     .tracking(-0.2)
                     .foregroundStyle(DesignColors.textPrincipal)
                     .multilineTextAlignment(.center)
@@ -455,7 +455,7 @@ struct AddBondGeneratingView: View {
     private var themePreview: some View {
         VStack(spacing: 10) {
             Text("Inside your reading")
-                .font(.raleway("SemiBold", size: 11, relativeTo: .caption2))
+                .font(AppTypography.cardEyebrow)
                 .tracking(1.4)
                 .foregroundStyle(DesignColors.textSecondary)
                 .textCase(.uppercase)

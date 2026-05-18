@@ -175,7 +175,7 @@ extension TodayView {
         VStack(alignment: .leading, spacing: 0) {
             if let meta {
                 Text(meta)
-                    .font(.raleway("SemiBold", size: 11, relativeTo: .caption2))
+                    .font(AppTypography.cardEyebrow)
                     .tracking(0.6)
                     .foregroundStyle(DesignColors.textSecondary)
                     .padding(.bottom, 12)

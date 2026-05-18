@@ -36,7 +36,7 @@ struct CycleDetailsCheckInsCard: View {
                     .font(.system(size: 13, weight: .regular))
                     .foregroundStyle(DesignColors.textSecondary)
                 Text("DAILY CHECK-INS")
-                    .font(.raleway("SemiBold", size: 11, relativeTo: .caption2))
+                    .font(AppTypography.cardEyebrow)
                     .tracking(1.4)
                     .foregroundStyle(DesignColors.textSecondary)
             }

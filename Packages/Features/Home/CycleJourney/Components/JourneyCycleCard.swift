@@ -67,7 +67,7 @@ struct JourneyCycleCard: View {
                 HStack {
                     let warmBrown = DesignColors.warmBrown
                     Text(topLabel)
-                        .font(.raleway("SemiBold", size: 14, relativeTo: .subheadline))
+                        .font(AppTypography.cardLabel)
                         .foregroundStyle(.white)
                         .padding(.horizontal, 12)
                         .padding(.vertical, 6)
@@ -78,7 +78,7 @@ struct JourneyCycleCard: View {
                     if !isFuture && !summary.isCurrentCycle {
                         HStack(spacing: 4) {
                             Text("Your Recap")
-                                .font(.raleway("SemiBold", size: 14, relativeTo: .subheadline))
+                                .font(AppTypography.cardLabel)
                             Image(systemName: "chevron.right")
                                 .font(.system(size: 11, weight: .semibold))
                         }
@@ -89,10 +89,10 @@ struct JourneyCycleCard: View {
                                 Image(systemName: "lock.fill")
                                     .font(.system(size: 11))
                                 Text("Recap")
-                                    .font(.raleway("SemiBold", size: 14, relativeTo: .subheadline))
+                                    .font(AppTypography.cardLabel)
                             }
                             Text("When this cycle ends")
-                                .font(.raleway("Regular", size: 12, relativeTo: .caption))
+                                .font(AppTypography.caption)
                         }
                         .foregroundStyle(DesignColors.textPlaceholder)
                     }

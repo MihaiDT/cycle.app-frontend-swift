@@ -124,7 +124,7 @@ struct BodySignalsChartCard<Chart: View>: View {
                     .font(.system(size: 13, weight: .regular))
                     .foregroundStyle(DesignColors.textSecondary)
                 Text(title.uppercased())
-                    .font(.raleway("SemiBold", size: 11, relativeTo: .caption2))
+                    .font(AppTypography.cardEyebrow)
                     .tracking(1.4)
                     .foregroundStyle(DesignColors.textSecondary)
 
@@ -178,7 +178,7 @@ private struct BodySignalInfoSheet: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
             Text(title)
-                .font(.raleway("Bold", size: 22, relativeTo: .title2))
+                .font(AppTypography.cardTitleSecondary)
                 .tracking(-0.3)
                 .foregroundStyle(DesignColors.text)
 

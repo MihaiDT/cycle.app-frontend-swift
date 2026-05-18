@@ -41,7 +41,7 @@ struct BodySignalsHero: View {
             // the phase shows up.
             PhaseGlossyDot(tint: phase.orbitColor, size: 8)
             Text(phase.displayName.uppercased())
-                .font(.raleway("SemiBold", size: 11, relativeTo: .caption2))
+                .font(AppTypography.cardEyebrow)
                 .tracking(1.6)
                 .foregroundStyle(DesignColors.text)
         }

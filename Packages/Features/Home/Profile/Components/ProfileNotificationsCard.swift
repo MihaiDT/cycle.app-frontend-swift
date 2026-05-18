@@ -36,7 +36,7 @@ public struct ProfileNotificationsCard: View {
             Toggle(isOn: Binding(get: { isOn }, set: onToggle)) {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Daily check-in reminder")
-                        .font(.raleway("Medium", size: 17, relativeTo: .headline))
+                        .font(AppTypography.rowTitle)
                         .foregroundStyle(DesignColors.text)
                     Text("A gentle nudge to log how you feel.")
                         .font(AppTypography.bodyMedium)
@@ -56,11 +56,11 @@ public struct ProfileNotificationsCard: View {
                 Button(action: onReminderRowTap) {
                     HStack(spacing: 0) {
                         Text("Reminder time")
-                            .font(.raleway("Medium", size: 17, relativeTo: .headline))
+                            .font(AppTypography.rowTitle)
                             .foregroundStyle(DesignColors.text)
                         Spacer()
                         Text(Self.timeFormatter.string(from: reminderTime))
-                            .font(.raleway("SemiBold", size: 17, relativeTo: .headline))
+                            .font(AppTypography.rowTitleEmphasized)
                             .foregroundStyle(DesignColors.accentWarm)
                             .padding(.trailing, AppLayout.spacingM)
                         ProfileNavChip()

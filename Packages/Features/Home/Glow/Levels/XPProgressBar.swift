@@ -35,7 +35,7 @@ struct XPProgressBar: View {
         VStack(alignment: .leading, spacing: 6) {
             HStack {
                 Text("\(levelInfo.emoji) \(levelInfo.title)")
-                    .font(.raleway("SemiBold", size: 14, relativeTo: .subheadline))
+                    .font(AppTypography.cardLabel)
                     .foregroundStyle(DesignColors.text)
 
                 Spacer()
@@ -46,7 +46,7 @@ struct XPProgressBar: View {
                         .foregroundStyle(DesignColors.accentWarm)
                 } else if let remaining = GlowConstants.xpForNextLevel(currentXP: currentXP) {
                     Text("\(remaining) XP to next level")
-                        .font(.raleway("Regular", size: 12, relativeTo: .caption))
+                        .font(AppTypography.caption)
                         .foregroundStyle(DesignColors.textSecondary)
                 }
             }

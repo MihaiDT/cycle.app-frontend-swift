@@ -75,7 +75,7 @@ struct DownloadDataView: View {
     private var titleBlock: some View {
         VStack(spacing: AppLayout.spacingS) {
             Text("Download your data")
-                .font(.raleway("Bold", size: 28, relativeTo: .title))
+                .font(AppTypography.displayHeader)
                 .foregroundStyle(DesignColors.text)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
@@ -144,7 +144,7 @@ struct DownloadDataView: View {
             .frame(width: 48, height: 48)
 
             Text(text)
-                .font(.raleway("Medium", size: 15, relativeTo: .subheadline))
+                .font(AppTypography.rowTitle)
                 .foregroundStyle(DesignColors.text)
                 .fixedSize(horizontal: false, vertical: true)
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -171,7 +171,7 @@ struct DownloadDataView: View {
 
             VStack(alignment: .leading, spacing: 4) {
                 Text("Stays under your control")
-                    .font(.raleway("SemiBold", size: 14, relativeTo: .subheadline))
+                    .font(AppTypography.cardLabel)
                     .foregroundStyle(DesignColors.text)
                 Text("If you choose to email a copy, the archive transits our server only to compose the message. Nothing is stored on our end.")
                     .font(AppTypography.bodyMedium)

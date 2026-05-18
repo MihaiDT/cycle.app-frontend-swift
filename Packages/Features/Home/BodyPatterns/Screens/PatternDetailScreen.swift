@@ -358,7 +358,7 @@ struct PatternDetailScreen: View {
             // surface's Raleway title.
             ToolbarItem(placement: .principal) {
                 Text("Pattern")
-                    .font(.raleway("SemiBold", size: 17, relativeTo: .headline))
+                    .font(AppTypography.rowTitleEmphasized)
                     .foregroundStyle(DesignColors.text)
             }
         }
