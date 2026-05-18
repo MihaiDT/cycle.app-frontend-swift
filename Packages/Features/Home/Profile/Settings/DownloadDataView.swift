@@ -173,7 +173,7 @@ struct DownloadDataView: View {
                 Text("Stays under your control")
                     .font(AppTypography.cardLabel)
                     .foregroundStyle(DesignColors.text)
-                Text("If you choose to email a copy, the archive transits our server only to compose the message. Nothing is stored on our end.")
+                Text("If you choose to email a copy, your encrypted archive is held on our server for up to 72 hours so the download link can fetch it. We delete it the moment you download, or sooner if the link expires.")
                     .font(AppTypography.bodyMedium)
                     .foregroundStyle(DesignColors.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)

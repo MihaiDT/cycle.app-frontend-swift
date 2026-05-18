@@ -136,14 +136,14 @@ struct DataExportReadyView: View {
     @ViewBuilder
     private var copyBlock: some View {
         if let sent = sentSummary {
-            Text("Your encrypted archive is on its way to \(sent.email). It may take a minute to arrive. If you don't see it, check spam.")
+            Text("We sent a download link to \(sent.email). The link works once and expires in 72 hours. Check spam if you don't see it within a minute.")
                 .font(AppTypography.bodyMedium)
                 .foregroundStyle(DesignColors.textSecondary)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
                 .padding(.horizontal, AppLayout.spacingS)
         } else {
-            Text("Add your email and we'll send the encrypted archive as an attachment.")
+            Text("Add your email and we'll send a one-shot download link. It works once and expires in 72 hours.")
                 .font(AppTypography.bodyMedium)
                 .foregroundStyle(DesignColors.textSecondary)
                 .multilineTextAlignment(.center)
@@ -245,7 +245,7 @@ struct DataExportReadyView: View {
                     Text("Stays under your control")
                         .font(AppTypography.cardLabel)
                         .foregroundStyle(DesignColors.text)
-                    Text("Your archive passes briefly through our server to compose the email. Nothing is stored on our end.")
+                    Text("Your encrypted archive is held on our server for up to 72 hours so the email link can fetch it. We delete it the moment you download, or sooner if the link expires. Only your device has the password.")
                         .font(AppTypography.bodyMedium)
                         .foregroundStyle(DesignColors.textSecondary)
                         .fixedSize(horizontal: false, vertical: true)
