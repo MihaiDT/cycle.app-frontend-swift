@@ -413,6 +413,13 @@ public struct HomeFeature: Sendable {
             case .me(.delegate(.didLogout)):
                 return .send(.logoutTapped)
 
+            case .me(.delegate(.cycleDataChanged)):
+                // User updated cycle/period length in Profile. Force
+                // the Calendar to refetch so the new spacing shows
+                // immediately instead of waiting for the next manual
+                // open.
+                return .send(.today(.calendar(.loadCalendar)))
+
             case .today, .chat, .me, .cycleInsights, .cycleJourney, .bodyPatterns, .delegate:
                 return .none
             }

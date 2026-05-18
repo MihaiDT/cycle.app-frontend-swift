@@ -142,12 +142,41 @@ extension MenstrualLocalClient {
             var entries: [MenstrualCalendarEntry] = []
 
             // Period entries + retroactive fertile window for confirmed cycles
-            let profileDescCal = FetchDescriptor<MenstrualProfileRecord>()
-            let avgCycleLen = (try? context.fetch(profileDescCal).first?.avgCycleLength) ?? 28
+            // Sort by createdAt desc so we always pick the latest
+            // profile if multiple records ended up in storage. An
+            // unsorted fetch can return the original onboarding
+            // profile with stale defaults, hiding manual overrides
+            // saved later.
+            let profileDescCal = FetchDescriptor<MenstrualProfileRecord>(
+                sortBy: [SortDescriptor(\.createdAt, order: .reverse)]
+            )
+            let latestProfile = try? context.fetch(profileDescCal).first
+            let avgCycleLen = latestProfile?.avgCycleLength ?? 28
+            let showOvulation = latestProfile?.showOvulation ?? true
+            let showFertile = latestProfile?.showFertileWindow ?? true
 
-            for cycle in cycles {
+            // A CycleRecord with a startDate in the future is an
+            // anomaly (confirmPeriod rejects future dates, so this can
+            // only happen via legacy data or migration bugs). Treating
+            // those as period bands clobbers the predicted spacing —
+            // skip them. Future periods are the predictor's job.
+            let todayCutoff = CycleMath.startOfDay(Date())
+            let pastCycles = cycles.filter { $0.startDate <= todayCutoff }
+            // The latest confirmed cycle's retroactive fertile window
+            // overlaps the upcoming prediction's fertile window (both
+            // cover the current cycle). We skip the retroactive entry
+            // for the last past cycle so the user doesn't see two
+            // "Fertile" labels separated by a day's worth of anchor
+            // drift between `simpleFertileWindow(cycleStart:)` and
+            // the live-recomputed `predicted - 14` ovulation peak.
+            let lastPastCycleStart = pastCycles
+                .map { CycleMath.startOfDay($0.startDate) }
+                .max()
+
+            for cycle in pastCycles {
                 let bd = cycle.bleedingDays ?? 5
                 let cl = cycle.actualCycleLength ?? avgCycleLen
+                let isLastPast = CycleMath.startOfDay(cycle.startDate) == lastPastCycleStart
 
                 // Period days
                 for dayOffset in 0..<bd {
@@ -161,20 +190,25 @@ extension MenstrualLocalClient {
                 }
 
                 // Retroactive fertile window + ovulation for confirmed cycles
-                if cycle.isConfirmed {
+                if cycle.isConfirmed, !isLastPast {
                     let fertile = CycleMath.simpleFertileWindow(
                         cycleStart: cycle.startDate, cycleLength: cl
                     )
 
-                    // Ovulation
-                    if fertile.peak >= start, fertile.peak <= end {
+                    // Ovulation peak marker — gated on showOvulation
+                    // so the user can hide the peak gradient point
+                    // independently of the fertile band.
+                    if showOvulation, fertile.peak >= start, fertile.peak <= end {
                         entries.append(MenstrualCalendarEntry(
                             date: fertile.peak, type: "ovulation",
                             label: "Ovulation", fertilityLevel: "peak"
                         ))
                     }
 
-                    // Fertile days
+                    // Fertile days — entries are always emitted so
+                    // the renderer knows the band's full span. The
+                    // show/hide gate runs in the phase-pill layer:
+                    // ON colors the band, OFF blanks the same days.
                     var current = fertile.start
                     while current <= fertile.end {
                         if current >= start, current <= end {
@@ -196,8 +230,11 @@ extension MenstrualLocalClient {
             }
 
             // Predicted period entries
-            let profileDesc = FetchDescriptor<MenstrualProfileRecord>()
-            let bleedingDays = (try? context.fetch(profileDesc).first?.avgBleedingDays) ?? 5
+            let profileDesc = FetchDescriptor<MenstrualProfileRecord>(
+                sortBy: [SortDescriptor(\.createdAt, order: .reverse)]
+            )
+            let predictionProfile = try? context.fetch(profileDesc).first
+            let bleedingDays = predictionProfile?.avgBleedingDays ?? 5
             for pred in predictions where !pred.isConfirmed {
                 for dayOffset in 0..<bleedingDays {
                     let date = CycleMath.addDays(pred.predictedDate, dayOffset)
@@ -209,37 +246,42 @@ extension MenstrualLocalClient {
                     }
                 }
 
-                // Fertile window
-                if let fStart = pred.fertileWindowStart,
-                   let fEnd = pred.fertileWindowEnd
-                {
-                    var current = fStart
-                    while current <= fEnd {
-                        if current >= start, current <= end {
-                            let level: String
-                            if let ovDate = pred.ovulationDate {
-                                let diff = abs(CycleMath.daysBetween(current, ovDate))
-                                switch diff {
-                                case 0: level = "peak"
-                                case 1: level = "high"
-                                case 2: level = "medium"
-                                default: level = "low"
-                                }
-                            } else {
-                                level = "low"
-                            }
-                            entries.append(MenstrualCalendarEntry(
-                                date: current, type: "fertile",
-                                label: "Fertile window", fertilityLevel: level
-                            ))
+                // Fertile window — recalculated live from the
+                // predicted period start instead of reading
+                // `pred.fertileWindowStart/End`. The stored values
+                // come from `simpleFertileWindow(cycleStart:
+                // currentStart, ...)` in `MenstrualLocalClient+
+                // Predictions` where `currentStart` is the NEXT
+                // period start — that anchor produces a window
+                // sitting inside the cycle AFTER the prediction,
+                // not the cycle leading up to it. Recomputing here
+                // anchors the window on the cycle the user is
+                // actually in: peak = predicted - 14, start =
+                // peak - 5, end = peak.
+                let ovPeak = CycleMath.addDays(pred.predictedDate, -14)
+                let fStart = CycleMath.addDays(ovPeak, -5)
+                let fEnd = ovPeak
+                var current = fStart
+                while current <= fEnd {
+                    if current >= start, current <= end {
+                        let diff = abs(CycleMath.daysBetween(current, ovPeak))
+                        let level: String = switch diff {
+                        case 0: "peak"
+                        case 1: "high"
+                        case 2: "medium"
+                        default: "low"
                         }
-                        current = CycleMath.addDays(current, 1)
+                        entries.append(MenstrualCalendarEntry(
+                            date: current, type: "fertile",
+                            label: "Fertile window", fertilityLevel: level
+                        ))
                     }
+                    current = CycleMath.addDays(current, 1)
                 }
 
-                if let ovDate = pred.ovulationDate, ovDate >= start, ovDate <= end {
+                if showOvulation, ovPeak >= start, ovPeak <= end {
                     entries.append(MenstrualCalendarEntry(
-                        date: ovDate, type: "ovulation",
+                        date: ovPeak, type: "ovulation",
                         label: "Ovulation", fertilityLevel: "peak"
                     ))
                 }
@@ -254,7 +296,12 @@ extension MenstrualLocalClient {
             }
 
             return MenstrualCalendarResponse(
-                startDate: start, endDate: end, entries: entries
+                startDate: start,
+                endDate: end,
+                entries: entries,
+                effectiveBleedingDays: bleedingDays,
+                showOvulation: showOvulation,
+                showFertileWindow: showFertile
             )
         }
     }

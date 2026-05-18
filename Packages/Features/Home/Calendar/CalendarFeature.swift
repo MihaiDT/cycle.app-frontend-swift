@@ -237,6 +237,13 @@ public struct CalendarFeature: Sendable {
             case .calendarLoaded(.success(let response)):
                 state.isLoadingCalendar = false
                 state.calendarEntries = response.entries
+                // Mirror the effective period length so the phase-pill
+                // renderer draws bands of the correct width — without
+                // this, `bleedingDays` stays pinned to the initial
+                // currentCycle value and ignores manual overrides.
+                state.bleedingDays = response.effectiveBleedingDays
+                state.showOvulation = response.showOvulation
+                state.showFertileWindow = response.showFertileWindow
                 Self.parseCalendarEntries(response.entries, into: &state)
                 return .none
 

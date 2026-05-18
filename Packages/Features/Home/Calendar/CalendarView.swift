@@ -71,6 +71,8 @@ public struct CalendarView: View {
                                 cycleLength: store.cycleLength,
                                 cycleStartDate: store.cycleStartDate,
                                 bleedingDays: store.bleedingDays,
+                                showOvulation: store.showOvulation,
+                                showFertileWindow: store.showFertileWindow,
                                 loggedDays: store.loggedDays,
                                 isEditingPeriod: store.isEditingPeriod,
                                 editPeriodDays: store.editPeriodDays,

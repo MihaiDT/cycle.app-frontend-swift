@@ -30,6 +30,7 @@ public struct MeFeature: Sendable {
         @Presents public var bondHistory: BondHistoryFeature.State?
         @Presents public var insightHistory: InsightHistoryFeature.State?
         @Presents public var meReading: MeReadingFeature.State?
+        @Presents public var profile: ProfileFeature.State?
 
         public init(
             story: MyStoryCard = .mock,
@@ -61,15 +62,19 @@ public struct MeFeature: Sendable {
         case bondTapped(Bond.ID)
         case dismissAddBond
         case dismissBondHistoryAfterPush
+        case dismissProfile
         case addBond(PresentationAction<AddBondFeature.Action>)
         case bondReading(PresentationAction<BondReadingFeature.Action>)
         case bondHistory(PresentationAction<BondHistoryFeature.Action>)
         case insightHistory(PresentationAction<InsightHistoryFeature.Action>)
         case meReading(PresentationAction<MeReadingFeature.Action>)
+        case profile(PresentationAction<ProfileFeature.Action>)
         case delegate(Delegate)
 
         public enum Delegate: Equatable, Sendable {
             case showAvatar
+            case showCycleEditor
+            case cycleDataChanged
             case showSettings
             case showStory
             case didLogout
@@ -82,6 +87,7 @@ public struct MeFeature: Sendable {
         Reduce { state, action in
             switch action {
             case .avatarTapped:
+                state.profile = ProfileFeature.State()
                 return .send(.delegate(.showAvatar))
             case .settingsTapped:
                 return .send(.delegate(.showSettings))
@@ -222,6 +228,19 @@ public struct MeFeature: Sendable {
                 return .none
             case .meReading:
                 return .none
+            case .profile(.presented(.delegate(.didLogout))):
+                state.profile = nil
+                return .send(.delegate(.didLogout))
+            case .profile(.presented(.delegate(.showCycleEditor))):
+                // Bubble up — HomeFeature handles the actual editor push.
+                return .send(.delegate(.showCycleEditor))
+            case .profile(.presented(.delegate(.cycleDataChanged))):
+                return .send(.delegate(.cycleDataChanged))
+            case .profile:
+                return .none
+            case .dismissProfile:
+                state.profile = nil
+                return .none
             case .delegate:
                 return .none
             }
@@ -240,6 +259,9 @@ public struct MeFeature: Sendable {
         }
         .ifLet(\.$meReading, action: \.meReading) {
             MeReadingFeature()
+        }
+        .ifLet(\.$profile, action: \.profile) {
+            ProfileFeature()
         }
     }
 }

@@ -15,6 +15,8 @@ struct CalendarTableView: UIViewRepresentable {
     let cycleLength: Int
     let cycleStartDate: Date
     let bleedingDays: Int
+    let showOvulation: Bool
+    let showFertileWindow: Bool
     let loggedDays: [String: CalendarFeature.State.DayLog]
     let isEditingPeriod: Bool
     let editPeriodDays: Set<String>
@@ -73,7 +75,8 @@ struct CalendarTableView: UIViewRepresentable {
             }
         } else if old.periodDays != periodDays || old.predictedPeriodDays != predictedPeriodDays
             || old.editPeriodDays != editPeriodDays
-            || old.fertileDays != fertileDays || old.selectedDate != selectedDate {
+            || old.fertileDays != fertileDays || old.selectedDate != selectedDate
+            || old.showOvulation != showOvulation || old.showFertileWindow != showFertileWindow {
             for cell in tv.visibleCells {
                 if let mc = cell as? MonthCell, let ip = tv.indexPath(for: mc) {
                     mc.configure(month: months[ip.row], parent: self)

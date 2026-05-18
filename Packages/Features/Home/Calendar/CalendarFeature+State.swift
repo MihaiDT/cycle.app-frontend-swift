@@ -33,6 +33,11 @@ extension CalendarFeature {
         public var cycleLength: Int
         public var bleedingDays: Int
 
+        // Display preferences mirrored from MenstrualCalendarResponse.
+        // Default true so the calendar renders fully until a load resolves.
+        public var showOvulation: Bool = true
+        public var showFertileWindow: Bool = true
+
         /// Unified cycle-derived calendar data — single source of truth.
         /// `periodDays` / `predictedPeriodDays` / `periodFlowIntensity` /
         /// `fertileDays` / `ovulationDays` are computed passthroughs into this.

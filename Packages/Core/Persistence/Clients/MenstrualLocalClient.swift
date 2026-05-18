@@ -55,6 +55,54 @@ public struct MenstrualLocalClient: Sendable {
     /// Save/update the menstrual profile.
     public var saveProfile: @Sendable (MenstrualProfileInfo, [String], String?, Bool, String?) async throws -> Void
 
+    /// Switch between auto-recalculated and manually pinned cycle length.
+    /// Pass `nil` to enable auto mode (recompute from observed cycles);
+    /// pass `Int` to pin to a fixed user-provided length.
+    public var setCycleLengthOverride: @Sendable (Int?) async throws -> Void
+
+    /// Returns the current manual-override mode + pinned value (if any).
+    public var getCycleLengthOverride: @Sendable () async throws -> Int?
+
+    /// Returns the cycle length the Recommended mode would use right
+    /// now — mean of observed cycle gaps, ignoring any manual
+    /// override. Falls back to the onboarding baseline when no
+    /// cycles have been logged yet.
+    public var getRecommendedCycleLength: @Sendable () async throws -> Int
+
+    /// Returns the cycle length currently in use — the pinned manual
+    /// value if active, otherwise the recommended figure. This is
+    /// what the Cycle data menu should display.
+    public var getEffectiveCycleLength: @Sendable () async throws -> Int
+
+    /// Same as `setCycleLengthOverride`, but for the average period
+    /// (bleeding) length. Pass `nil` to revert to auto mode.
+    public var setPeriodLengthOverride: @Sendable (Int?) async throws -> Void
+
+    /// Returns the manually pinned period length if active, otherwise nil.
+    public var getPeriodLengthOverride: @Sendable () async throws -> Int?
+
+    /// Returns the period length the Recommended mode would use
+    /// right now — mean of observed `bleedingDays`. Falls back to the
+    /// stored default when no cycles are confirmed yet.
+    public var getRecommendedPeriodLength: @Sendable () async throws -> Int
+
+    /// Returns the effective period length currently in use — the
+    /// pinned manual value if active, otherwise the same recommended
+    /// figure. This is what the Cycle data menu should display.
+    public var getEffectivePeriodLength: @Sendable () async throws -> Int
+
+    /// Whether the user wants ovulation markers shown on the calendar.
+    public var getShowOvulation: @Sendable () async throws -> Bool
+
+    /// Toggle ovulation visibility on the calendar.
+    public var setShowOvulation: @Sendable (Bool) async throws -> Void
+
+    /// Whether the user wants the fertile window band shown on the calendar.
+    public var getShowFertileWindow: @Sendable () async throws -> Bool
+
+    /// Toggle fertile window visibility on the calendar.
+    public var setShowFertileWindow: @Sendable (Bool) async throws -> Void
+
     /// Returns the month name of the most recent unviewed recap, or nil.
     public var unviewedRecapMonth: @Sendable () async throws -> String?
 
@@ -316,6 +364,18 @@ extension MenstrualLocalClient {
             generatePrediction: { },
             getProfile: { nil },
             saveProfile: { _, _, _, _, _ in },
+            setCycleLengthOverride: { _ in },
+            getCycleLengthOverride: { nil },
+            getRecommendedCycleLength: { 28 },
+            getEffectiveCycleLength: { 28 },
+            setPeriodLengthOverride: { _ in },
+            getPeriodLengthOverride: { nil },
+            getRecommendedPeriodLength: { 5 },
+            getEffectivePeriodLength: { 5 },
+            getShowOvulation: { true },
+            setShowOvulation: { _ in },
+            getShowFertileWindow: { true },
+            setShowFertileWindow: { _ in },
             unviewedRecapMonth: { nil },
             markAllRecapsViewed: { },
             detectPatterns: { [] },

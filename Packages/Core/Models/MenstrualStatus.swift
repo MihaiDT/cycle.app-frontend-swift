@@ -167,11 +167,41 @@ public struct MenstrualCalendarResponse: Codable, Equatable, Sendable {
     public let startDate: Date
     public let endDate: Date
     public let entries: [MenstrualCalendarEntry]
+    /// Effective period length (profile.avgBleedingDays). Calendar
+    /// state mirrors this so the phase-pill renderer matches the
+    /// predicted span shown in entries.
+    public let effectiveBleedingDays: Int
+    /// Display preferences. Calendar state mirrors these so the
+    /// phase-pill renderer can hide ovulation / fertile-window
+    /// segments computed from `cycleLength` math even when the
+    /// underlying entries were already filtered out.
+    public let showOvulation: Bool
+    public let showFertileWindow: Bool
 
-    public init(startDate: Date, endDate: Date, entries: [MenstrualCalendarEntry]) {
+    public init(
+        startDate: Date,
+        endDate: Date,
+        entries: [MenstrualCalendarEntry],
+        effectiveBleedingDays: Int = 5,
+        showOvulation: Bool = true,
+        showFertileWindow: Bool = true
+    ) {
         self.startDate = startDate
         self.endDate = endDate
         self.entries = entries
+        self.effectiveBleedingDays = effectiveBleedingDays
+        self.showOvulation = showOvulation
+        self.showFertileWindow = showFertileWindow
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        startDate = try container.decode(Date.self, forKey: .startDate)
+        endDate = try container.decode(Date.self, forKey: .endDate)
+        entries = try container.decode([MenstrualCalendarEntry].self, forKey: .entries)
+        effectiveBleedingDays = (try? container.decodeIfPresent(Int.self, forKey: .effectiveBleedingDays)) ?? 5
+        showOvulation = (try? container.decodeIfPresent(Bool.self, forKey: .showOvulation)) ?? true
+        showFertileWindow = (try? container.decodeIfPresent(Bool.self, forKey: .showFertileWindow)) ?? true
     }
 }
 

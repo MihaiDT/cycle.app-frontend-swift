@@ -21,6 +21,18 @@ extension MenstrualLocalClient {
             generatePrediction: liveGeneratePrediction(),
             getProfile: liveGetProfile(),
             saveProfile: liveSaveProfile(),
+            setCycleLengthOverride: liveSetCycleLengthOverride(),
+            getCycleLengthOverride: liveGetCycleLengthOverride(),
+            getRecommendedCycleLength: liveGetRecommendedCycleLength(),
+            getEffectiveCycleLength: liveGetEffectiveCycleLength(),
+            setPeriodLengthOverride: liveSetPeriodLengthOverride(),
+            getPeriodLengthOverride: liveGetPeriodLengthOverride(),
+            getRecommendedPeriodLength: liveGetRecommendedPeriodLength(),
+            getEffectivePeriodLength: liveGetEffectivePeriodLength(),
+            getShowOvulation: liveGetShowOvulation(),
+            setShowOvulation: liveSetShowOvulation(),
+            getShowFertileWindow: liveGetShowFertileWindow(),
+            setShowFertileWindow: liveSetShowFertileWindow(),
             unviewedRecapMonth: liveUnviewedRecapMonth(),
             markAllRecapsViewed: liveMarkAllRecapsViewed(),
             detectPatterns: liveDetectPatterns(),
@@ -86,29 +98,42 @@ extension MenstrualLocalClient {
             }
         }
 
-        // Recalculate profile
+        // Recalculate profile — only use cycles that have actually
+        // happened. A CycleRecord dated in the future would pull
+        // avgCycleLength toward a nonsense observed length.
+        let nowDay = CycleMath.startOfDay(Date())
+        let pastCycles = arr.filter { $0.startDate <= nowDay }
         if let profile = try fetchProfile(context: context) {
-            let bleedingValues = arr.compactMap(\.bleedingDays)
-            if !bleedingValues.isEmpty {
+            let bleedingValues = pastCycles.compactMap(\.bleedingDays)
+            if !bleedingValues.isEmpty && !profile.useManualPeriodLength {
                 profile.avgBleedingDays = Int(round(CycleMath.mean(bleedingValues)))
             }
 
             var cycleLengths: [Int] = []
-            for cycle in arr {
+            for cycle in pastCycles {
                 if let len = cycle.actualCycleLength {
                     cycleLengths.append(len)
                 }
             }
             if !cycleLengths.isEmpty {
-                profile.avgCycleLength = Int(round(CycleMath.mean(cycleLengths)))
-                profile.cycleRegularity = CycleMath.classifyVariability(cycleLengths)
-                // Promote observed average to baseline once we have enough data
-                if cycleLengths.count >= 3 {
-                    profile.onboardingCycleLength = profile.avgCycleLength
+                // Manual override mode: user pinned the cycle length —
+                // keep `avgCycleLength` untouched, only refresh regularity.
+                if !profile.useManualCycleLength {
+                    profile.avgCycleLength = Int(round(CycleMath.mean(cycleLengths)))
+                    // Promote observed average to baseline once we have enough data
+                    if cycleLengths.count >= 3 {
+                        profile.onboardingCycleLength = profile.avgCycleLength
+                    }
                 }
-            } else {
-                // No observed cycle gaps — revert to baseline
-                profile.avgCycleLength = profile.onboardingCycleLength
+                profile.cycleRegularity = CycleMath.classifyVariability(cycleLengths)
+            } else if !profile.useManualCycleLength {
+                // No observed cycle gaps — fall back to 28 instead of
+                // `onboardingCycleLength`. Earlier code paths leaked
+                // manual override values into `onboardingCycleLength`,
+                // so using it as a baseline silently re-pinned the
+                // old manual value after the user switched away from
+                // Manual mode.
+                profile.avgCycleLength = 28
             }
 
             // Keep `journeyStartDate` anchored to the oldest logged

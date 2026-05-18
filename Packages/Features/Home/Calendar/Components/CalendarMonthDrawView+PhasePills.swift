@@ -135,17 +135,12 @@ extension MonthGridDrawView {
            cal.startOfDay(for: date) >= today {
             return .predictedPeriod
         }
-        // The late window historically suppressed all phase pills, leaving the
-        // stretch between predicted-period and the actual late period blank.
-        // We now keep phase pills rendering through the late window — only the
-        // late-period pill itself is special (handled above as `.latePeriod`).
-        //
-        // Both `ovulationDays` (peak day) and `fertileDays` (the 6-day high-
-        // fertility window: 5 days before ovulation + the day itself) take this
-        // shortcut so the full fertile band renders as one peach run with the
-        // peak gradient anchored on the ovulation day. Matches Clue / Flo /
-        // Apple Health / Clearblue conventions for a 6-day visible fertile window.
-        if ovulationDays.contains(key) || fertileDays[key] != nil { return .ovulatory }
+        // Fertile band: sourced from the entries layer so the span
+        // matches across ON/OFF. ON paints the same days peach, OFF
+        // blanks them — band length is identical either way.
+        if ovulationDays.contains(key) || fertileDays[key] != nil {
+            return showFertileWindow ? .ovulatory : nil
+        }
 
         // Phase pills only render inside an anchored cycle: a `[start, start + cycleLength)`
         // window beginning on each logged or predicted period start. Outside any such
@@ -155,7 +150,7 @@ extension MonthGridDrawView {
         switch phaseFor(date: date) {
         case .follicular: return .follicular
         case .luteal: return .luteal
-        case .ovulatory: return .ovulatory
+        case .ovulatory: return showFertileWindow ? .ovulatory : nil
         // Unmarked menstrual phase has four fallbacks:
         // - Day directly before a logged period start → late luteal / PMS, fall back
         //   to luteal so the run from luteal into period stays unbroken.

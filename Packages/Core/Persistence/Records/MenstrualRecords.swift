@@ -34,6 +34,27 @@ public final class MenstrualProfileRecord {
     @Attribute(.allowsCloudEncryption)
     public var onboardingCycleLength: Int = 28
 
+    /// When true, `avgCycleLength` is treated as a user-pinned value and
+    /// the Live recalc loop will NOT overwrite it from observed cycle
+    /// data. Mirrors Clue's "Manual cycle length predictions" toggle.
+    /// Note: NOT cloud-encrypted (mirrors `phaseLutealLength`). It's a
+    /// preference flag, not health data — the actual cycle length value
+    /// it gates (`avgCycleLength`) IS encrypted on its own.
+    public var useManualCycleLength: Bool = false
+
+    /// When true, `avgBleedingDays` is user-pinned and not overwritten
+    /// by future period-length recalculations. Same rationale as
+    /// `useManualCycleLength` re: encryption.
+    public var useManualPeriodLength: Bool = false
+
+    /// Display toggle: hide ovulation markers on the calendar when
+    /// false. Default on. Preference flag, not health data.
+    public var showOvulation: Bool = true
+
+    /// Display toggle: hide the fertile window band on the calendar
+    /// when false. Default on. Preference flag, not health data.
+    public var showFertileWindow: Bool = true
+
     /// Luteal phase length for ovulation estimation (default 14).
     /// Note: CloudKit schema has this as non-encrypted (NUMBER_INT64).
     /// Do NOT add .allowsCloudEncryption without resetting CloudKit Development environment.
@@ -60,8 +81,8 @@ public final class MenstrualProfileRecord {
         createdAt: Date = .now,
         updatedAt: Date = Date.now
     ) {
-        self.avgCycleLength = max(18, min(50, avgCycleLength))
-        self.onboardingCycleLength = max(18, min(50, avgCycleLength))
+        self.avgCycleLength = max(10, min(90, avgCycleLength))
+        self.onboardingCycleLength = max(10, min(90, avgCycleLength))
         self.avgBleedingDays = max(1, min(10, avgBleedingDays))
         self.cycleRegularity = cycleRegularity
         self.typicalSymptoms = typicalSymptoms

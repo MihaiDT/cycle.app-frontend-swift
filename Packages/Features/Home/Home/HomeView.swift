@@ -94,7 +94,7 @@ public struct HomeView: View {
                     || store.isLatestRecapDirectVisible
             )
             .compositingGroup()
-            .offset(x: (isCalendarOpen || store.isCycleInsightsVisible || store.isBodyPatternsVisible || store.todayState.calendarState.isShowingSymptomSheet || store.meState.addBond != nil || store.meState.bondReading != nil || store.meState.bondHistory != nil || store.meState.insightHistory != nil || store.meState.meReading != nil) ? -rootGeo.size.width * 0.22 : 0)
+            .offset(x: (isCalendarOpen || store.isCycleInsightsVisible || store.isBodyPatternsVisible || store.todayState.calendarState.isShowingSymptomSheet || store.meState.addBond != nil || store.meState.bondReading != nil || store.meState.bondHistory != nil || store.meState.insightHistory != nil || store.meState.meReading != nil) ? -rootGeo.size.width * 0.22 : (store.meState.profile != nil ? rootGeo.size.width * 0.22 : 0))
             .overlay(
                 // MeReading is intentionally excluded — that
                 // flow now slides in as a native right-to-left
@@ -104,7 +104,7 @@ public struct HomeView: View {
                 // the 0.22 dim so they read as modal-style
                 // takeovers rather than navigation.
                 Color.black
-                    .opacity((isCalendarOpen || store.isCycleInsightsVisible || store.isBodyPatternsVisible || store.todayState.calendarState.isShowingSymptomSheet || store.meState.addBond != nil || store.meState.bondReading != nil || store.meState.bondHistory != nil || store.meState.insightHistory != nil) ? 0.22 : 0)
+                    .opacity((isCalendarOpen || store.isCycleInsightsVisible || store.isBodyPatternsVisible || store.todayState.calendarState.isShowingSymptomSheet || store.meState.addBond != nil || store.meState.bondReading != nil || store.meState.bondHistory != nil || store.meState.insightHistory != nil || store.meState.profile != nil) ? 0.22 : 0)
                     .ignoresSafeArea()
                     .allowsHitTesting(false)
             )
@@ -116,6 +116,7 @@ public struct HomeView: View {
             .animation(.easeInOut(duration: 0.32), value: store.meState.bondReading != nil)
             .animation(.easeInOut(duration: 0.32), value: store.meState.bondHistory != nil)
             .animation(.easeInOut(duration: 0.32), value: store.meState.insightHistory != nil || store.meState.meReading != nil)
+            .animation(.easeInOut(duration: 0.32), value: store.meState.profile != nil)
 
             // Calendar overlay — animation is scoped to this inner
             // ZStack only so the `.transition` of the calendar doesn't
@@ -314,6 +315,26 @@ public struct HomeView: View {
             }
             .animation(.easeInOut(duration: 0.32), value: store.meState.meReading != nil)
             .zIndex(9)
+
+            // Profile overlay — pushed from the top-left avatar on
+            // the Me tab. Slides in from the LEADING edge to match
+            // the position of its entry point (avatar lives top-
+            // left, so the screen reveals from the same side).
+            ZStack {
+                if let profileStore = store.scope(
+                    state: \.meState.profile,
+                    action: \.me.profile.presented
+                ) {
+                    ProfileView(
+                        store: profileStore,
+                        onDismiss: { store.send(.me(.dismissProfile)) }
+                    )
+                    .background(DesignColors.background.ignoresSafeArea())
+                    .transition(.move(edge: .leading))
+                }
+            }
+            .animation(.easeInOut(duration: 0.32), value: store.meState.profile != nil)
+            .zIndex(7)
 
             // Initial profile bootstrap — subtle non-blocking top indicator.
             // Tabs stay interactive; hero already has its own skeleton state.

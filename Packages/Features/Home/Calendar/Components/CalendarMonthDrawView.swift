@@ -16,6 +16,8 @@ final class MonthGridDrawView: UIView {
     var cycleLength = 28
     var cycleStartDate: Date = Date()
     var bleedingDays: Int = 5
+    var showOvulation: Bool = true
+    var showFertileWindow: Bool = true
     var isEditingPeriod = false
     var editPeriodDays: Set<String> = []
     var onDaySelected: ((Date) -> Void)?
@@ -194,6 +196,8 @@ final class MonthGridDrawView: UIView {
         self.cycleLength = parent.cycleLength
         self.cycleStartDate = parent.cycleStartDate
         self.bleedingDays = parent.bleedingDays
+        self.showOvulation = parent.showOvulation
+        self.showFertileWindow = parent.showFertileWindow
         self.isEditingPeriod = parent.isEditingPeriod
         self.editPeriodDays = parent.editPeriodDays
         self.onDaySelected = parent.onDaySelected
@@ -205,12 +209,20 @@ final class MonthGridDrawView: UIView {
         // first range also extends one cycleLength backward to colour the prior
         // cycle's luteal end. Result: zero gaps inside the logged horizon.
         let allPeriodKeys = parent.periodDays.union(parent.predictedPeriodDays)
+        // When the user has pinned bleedingDays to 1, every predicted
+        // day is by definition an isolated single-day entry — the
+        // standard "needs a consecutive neighbor" check would drop all
+        // future cycle anchors and the phase pills would never project
+        // past the first one.
+        let allowSingleDayAnchors = parent.bleedingDays <= 1
         let anchors: [Date] = allPeriodKeys.compactMap { key -> Date? in
             guard let date = CalendarFeature.parseDate(key) else { return nil }
-            guard let next = cal.date(byAdding: .day, value: 1, to: date),
-                  allPeriodKeys.contains(CalendarFeature.dateKey(next)) else { return nil }
-            guard let prev = cal.date(byAdding: .day, value: -1, to: date) else { return date }
-            return allPeriodKeys.contains(CalendarFeature.dateKey(prev)) ? nil : date
+            let nextKey = cal.date(byAdding: .day, value: 1, to: date).map(CalendarFeature.dateKey)
+            let prevKey = cal.date(byAdding: .day, value: -1, to: date).map(CalendarFeature.dateKey)
+            let hasNext = nextKey.map(allPeriodKeys.contains) ?? false
+            let hasPrev = prevKey.map(allPeriodKeys.contains) ?? false
+            if !hasNext && !allowSingleDayAnchors { return nil }
+            return hasPrev ? nil : date
         }.sorted()
 
         let cl = parent.cycleLength
@@ -334,8 +346,13 @@ final class MonthGridDrawView: UIView {
             let d = cal.startOfDay(for: date)
 
             let isConfirmed = periodDays.contains(key)
+            // The neighbor check drops accidental single-day entries
+            // (data quirks). It also drops legitimate 1-day period
+            // predictions — skip it when the user has explicitly
+            // pinned bleedingDays to 1.
+            let needsNeighborCheck = bleedingDays > 1
             let isPredictedRun = predictedPeriodDays.contains(key)
-                && hasNeighborIn(predictedPeriodDays, around: date)
+                && (!needsNeighborCheck || hasNeighborIn(predictedPeriodDays, around: date))
                 && !hasLoggedPeriodNear(date: date)
                 && d >= today
             let isPeriodPill = isConfirmed || isPredictedRun

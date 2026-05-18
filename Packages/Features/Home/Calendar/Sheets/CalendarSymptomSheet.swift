@@ -41,13 +41,27 @@ struct SymptomLoggingSheet: View {
     @AppStorage(SymptomSettingsKeys.forYouTabEnabled)
     private var forYouTabEnabled: Bool = true
 
-    /// Categories actually rendered in the tab bar, after the
-    /// For-you toggle filters out `.smart` when the user has
-    /// turned it off.
+    /// Live preferences source for the personalization screen —
+    /// owns ordering + per-category enabled flags. Reading the
+    /// store as a @StateObject ensures the tab bar refreshes
+    /// when the user re-opens the sheet after toggling.
+    @StateObject private var trackingPreferences = TrackingPreferencesStore.shared
+
+    /// Categories actually rendered in the tab bar. First the
+    /// For-you toggle filters out `.smart` when off, then the
+    /// personalization preferences apply the user's custom
+    /// order and remove any categories they've disabled.
     private var visibleCategories: [SymptomCategory] {
-        forYouTabEnabled
+        let base = forYouTabEnabled
             ? SymptomCategory.allCases
             : SymptomCategory.allCases.filter { $0 != .smart }
+        let baseSet = Set(base)
+
+        let ordered = trackingPreferences.order.filter {
+            baseSet.contains($0) && trackingPreferences.isEnabled($0)
+        }
+        guard !ordered.isEmpty else { return base }
+        return ordered
     }
 
     private var selectedSymptoms: Set<String> {

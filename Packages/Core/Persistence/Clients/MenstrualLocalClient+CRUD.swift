@@ -307,4 +307,325 @@ extension MenstrualLocalClient {
             try context.save()
         }
     }
+
+    // MARK: setCycleLengthOverride
+
+    /// Pass `Int` to pin cycle length manually; `nil` to revert to
+    /// auto-mode (the Live reconciliation loop will pick a new value
+    /// from observed cycles the next time it runs).
+    static func liveSetCycleLengthOverride() -> @Sendable (Int?) async throws -> Void {
+        return { override in
+            let container = CycleDataStore.shared
+            let context = ModelContext(container)
+
+            let existing = try fetchProfile(context: context)
+            let record: MenstrualProfileRecord
+            if let existing {
+                record = existing
+            } else {
+                record = MenstrualProfileRecord(onboardingCompletedAt: .now)
+                context.insert(record)
+            }
+
+            if let value = override {
+                // Match the picker's 10–90 range exactly. Used to be
+                // clamped to 18–50 (historic sanity for auto-WMA),
+                // but in manual mode the user has explicitly chosen
+                // the value, so don't silently rewrite it down to 50.
+                let clamped = max(10, min(90, value))
+                record.useManualCycleLength = true
+                record.avgCycleLength = clamped
+                // Do NOT touch `onboardingCycleLength` — that's the
+                // user's original onboarding answer. Manual overrides
+                // are temporary pins; the recommended fallback needs
+                // an untouched baseline to default to.
+            } else {
+                // Switching back to Recommended: clear the flag AND
+                // re-derive `avgCycleLength` from observed cycle gaps.
+                // Otherwise the value stays pinned at whatever the
+                // user typed in manual mode until the next cycle is
+                // confirmed.
+                record.useManualCycleLength = false
+                let today = CycleMath.startOfDay(Date())
+                let allCycles = try fetchAllCycles(context: context)
+                let pastCycles = allCycles
+                    .filter { $0.startDate <= today }
+                    .sorted { $0.startDate > $1.startDate }
+                var gaps: [Int] = []
+                for cycle in pastCycles {
+                    if let stored = cycle.actualCycleLength { gaps.append(stored) }
+                }
+                if gaps.isEmpty, pastCycles.count >= 2 {
+                    for i in 0..<(pastCycles.count - 1) {
+                        let gap = CycleMath.cycleLength(
+                            periodStart1: pastCycles[i + 1].startDate,
+                            periodStart2: pastCycles[i].startDate
+                        )
+                        if gap > 0 { gaps.append(gap) }
+                    }
+                }
+                if gaps.isEmpty {
+                    // No observed data — fall back to a neutral 28.
+                    // (Used to fall back to onboardingCycleLength but
+                    // earlier code mirrored manual overrides into it,
+                    // so we lost a trustworthy baseline.)
+                    record.avgCycleLength = 28
+                } else {
+                    record.avgCycleLength = Int(round(CycleMath.mean(gaps)))
+                    if gaps.count >= 3 {
+                        record.onboardingCycleLength = record.avgCycleLength
+                    }
+                }
+            }
+            record.updatedAt = .now
+            try context.save()
+        }
+    }
+
+    // MARK: getCycleLengthOverride
+
+    /// Returns the manually pinned cycle length if active, otherwise `nil`.
+    static func liveGetCycleLengthOverride() -> @Sendable () async throws -> Int? {
+        return {
+            let container = CycleDataStore.shared
+            let context = ModelContext(container)
+            guard let profile = try fetchProfile(context: context),
+                  profile.useManualCycleLength else { return nil }
+            return profile.avgCycleLength
+        }
+    }
+
+    // MARK: setPeriodLengthOverride
+
+    /// Pass `Int` to pin period (bleeding) length manually; `nil` to revert
+    /// to auto mode.
+    static func liveSetPeriodLengthOverride() -> @Sendable (Int?) async throws -> Void {
+        return { override in
+            let container = CycleDataStore.shared
+            let context = ModelContext(container)
+
+            let existing = try fetchProfile(context: context)
+            let record: MenstrualProfileRecord
+            if let existing {
+                record = existing
+            } else {
+                record = MenstrualProfileRecord(onboardingCompletedAt: .now)
+                context.insert(record)
+            }
+
+            if let value = override {
+                let clamped = max(1, min(10, value))
+                record.useManualPeriodLength = true
+                record.avgBleedingDays = clamped
+            } else {
+                // Switching back to Recommended: recompute the mean
+                // bleeding length from the cycles already on record.
+                record.useManualPeriodLength = false
+                let today = CycleMath.startOfDay(Date())
+                let allCycles = try fetchAllCycles(context: context)
+                let bleedings = allCycles
+                    .filter { $0.startDate <= today }
+                    .compactMap(\.bleedingDays)
+                if !bleedings.isEmpty {
+                    record.avgBleedingDays = max(1, min(10, Int(round(CycleMath.mean(bleedings)))))
+                }
+                // If empty, leave the existing value — there's nothing
+                // to derive from, and forcing a default would silently
+                // change a setting the user never touched.
+            }
+            record.updatedAt = .now
+            try context.save()
+        }
+    }
+
+    // MARK: getPeriodLengthOverride
+
+    static func liveGetPeriodLengthOverride() -> @Sendable () async throws -> Int? {
+        return {
+            let container = CycleDataStore.shared
+            let context = ModelContext(container)
+            guard let profile = try fetchProfile(context: context),
+                  profile.useManualPeriodLength else { return nil }
+            return profile.avgBleedingDays
+        }
+    }
+
+    // MARK: showOvulation / showFertileWindow
+
+    static func liveGetShowOvulation() -> @Sendable () async throws -> Bool {
+        return {
+            let container = CycleDataStore.shared
+            let context = ModelContext(container)
+            return (try fetchProfile(context: context))?.showOvulation ?? true
+        }
+    }
+
+    static func liveSetShowOvulation() -> @Sendable (Bool) async throws -> Void {
+        return { value in
+            let container = CycleDataStore.shared
+            let context = ModelContext(container)
+            let record: MenstrualProfileRecord
+            if let existing = try fetchProfile(context: context) {
+                record = existing
+            } else {
+                record = MenstrualProfileRecord(onboardingCompletedAt: .now)
+                context.insert(record)
+            }
+            record.showOvulation = value
+            record.updatedAt = .now
+            try context.save()
+        }
+    }
+
+    static func liveGetShowFertileWindow() -> @Sendable () async throws -> Bool {
+        return {
+            let container = CycleDataStore.shared
+            let context = ModelContext(container)
+            return (try fetchProfile(context: context))?.showFertileWindow ?? true
+        }
+    }
+
+    static func liveSetShowFertileWindow() -> @Sendable (Bool) async throws -> Void {
+        return { value in
+            let container = CycleDataStore.shared
+            let context = ModelContext(container)
+            let record: MenstrualProfileRecord
+            if let existing = try fetchProfile(context: context) {
+                record = existing
+            } else {
+                record = MenstrualProfileRecord(onboardingCompletedAt: .now)
+                context.insert(record)
+            }
+            record.showFertileWindow = value
+            record.updatedAt = .now
+            try context.save()
+        }
+    }
+
+    // MARK: getEffectiveCycleLength
+
+    /// Returns the cycle length currently in use. If manual override
+    /// is active, returns the pinned value. Otherwise returns the
+    /// recommended (mean of observed gaps, fallback 28). Ignores any
+    /// stale `avgCycleLength` value left from a previous manual save.
+    static func liveGetEffectiveCycleLength() -> @Sendable () async throws -> Int {
+        return {
+            let container = CycleDataStore.shared
+            let context = ModelContext(container)
+            guard let profile = try fetchProfile(context: context) else { return 28 }
+            if profile.useManualCycleLength {
+                return max(10, min(90, profile.avgCycleLength))
+            }
+            // Recompute live so a polluted `avgCycleLength` from an
+            // earlier manual save doesn't leak through.
+            let today = CycleMath.startOfDay(Date())
+            let allCycles = try fetchAllCycles(context: context)
+            let pastCycles = allCycles
+                .filter { $0.startDate <= today }
+                .sorted { $0.startDate > $1.startDate }
+            var gaps: [Int] = pastCycles.compactMap(\.actualCycleLength)
+            if gaps.isEmpty, pastCycles.count >= 2 {
+                for i in 0..<(pastCycles.count - 1) {
+                    let gap = CycleMath.cycleLength(
+                        periodStart1: pastCycles[i + 1].startDate,
+                        periodStart2: pastCycles[i].startDate
+                    )
+                    if gap > 0 { gaps.append(gap) }
+                }
+            }
+            if !gaps.isEmpty {
+                return Int(round(CycleMath.mean(gaps)))
+            }
+            return 28
+        }
+    }
+
+    // MARK: getRecommendedCycleLength
+
+    /// Computes the cycle length Recommended mode would use, ignoring
+    /// any manual override. Mean of observed cycle gaps, fallback to
+    /// the onboarding baseline if no data.
+    static func liveGetRecommendedCycleLength() -> @Sendable () async throws -> Int {
+        return {
+            let container = CycleDataStore.shared
+            let context = ModelContext(container)
+            let today = CycleMath.startOfDay(Date())
+            let allCycles = try fetchAllCycles(context: context)
+            let pastCycles = allCycles
+                .filter { $0.startDate <= today }
+                .sorted { $0.startDate > $1.startDate }
+
+            var gaps: [Int] = pastCycles.compactMap(\.actualCycleLength)
+            if gaps.isEmpty, pastCycles.count >= 2 {
+                for i in 0..<(pastCycles.count - 1) {
+                    let gap = CycleMath.cycleLength(
+                        periodStart1: pastCycles[i + 1].startDate,
+                        periodStart2: pastCycles[i].startDate
+                    )
+                    if gap > 0 { gaps.append(gap) }
+                }
+            }
+            if !gaps.isEmpty {
+                return Int(round(CycleMath.mean(gaps)))
+            }
+            // No observed data — return a neutral 28-day baseline.
+            // Intentionally ignoring `onboardingCycleLength` here:
+            // earlier code paths used to mirror the manual override
+            // into it, which then leaked back as the "recommended"
+            // value after the user toggled away from Manual.
+            return 28
+        }
+    }
+
+    // MARK: getRecommendedPeriodLength
+
+    static func liveGetRecommendedPeriodLength() -> @Sendable () async throws -> Int {
+        return {
+            let container = CycleDataStore.shared
+            let context = ModelContext(container)
+            let today = CycleMath.startOfDay(Date())
+            let allCycles = try fetchAllCycles(context: context)
+            let bleedings = allCycles
+                .filter { $0.startDate <= today }
+                .compactMap(\.bleedingDays)
+            if !bleedings.isEmpty {
+                return max(1, min(10, Int(round(CycleMath.mean(bleedings)))))
+            }
+            // No observed data — return a neutral 5-day baseline.
+            // Intentionally ignoring `profile.avgBleedingDays` here:
+            // earlier code paths used to mirror the manual override
+            // into it, which then leaked back as the "recommended"
+            // value after the user toggled away from Manual.
+            return 5
+        }
+    }
+
+    // MARK: getEffectivePeriodLength
+
+    /// Returns the period length currently in use. If manual override
+    /// is active, returns the pinned value. Otherwise returns the
+    /// recommended (mean of observed bleeding days, fallback 5).
+    /// Mirrors `getEffectiveCycleLength` for the same reason: avoid
+    /// leaking a stale `avgBleedingDays` value pinned by a previous
+    /// manual save.
+    static func liveGetEffectivePeriodLength() -> @Sendable () async throws -> Int {
+        return {
+            let container = CycleDataStore.shared
+            let context = ModelContext(container)
+            guard let profile = try fetchProfile(context: context) else { return 5 }
+            if profile.useManualPeriodLength {
+                return max(1, min(10, profile.avgBleedingDays))
+            }
+            // Recompute live to ignore any polluted stored value.
+            let today = CycleMath.startOfDay(Date())
+            let allCycles = try fetchAllCycles(context: context)
+            let bleedings = allCycles
+                .filter { $0.startDate <= today }
+                .compactMap(\.bleedingDays)
+            if !bleedings.isEmpty {
+                return max(1, min(10, Int(round(CycleMath.mean(bleedings)))))
+            }
+            return 5
+        }
+    }
 }

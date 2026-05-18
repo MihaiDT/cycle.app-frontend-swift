@@ -14,10 +14,12 @@ extension MenstrualLocalClient {
     static func regeneratePredictions(container: ModelContainer) async throws {
         let context = ModelContext(container)
 
-        // Clear unconfirmed predictions
-        let clearDescriptor = FetchDescriptor<PredictionRecord>(
-            predicate: #Predicate<PredictionRecord> { !$0.isConfirmed }
-        )
+        // Clear all predictions — they're derived from the cycle
+        // records (the source of truth). Leaving stale `isConfirmed`
+        // predictions around caused the calendar to show period
+        // bands at the OLD predicted spacing even after the user
+        // pinned a new manual cycle length.
+        let clearDescriptor = FetchDescriptor<PredictionRecord>()
         for pred in try context.fetch(clearDescriptor) {
             context.delete(pred)
         }
@@ -60,9 +62,17 @@ extension MenstrualLocalClient {
         // Use profile average for maximum prediction stability
         let cycleLen = profile.avgCycleLength
 
-        // Project predictions into the future (~1 year)
-        // Use most recent cycle + WMA for consistent spacing (V4 adjustments can over-correct)
-        let mostRecentStart = cycles.first?.startDate ?? result.predictedStart
+        // Project predictions into the future (~1 year). Anchor on
+        // the most recent cycle that's already started — a CycleRecord
+        // with a startDate in the future (possible if the user logged a
+        // period via Edit Period at a future date by mistake) would
+        // otherwise push the entire prediction series forward.
+        let now = CycleMath.startOfDay(Date())
+        let mostRecentStart = cycles
+            .first(where: { $0.startDate <= now })?
+            .startDate
+            ?? cycles.first?.startDate
+            ?? result.predictedStart
         var currentStart = CycleMath.addDays(mostRecentStart, cycleLen)
         var currentConfidence = result.confidence
         let today = CycleMath.startOfDay(Date())
@@ -83,8 +93,11 @@ extension MenstrualLocalClient {
         )
         context.insert(primaryPred)
 
-        // Advance past primary prediction
-        let primaryLen = max(18, min(50, cycleLen))
+        // Advance past primary prediction. Match the manual-override
+        // picker's range (10–90) — capping at 50 here would silently
+        // bunch up predictions for users who pinned, say, a 75-day
+        // length.
+        let primaryLen = max(10, min(90, cycleLen))
         currentStart = CycleMath.addDays(currentStart, primaryLen)
         currentConfidence = max(0.3, currentConfidence * 0.95)
 
