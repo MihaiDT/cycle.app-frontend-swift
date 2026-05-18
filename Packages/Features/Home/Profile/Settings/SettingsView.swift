@@ -22,6 +22,7 @@ struct SettingsView: View {
     private var hideWidgetData: Bool = false
 
     @State private var isShowingDownloadData: Bool = false
+    @State private var isShowingTheme: Bool = false
 
     var body: some View {
         ZStack {
@@ -40,6 +41,9 @@ struct SettingsView: View {
             // back here in one animation, instead of bouncing
             // through DownloadDataView.
             DownloadDataView(onExportComplete: { isShowingDownloadData = false })
+        }
+        .navigationDestination(isPresented: $isShowingTheme) {
+            ThemePickerView()
         }
     }
 
@@ -82,7 +86,7 @@ struct SettingsView: View {
     private var personalizeSection: some View {
         section(title: "Personalize") {
             VStack(alignment: .leading, spacing: 0) {
-                navRow(title: "Theme") {}
+                navRow(title: "Theme") { isShowingTheme = true }
                 divider
                 navRow(title: "Language", isExternal: true) {
                     openSystemSettings()

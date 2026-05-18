@@ -10,6 +10,9 @@ public struct AppView: View {
     @Environment(\.scenePhase) private var scenePhase
     @StateObject private var lock = BiometricLockController.shared
 
+    @AppStorage(AppThemeStorage.key) private var themeRaw: String = AppTheme.system.rawValue
+    private var theme: AppTheme { AppTheme(rawValue: themeRaw) ?? .system }
+
     public init(store: StoreOf<AppFeature>) {
         self.store = store
     }
@@ -35,6 +38,7 @@ public struct AppView: View {
             }
         }
         .animation(.easeInOut(duration: 0.28), value: lock.isUnlocked)
+        .preferredColorScheme(theme.colorScheme)
         .onChange(of: scenePhase) { _, newPhase in
             // Re-lock only on .background — that's the genuine
             // "user left the app" signal. .inactive also fires
