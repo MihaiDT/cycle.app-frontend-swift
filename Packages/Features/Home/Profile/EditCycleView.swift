@@ -9,7 +9,6 @@ import SwiftUI
 
 public struct EditCycleView: View {
     @Bindable var store: StoreOf<EditCycleFeature>
-    @Environment(\.dismiss) private var dismiss
 
     public init(store: StoreOf<EditCycleFeature>) {
         self.store = store
@@ -34,16 +33,7 @@ public struct EditCycleView: View {
         .navigationTitle("Cycle data")
         .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(.hidden, for: .navigationBar)
-        .navigationBarBackButtonHidden(true)
         .toolbar {
-            ToolbarItem(placement: .topBarLeading) {
-                Button { dismiss() } label: {
-                    Image(systemName: "chevron.left")
-                        .font(.system(size: 17, weight: .semibold))
-                        .foregroundStyle(DesignColors.text)
-                }
-                .accessibilityLabel("Back")
-            }
             ToolbarItem(placement: .principal) {
                 Text("Cycle data")
                     .font(AppTypography.rowTitleEmphasized)

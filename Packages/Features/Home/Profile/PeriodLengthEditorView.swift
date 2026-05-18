@@ -8,7 +8,6 @@ import SwiftUI
 
 public struct PeriodLengthEditorView: View {
     @Bindable var store: StoreOf<PeriodLengthEditorFeature>
-    @Environment(\.dismiss) private var dismiss
 
     public init(store: StoreOf<PeriodLengthEditorFeature>) {
         self.store = store
@@ -42,21 +41,11 @@ public struct PeriodLengthEditorView: View {
             }
 
         }
-        .navigationBarBackButtonHidden(true)
         .animation(.easeInOut(duration: 0.25), value: store.isSaving)
         .navigationTitle("Period length")
         .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(.hidden, for: .navigationBar)
         .toolbar {
-            ToolbarItem(placement: .topBarLeading) {
-                Button { dismiss() } label: {
-                    Image(systemName: "chevron.left")
-                        .font(.system(size: 17, weight: .semibold))
-                        .foregroundStyle(DesignColors.text)
-                }
-                .accessibilityLabel("Back")
-                .disabled(store.isSaving)
-            }
             ToolbarItem(placement: .principal) {
                 Text("Period length")
                     .font(AppTypography.rowTitleEmphasized)

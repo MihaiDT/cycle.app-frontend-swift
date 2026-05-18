@@ -10,7 +10,6 @@ import SwiftUI
 
 public struct CycleLengthEditorView: View {
     @Bindable var store: StoreOf<CycleLengthEditorFeature>
-    @Environment(\.dismiss) private var dismiss
 
     public init(store: StoreOf<CycleLengthEditorFeature>) {
         self.store = store
@@ -46,21 +45,11 @@ public struct CycleLengthEditorView: View {
 
 
         }
-        .navigationBarBackButtonHidden(true)
         .animation(.easeInOut(duration: 0.25), value: store.isSaving)
         .navigationTitle("Cycle length")
         .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(.hidden, for: .navigationBar)
         .toolbar {
-            ToolbarItem(placement: .topBarLeading) {
-                Button { dismiss() } label: {
-                    Image(systemName: "chevron.left")
-                        .font(.system(size: 17, weight: .semibold))
-                        .foregroundStyle(DesignColors.text)
-                }
-                .accessibilityLabel("Back")
-                .disabled(store.isSaving)
-            }
             ToolbarItem(placement: .principal) {
                 Text("Cycle length")
                     .font(AppTypography.rowTitleEmphasized)
