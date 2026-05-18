@@ -49,6 +49,20 @@ struct DataExportReadyView: View {
     @State private var isSending: Bool = false
     @State private var sentSummary: SentSummary?
 
+    /// Wall-clock timestamp (Unix epoch) of the most recent
+    /// successful email send. Compared against
+    /// `Self.cooldownSeconds` (72h) to gate the "Email me a copy"
+    /// button so a user can't spam the backend (and the recipient)
+    /// while their previous link is still valid. Lives in
+    /// `@AppStorage` so the cooldown survives app relaunches.
+    @AppStorage(DataExportReadyView.lastSentAtKey)
+    private var lastSentAtRaw: Double = 0
+
+    /// Re-drives the cooldown copy ("expires in 41h") at minute
+    /// granularity. Lighter than a 1s timer; the countdown text
+    /// rounds to hours anyway.
+    @State private var cooldownTickerTrigger: Int = 0
+
     var body: some View {
         ZStack {
             AppleHealthBackground()
@@ -285,13 +299,22 @@ struct DataExportReadyView: View {
             .background { footerBackground }
         } else {
             VStack(spacing: AppLayout.spacingS) {
+                if isInCooldown {
+                    Text(cooldownText)
+                        .font(AppTypography.bodyMedium)
+                        .foregroundStyle(DesignColors.textSecondary)
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .padding(.horizontal, AppLayout.spacingS)
+                }
+
                 WarmCapsuleButton(
-                    isSending ? "Sending…" : "Email me a copy",
+                    emailButtonTitle,
                     prominence: .primary,
                     isFullWidth: true,
                     action: { Task { await sendViaBackend() } }
                 )
-                .disabled(isSending || !isEmailValid)
+                .disabled(isSending || !isEmailValid || isInCooldown)
 
                 Button(action: shareFile) {
                     Text("Other ways to share")
@@ -343,6 +366,12 @@ struct DataExportReadyView: View {
     }
 
     // MARK: - Derived
+
+    private var emailButtonTitle: String {
+        if isSending { return "Sending…" }
+        if isInCooldown { return "Wait for the previous link" }
+        return "Email me a copy"
+    }
 
     private var isEmailValid: Bool {
         Self.isLikelyValidEmail(email)
@@ -461,6 +490,13 @@ struct DataExportReadyView: View {
 
             await persistEmail(trimmed)
 
+            // Engage the 72h cooldown so the user can't re-send
+            // while their previous link is still valid. Stored as
+            // a Unix timestamp in @AppStorage so it survives
+            // relaunches and view re-mounts.
+            lastSentAtRaw = Date.now.timeIntervalSince1970
+            startCooldownTicker()
+
             withAnimation(.easeInOut(duration: 0.3)) {
                 sentSummary = SentSummary(email: trimmed)
             }
@@ -517,6 +553,45 @@ struct DataExportReadyView: View {
     }
 
     // MARK: - Helpers
+
+    // MARK: - Cooldown
+
+    fileprivate static let lastSentAtKey = "cycle.app.dataExport.lastSentAt"
+    private static let cooldownSeconds: TimeInterval = 72 * 60 * 60
+
+    /// Seconds remaining until a fresh export email can be sent.
+    /// Zero (or negative) when no cooldown is active. Reads
+    /// `cooldownTickerTrigger` so the value re-evaluates whenever
+    /// the ticker fires.
+    private var cooldownRemaining: TimeInterval {
+        _ = cooldownTickerTrigger
+        guard lastSentAtRaw > 0 else { return 0 }
+        let elapsed = Date.now.timeIntervalSince1970 - lastSentAtRaw
+        return max(0, Self.cooldownSeconds - elapsed)
+    }
+
+    private var isInCooldown: Bool { cooldownRemaining > 0 }
+
+    private var cooldownText: String {
+        let remaining = cooldownRemaining
+        guard remaining > 0 else { return "" }
+        let hours = Int(remaining / 3600)
+        if hours >= 1 {
+            return "Your previous link is still active. You can send a new one in about \(hours)h."
+        }
+        let minutes = max(1, Int(remaining / 60))
+        return "Your previous link is still active. You can send a new one in about \(minutes) min."
+    }
+
+    private func startCooldownTicker() {
+        cooldownTickerTrigger &+= 1
+        // No timer publisher needed for now — re-evaluation is
+        // driven by the view rebuilding on relevant @State changes
+        // (sending, email edits, app foreground). For a more
+        // precise countdown we could swap in a TimelineView(.periodic),
+        // but a minute resolution would be overkill since the copy
+        // rounds to hours.
+    }
 
     private static func exportFileName() -> String {
         let formatter = DateFormatter()
