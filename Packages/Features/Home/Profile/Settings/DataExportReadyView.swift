@@ -26,6 +26,12 @@ import SwiftUI
 // - Primary CTA "Email me a copy" + secondary "Other ways to share"
 
 struct DataExportReadyView: View {
+    /// Closure fired when the user taps "Done" on the success state.
+    /// Set by the presenting view to pop all the way back to a
+    /// stable anchor (Settings) instead of dismissing one level
+    /// at a time. When nil, falls back to a plain `dismiss()`.
+    var onComplete: (() -> Void)? = nil
+
     @Environment(\.dismiss) private var dismiss
     @Dependency(\.apiClient) private var apiClient
     @Dependency(\.userProfileLocal) private var userProfileLocal
@@ -273,7 +279,7 @@ struct DataExportReadyView: View {
                 "Done",
                 prominence: .primary,
                 isFullWidth: true,
-                action: { dismiss() }
+                action: { (onComplete ?? { dismiss() })() }
             )
             .padding(.horizontal, AppLayout.screenHorizontal)
             .padding(.top, AppLayout.spacingL)

@@ -14,6 +14,12 @@ import SwiftUI
 // message — we don't store the contents.
 
 struct DownloadDataView: View {
+    /// Closure fired when DataExportReadyView reports it's finished
+    /// (user tapped "Done" on the success state). The parent uses
+    /// this to pop both this view and DataExportReadyView in a
+    /// single animation, landing the user back on Settings.
+    var onExportComplete: (() -> Void)? = nil
+
     @Environment(\.dismiss) private var dismiss
     @State private var isShowingExportReady: Bool = false
 
@@ -32,7 +38,7 @@ struct DownloadDataView: View {
         .toolbar { backToolbarItem(dismiss: dismiss) }
         .safeAreaInset(edge: .bottom, spacing: 0) { footer }
         .navigationDestination(isPresented: $isShowingExportReady) {
-            DataExportReadyView()
+            DataExportReadyView(onComplete: { onExportComplete?() })
         }
     }
 

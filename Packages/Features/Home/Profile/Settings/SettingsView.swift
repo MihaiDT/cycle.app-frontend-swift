@@ -39,7 +39,11 @@ struct SettingsView: View {
         .navigationBarBackButtonHidden(true)
         .toolbar { backToolbarItem(dismiss: dismiss) }
         .navigationDestination(isPresented: $isShowingDownloadData) {
-            DownloadDataView()
+            // Tapping "Done" on the export success state flips this
+            // bool — SwiftUI cascades the pop and lands the user
+            // back here in one animation, instead of bouncing
+            // through DownloadDataView.
+            DownloadDataView(onExportComplete: { isShowingDownloadData = false })
         }
     }
 
