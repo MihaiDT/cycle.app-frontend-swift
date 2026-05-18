@@ -18,6 +18,14 @@ struct AppLockView: View {
 
     var body: some View {
         ZStack {
+            // Solid base — AppleHealthBackground is a translucent
+            // gradient (peach 0.38 → white) so without an opaque
+            // backdrop the app's data leaks through the lock view.
+            // The point of the gate is that the user (or anyone
+            // peeking) can't see anything until they authenticate.
+            DesignColors.background
+                .ignoresSafeArea()
+
             AppleHealthBackground()
                 .ignoresSafeArea()
 
