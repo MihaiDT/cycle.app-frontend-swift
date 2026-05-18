@@ -1,32 +1,32 @@
 import ComposableArchitecture
-import MessageUI
 import SwiftUI
 
 // MARK: - Data Export Ready View
 //
 // Confirmation screen after the user taps "Request data" on
-// DownloadDataView. The export bundle is generated on-device
-// (DataExporter) and delivered to the user via:
-// - Primary: MFMailComposeViewController (user emails it to themselves)
-// - Secondary: UIActivityViewController (AirDrop / Files / Gmail / …)
+// DownloadDataView. The export bundle is generated on-device by
+// DataExporter and delivered to the user via:
+// - Primary: backend transactional email relay (POST
+//   /api/data-export/email → Resend). The Go backend never
+//   persists the payload; it's a pure pass-through.
+// - Secondary: UIActivityViewController (AirDrop / Files / Gmail /
+//   any sharing extension).
 //
-// Email flow is local-first by design: the To field is pre-filled
-// from a cached `email` on `UserProfileRecord` (E2E encrypted via
-// CloudKit). First export captures the email, subsequent exports
-// auto-fill. The user always sees and approves the message in the
-// system Mail composer before it sends — Apple's "Privacy & Data
-// Use" guidance treats that composer as the consent surface.
+// The cached email lives on UserProfileRecord with
+// @Attribute(.allowsCloudEncryption). First export captures it,
+// subsequent exports pre-fill the TextField.
 //
 // Layout (top → bottom):
-// - Hero icon disc
+// - Hero icon disc + status (loading / success / idle)
 // - Title + descriptive copy
-// - Reference code block (tap to copy; also embedded in the JSON
-//   manifest so the file is traceable to the on-screen receipt)
-// - Email-to row (TextField with cached value, persisted on send)
-// - Primary CTA "Email me a copy" + secondary text "Other ways to share"
+// - Reference code block (tap to copy; embedded in
+//   manifest.referenceCode of the JSON file)
+// - Email TextField with cached value (persisted on send)
+// - Primary CTA "Email me a copy" + secondary "Other ways to share"
 
 struct DataExportReadyView: View {
     @Environment(\.dismiss) private var dismiss
+    @Dependency(\.apiClient) private var apiClient
     @Dependency(\.userProfileLocal) private var userProfileLocal
 
     @State private var referenceCode: String = DataExportReadyView.generateReferenceCode()
@@ -36,11 +36,9 @@ struct DataExportReadyView: View {
     @State private var didHydrateEmail: Bool = false
 
     @State private var shareItem: ExportShareItem?
-    @State private var mailDraft: MailDraft?
     @State private var exportError: String?
-    @State private var showMailFallbackAlert: Bool = false
-    @State private var pendingMailURL: URL?
-    @State private var isGenerating: Bool = false
+    @State private var isSending: Bool = false
+    @State private var sentSummary: SentSummary?
 
     var body: some View {
         ZStack {
@@ -59,23 +57,14 @@ struct DataExportReadyView: View {
         .sheet(item: $shareItem) { item in
             ShareSheet(items: [item.url])
         }
-        .sheet(item: $mailDraft) { draft in
-            MailComposeView(draft: draft) { _, _ in }
-                .ignoresSafeArea()
-        }
-        .alert("Export failed", isPresented: exportErrorBinding, presenting: exportError) { _ in
-            Button("OK") { exportError = nil }
+        .alert("Couldn't send email", isPresented: exportErrorBinding, presenting: exportError) { _ in
+            Button("Try again") {
+                exportError = nil
+                Task { await sendViaBackend() }
+            }
+            Button("Cancel", role: .cancel) { exportError = nil }
         } message: { message in
             Text(message)
-        }
-        .alert(
-            "iOS Mail isn't set up",
-            isPresented: $showMailFallbackAlert
-        ) {
-            Button("Use share sheet") { presentShareSheetFallback() }
-            Button("Cancel", role: .cancel) { pendingMailURL = nil }
-        } message: {
-            Text("Add a Mail account in Settings or use the share sheet to send your export via another app.")
         }
     }
 
@@ -109,17 +98,32 @@ struct DataExportReadyView: View {
                 .fill(DesignColors.accentWarm.opacity(0.14))
                 .frame(width: 132, height: 132)
 
-            Image(systemName: "tray.and.arrow.down.fill")
-                .font(.system(size: 52, weight: .regular))
-                .foregroundStyle(DesignColors.accentWarm)
+            if sentSummary != nil {
+                Image(systemName: "checkmark.circle.fill")
+                    .font(.system(size: 64, weight: .regular))
+                    .foregroundStyle(DesignColors.accentWarm)
+                    .transition(.opacity)
+            } else if isSending {
+                ProgressView()
+                    .progressViewStyle(.circular)
+                    .tint(DesignColors.accentWarm)
+                    .controlSize(.large)
+            } else {
+                Image(systemName: "tray.and.arrow.down.fill")
+                    .font(.system(size: 52, weight: .regular))
+                    .foregroundStyle(DesignColors.accentWarm)
+                    .transition(.opacity)
+            }
         }
+        .animation(.easeInOut(duration: 0.25), value: sentSummary?.email)
+        .animation(.easeInOut(duration: 0.25), value: isSending)
         .padding(.top, AppLayout.spacingM)
     }
 
     // MARK: - Text
 
     private var titleBlock: some View {
-        Text("Your data is ready")
+        Text(sentSummary != nil ? "Email sent" : "Your data is ready")
             .font(.raleway("Bold", size: 24, relativeTo: .title2))
             .foregroundStyle(DesignColors.text)
             .multilineTextAlignment(.center)
@@ -127,21 +131,33 @@ struct DataExportReadyView: View {
             .padding(.horizontal, AppLayout.spacingS)
     }
 
+    @ViewBuilder
     private var copyBlock: some View {
-        VStack(spacing: AppLayout.spacingM) {
-            Text("We've bundled every cycle, symptom, check-in, prediction, and HBI score into a single JSON file. It stays on this device until you choose where to send it.")
-                .font(AppTypography.bodyMedium)
-                .foregroundStyle(DesignColors.textSecondary)
-                .multilineTextAlignment(.center)
-                .fixedSize(horizontal: false, vertical: true)
+        if let sent = sentSummary {
+            VStack(spacing: AppLayout.spacingM) {
+                Text("Your export is on its way to \(sent.email). It may take a minute to arrive — check spam if you don't see it.")
+                    .font(AppTypography.bodyMedium)
+                    .foregroundStyle(DesignColors.textSecondary)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .padding(.horizontal, AppLayout.spacingXS)
+        } else {
+            VStack(spacing: AppLayout.spacingM) {
+                Text("We've bundled every cycle, symptom, check-in, prediction, and HBI score into a single JSON file. It stays on this device until you send it.")
+                    .font(AppTypography.bodyMedium)
+                    .foregroundStyle(DesignColors.textSecondary)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
 
-            Text("Type the address where you want it delivered, then tap Email me a copy. The system Mail composer opens with everything pre-filled so you can review before sending.")
-                .font(AppTypography.bodyMedium)
-                .foregroundStyle(DesignColors.textSecondary)
-                .multilineTextAlignment(.center)
-                .fixedSize(horizontal: false, vertical: true)
+                Text("Enter your email below and we'll send it as an attachment. Your data passes through our server only to compose the message — we don't store it.")
+                    .font(AppTypography.bodyMedium)
+                    .foregroundStyle(DesignColors.textSecondary)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .padding(.horizontal, AppLayout.spacingXS)
         }
-        .padding(.horizontal, AppLayout.spacingXS)
     }
 
     // MARK: - Reference code
@@ -177,54 +193,72 @@ struct DataExportReadyView: View {
 
     // MARK: - Email input
 
+    @ViewBuilder
     private var emailInputRow: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text("Send to")
-                .font(AppTypography.cardEyebrow)
-                .tracking(AppTypography.cardEyebrowTracking)
-                .foregroundStyle(DesignColors.textSecondary)
-                .padding(.horizontal, AppLayout.spacingM)
-                .padding(.top, 14)
+        if sentSummary == nil {
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Send to")
+                    .font(AppTypography.cardEyebrow)
+                    .tracking(AppTypography.cardEyebrowTracking)
+                    .foregroundStyle(DesignColors.textSecondary)
+                    .padding(.horizontal, AppLayout.spacingM)
+                    .padding(.top, 14)
 
-            TextField("you@example.com", text: $email)
-                .font(.raleway("Medium", size: 17, relativeTo: .headline))
-                .foregroundStyle(DesignColors.text)
-                .textInputAutocapitalization(.never)
-                .autocorrectionDisabled()
-                .keyboardType(.emailAddress)
-                .textContentType(.emailAddress)
-                .padding(.horizontal, AppLayout.spacingM)
-                .padding(.bottom, 14)
+                TextField("you@example.com", text: $email)
+                    .font(.raleway("Medium", size: 17, relativeTo: .headline))
+                    .foregroundStyle(DesignColors.text)
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled()
+                    .keyboardType(.emailAddress)
+                    .textContentType(.emailAddress)
+                    .disabled(isSending)
+                    .padding(.horizontal, AppLayout.spacingM)
+                    .padding(.bottom, 14)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .widgetCardStyle(cornerRadius: AppLayout.cornerRadiusL)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .widgetCardStyle(cornerRadius: AppLayout.cornerRadiusL)
     }
 
     // MARK: - Footer
 
+    @ViewBuilder
     private var footer: some View {
-        VStack(spacing: AppLayout.spacingS) {
-            WarmCapsuleButton(
-                isGenerating ? "Preparing…" : "Email me a copy",
-                prominence: .primary,
-                isFullWidth: true,
-                action: sendViaEmail
-            )
-            .disabled(isGenerating || !isEmailValid)
-
-            Button(action: shareFile) {
-                Text("Other ways to share")
-                    .font(.raleway("Medium", size: 14, relativeTo: .footnote))
-                    .foregroundStyle(DesignColors.textSecondary)
-                    .underline(true, color: DesignColors.textSecondary.opacity(0.6))
-                    .padding(.vertical, 6)
-                    .contentShape(Rectangle())
+        if sentSummary != nil {
+            VStack(spacing: AppLayout.spacingS) {
+                WarmCapsuleButton(
+                    "Done",
+                    prominence: .primary,
+                    isFullWidth: true,
+                    action: { dismiss() }
+                )
             }
-            .buttonStyle(.plain)
-            .disabled(isGenerating)
+            .padding(.horizontal, AppLayout.screenHorizontal)
+            .padding(.bottom, AppLayout.spacingL)
+        } else {
+            VStack(spacing: AppLayout.spacingS) {
+                WarmCapsuleButton(
+                    isSending ? "Sending…" : "Email me a copy",
+                    prominence: .primary,
+                    isFullWidth: true,
+                    action: { Task { await sendViaBackend() } }
+                )
+                .disabled(isSending || !isEmailValid)
+
+                Button(action: shareFile) {
+                    Text("Other ways to share")
+                        .font(.raleway("Medium", size: 14, relativeTo: .footnote))
+                        .foregroundStyle(DesignColors.textSecondary)
+                        .underline(true, color: DesignColors.textSecondary.opacity(0.6))
+                        .padding(.vertical, 6)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .disabled(isSending)
+            }
+            .padding(.horizontal, AppLayout.screenHorizontal)
+            .padding(.bottom, AppLayout.spacingL)
         }
-        .padding(.horizontal, AppLayout.screenHorizontal)
-        .padding(.bottom, AppLayout.spacingL)
     }
 
     // MARK: - Derived
@@ -252,7 +286,7 @@ struct DataExportReadyView: View {
                 email = cached
             }
         } catch {
-            // Non-fatal — the user can still type the email manually.
+            // Non-fatal — the user can still type it manually.
         }
     }
 
@@ -268,102 +302,81 @@ struct DataExportReadyView: View {
         }
     }
 
-    private func sendViaEmail() {
-        guard !isGenerating, isEmailValid else { return }
-        isGenerating = true
-
+    private func sendViaBackend() async {
+        guard !isSending, isEmailValid else { return }
         let trimmed = email.trimmingCharacters(in: .whitespacesAndNewlines)
         email = trimmed
+        isSending = true
+
+        defer { isSending = false }
 
         do {
-            let url = try buildExportFile()
-            persistEmail(trimmed)
+            let payload = try buildExportData()
+            let fileName = Self.exportFileName()
+            let request = DataExportEmailRequest(
+                to: trimmed,
+                referenceCode: referenceCode,
+                payloadB64: payload.base64EncodedString(),
+                filename: fileName
+            )
+            let endpoint = try Endpoint.sendDataExportEmail(body: request)
+            let _: DataExportEmailResponse = try await apiClient.send(endpoint)
 
-            if MFMailComposeViewController.canSendMail() {
-                let data = try Data(contentsOf: url)
-                mailDraft = MailDraft(
-                    subject: "Your cycle.app data export – \(Self.humanDate())",
-                    body: emailBody(),
-                    toRecipients: [trimmed],
-                    attachmentData: data,
-                    attachmentMime: "application/json",
-                    attachmentFilename: url.lastPathComponent
-                )
-            } else {
-                pendingMailURL = url
-                showMailFallbackAlert = true
+            await persistEmail(trimmed)
+
+            withAnimation(.easeInOut(duration: 0.3)) {
+                sentSummary = SentSummary(email: trimmed)
             }
+            UIImpactFeedbackGenerator(style: .light).impactOccurred()
         } catch {
             exportError = error.localizedDescription
         }
-
-        isGenerating = false
     }
 
     private func shareFile() {
-        guard !isGenerating else { return }
-        isGenerating = true
-
+        guard !isSending else { return }
         do {
             let url = try buildExportFile()
             shareItem = ExportShareItem(url: url)
         } catch {
             exportError = error.localizedDescription
         }
-
-        isGenerating = false
-    }
-
-    private func presentShareSheetFallback() {
-        guard let url = pendingMailURL else { return }
-        shareItem = ExportShareItem(url: url)
-        pendingMailURL = nil
     }
 
     // MARK: - Export pipeline
 
-    private func buildExportFile() throws -> URL {
+    private func buildExportData() throws -> Data {
         let info = Bundle.main.infoDictionary ?? [:]
         let appVersion = (info["CFBundleShortVersionString"] as? String) ?? "0.0.0"
         let buildNumber = (info["CFBundleVersion"] as? String) ?? "0"
 
-        let json = try DataExporter().exportAll(
+        return try DataExporter().exportAll(
             appVersion: appVersion,
             buildNumber: buildNumber,
             preferences: ExportablePreferences.snapshot(),
             referenceCode: referenceCode
         )
+    }
 
+    private func buildExportFile() throws -> URL {
+        let data = try buildExportData()
         let fileName = Self.exportFileName()
         let url = FileManager.default.temporaryDirectory
             .appendingPathComponent(fileName)
-        try json.write(to: url, options: .atomic)
+        try data.write(to: url, options: .atomic)
         return url
     }
 
-    private func persistEmail(_ value: String) {
-        let userProfileLocal = userProfileLocal
-        Task.detached {
-            do {
-                guard var snapshot = try await userProfileLocal.getProfile(),
-                      snapshot.email != value else { return }
-                snapshot.email = value
-                try await userProfileLocal.saveProfile(snapshot)
-            } catch {
-                // Best-effort cache — silent if it can't write. Guest
-                // users (no profile yet) simply re-type next time.
-            }
+    private func persistEmail(_ value: String) async {
+        do {
+            guard var snapshot = try await userProfileLocal.getProfile(),
+                  snapshot.email != value else { return }
+            snapshot.email = value
+            try await userProfileLocal.saveProfile(snapshot)
+        } catch {
+            // Best-effort cache — silent if it can't write. Guest
+            // users (no profile yet) simply re-type next time.
         }
-    }
-
-    private func emailBody() -> String {
-        """
-        Your cycle.app data export is attached as a JSON file.
-
-        It includes every cycle, symptom, check-in, prediction, and HBI score logged on this device, plus your in-app preferences. The data stays under your control from this point on.
-
-        Reference code: \(referenceCode)
-        """
     }
 
     // MARK: - Helpers
@@ -376,18 +389,9 @@ struct DataExportReadyView: View {
         return "cycleapp-export-\(formatter.string(from: .now)).json"
     }
 
-    private static func humanDate() -> String {
-        let formatter = DateFormatter()
-        formatter.dateStyle = .medium
-        formatter.timeStyle = .none
-        return formatter.string(from: .now)
-    }
-
     private static func isLikelyValidEmail(_ value: String) -> Bool {
         let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return false }
-        // Lightweight RFC-5322-ish check — the system Mail composer
-        // does the authoritative validation when the user hits Send.
         let pattern = #"^[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$"#
         return trimmed.range(of: pattern, options: .regularExpression) != nil
     }
@@ -402,4 +406,10 @@ struct DataExportReadyView: View {
         }
         return chunks.joined(separator: "-")
     }
+}
+
+// MARK: - Sent Summary
+
+private struct SentSummary: Equatable {
+    let email: String
 }

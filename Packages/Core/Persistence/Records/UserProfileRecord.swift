@@ -15,9 +15,9 @@ public final class UserProfileRecord {
 
     /// Optional contact email captured the first time the user
     /// requests an export (DataExportReadyView). Cached so future
-    /// exports pre-fill MFMailCompose's To field. E2E encrypted —
-    /// never leaves the device except via the user-controlled
-    /// share/email channel.
+    /// exports pre-fill the recipient field. E2E encrypted — never
+    /// leaves the device except as the "to" address in the user-
+    /// triggered transactional email relay.
     @Attribute(.allowsCloudEncryption)
     public var email: String?
 
