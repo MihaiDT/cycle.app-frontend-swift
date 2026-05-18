@@ -7,18 +7,44 @@ import SwiftUI
 
 public struct AppView: View {
     @Bindable var store: StoreOf<AppFeature>
+    @Environment(\.scenePhase) private var scenePhase
+    @StateObject private var lock = BiometricLockController.shared
 
     public init(store: StoreOf<AppFeature>) {
         self.store = store
     }
 
     public var body: some View {
-        destinationView
-            .animation(.easeInOut(duration: 0.5), value: store.destination)
-            .task {
-                store.send(.onAppear)
+        ZStack {
+            destinationView
+                .animation(.easeInOut(duration: 0.5), value: store.destination)
+                .task {
+                    store.send(.onAppear)
+                }
+                .modelContainer(CycleDataStore.shared)
+
+            // Biometric gate: when enabled in Settings and the
+            // session isn't authenticated, the lock view occupies
+            // the entire screen and prompts Face ID on appear.
+            // Stays mounted (rather than .opacity-hidden) so the
+            // .task auto-prompt fires every time the app foregrounds.
+            if !lock.isUnlocked {
+                AppLockView(controller: lock)
+                    .transition(.opacity)
+                    .zIndex(100)
             }
-            .modelContainer(CycleDataStore.shared)
+        }
+        .animation(.easeInOut(duration: 0.28), value: lock.isUnlocked)
+        .onChange(of: scenePhase) { _, newPhase in
+            // Re-lock the app whenever it leaves the foreground —
+            // standard security pattern for biometric-gated apps.
+            // SwiftUI fires .background BEFORE the snapshot the
+            // system takes for the App Switcher, so the snapshot
+            // already shows the lock screen, not the user's data.
+            if newPhase != .active {
+                lock.lock()
+            }
+        }
     }
 
     @ViewBuilder

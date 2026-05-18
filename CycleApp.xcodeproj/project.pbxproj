@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		0031F9A6F8A49ADC51DB17A9 /* DataExportReadyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D2B05C65917ABA84E9D317E /* DataExportReadyView.swift */; };
 		007F4E831F1C866954AF6F03 /* MenstrualLocalClient+Journey.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2FF6FACF2529F5BD1E0D6959 /* MenstrualLocalClient+Journey.swift */; };
+		00D3654EB3B389037B123410 /* AppLockView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A852274950825067C6D5D2F /* AppLockView.swift */; };
 		0118507FD9098500C02DE05C /* GlassButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9454061EE04D2B8B5D7159B2 /* GlassButton.swift */; };
 		014286BEC960ECCAEDF447CE /* SymptomDayPill.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB6582978B2DFBB6F21CD331 /* SymptomDayPill.swift */; };
 		01D6CD7A25E3F29B6406832C /* MenstrualLocalClientTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B8BCDA4EDBEB5E424AECA1F /* MenstrualLocalClientTests.swift */; };
@@ -245,6 +246,7 @@
 		958B8D6C72AA106E624F842C /* CycleModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2076EF3B4C82618066DD0347 /* CycleModels.swift */; };
 		96287AEF4C95E18CC0C33F2C /* CycleHistoryAll.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75C8C6447A1238FB48FAAEAC /* CycleHistoryAll.swift */; };
 		96667C0CDEE4D340407D5827 /* BodySignalsReadingTemplates.swift in Sources */ = {isa = PBXBuildFile; fileRef = F843CB5872076C7FB2CAC89E /* BodySignalsReadingTemplates.swift */; };
+		96A90027C617E76794FC3F4E /* BiometricLockController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 82801F233314BC15561A4E94 /* BiometricLockController.swift */; };
 		970E76E219365471DE4B6796 /* JourneyDestinationTiles.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4194779F49AFA1C483C9DDB1 /* JourneyDestinationTiles.swift */; };
 		98595F7CDF995D40B1B35063 /* ChallengeAcceptInlineView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F8FE7A3A53838B86A6FF4B1 /* ChallengeAcceptInlineView.swift */; };
 		986DC0F5842157CD9402EE82 /* Raleway-Light.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 8706093A21A56ECBA0441334 /* Raleway-Light.ttf */; };
@@ -610,6 +612,7 @@
 		5A2A32414836BA74562A05DC /* ChallengeInProgressBanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChallengeInProgressBanner.swift; sourceTree = "<group>"; };
 		5A2B9B34FCD3299A214AEF56 /* EditCycleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditCycleView.swift; sourceTree = "<group>"; };
 		5A599EEAB5931BAEBC4207E9 /* Raleway-MediumItalic.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Raleway-MediumItalic.ttf"; sourceTree = "<group>"; };
+		5A852274950825067C6D5D2F /* AppLockView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLockView.swift; sourceTree = "<group>"; };
 		5B53A686C39C24DCFF6E5D7E /* CycleLiveEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CycleLiveEngine.swift; sourceTree = "<group>"; };
 		5C043A2082E6C0A084726140 /* DayDetailPayload.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DayDetailPayload.swift; sourceTree = "<group>"; };
 		5C63A3A780FB9FC8194E44B3 /* BodyPatternsReadingEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BodyPatternsReadingEngine.swift; sourceTree = "<group>"; };
@@ -696,6 +699,7 @@
 		820A1773DE37A2B05FE3DD3A /* BinaryDigitToggleStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BinaryDigitToggleStyle.swift; sourceTree = "<group>"; };
 		822B9B1D1ABF909912164ADE /* GlassToolbar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassToolbar.swift; sourceTree = "<group>"; };
 		823B14CA893AB18E490B49AD /* Date+Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Date+Extensions.swift"; sourceTree = "<group>"; };
+		82801F233314BC15561A4E94 /* BiometricLockController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BiometricLockController.swift; sourceTree = "<group>"; };
 		82E1A931E0CDF2855BC5987D /* CrescentIcon.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CrescentIcon.swift; sourceTree = "<group>"; };
 		82F85F783A936AF67E3C712D /* SymptomSummaryPill.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SymptomSummaryPill.swift; sourceTree = "<group>"; };
 		83EBD176631DE4F334634FE8 /* HealthPermissionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthPermissionView.swift; sourceTree = "<group>"; };
@@ -1221,6 +1225,7 @@
 		4498FF015F73F5FD76F28C82 /* App */ = {
 			isa = PBXGroup;
 			children = (
+				665C314941D44F6A82F03196 /* BiometricLock */,
 				F2D301EC66D02408A5DE9371 /* AppFeature.swift */,
 				A6356FA90BCE7FF949EB8A6D /* AppView.swift */,
 				4674CEEA6B50FCAB809318E6 /* SplineIntroView.swift */,
@@ -1401,6 +1406,15 @@
 				4B65D371488DB444DAA415F8 /* PatternWidgetCard.swift */,
 			);
 			path = Cards;
+			sourceTree = "<group>";
+		};
+		665C314941D44F6A82F03196 /* BiometricLock */ = {
+			isa = PBXGroup;
+			children = (
+				5A852274950825067C6D5D2F /* AppLockView.swift */,
+				82801F233314BC15561A4E94 /* BiometricLockController.swift */,
+			);
+			path = BiometricLock;
 			sourceTree = "<group>";
 		};
 		67914E39017389DDCA469BB3 /* Components */ = {
@@ -2344,6 +2358,7 @@
 				44095A2D9518176592A5BE27 /* AppCloseButton.swift in Sources */,
 				9ABF69342B1A36DCB7FD9BDB /* AppDoneButton.swift in Sources */,
 				B98CDCDE2F0F8E0ED67FAC40 /* AppFeature.swift in Sources */,
+				00D3654EB3B389037B123410 /* AppLockView.swift in Sources */,
 				19FA53471A70ED83B5E5F370 /* AppPageDots.swift in Sources */,
 				A19E1EE8291CBA65A89F7F83 /* AppScreenHeader.swift in Sources */,
 				BB2D01F0CCB9012BB7F15D0B /* AppSheetScreen.swift in Sources */,
@@ -2353,6 +2368,7 @@
 				807A0BD8F1194D116F3BBD43 /* AriaRecapStories.swift in Sources */,
 				20F8CD3D758FDE2C45F73FF5 /* AsymmetricBottomCurveShape.swift in Sources */,
 				634EF9603BB0304CFCFE7CBE /* BinaryDigitToggleStyle.swift in Sources */,
+				96A90027C617E76794FC3F4E /* BiometricLockController.swift in Sources */,
 				55753ABF335FE3B4EA649FBE /* BirthDataView.swift in Sources */,
 				5E35A6CB1BE14C50C75D4F7A /* BodyPatternsAboutScreen.swift in Sources */,
 				0912B2F244420326FA7CF40F /* BodyPatternsEmptyWidget.swift in Sources */,

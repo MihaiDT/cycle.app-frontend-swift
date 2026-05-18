@@ -67,7 +67,7 @@ struct SettingsView: View {
                 divider
                 toggleRow(
                     title: "Face ID to unlock the app",
-                    binding: $biometricUnlockEnabled
+                    binding: biometricToggleBinding
                 )
                 divider
                 toggleRow(
@@ -155,6 +155,36 @@ struct SettingsView: View {
 
             content()
         }
+    }
+
+    // MARK: - Biometric toggle
+
+    /// Intercepts the Face-ID toggle so the user has to authenticate
+    /// before the flag flips either direction. Enabling without
+    /// auth would let someone with a stolen unlocked phone lock the
+    /// real owner out; disabling without auth would let them unlock
+    /// the app afterwards. Symmetric prompt closes both holes.
+    private var biometricToggleBinding: Binding<Bool> {
+        Binding(
+            get: { biometricUnlockEnabled },
+            set: { newValue in
+                Task { @MainActor in
+                    let lock = BiometricLockController.shared
+                    let reason = newValue
+                        ? "Confirm with Face ID to require it on every app launch."
+                        : "Confirm with Face ID to turn off the app lock."
+                    let ok = await lock.authenticate(reason: reason)
+                    guard ok else { return }
+                    biometricUnlockEnabled = newValue
+                    if !newValue {
+                        // After disabling, immediately drop the lock
+                        // so the user isn't asked again on the next
+                        // background → foreground.
+                        lock.disableAndUnlock()
+                    }
+                }
+            }
+        )
     }
 
     // MARK: - Actions
