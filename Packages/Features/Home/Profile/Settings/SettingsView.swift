@@ -23,6 +23,7 @@ struct SettingsView: View {
 
     @State private var isShowingDownloadData: Bool = false
     @State private var isShowingTheme: Bool = false
+    @State private var isShowingUnits: Bool = false
 
     var body: some View {
         ZStack {
@@ -44,6 +45,9 @@ struct SettingsView: View {
         }
         .navigationDestination(isPresented: $isShowingTheme) {
             ThemePickerView()
+        }
+        .navigationDestination(isPresented: $isShowingUnits) {
+            UnitsView()
         }
     }
 
@@ -92,7 +96,7 @@ struct SettingsView: View {
                     openSystemSettings()
                 }
                 divider
-                navRow(title: "Units") {}
+                navRow(title: "Units") { isShowingUnits = true }
             }
             .widgetCardStyle(cornerRadius: AppLayout.cornerRadiusL)
         }

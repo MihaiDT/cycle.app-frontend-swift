@@ -171,6 +171,7 @@
 		6018B99FE7EED18A8F67874B /* HBIDashboard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F9895D88CABF51577D545ED /* HBIDashboard.swift */; };
 		60C0A86EADAAFDA4D6453218 /* DailyCheckInRitualView+Aria.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7F659D52D829FD3E897024C /* DailyCheckInRitualView+Aria.swift */; };
 		6135A3BCC4EAA33FF3066701 /* SymptomDaySelector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100E952C915F3A3BE8D42724 /* SymptomDaySelector.swift */; };
+		61C2720B964AF17D41673296 /* UnitsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E89A8DB684568926E4BA43AB /* UnitsView.swift */; };
 		633F2651341C30F4D76A2F12 /* NyraOrbShapes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C72E2C15313460FCF156734 /* NyraOrbShapes.swift */; };
 		63831B62BDE7E8E57764389A /* SymptomChip.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83F85B196221F186792BC94A /* SymptomChip.swift */; };
 		642D8331CA283010ED3B6FB3 /* DailyCheckInRitualView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDB9CFE211A695FD67C6F0A7 /* DailyCheckInRitualView.swift */; };
@@ -245,6 +246,7 @@
 		92B087BF6ABC6C5D9F969D15 /* BodySignals.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE65D85B94B4B89649A2A8EC /* BodySignals.swift */; };
 		943523D1E37324076854D090 /* CycleHeroShapes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55E7752F5E737ECD378C5BE1 /* CycleHeroShapes.swift */; };
 		958B8D6C72AA106E624F842C /* CycleModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2076EF3B4C82618066DD0347 /* CycleModels.swift */; };
+		95B7AE35F5D5ECE7233754DC /* TemperatureUnit.swift in Sources */ = {isa = PBXBuildFile; fileRef = E149D0693F044B9F8664E5B5 /* TemperatureUnit.swift */; };
 		96287AEF4C95E18CC0C33F2C /* CycleHistoryAll.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75C8C6447A1238FB48FAAEAC /* CycleHistoryAll.swift */; };
 		96667C0CDEE4D340407D5827 /* BodySignalsReadingTemplates.swift in Sources */ = {isa = PBXBuildFile; fileRef = F843CB5872076C7FB2CAC89E /* BodySignalsReadingTemplates.swift */; };
 		96A90027C617E76794FC3F4E /* BiometricLockController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 82801F233314BC15561A4E94 /* BiometricLockController.swift */; };
@@ -851,6 +853,7 @@
 		DEA660E2A6A80E4B0ACEC053 /* SymptomSelectionPlaceholder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SymptomSelectionPlaceholder.swift; sourceTree = "<group>"; };
 		DF36AA0A130B3D8D3CB54381 /* SymptomSettingsRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SymptomSettingsRow.swift; sourceTree = "<group>"; };
 		DFB5C69AF9E8C6B3B5A8F50C /* CycleJourneyEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CycleJourneyEngine.swift; sourceTree = "<group>"; };
+		E149D0693F044B9F8664E5B5 /* TemperatureUnit.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TemperatureUnit.swift; sourceTree = "<group>"; };
 		E18F423D65094D75636B3861 /* CalendarDayDetail.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarDayDetail.swift; sourceTree = "<group>"; };
 		E25D139762A5500AA29BBDE1 /* CycleCalendarViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CycleCalendarViews.swift; sourceTree = "<group>"; };
 		E3398A6C9E1190C24A7DFEFD /* CycleStatInfoPersonalReading.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CycleStatInfoPersonalReading.swift; sourceTree = "<group>"; };
@@ -860,6 +863,7 @@
 		E687F11BA153A2DF683BD9B0 /* logo_animation.splineswift */ = {isa = PBXFileReference; path = logo_animation.splineswift; sourceTree = "<group>"; };
 		E708DD9ACCBA043BD8C2A559 /* BondHistoryFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BondHistoryFeature.swift; sourceTree = "<group>"; };
 		E7FE49861A2ACC6DD33BED9E /* TodayFeature+Helpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "TodayFeature+Helpers.swift"; sourceTree = "<group>"; };
+		E89A8DB684568926E4BA43AB /* UnitsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnitsView.swift; sourceTree = "<group>"; };
 		EA867F396B072ED863219115 /* APIError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIError.swift; sourceTree = "<group>"; };
 		EBC86DA5C36E0C18C60DDA86 /* CycleDataDurationRegularity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CycleDataDurationRegularity.swift; sourceTree = "<group>"; };
 		EC9D7B9E60FCE14DEE802BAA /* Calendar+Helpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Calendar+Helpers.swift"; sourceTree = "<group>"; };
@@ -1605,6 +1609,15 @@
 			path = Sheets;
 			sourceTree = "<group>";
 		};
+		7D127BFC2DD6F80BEB0DFD88 /* Units */ = {
+			isa = PBXGroup;
+			children = (
+				E149D0693F044B9F8664E5B5 /* TemperatureUnit.swift */,
+				E89A8DB684568926E4BA43AB /* UnitsView.swift */,
+			);
+			path = Units;
+			sourceTree = "<group>";
+		};
 		82D3DB014200BE3EE62955D5 /* Extensions */ = {
 			isa = PBXGroup;
 			children = (
@@ -1777,6 +1790,7 @@
 			isa = PBXGroup;
 			children = (
 				728A869E962EC5DC325601F8 /* Theme */,
+				7D127BFC2DD6F80BEB0DFD88 /* Units */,
 				3D2B05C65917ABA84E9D317E /* DataExportReadyView.swift */,
 				584E3F26085A3E75850CEE73 /* DataExportReadyView+Actions.swift */,
 				5EB6696A2F5EE3E4A3FBDCE8 /* DataExportReadyView+Sections.swift */,
@@ -2699,6 +2713,7 @@
 				4CC7F849816C5102E93BD380 /* SymptomSettingsRow.swift in Sources */,
 				311A8CA87FA176368CFCEE89 /* SymptomSettingsView.swift in Sources */,
 				4D461BAD8377D6BF66324243 /* SymptomSummaryPill.swift in Sources */,
+				95B7AE35F5D5ECE7233754DC /* TemperatureUnit.swift in Sources */,
 				CA62466A1EF6FAE4F302EAE1 /* ThemePickerView.swift in Sources */,
 				57BEF118CF81B3D6E8590180 /* ThemePreviewCard.swift in Sources */,
 				422EB7EE09E5D973842E778E /* TodayFeature+Helpers.swift in Sources */,
@@ -2714,6 +2729,7 @@
 				EAD4B5ED9EF0B9B12802CDD6 /* TrendBarChart.swift in Sources */,
 				8615C57A1ED557DFA7483972 /* Typography.swift in Sources */,
 				79336A90E553B790F6CCF604 /* UIFont+Raleway.swift in Sources */,
+				61C2720B964AF17D41673296 /* UnitsView.swift in Sources */,
 				D1CF7852379A9A2B365FCE80 /* User.swift in Sources */,
 				0454C57DFA25D344D26BC6E2 /* UserProfileLocalClient.swift in Sources */,
 				F4B1AE273282CC03DC06907C /* UserProfileRecord.swift in Sources */,

@@ -18,7 +18,13 @@ func formattedBodySignalValue(
 ) -> String {
     switch kind {
     case .wristTemperature:
-        return String(format: "%.1f%@", value, unit)
+        // Underlying storage is Celsius. Convert + reskin the
+        // unit string per the user's Settings → Units pick at the
+        // moment of display so the underlying SwiftData stays
+        // canonical.
+        let temp = TemperatureUnit.current
+        let converted = temp.display(fromCelsius: value)
+        return String(format: "%.1f%@", converted, temp.symbol)
     case .hrv:
         return String(format: "%.0f %@", value, unit)
     case .restingHR:
@@ -37,7 +43,15 @@ struct BodySignalDeltaFormatter {
 func bodySignalDeltaFormatter(for kind: BodySignalMetric.Kind) -> BodySignalDeltaFormatter {
     switch kind {
     case .wristTemperature:
-        return BodySignalDeltaFormatter(flatThreshold: 0.05) { String(format: "%.2f°C", $0) }
+        let temp = TemperatureUnit.current
+        // The delta arrives in Celsius (HealthKit-native).
+        // Multiplying by 9/5 scales the magnitude correctly for
+        // Fahrenheit — additive offset cancels out for a delta.
+        let scale = temp == .fahrenheit ? 9.0 / 5.0 : 1.0
+        let symbol = temp.symbol
+        return BodySignalDeltaFormatter(flatThreshold: 0.05) {
+            String(format: "%.2f%@", $0 * scale, symbol)
+        }
     case .hrv:
         return BodySignalDeltaFormatter(flatThreshold: 1.5) { String(format: "%.0f ms", $0) }
     case .restingHR:
