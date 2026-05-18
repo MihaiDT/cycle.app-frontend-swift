@@ -194,46 +194,44 @@ struct DownloadDataView: View {
     // solid bottom of the gradient where readability is highest.
 
     private var footer: some View {
-        ZStack(alignment: .bottom) {
-            // 1. Frosted blur layer, masked so it fades in
-            //    vertically rather than appearing as a hard band.
-            Rectangle()
-                .fill(.ultraThinMaterial)
-                .mask {
-                    LinearGradient(
-                        colors: [.clear, .black.opacity(0.6), .black, .black],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                }
-                .allowsHitTesting(false)
+        WarmCapsuleButton(
+            "Continue",
+            prominence: .primary,
+            isFullWidth: true,
+            action: requestData
+        )
+        .padding(.horizontal, AppLayout.screenHorizontal)
+        .padding(.top, AppLayout.spacingL)
+        .padding(.bottom, AppLayout.spacingS)
+        .background {
+            // Background bleeds through the bottom safe area so the
+            // warm gradient + frosted blur reach all the way to the
+            // home indicator. The button itself stays above the
+            // safe area thanks to the `.padding(.bottom)` above.
+            ZStack {
+                Rectangle()
+                    .fill(.ultraThinMaterial)
+                    .mask {
+                        LinearGradient(
+                            colors: [.clear, .black.opacity(0.6), .black, .black],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                    }
 
-            // 2. Warm peach tint — same accent as the header's
-            //    AppleHealthBackground, faded the same way so the
-            //    two ends of the screen feel symmetric.
-            LinearGradient(
-                colors: [
-                    .clear,
-                    DesignColors.accentWarm.opacity(0.08),
-                    DesignColors.accentWarm.opacity(0.16),
-                ],
-                startPoint: .top,
-                endPoint: .bottom
-            )
+                LinearGradient(
+                    colors: [
+                        .clear,
+                        DesignColors.accentWarm.opacity(0.08),
+                        DesignColors.accentWarm.opacity(0.16),
+                    ],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+            }
+            .ignoresSafeArea(.container, edges: .bottom)
             .allowsHitTesting(false)
-
-            // 3. Button — pushed off the bottom safe area so it
-            //    sits in the strongest part of the gradient.
-            WarmCapsuleButton(
-                "Continue",
-                prominence: .primary,
-                isFullWidth: true,
-                action: requestData
-            )
-            .padding(.horizontal, AppLayout.screenHorizontal)
-            .padding(.bottom, AppLayout.spacingS)
         }
-        .frame(height: 132)
     }
 
     // MARK: - Actions
