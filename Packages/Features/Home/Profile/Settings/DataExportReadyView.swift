@@ -1,5 +1,4 @@
 import SwiftUI
-import UIKit
 
 // MARK: - Data Export Ready View
 //
@@ -7,23 +6,26 @@ import UIKit
 // DownloadDataView. The actual export bundle is generated on
 // device — there's no email round-trip — so the copy reframes
 // the Clue-style "check your email" flow as "your encrypted
-// file is ready, save the password, then share."
+// file is ready, save the referenceCode, then share."
 //
 // Layout (top → bottom):
 // - Hero icon disc
 // - Title
-// - Two body paragraphs explaining password + share step
-// - Password code block with copy affordance
+// - Two body paragraphs explaining referenceCode + share step
+// - Reference code block with copy affordance
 // - Sticky CTA at the bottom that opens the share sheet
 //
-// The password is generated once per screen lifecycle. Today
+// The referenceCode is generated once per screen lifecycle. Today
 // it's display-only; once the export logic lands, this same
 // string will key the encrypted archive.
 
 struct DataExportReadyView: View {
     @Environment(\.dismiss) private var dismiss
-    @State private var password: String = DataExportReadyView.generatePassword()
+    @State private var referenceCode: String = DataExportReadyView.generateReferenceCode()
     @State private var didCopy: Bool = false
+    @State private var shareItem: ExportShareItem?
+    @State private var exportError: String?
+    @State private var isGenerating: Bool = false
 
     var body: some View {
         ZStack {
@@ -38,6 +40,21 @@ struct DataExportReadyView: View {
         .toolbar(.hidden, for: .tabBar)
         .navigationBarBackButtonHidden(true)
         .toolbar { backToolbarItem(dismiss: dismiss) }
+        .sheet(item: $shareItem) { item in
+            ShareSheet(items: [item.url])
+        }
+        .alert("Export failed", isPresented: exportErrorBinding, presenting: exportError) { _ in
+            Button("OK") { exportError = nil }
+        } message: { message in
+            Text(message)
+        }
+    }
+
+    private var exportErrorBinding: Binding<Bool> {
+        Binding(
+            get: { exportError != nil },
+            set: { if !$0 { exportError = nil } }
+        )
     }
 
     // MARK: - Content
@@ -49,7 +66,7 @@ struct DataExportReadyView: View {
                     heroIcon
                     titleBlock
                     copyBlock
-                    passwordRow
+                    referenceCodeRow
                 }
                 .padding(.horizontal, AppLayout.screenHorizontal)
                 .padding(.top, AppLayout.spacingL)
@@ -69,8 +86,8 @@ struct DataExportReadyView: View {
                 .fill(DesignColors.accentWarm.opacity(0.14))
                 .frame(width: 132, height: 132)
 
-            Image(systemName: "lock.shield.fill")
-                .font(.system(size: 56, weight: .regular))
+            Image(systemName: "tray.and.arrow.down.fill")
+                .font(.system(size: 52, weight: .regular))
                 .foregroundStyle(DesignColors.accentWarm)
         }
         .padding(.top, AppLayout.spacingM)
@@ -79,7 +96,7 @@ struct DataExportReadyView: View {
     // MARK: - Text
 
     private var titleBlock: some View {
-        Text("Your encrypted file is ready")
+        Text("Your data is ready")
             .font(.raleway("Bold", size: 24, relativeTo: .title2))
             .foregroundStyle(DesignColors.text)
             .multilineTextAlignment(.center)
@@ -89,13 +106,13 @@ struct DataExportReadyView: View {
 
     private var copyBlock: some View {
         VStack(spacing: AppLayout.spacingM) {
-            Text("We've bundled every cycle, symptom, and check-in into a single password-protected file. Save the password somewhere safe — you'll need it to open the file later.")
+            Text("We've bundled every cycle, symptom, check-in, prediction, and HBI score into a single JSON file. It stays on this device until you choose where to share it.")
                 .font(AppTypography.bodyMedium)
                 .foregroundStyle(DesignColors.textSecondary)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
 
-            Text("Tap the password below to copy it, then share the file from the next sheet.")
+            Text("Tap the code below to copy it — keep it alongside the file as your export receipt.")
                 .font(AppTypography.bodyMedium)
                 .foregroundStyle(DesignColors.textSecondary)
                 .multilineTextAlignment(.center)
@@ -104,12 +121,12 @@ struct DataExportReadyView: View {
         .padding(.horizontal, AppLayout.spacingXS)
     }
 
-    // MARK: - Password
+    // MARK: - Reference code
 
-    private var passwordRow: some View {
-        Button(action: copyPassword) {
+    private var referenceCodeRow: some View {
+        Button(action: copyReferenceCode) {
             HStack(spacing: AppLayout.spacingS) {
-                Text(password)
+                Text(referenceCode)
                     .font(.system(.body, design: .monospaced).weight(.semibold))
                     .foregroundStyle(DesignColors.accent)
                     .lineLimit(1)
@@ -133,19 +150,20 @@ struct DataExportReadyView: View {
 
     private var footer: some View {
         WarmCapsuleButton(
-            "Share file",
+            isGenerating ? "Preparing…" : "Share file",
             prominence: .primary,
             isFullWidth: true,
             action: shareFile
         )
+        .disabled(isGenerating)
         .padding(.horizontal, AppLayout.screenHorizontal)
         .padding(.bottom, AppLayout.spacingL)
     }
 
     // MARK: - Actions
 
-    private func copyPassword() {
-        UIPasteboard.general.string = password
+    private func copyReferenceCode() {
+        UIPasteboard.general.string = referenceCode
         UIImpactFeedbackGenerator(style: .soft).impactOccurred()
         withAnimation(.easeInOut(duration: 0.2)) { didCopy = true }
         Task { @MainActor in
@@ -155,13 +173,44 @@ struct DataExportReadyView: View {
     }
 
     private func shareFile() {
-        // TODO: present UIActivityViewController with the generated
-        // encrypted export bundle once the on-device assembly lands.
+        guard !isGenerating else { return }
+        isGenerating = true
+
+        do {
+            let info = Bundle.main.infoDictionary ?? [:]
+            let appVersion = (info["CFBundleShortVersionString"] as? String) ?? "0.0.0"
+            let buildNumber = (info["CFBundleVersion"] as? String) ?? "0"
+
+            let json = try DataExporter().exportAll(
+                appVersion: appVersion,
+                buildNumber: buildNumber,
+                preferences: ExportablePreferences.snapshot()
+            )
+
+            let fileName = Self.exportFileName()
+            let url = FileManager.default.temporaryDirectory
+                .appendingPathComponent(fileName)
+            try json.write(to: url, options: .atomic)
+
+            shareItem = ExportShareItem(url: url)
+        } catch {
+            exportError = error.localizedDescription
+        }
+
+        isGenerating = false
     }
 
-    // MARK: - Password generation
+    private static func exportFileName() -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd-HHmmss"
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = TimeZone(secondsFromGMT: 0)
+        return "cycleapp-export-\(formatter.string(from: .now)).json"
+    }
 
-    private static func generatePassword() -> String {
+    // MARK: - Reference code generation
+
+    private static func generateReferenceCode() -> String {
         let alphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*"
         return String((0..<20).compactMap { _ in alphabet.randomElement() })
     }

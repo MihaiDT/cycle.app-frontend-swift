@@ -126,9 +126,11 @@
 		4CC7F849816C5102E93BD380 /* SymptomSettingsRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = DF36AA0A130B3D8D3CB54381 /* SymptomSettingsRow.swift */; };
 		4D2BE56E939A8525C7E1F104 /* CycleSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3AF820DEA7E37EE74A2C049 /* CycleSnapshot.swift */; };
 		4D461BAD8377D6BF66324243 /* SymptomSummaryPill.swift in Sources */ = {isa = PBXBuildFile; fileRef = 82F85F783A936AF67E3C712D /* SymptomSummaryPill.swift */; };
+		4DB974756DDACA1837BBD073 /* ShareSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 198688CBCA3E8298654F0744 /* ShareSheet.swift */; };
 		4DD0D6C1DA3073ECA64A82C7 /* TodayFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD39CD72FF8EE33496F332F7 /* TodayFeature.swift */; };
 		4DEC79171C5FC9E37311092F /* HBILocalClient+Baseline.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8BDD2E25967B606C0A22CA91 /* HBILocalClient+Baseline.swift */; };
 		4E2BE6BEA082DC3A3D9C77ED /* BondsCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 92BFC10505BE4805E3BA80B2 /* BondsCard.swift */; };
+		4E669D5CEA779F4EC0E32C05 /* DataExporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED97C93A00CD7226D202310C /* DataExporter.swift */; };
 		4E71FBB8F3B159F5180C3D3D /* CalendarTableView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF4BC4680417466F0E6E890C /* CalendarTableView.swift */; };
 		4EDD319E6151BC9BD4C41AC1 /* CalendarBars.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5F19B9ABA60E56B8DB1E688 /* CalendarBars.swift */; };
 		4F5A6780E4C67EA9E30B1117 /* ModelCodableTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B2E917A1A387F2983A37D06 /* ModelCodableTests.swift */; };
@@ -510,6 +512,7 @@
 		171CF7DA8130270099E90B18 /* CycleNormality.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CycleNormality.swift; sourceTree = "<group>"; };
 		172ACA5B70544F69C08564D0 /* MenstrualLocalClient+CRUD.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MenstrualLocalClient+CRUD.swift"; sourceTree = "<group>"; };
 		195A1FF20EFA96AE333D3BD7 /* CycleComparisonScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CycleComparisonScreen.swift; sourceTree = "<group>"; };
+		198688CBCA3E8298654F0744 /* ShareSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareSheet.swift; sourceTree = "<group>"; };
 		1A228CD6D000620AE6C07CE2 /* SymptomSelectedStrip.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SymptomSelectedStrip.swift; sourceTree = "<group>"; };
 		1A61DBB62B860EA73B54AD8E /* CycleStatsCustomize.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CycleStatsCustomize.swift; sourceTree = "<group>"; };
 		1A7044A8D51DAA185FE5A6E2 /* CycleStatsTodayHeader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CycleStatsTodayHeader.swift; sourceTree = "<group>"; };
@@ -846,6 +849,7 @@
 		EA867F396B072ED863219115 /* APIError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIError.swift; sourceTree = "<group>"; };
 		EBC86DA5C36E0C18C60DDA86 /* CycleDataDurationRegularity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CycleDataDurationRegularity.swift; sourceTree = "<group>"; };
 		EC9D7B9E60FCE14DEE802BAA /* Calendar+Helpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Calendar+Helpers.swift"; sourceTree = "<group>"; };
+		ED97C93A00CD7226D202310C /* DataExporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataExporter.swift; sourceTree = "<group>"; };
 		EDDEF730A9990B6EEE0FED9F /* GlassTextField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassTextField.swift; sourceTree = "<group>"; };
 		EF919E186FA2FE5A1C7C018A /* GlossyBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlossyBar.swift; sourceTree = "<group>"; };
 		F0372EA857D62830F09101BF /* AppCloseButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppCloseButton.swift; sourceTree = "<group>"; };
@@ -1610,6 +1614,14 @@
 			path = BodySignals;
 			sourceTree = "<group>";
 		};
+		8CD41866A361DFBA1D2D387E /* DataExport */ = {
+			isa = PBXGroup;
+			children = (
+				ED97C93A00CD7226D202310C /* DataExporter.swift */,
+			);
+			path = DataExport;
+			sourceTree = "<group>";
+		};
 		8E32A05C03E7520154996380 /* AddBond */ = {
 			isa = PBXGroup;
 			children = (
@@ -1657,6 +1669,7 @@
 			isa = PBXGroup;
 			children = (
 				07364F409CF33ACFB94B7B06 /* Clients */,
+				8CD41866A361DFBA1D2D387E /* DataExport */,
 				B6DB2495B671501A06565648 /* Records */,
 				252B1935BE43B154DA84074D /* CycleDataStore.swift */,
 			);
@@ -1731,6 +1744,7 @@
 				3D2B05C65917ABA84E9D317E /* DataExportReadyView.swift */,
 				676086ACC1482A7B47B3AB90 /* DownloadDataView.swift */,
 				04E486DCC9147F1712197470 /* SettingsView.swift */,
+				198688CBCA3E8298654F0744 /* ShareSheet.swift */,
 			);
 			path = Settings;
 			sourceTree = "<group>";
@@ -2471,6 +2485,7 @@
 				EFD6AE0334EBF5A13A10338C /* DailyInsightCard.swift in Sources */,
 				8B258C02527F961E9F92D674 /* DailySelfReport.swift in Sources */,
 				0031F9A6F8A49ADC51DB17A9 /* DataExportReadyView.swift in Sources */,
+				4E669D5CEA779F4EC0E32C05 /* DataExporter.swift in Sources */,
 				A22AE1F3C3632E9BF6143065 /* Date+Extensions.swift in Sources */,
 				5DCE910178B8D9496725A1A1 /* DateFormatter+Cycle.swift in Sources */,
 				83B260584C32CCAFD28967EC /* DayDetailPayload.swift in Sources */,
@@ -2615,6 +2630,7 @@
 				F061112368ACFEB584AC33C8 /* SectionHeader.swift in Sources */,
 				87CAE6A7177A5573669A6CBC /* SegmentedHalfArcGauge.swift in Sources */,
 				E88D6EC97A84AE287BFDF5E3 /* SettingsView.swift in Sources */,
+				4DB974756DDACA1837BBD073 /* ShareSheet.swift in Sources */,
 				AA2ADCE0EC0C7F1F17DAC5CB /* SheetHeader.swift in Sources */,
 				54217201BC8BE6A1F89310CC /* SmartSymptomProvider.swift in Sources */,
 				EAE94D440E5CAE4891823D80 /* SourceCitationFooter.swift in Sources */,
