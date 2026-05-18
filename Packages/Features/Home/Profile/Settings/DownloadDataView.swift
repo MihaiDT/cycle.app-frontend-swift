@@ -3,14 +3,15 @@ import SwiftUI
 // MARK: - Download Data View
 //
 // "Download your data" — pushed onto the Settings stack. Editorial
-// layout: large title, a "How it works" copy block, then a sticky
-// CTA at the bottom that kicks off the export.
+// layout: hero peach disc anchors the screen (visual sibling of
+// DataExportReadyView), then a "What's included" bullet list,
+// then a privacy callout, then a sticky Continue CTA.
 //
-// Local-first reality: cycle.app stores every health record on the
-// device (SwiftData + CloudKit encrypted sync). There's no backend
-// copy to request — when the export action lands, it'll generate a
-// file in-app and present a share sheet. For now the CTA fires a
-// no-op closure; the data assembly logic is a follow-up.
+// Local-first reality: every health record lives on the device
+// (SwiftData + CloudKit encrypted sync). The export bundle is
+// assembled on-device; when the user emails a copy, the encrypted
+// archive transits cycle.app's backend solely to compose the
+// message — we don't store the contents.
 
 struct DownloadDataView: View {
     @Environment(\.dismiss) private var dismiss
@@ -39,12 +40,14 @@ struct DownloadDataView: View {
     private var content: some View {
         VStack(spacing: 0) {
             ScrollView {
-                VStack(alignment: .leading, spacing: AppLayout.spacingL) {
-                    title
-                    howItWorks
+                VStack(spacing: AppLayout.spacingL) {
+                    heroIcon
+                    titleBlock
+                    includedList
+                    privacyCallout
                 }
                 .padding(.horizontal, AppLayout.screenHorizontal)
-                .padding(.top, AppLayout.spacingS)
+                .padding(.top, AppLayout.spacingM)
                 .padding(.bottom, AppLayout.spacingXL)
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
@@ -54,36 +57,140 @@ struct DownloadDataView: View {
         }
     }
 
-    private var title: some View {
-        Text("Download your data")
-            .font(.raleway("Bold", size: 30, relativeTo: .largeTitle))
-            .foregroundStyle(DesignColors.text)
-            .fixedSize(horizontal: false, vertical: true)
-            .padding(.top, AppLayout.spacingL)
-    }
+    // MARK: - Hero
 
-    private var howItWorks: some View {
-        VStack(alignment: .leading, spacing: AppLayout.spacingM) {
-            Text("How it works")
-                .font(.raleway("SemiBold", size: 17, relativeTo: .headline))
-                .foregroundStyle(DesignColors.text)
+    private var heroIcon: some View {
+        ZStack {
+            Circle()
+                .fill(DesignColors.accentWarm.opacity(0.14))
+                .frame(width: 132, height: 132)
 
-            Text("Your cycle data lives only on this device. Tap below and we'll bundle every cycle, symptom, check-in, prediction, and HBI score into a single JSON file.")
-                .font(AppTypography.bodyMedium)
-                .foregroundStyle(DesignColors.textSecondary)
-                .fixedSize(horizontal: false, vertical: true)
-
-            Text("On the next screen you can email a copy to yourself or share it through AirDrop, Files, or any installed app. Nothing is sent to a server — the file stays under your control from the moment it's created.")
-                .font(AppTypography.bodyMedium)
-                .foregroundStyle(DesignColors.textSecondary)
-                .fixedSize(horizontal: false, vertical: true)
+            Image(systemName: "tray.and.arrow.down.fill")
+                .font(.system(size: 52, weight: .regular))
+                .foregroundStyle(DesignColors.accentWarm)
         }
+        .padding(.top, AppLayout.spacingM)
+        .frame(maxWidth: .infinity)
     }
+
+    // MARK: - Title
+
+    private var titleBlock: some View {
+        VStack(spacing: AppLayout.spacingS) {
+            Text("Download your data")
+                .font(.raleway("Bold", size: 28, relativeTo: .title))
+                .foregroundStyle(DesignColors.text)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+
+            Text("A snapshot of everything you've logged in cycle.app, packaged into a single encrypted archive.")
+                .font(AppTypography.bodyMedium)
+                .foregroundStyle(DesignColors.textSecondary)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.horizontal, AppLayout.spacingS)
+        }
+        .frame(maxWidth: .infinity)
+    }
+
+    // MARK: - What's included
+
+    private var includedList: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            sectionLabel("What's included")
+                .padding(.horizontal, AppLayout.spacingM)
+                .padding(.top, 14)
+                .padding(.bottom, AppLayout.spacingS)
+
+            includedRow(icon: "drop.fill",
+                        tint: DesignColors.accent,
+                        text: "Every logged cycle and bleeding day")
+            divider
+            includedRow(icon: "face.smiling.inverse",
+                        tint: DesignColors.roseTaupe,
+                        text: "Every symptom and daily check-in")
+            divider
+            includedRow(icon: "chart.line.uptrend.xyaxis",
+                        tint: DesignColors.accentSecondary,
+                        text: "Cycle predictions and accuracy history")
+            divider
+            includedRow(icon: "sparkles",
+                        tint: DesignColors.accentWarm,
+                        text: "Your wellness scores and trends")
+            divider
+            includedRow(icon: "gearshape.fill",
+                        tint: DesignColors.textCard,
+                        text: "In-app preferences")
+        }
+        .widgetCardStyle(cornerRadius: AppLayout.cornerRadiusL)
+    }
+
+    private func sectionLabel(_ text: String) -> some View {
+        Text(text.uppercased())
+            .font(AppTypography.cardEyebrow)
+            .tracking(AppTypography.cardEyebrowTracking)
+            .foregroundStyle(DesignColors.textSecondary)
+            .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private func includedRow(icon: String, tint: Color, text: String) -> some View {
+        HStack(spacing: AppLayout.spacingS) {
+            ZStack {
+                Circle().fill(tint.opacity(0.16))
+                Image(systemName: icon)
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(tint)
+            }
+            .frame(width: 30, height: 30)
+
+            Text(text)
+                .font(.raleway("Medium", size: 15, relativeTo: .subheadline))
+                .foregroundStyle(DesignColors.text)
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .padding(.horizontal, AppLayout.spacingM)
+        .padding(.vertical, 10)
+    }
+
+    private var divider: some View {
+        Rectangle()
+            .fill(DesignColors.textSecondary.opacity(0.10))
+            .frame(height: 0.5)
+            .padding(.leading, AppLayout.spacingM + 30 + AppLayout.spacingS)
+    }
+
+    // MARK: - Privacy
+
+    private var privacyCallout: some View {
+        HStack(alignment: .top, spacing: AppLayout.spacingS) {
+            Image(systemName: "lock.shield.fill")
+                .font(.system(size: 18, weight: .semibold))
+                .foregroundStyle(DesignColors.accentWarm)
+                .frame(width: 24)
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Stays under your control")
+                    .font(.raleway("SemiBold", size: 14, relativeTo: .subheadline))
+                    .foregroundStyle(DesignColors.text)
+                Text("If you choose to email a copy, the archive transits our server only to compose the message. Nothing is stored on our end.")
+                    .font(AppTypography.bodyMedium)
+                    .foregroundStyle(DesignColors.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .padding(.horizontal, AppLayout.spacingM)
+        .padding(.vertical, 14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .widgetCardStyle(cornerRadius: AppLayout.cornerRadiusL)
+    }
+
+    // MARK: - Footer
 
     private var footer: some View {
         VStack(spacing: 0) {
             WarmCapsuleButton(
-                "Request data",
+                "Continue",
                 prominence: .primary,
                 isFullWidth: true,
                 action: requestData
