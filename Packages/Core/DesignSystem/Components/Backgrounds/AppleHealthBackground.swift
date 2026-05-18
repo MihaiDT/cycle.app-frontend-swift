@@ -19,22 +19,28 @@ public struct AppleHealthBackground: View {
     }
 
     public var body: some View {
-        // Static render — single canvas snapshot, single GPU blur
-        // pass, no TimelineView. The ambient morph used to live
-        // here but it cost a continuous Metal pass per screen and
-        // showed up as push lag when screens stacked. The canvas
-        // function still takes a `time` parameter so the morph can
-        // be reintroduced (re-wrap in TimelineView) without
-        // rewriting the geometry math.
-        GeometryReader { proxy in
-            AppleHealthBackground.canvas(
-                size: proxy.size,
-                time: 0,
-                accent: accent
-            )
-            .drawingGroup()
-            .blur(radius: 14)
-        }
+        // Pure LinearGradient — no drawingGroup, no GPU blur pass,
+        // no Metal context. Earlier revisions rendered an explicit
+        // canvas ellipse + blur(14) to get a soft "lens" curve at
+        // the top, but the blur pipeline re-rasterised on every
+        // navigation push and showed up as 1-2 dropped frames per
+        // screen transition. A vertical gradient with a long top
+        // ramp + a hard fade to white reads ~indistinguishable
+        // against the actual content cards while costing roughly
+        // nothing to render. The `canvas(...)` static helper is
+        // still in this file so we can opt back into the ellipse
+        // version on hero screens later by composing it explicitly.
+        LinearGradient(
+            stops: [
+                .init(color: accent.opacity(0.38), location: 0.00),
+                .init(color: accent.opacity(0.22), location: 0.10),
+                .init(color: accent.opacity(0.08), location: 0.22),
+                .init(color: Color.white, location: 0.45),
+                .init(color: Color.white, location: 1.00),
+            ],
+            startPoint: .top,
+            endPoint: .bottom
+        )
         .ignoresSafeArea()
     }
 
