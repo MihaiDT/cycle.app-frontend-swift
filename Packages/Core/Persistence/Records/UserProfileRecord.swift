@@ -13,6 +13,14 @@ public final class UserProfileRecord {
     @Attribute(.allowsCloudEncryption)
     public var userName: String = ""
 
+    /// Optional contact email captured the first time the user
+    /// requests an export (DataExportReadyView). Cached so future
+    /// exports pre-fill MFMailCompose's To field. E2E encrypted —
+    /// never leaves the device except via the user-controlled
+    /// share/email channel.
+    @Attribute(.allowsCloudEncryption)
+    public var email: String?
+
     @Attribute(.allowsCloudEncryption)
     public var birthDate: Date?
 
@@ -59,6 +67,7 @@ public final class UserProfileRecord {
 
     public init(
         userName: String,
+        email: String? = nil,
         birthDate: Date? = nil,
         birthTime: Date? = nil,
         birthPlace: String? = nil,
@@ -78,6 +87,7 @@ public final class UserProfileRecord {
         updatedAt: Date = Date.now
     ) {
         self.userName = userName
+        self.email = email
         self.birthDate = birthDate
         self.birthTime = birthTime
         self.birthPlace = birthPlace

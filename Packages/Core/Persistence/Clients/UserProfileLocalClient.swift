@@ -14,6 +14,7 @@ public struct UserProfileLocalClient: Sendable {
 
 public struct UserProfileSnapshot: Sendable, Equatable, Codable {
     public var userName: String
+    public var email: String?
     public var birthDate: Date?
     public var birthTime: Date?
     public var birthPlace: String?
@@ -33,6 +34,7 @@ public struct UserProfileSnapshot: Sendable, Equatable, Codable {
 
     public init(
         userName: String,
+        email: String? = nil,
         birthDate: Date? = nil,
         birthTime: Date? = nil,
         birthPlace: String? = nil,
@@ -51,6 +53,7 @@ public struct UserProfileSnapshot: Sendable, Equatable, Codable {
         createdAt: Date = .now
     ) {
         self.userName = userName
+        self.email = email
         self.birthDate = birthDate
         self.birthTime = birthTime
         self.birthPlace = birthPlace
@@ -146,6 +149,7 @@ extension UserProfileRecord {
     func toSnapshot() -> UserProfileSnapshot {
         UserProfileSnapshot(
             userName: userName,
+            email: email,
             birthDate: birthDate,
             birthTime: birthTime,
             birthPlace: birthPlace,
@@ -167,6 +171,7 @@ extension UserProfileRecord {
 
     func update(from snapshot: UserProfileSnapshot) {
         userName = snapshot.userName
+        email = snapshot.email
         birthDate = snapshot.birthDate
         birthTime = snapshot.birthTime
         birthPlace = snapshot.birthPlace
@@ -188,6 +193,7 @@ extension UserProfileRecord {
     static func from(_ snapshot: UserProfileSnapshot) -> UserProfileRecord {
         UserProfileRecord(
             userName: snapshot.userName,
+            email: snapshot.email,
             birthDate: snapshot.birthDate,
             birthTime: snapshot.birthTime,
             birthPlace: snapshot.birthPlace,

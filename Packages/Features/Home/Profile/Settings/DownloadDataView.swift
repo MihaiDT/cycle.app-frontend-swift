@@ -68,12 +68,12 @@ struct DownloadDataView: View {
                 .font(.raleway("SemiBold", size: 17, relativeTo: .headline))
                 .foregroundStyle(DesignColors.text)
 
-            Text("Your cycle data lives only on this device. Tap below and we'll bundle every cycle, symptom, and check-in into a single file you can save or share.")
+            Text("Your cycle data lives only on this device. Tap below and we'll bundle every cycle, symptom, check-in, prediction, and HBI score into a single JSON file.")
                 .font(AppTypography.bodyMedium)
                 .foregroundStyle(DesignColors.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)
 
-            Text("Nothing is sent to a server. The file stays under your control from the moment it's created.")
+            Text("On the next screen you can email a copy to yourself or share it through AirDrop, Files, or any installed app. Nothing is sent to a server — the file stays under your control from the moment it's created.")
                 .font(AppTypography.bodyMedium)
                 .foregroundStyle(DesignColors.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)

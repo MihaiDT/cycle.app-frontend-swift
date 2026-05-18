@@ -85,6 +85,7 @@
 		34E418836FED9A4E56182149 /* CycleLiveContent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68E66345CDABFE206FBFFF96 /* CycleLiveContent.swift */; };
 		352C5722E6F500785F40BC2F /* WristTempChart.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1235C1A330AA94C0845080A3 /* WristTempChart.swift */; };
 		35C1FF1EDA3F84ADDC20EF7A /* ChallengeInProgressBanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A2A32414836BA74562A05DC /* ChallengeInProgressBanner.swift */; };
+		37527CBEB3CF1A86D5ECDAF8 /* MailComposeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37FCF1F497729DE83A405655 /* MailComposeView.swift */; };
 		375F407A03F063871516C06A /* CycleHeroView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 617634D01BB34150AA15DDA2 /* CycleHeroView.swift */; };
 		3856D66BE07503CC89BD50AC /* GlowLocalClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9B8CB10C398A2C522E97C6D6 /* GlowLocalClient.swift */; };
 		38AF450775AE7474F9D5C2C1 /* ProfileAppPreferencesCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85E68DB60AD063DE9AA8AE20 /* ProfileAppPreferencesCard.swift */; };
@@ -558,6 +559,7 @@
 		367A6F2224DD7C37BA05AE6D /* ProfileNavChip.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileNavChip.swift; sourceTree = "<group>"; };
 		36BB6489CEFD8DBD97360CE4 /* WhenToSeeDoctorScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WhenToSeeDoctorScreen.swift; sourceTree = "<group>"; };
 		37EB89389930939268691D08 /* RestingHRSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RestingHRSection.swift; sourceTree = "<group>"; };
+		37FCF1F497729DE83A405655 /* MailComposeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MailComposeView.swift; sourceTree = "<group>"; };
 		38F11C8E6DC83049D73B7E89 /* CalendarAriaInsight.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarAriaInsight.swift; sourceTree = "<group>"; };
 		3994AAF48ABC03F15465A1FD /* UIFont+Raleway.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UIFont+Raleway.swift"; sourceTree = "<group>"; };
 		3AE0C6C504B834757E631C9B /* CycleTrendDetailBlock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CycleTrendDetailBlock.swift; sourceTree = "<group>"; };
@@ -1743,6 +1745,7 @@
 			children = (
 				3D2B05C65917ABA84E9D317E /* DataExportReadyView.swift */,
 				676086ACC1482A7B47B3AB90 /* DownloadDataView.swift */,
+				37FCF1F497729DE83A405655 /* MailComposeView.swift */,
 				04E486DCC9147F1712197470 /* SettingsView.swift */,
 				198688CBCA3E8298654F0744 /* ShareSheet.swift */,
 			);
@@ -2558,6 +2561,7 @@
 				A149833A49EC9A7B165FE036 /* LiquidGlassModifier.swift in Sources */,
 				E4834899C6B039EEF684B128 /* LocalNotificationClient.swift in Sources */,
 				720F88AA7FBDC85F3F1C9C5A /* LoggingActionCard.swift in Sources */,
+				37527CBEB3CF1A86D5ECDAF8 /* MailComposeView.swift in Sources */,
 				0D9C8B1B106A202A4AFAB0BB /* MeBodySheet.swift in Sources */,
 				0EAE8EA4A1069ABB755BA642 /* MeContent.swift in Sources */,
 				38FAEE641525859BF461D246 /* MeFeature.swift in Sources */,

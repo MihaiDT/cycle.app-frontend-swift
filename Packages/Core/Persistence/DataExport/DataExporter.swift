@@ -35,14 +35,16 @@ public struct DataExporter {
     public func exportAll(
         appVersion: String,
         buildNumber: String,
-        preferences: ExportablePreferences
+        preferences: ExportablePreferences,
+        referenceCode: String? = nil
     ) throws -> Data {
         let context = ModelContext(CycleDataStore.shared)
 
         var payload: [String: Any] = [:]
         payload["manifest"] = makeManifest(
             appVersion: appVersion,
-            buildNumber: buildNumber
+            buildNumber: buildNumber,
+            referenceCode: referenceCode
         )
         payload["userProfile"] = try makeUserProfile(context: context)
         payload["menstrualProfile"] = try makeMenstrualProfile(context: context)
@@ -61,8 +63,12 @@ public struct DataExporter {
 
     // MARK: - Manifest
 
-    private func makeManifest(appVersion: String, buildNumber: String) -> [String: Any] {
-        [
+    private func makeManifest(
+        appVersion: String,
+        buildNumber: String,
+        referenceCode: String?
+    ) -> [String: Any] {
+        var manifest: [String: Any] = [
             "schemaVersion": SchemaVersion.current,
             "appVersion": appVersion,
             "buildNumber": buildNumber,
@@ -81,6 +87,10 @@ public struct DataExporter {
                 "preferences",
             ],
         ]
+        if let referenceCode {
+            manifest["referenceCode"] = referenceCode
+        }
+        return manifest
     }
 
     // MARK: - UserProfile
@@ -91,6 +101,7 @@ public struct DataExporter {
 
         return [
             "userName": record.userName,
+            "email": record.email ?? NSNull(),
             "birthDate": Self.optionalDate(record.birthDate),
             "birthTime": Self.optionalDate(record.birthTime),
             "birthPlace": record.birthPlace ?? NSNull(),
