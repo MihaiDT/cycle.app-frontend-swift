@@ -36,12 +36,17 @@ public struct AppView: View {
         }
         .animation(.easeInOut(duration: 0.28), value: lock.isUnlocked)
         .onChange(of: scenePhase) { _, newPhase in
-            // Re-lock the app whenever it leaves the foreground —
-            // standard security pattern for biometric-gated apps.
-            // SwiftUI fires .background BEFORE the snapshot the
-            // system takes for the App Switcher, so the snapshot
-            // already shows the lock screen, not the user's data.
-            if newPhase != .active {
+            // Re-lock only on .background — that's the genuine
+            // "user left the app" signal. .inactive also fires
+            // when the system surfaces its biometric prompt or any
+            // other transient UI, and treating that as a relock
+            // racrasses with the LAContext call we just made
+            // (relock → AppLockView appears → its .task auto-
+            // prompts again → infinite Face ID loop). The App
+            // Switcher snapshot is taken during the .background
+            // phase too, so we still hide data from the multi-
+            // tasking preview.
+            if newPhase == .background {
                 lock.lock()
             }
         }
