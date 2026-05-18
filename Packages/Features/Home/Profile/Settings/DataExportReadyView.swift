@@ -1,4 +1,5 @@
 import ComposableArchitecture
+import LocalAuthentication
 import SwiftUI
 
 // MARK: - Data Export Ready View
@@ -30,7 +31,9 @@ struct DataExportReadyView: View {
     @Dependency(\.userProfileLocal) private var userProfileLocal
 
     @State private var referenceCode: String = DataExportReadyView.generateReferenceCode()
+    @State private var isCodeRevealed: Bool = false
     @State private var didCopy: Bool = false
+    @State private var relockTask: Task<Void, Never>?
 
     @State private var email: String = ""
     @State private var didHydrateEmail: Bool = false
@@ -54,6 +57,7 @@ struct DataExportReadyView: View {
         .navigationBarBackButtonHidden(true)
         .toolbar { backToolbarItem(dismiss: dismiss) }
         .task { await hydrateEmailIfNeeded() }
+        .onDisappear { relockTask?.cancel() }
         .sheet(item: $shareItem) { item in
             ShareSheet(items: [item.url])
         }
@@ -163,24 +167,30 @@ struct DataExportReadyView: View {
     // MARK: - Reference code
 
     private var referenceCodeRow: some View {
-        Button(action: copyReferenceCode) {
+        Button(action: handleReferenceCodeTap) {
             HStack(spacing: AppLayout.spacingS) {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Reference code")
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Archive password")
                         .font(AppTypography.cardEyebrow)
                         .tracking(AppTypography.cardEyebrowTracking)
                         .foregroundStyle(DesignColors.textSecondary)
-                    Text(referenceCode)
+                    Text(isCodeRevealed ? referenceCode : Self.redactedCode)
                         .font(.system(.body, design: .monospaced).weight(.semibold))
                         .foregroundStyle(DesignColors.accent)
                         .lineLimit(1)
                         .minimumScaleFactor(0.6)
+                        .contentTransition(.opacity)
+                    Text(isCodeRevealed
+                        ? "Auto-locks in a few seconds. Tap to copy."
+                        : "Protected by Face ID — tap to reveal.")
+                        .font(.raleway("Regular", size: 12, relativeTo: .caption))
+                        .foregroundStyle(DesignColors.textSecondary.opacity(0.75))
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
 
-                Image(systemName: didCopy ? "checkmark" : "doc.on.doc")
+                Image(systemName: trailingIconName)
                     .font(.system(size: 18, weight: .semibold))
-                    .foregroundStyle(didCopy ? DesignColors.accentWarm : DesignColors.textSecondary)
+                    .foregroundStyle(trailingIconColor)
                     .contentTransition(.symbolEffect(.replace))
             }
             .padding(.horizontal, AppLayout.spacingM)
@@ -190,6 +200,18 @@ struct DataExportReadyView: View {
         .buttonStyle(.plain)
         .widgetCardStyle(cornerRadius: AppLayout.cornerRadiusL)
     }
+
+    private var trailingIconName: String {
+        if didCopy { return "checkmark" }
+        return isCodeRevealed ? "doc.on.doc" : "faceid"
+    }
+
+    private var trailingIconColor: Color {
+        if didCopy { return DesignColors.accentWarm }
+        return isCodeRevealed ? DesignColors.textSecondary : DesignColors.accent
+    }
+
+    private static let redactedCode = "••••–••••–••••–••••"
 
     // MARK: - Email input
 
@@ -292,13 +314,69 @@ struct DataExportReadyView: View {
 
     // MARK: - Actions
 
-    private func copyReferenceCode() {
+    private func handleReferenceCodeTap() {
+        if isCodeRevealed {
+            copyToClipboard()
+        } else {
+            Task { await unlockReferenceCode() }
+        }
+    }
+
+    private func unlockReferenceCode() async {
+        // `.deviceOwnerAuthentication` allows passcode fallback when
+        // biometrics fail or aren't enrolled (simulator, older device).
+        // `.deviceOwnerAuthenticationWithBiometrics` is stricter but
+        // can lock the user out if they can't enroll Face ID.
+        let context = LAContext()
+        context.localizedFallbackTitle = "Use passcode"
+
+        var policyError: NSError?
+        guard context.canEvaluatePolicy(.deviceOwnerAuthentication, error: &policyError) else {
+            // No biometrics + no passcode set. Fall back to revealing
+            // without auth — the device itself has no lock surface.
+            withAnimation(.easeInOut(duration: 0.25)) {
+                isCodeRevealed = true
+            }
+            scheduleAutoRelock()
+            return
+        }
+
+        do {
+            let success = try await context.evaluatePolicy(
+                .deviceOwnerAuthentication,
+                localizedReason: "Reveal the password that unlocks your encrypted export."
+            )
+            guard success else { return }
+
+            withAnimation(.easeInOut(duration: 0.25)) {
+                isCodeRevealed = true
+            }
+            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+            copyToClipboard()
+            scheduleAutoRelock()
+        } catch {
+            // User cancelled or auth failed — leave code locked.
+        }
+    }
+
+    private func copyToClipboard() {
         UIPasteboard.general.string = referenceCode
         UIImpactFeedbackGenerator(style: .soft).impactOccurred()
         withAnimation(.easeInOut(duration: 0.2)) { didCopy = true }
         Task { @MainActor in
             try? await Task.sleep(for: .seconds(1.8))
             withAnimation(.easeInOut(duration: 0.2)) { didCopy = false }
+        }
+    }
+
+    private func scheduleAutoRelock() {
+        relockTask?.cancel()
+        relockTask = Task { @MainActor in
+            try? await Task.sleep(for: .seconds(20))
+            guard !Task.isCancelled else { return }
+            withAnimation(.easeInOut(duration: 0.25)) {
+                isCodeRevealed = false
+            }
         }
     }
 
