@@ -22,7 +22,7 @@ struct DownloadDataView: View {
             AppleHealthBackground()
                 .ignoresSafeArea()
 
-            content
+            scrollContent
         }
         .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
@@ -30,31 +30,28 @@ struct DownloadDataView: View {
         .toolbar(.hidden, for: .tabBar)
         .navigationBarBackButtonHidden(true)
         .toolbar { backToolbarItem(dismiss: dismiss) }
+        .safeAreaInset(edge: .bottom, spacing: 0) { footer }
         .navigationDestination(isPresented: $isShowingExportReady) {
             DataExportReadyView()
         }
     }
 
-    // MARK: - Content
+    // MARK: - Scroll body
 
-    private var content: some View {
-        VStack(spacing: 0) {
-            ScrollView {
-                VStack(spacing: AppLayout.spacingL) {
-                    heroIcon
-                    titleBlock
-                    includedList
-                    privacyCallout
-                }
-                .padding(.horizontal, AppLayout.screenHorizontal)
-                .padding(.top, AppLayout.spacingM)
-                .padding(.bottom, AppLayout.spacingXL)
-                .frame(maxWidth: .infinity, alignment: .leading)
+    private var scrollContent: some View {
+        ScrollView {
+            VStack(spacing: AppLayout.spacingL) {
+                heroIcon
+                titleBlock
+                includedList
+                privacyCallout
             }
-            .scrollIndicators(.hidden)
-
-            footer
+            .padding(.horizontal, AppLayout.screenHorizontal)
+            .padding(.top, AppLayout.spacingM)
+            .padding(.bottom, AppLayout.spacingXL)
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
+        .scrollIndicators(.hidden)
     }
 
     // MARK: - Hero
@@ -189,9 +186,44 @@ struct DownloadDataView: View {
     }
 
     // MARK: - Footer
+    //
+    // Mirrors the top peach header: a frosted blur + warm tint that
+    // fades from transparent at the top into a full surface at the
+    // bottom edge. Content scrolls underneath so the last card
+    // softly diffuses through the blur. The button sits on the
+    // solid bottom of the gradient where readability is highest.
 
     private var footer: some View {
-        VStack(spacing: 0) {
+        ZStack(alignment: .bottom) {
+            // 1. Frosted blur layer, masked so it fades in
+            //    vertically rather than appearing as a hard band.
+            Rectangle()
+                .fill(.ultraThinMaterial)
+                .mask {
+                    LinearGradient(
+                        colors: [.clear, .black.opacity(0.6), .black, .black],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                }
+                .allowsHitTesting(false)
+
+            // 2. Warm peach tint — same accent as the header's
+            //    AppleHealthBackground, faded the same way so the
+            //    two ends of the screen feel symmetric.
+            LinearGradient(
+                colors: [
+                    .clear,
+                    DesignColors.accentWarm.opacity(0.08),
+                    DesignColors.accentWarm.opacity(0.16),
+                ],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .allowsHitTesting(false)
+
+            // 3. Button — pushed off the bottom safe area so it
+            //    sits in the strongest part of the gradient.
             WarmCapsuleButton(
                 "Continue",
                 prominence: .primary,
@@ -199,8 +231,9 @@ struct DownloadDataView: View {
                 action: requestData
             )
             .padding(.horizontal, AppLayout.screenHorizontal)
-            .padding(.bottom, AppLayout.spacingL)
+            .padding(.bottom, AppLayout.spacingS)
         }
+        .frame(height: 132)
     }
 
     // MARK: - Actions
