@@ -27,7 +27,7 @@ struct SettingsView: View {
 
     var body: some View {
         ZStack {
-            AppleHealthBackground(animated: false)
+            AppleHealthBackground()
                 .ignoresSafeArea()
 
             scrollContent

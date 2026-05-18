@@ -13,42 +13,27 @@ import SwiftUI
 public struct AppleHealthBackground: View {
 
     public let accent: Color
-    public let animated: Bool
 
-    public init(
-        accent: Color = Color(red: 1.00, green: 0.66, blue: 0.55),
-        animated: Bool = true
-    ) {
+    public init(accent: Color = Color(red: 1.00, green: 0.66, blue: 0.55)) {
         self.accent = accent
-        self.animated = animated
     }
 
     public var body: some View {
+        // Static render — single canvas snapshot, single GPU blur
+        // pass, no TimelineView. The ambient morph used to live
+        // here but it cost a continuous Metal pass per screen and
+        // showed up as push lag when screens stacked. The canvas
+        // function still takes a `time` parameter so the morph can
+        // be reintroduced (re-wrap in TimelineView) without
+        // rewriting the geometry math.
         GeometryReader { proxy in
-            if animated {
-                TimelineView(.periodic(from: .now, by: 1.0 / 30.0)) { context in
-                    AppleHealthBackground.canvas(
-                        size: proxy.size,
-                        time: context.date.timeIntervalSinceReferenceDate,
-                        accent: accent
-                    )
-                    .drawingGroup() // flatten to a Metal texture
-                    .blur(radius: 14) // single GPU blur pass on the texture
-                }
-            } else {
-                // Static snapshot for utility surfaces (Settings,
-                // export flows) where the morph TimelineView is a
-                // navigation-push cost we don't recoup visually —
-                // the user scans these screens for seconds, not
-                // long enough to notice ambient breathing.
-                AppleHealthBackground.canvas(
-                    size: proxy.size,
-                    time: 0,
-                    accent: accent
-                )
-                .drawingGroup()
-                .blur(radius: 14)
-            }
+            AppleHealthBackground.canvas(
+                size: proxy.size,
+                time: 0,
+                accent: accent
+            )
+            .drawingGroup()
+            .blur(radius: 14)
         }
         .ignoresSafeArea()
     }
