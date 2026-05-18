@@ -136,12 +136,18 @@ struct DataExportReadyView: View {
     @ViewBuilder
     private var copyBlock: some View {
         if let sent = sentSummary {
-            Text("We sent a download link to \(sent.email). The link works once and expires in 72 hours. Check spam if you don't see it within a minute.")
-                .font(AppTypography.bodyMedium)
-                .foregroundStyle(DesignColors.textSecondary)
-                .multilineTextAlignment(.center)
-                .fixedSize(horizontal: false, vertical: true)
-                .padding(.horizontal, AppLayout.spacingS)
+            (
+                Text("We sent a download link to ")
+                + Text(sent.email)
+                    .fontWeight(.semibold)
+                    .foregroundColor(DesignColors.text)
+                + Text(". The link works once and expires in 72 hours. Check spam if you don't see it within a minute.")
+            )
+            .font(AppTypography.bodyMedium)
+            .foregroundStyle(DesignColors.textSecondary)
+            .multilineTextAlignment(.center)
+            .fixedSize(horizontal: false, vertical: true)
+            .padding(.horizontal, AppLayout.spacingS)
         } else {
             Text("Add your email and we'll send a one-shot download link. It works once and expires in 72 hours.")
                 .font(AppTypography.bodyMedium)
