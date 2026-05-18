@@ -68,9 +68,13 @@ struct MailComposeView: UIViewControllerRepresentable {
             didFinishWith result: MFMailComposeResult,
             error: Error?
         ) {
-            controller.dismiss(animated: true) { [onResult] in
-                onResult?(result, error)
-            }
+            // The MFMailComposeViewControllerDelegate callback fires
+            // on the main thread, so we can dismiss + report inline
+            // instead of nesting the report inside dismiss's completion
+            // — that nesting triggered Swift 6's non-Sendable closure
+            // check because Error? isn't Sendable.
+            controller.dismiss(animated: true)
+            onResult?(result, error)
         }
     }
 }
