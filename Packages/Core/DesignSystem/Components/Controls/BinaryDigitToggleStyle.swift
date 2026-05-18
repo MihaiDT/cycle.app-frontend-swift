@@ -2,11 +2,12 @@ import SwiftUI
 
 // MARK: - Binary Digit Toggle Style
 //
-// Replaces the system Toggle visual with a track that shows "1"
-// when the toggle is on and "0" when it's off. The digit lives in
-// the EMPTY half of the track — opposite the thumb — so the state
-// reads instantly without needing colour discrimination, and the
-// thumb position confirms the same answer.
+// Replaces the system Toggle visual with a track that carries the
+// IEC 60417 power-switch glyphs — a vertical bar (⏽) for on, an
+// open circle (⭘) for off — drawn as native shapes so they stay
+// crisp at any pixel density. The glyph lives in the EMPTY half
+// of the track, opposite the thumb, so the white circle never
+// covers it.
 //
 // Applied app-wide from `AppView` via `.toggleStyle(.binaryDigit)`
 // so every `Toggle` across Profile, Settings, Tracking, etc. picks
@@ -18,8 +19,9 @@ import SwiftUI
 // - On state uses DesignColors.accentWarm to stay on-brand; off
 //   state is a muted neutral built from textSecondary so it reads
 //   as "inactive" on both light and dark surfaces.
-// - The digit font is monospaced semibold so "1" and "0" share the
-//   same advance width — no jitter when the value flips.
+// - Glyphs are drawn from Shape primitives (Rectangle + Circle)
+//   instead of unicode text so the stroke width and corner radius
+//   stay under direct control and the icon doesn't rely on a font.
 // - Tap target is the full HStack (label + switch) per Apple's
 //   accessibility guidance.
 
@@ -67,14 +69,12 @@ private struct BinaryDigitSwitch: View {
                 .fill(isOn ? DesignColors.accentWarm : DesignColors.textSecondary.opacity(0.28))
                 .frame(width: trackWidth, height: trackHeight)
 
-            // The digit lives on the side OPPOSITE the thumb so it
-            // never gets covered by the white circle.
-            Text(isOn ? "1" : "0")
-                .font(.system(size: 13, weight: .bold, design: .monospaced))
-                .foregroundStyle(Color.white.opacity(isOn ? 0.95 : 0.88))
+            // IEC 60417 glyph — vertical bar when on, open circle
+            // when off. Drawn as shapes so the strokes stay pixel-
+            // crisp at any scale.
+            powerGlyph
                 .frame(width: thumbSize, height: thumbSize)
                 .offset(x: isOn ? -thumbTravel : thumbTravel)
-                .contentTransition(.numericText())
 
             // Thumb
             Circle()
@@ -85,5 +85,22 @@ private struct BinaryDigitSwitch: View {
         }
         .frame(width: trackWidth, height: trackHeight)
         .accessibilityHidden(true) // The parent Toggle handles a11y.
+    }
+
+    @ViewBuilder
+    private var powerGlyph: some View {
+        if isOn {
+            // Vertical bar (⏽). Rounded ends so it looks intentional
+            // at small sizes; ~half the thumb's height for proportion.
+            Capsule()
+                .fill(Color.white.opacity(0.95))
+                .frame(width: 2, height: 12)
+        } else {
+            // Open circle (⭘). Stroked, not filled, so it reads as
+            // "open / off" rather than a dot.
+            Circle()
+                .strokeBorder(Color.white.opacity(0.92), lineWidth: 1.6)
+                .frame(width: 11, height: 11)
+        }
     }
 }
