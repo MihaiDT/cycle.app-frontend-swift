@@ -20,7 +20,6 @@ struct DownloadDataView: View {
     /// single animation, landing the user back on Settings.
     var onExportComplete: (() -> Void)? = nil
 
-    @Environment(\.dismiss) private var dismiss
     @State private var isShowingExportReady: Bool = false
 
     var body: some View {
@@ -34,8 +33,6 @@ struct DownloadDataView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(.hidden, for: .navigationBar)
         .toolbar(.hidden, for: .tabBar)
-        .navigationBarBackButtonHidden(true)
-        .toolbar { backToolbarItem(dismiss: dismiss) }
         .safeAreaInset(edge: .bottom, spacing: 0) { footer }
         .navigationDestination(isPresented: $isShowingExportReady) {
             DataExportReadyView(onComplete: { onExportComplete?() })

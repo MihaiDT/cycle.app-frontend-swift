@@ -285,10 +285,6 @@ public struct ProfileView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(.hidden, for: .navigationBar)
         .toolbar(.hidden, for: .tabBar)
-        .navigationBarBackButtonHidden(true)
-        .toolbar {
-            backToolbarItem(action: { store.send(.notificationsSheetDismissed) })
-        }
     }
 
     private var deleteDialogBinding: Binding<Bool> {

@@ -15,8 +15,6 @@ import SwiftUI
 //   tap closures stay no-op until those screens land.
 
 struct SettingsView: View {
-    @Environment(\.dismiss) private var dismiss
-
     @AppStorage(SettingsKeys.biometricUnlockEnabled)
     private var biometricUnlockEnabled: Bool = false
 
@@ -36,8 +34,6 @@ struct SettingsView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(.hidden, for: .navigationBar)
         .toolbar(.hidden, for: .tabBar)
-        .navigationBarBackButtonHidden(true)
-        .toolbar { backToolbarItem(dismiss: dismiss) }
         .navigationDestination(isPresented: $isShowingDownloadData) {
             // Tapping "Done" on the export success state flips this
             // bool — SwiftUI cascades the pop and lands the user

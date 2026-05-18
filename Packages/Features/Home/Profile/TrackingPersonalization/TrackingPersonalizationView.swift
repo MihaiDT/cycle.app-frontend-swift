@@ -15,7 +15,6 @@ import SwiftUI
 // handles stay visible via a persistent `.editMode` environment.
 
 struct TrackingPersonalizationView: View {
-    @Environment(\.dismiss) private var dismiss
     @StateObject private var store = TrackingPreferencesStore.shared
     @State private var editMode: EditMode = .active
 
@@ -30,8 +29,6 @@ struct TrackingPersonalizationView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(.hidden, for: .navigationBar)
         .toolbar(.hidden, for: .tabBar)
-        .navigationBarBackButtonHidden(true)
-        .toolbar { backToolbarItem(dismiss: dismiss) }
     }
 
     // MARK: - Content

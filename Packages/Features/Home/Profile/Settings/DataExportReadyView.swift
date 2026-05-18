@@ -60,8 +60,6 @@ struct DataExportReadyView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(.hidden, for: .navigationBar)
         .toolbar(.hidden, for: .tabBar)
-        .navigationBarBackButtonHidden(true)
-        .toolbar { backToolbarItem(dismiss: dismiss) }
         .safeAreaInset(edge: .bottom, spacing: 0) { footer }
         .task { await hydrateEmailIfNeeded() }
         .onDisappear { relockTask?.cancel() }
