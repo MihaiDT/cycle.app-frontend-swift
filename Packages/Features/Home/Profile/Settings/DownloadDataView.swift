@@ -102,23 +102,23 @@ struct DownloadDataView: View {
                 .padding(.top, 14)
                 .padding(.bottom, AppLayout.spacingS)
 
-            includedRow(icon: "drop.fill",
+            includedRow(asset: "CycleLogged",
                         tint: DesignColors.accent,
                         text: "Every logged cycle and bleeding day")
             divider
-            includedRow(icon: "face.smiling.inverse",
+            includedRow(asset: "SymptomCheckIn",
                         tint: DesignColors.roseTaupe,
                         text: "Every symptom and daily check-in")
             divider
-            includedRow(icon: "chart.line.uptrend.xyaxis",
+            includedRow(asset: "PredictionAccuracy",
                         tint: DesignColors.accentSecondary,
                         text: "Cycle predictions and accuracy history")
             divider
-            includedRow(icon: "sparkles",
+            includedRow(asset: "WellnessTrends",
                         tint: DesignColors.accentWarm,
                         text: "Your wellness scores and trends")
             divider
-            includedRow(icon: "gearshape.fill",
+            includedRow(asset: "AppPreferences",
                         tint: DesignColors.textCard,
                         text: "In-app preferences")
         }
@@ -133,15 +133,18 @@ struct DownloadDataView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    private func includedRow(icon: String, tint: Color, text: String) -> some View {
+    private func includedRow(asset: String, tint: Color, text: String) -> some View {
         HStack(spacing: AppLayout.spacingS) {
             ZStack {
                 Circle().fill(tint.opacity(0.16))
-                Image(systemName: icon)
-                    .font(.system(size: 14, weight: .semibold))
+                Image(asset)
+                    .renderingMode(.template)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 18, height: 18)
                     .foregroundStyle(tint)
             }
-            .frame(width: 30, height: 30)
+            .frame(width: 34, height: 34)
 
             Text(text)
                 .font(.raleway("Medium", size: 15, relativeTo: .subheadline))
@@ -157,7 +160,7 @@ struct DownloadDataView: View {
         Rectangle()
             .fill(DesignColors.textSecondary.opacity(0.10))
             .frame(height: 0.5)
-            .padding(.leading, AppLayout.spacingM + 30 + AppLayout.spacingS)
+            .padding(.leading, AppLayout.spacingM + 34 + AppLayout.spacingS)
     }
 
     // MARK: - Privacy
