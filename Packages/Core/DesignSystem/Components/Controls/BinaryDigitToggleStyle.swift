@@ -63,11 +63,13 @@ private struct BinaryDigitSwitch: View {
     private var thumbSize: CGFloat { trackHeight - thumbInset * 2 }
     private var thumbTravel: CGFloat { (trackWidth - trackHeight) / 2 }
 
+    private var trackTint: Color {
+        isOn ? DesignColors.accentWarm : DesignColors.textSecondary.opacity(0.28)
+    }
+
     var body: some View {
         ZStack {
-            Capsule()
-                .fill(isOn ? DesignColors.accentWarm : DesignColors.textSecondary.opacity(0.28))
-                .frame(width: trackWidth, height: trackHeight)
+            track
 
             // IEC 60417 glyph — vertical bar when on, open circle
             // when off. Drawn as shapes so the strokes stay pixel-
@@ -76,15 +78,48 @@ private struct BinaryDigitSwitch: View {
                 .frame(width: thumbSize, height: thumbSize)
                 .offset(x: isOn ? -thumbTravel : thumbTravel)
 
-            // Thumb
+            thumb
+        }
+        .frame(width: trackWidth, height: trackHeight)
+        .accessibilityHidden(true) // The parent Toggle handles a11y.
+    }
+
+    @ViewBuilder
+    private var track: some View {
+        if #available(iOS 26.0, *) {
+            // Liquid Glass — the tint propagates through the glass
+            // pass so the track reads as accent-coloured frosted
+            // material rather than a flat fill.
+            Color.clear
+                .frame(width: trackWidth, height: trackHeight)
+                .glassEffect(
+                    .regular.tint(trackTint),
+                    in: Capsule()
+                )
+        } else {
+            // Pre-iOS 26 fallback: solid fill so the track still
+            // reads as the brand colour even when the OS doesn't
+            // ship the glass shader.
+            Capsule()
+                .fill(trackTint)
+                .frame(width: trackWidth, height: trackHeight)
+        }
+    }
+
+    @ViewBuilder
+    private var thumb: some View {
+        if #available(iOS 26.0, *) {
+            Color.clear
+                .frame(width: thumbSize, height: thumbSize)
+                .glassEffect(.regular.interactive(), in: Circle())
+                .offset(x: isOn ? thumbTravel : -thumbTravel)
+        } else {
             Circle()
                 .fill(Color.white)
                 .frame(width: thumbSize, height: thumbSize)
                 .shadow(color: .black.opacity(0.18), radius: 1.5, x: 0, y: 1)
                 .offset(x: isOn ? thumbTravel : -thumbTravel)
         }
-        .frame(width: trackWidth, height: trackHeight)
-        .accessibilityHidden(true) // The parent Toggle handles a11y.
     }
 
     @ViewBuilder
