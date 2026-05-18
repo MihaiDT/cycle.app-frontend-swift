@@ -71,10 +71,6 @@ struct CycleApp: App {
                     AppFeature()
                 }
             )
-            // Brand toggle: shows `1` on / `0` off in the track.
-            // Applied at the root so every Toggle in the app picks
-            // it up via the environment.
-            .toggleStyle(.binaryDigit)
         }
     }
 }
