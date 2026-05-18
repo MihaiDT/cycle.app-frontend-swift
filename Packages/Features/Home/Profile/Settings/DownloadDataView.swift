@@ -18,7 +18,7 @@ struct DownloadDataView: View {
 
     var body: some View {
         ZStack {
-            AppleHealthBackground()
+            AppleHealthBackground(animated: false)
                 .ignoresSafeArea()
 
             content

@@ -13,21 +13,41 @@ import SwiftUI
 public struct AppleHealthBackground: View {
 
     public let accent: Color
+    public let animated: Bool
 
-    public init(accent: Color = Color(red: 1.00, green: 0.66, blue: 0.55)) {
+    public init(
+        accent: Color = Color(red: 1.00, green: 0.66, blue: 0.55),
+        animated: Bool = true
+    ) {
         self.accent = accent
+        self.animated = animated
     }
 
     public var body: some View {
         GeometryReader { proxy in
-            TimelineView(.periodic(from: .now, by: 1.0 / 30.0)) { context in
+            if animated {
+                TimelineView(.periodic(from: .now, by: 1.0 / 30.0)) { context in
+                    AppleHealthBackground.canvas(
+                        size: proxy.size,
+                        time: context.date.timeIntervalSinceReferenceDate,
+                        accent: accent
+                    )
+                    .drawingGroup() // flatten to a Metal texture
+                    .blur(radius: 14) // single GPU blur pass on the texture
+                }
+            } else {
+                // Static snapshot for utility surfaces (Settings,
+                // export flows) where the morph TimelineView is a
+                // navigation-push cost we don't recoup visually —
+                // the user scans these screens for seconds, not
+                // long enough to notice ambient breathing.
                 AppleHealthBackground.canvas(
                     size: proxy.size,
-                    time: context.date.timeIntervalSinceReferenceDate,
+                    time: 0,
                     accent: accent
                 )
-                .drawingGroup() // flatten to a Metal texture
-                .blur(radius: 14) // single GPU blur pass on the texture
+                .drawingGroup()
+                .blur(radius: 14)
             }
         }
         .ignoresSafeArea()

@@ -265,7 +265,7 @@ public struct ProfileView: View {
 
     private var notificationsScreen: some View {
         ZStack {
-            AppleHealthBackground()
+            AppleHealthBackground(animated: false)
                 .ignoresSafeArea()
 
             ScrollView {
